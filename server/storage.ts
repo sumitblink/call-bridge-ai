@@ -169,8 +169,13 @@ export class MemStorage implements IStorage {
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
     const id = this.currentCampaignId++;
     const newCampaign: Campaign = {
-      ...campaign,
       id,
+      name: campaign.name,
+      description: campaign.description ?? null,
+      status: campaign.status ?? "draft",
+      progress: campaign.progress ?? 0,
+      callsMade: campaign.callsMade ?? 0,
+      successRate: campaign.successRate ?? "0.00",
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -207,8 +212,11 @@ export class MemStorage implements IStorage {
   async createAgent(agent: InsertAgent): Promise<Agent> {
     const id = this.currentAgentId++;
     const newAgent: Agent = {
-      ...agent,
       id,
+      name: agent.name,
+      email: agent.email,
+      status: agent.status ?? "offline",
+      campaignId: agent.campaignId ?? null,
       createdAt: new Date(),
     };
     this.agents.set(id, newAgent);
@@ -241,8 +249,13 @@ export class MemStorage implements IStorage {
   async createCall(call: InsertCall): Promise<Call> {
     const id = this.currentCallId++;
     const newCall: Call = {
-      ...call,
       id,
+      campaignId: call.campaignId,
+      agentId: call.agentId ?? null,
+      phoneNumber: call.phoneNumber,
+      status: call.status,
+      duration: call.duration ?? null,
+      notes: call.notes ?? null,
       createdAt: new Date(),
     };
     this.calls.set(id, newCall);
