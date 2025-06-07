@@ -267,7 +267,7 @@ function CampaignForm({
                 <Textarea 
                   placeholder="Enter campaign description (optional)" 
                   {...field} 
-                  value={field.value || ""}
+                  value={field.value ?? ""}
                 />
               </FormControl>
               <FormMessage />
@@ -318,7 +318,7 @@ export default function Campaigns() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: campaigns, isLoading, error } = useQuery({
+  const { data: campaigns, isLoading, error } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"],
   });
 
@@ -438,7 +438,7 @@ export default function Campaigns() {
             </Card>
           ))}
         </div>
-      ) : !campaigns || campaigns.length === 0 ? (
+      ) : !campaigns || (Array.isArray(campaigns) && campaigns.length === 0) ? (
         <Card>
           <CardContent className="p-6">
             <div className="text-center">
@@ -456,7 +456,7 @@ export default function Campaigns() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {campaigns && campaigns.map((campaign: Campaign) => (
+          {campaigns && Array.isArray(campaigns) && campaigns.map((campaign: Campaign) => (
             <CampaignCard
               key={campaign.id}
               campaign={campaign}

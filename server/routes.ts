@@ -59,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update campaign status (pause/resume)
+  // Update campaign
   app.patch("/api/campaigns/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -67,12 +67,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid campaign ID" });
       }
 
-      const { status } = req.body;
-      if (!status || !["active", "paused", "completed", "draft"].includes(status)) {
+      // Validate the update data
+      const updateData = req.body;
+      if (updateData.status && !["active", "paused", "completed", "draft"].includes(updateData.status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
 
-      const campaign = await storage.updateCampaign(id, { status });
+      const campaign = await storage.updateCampaign(id, updateData);
       if (!campaign) {
         return res.status(404).json({ message: "Campaign not found" });
       }
@@ -81,6 +82,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating campaign:", error);
       res.status(500).json({ message: "Failed to update campaign" });
+    }
+  });
+
+  // Delete campaign
+  app.delete("/api/campaigns/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+
+      const success = await storage.deleteCampaign(id);
+      if (!success) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+
+      res.json({ message: "Campaign deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting campaign:", error);
+      res.status(500).json({ message: "Failed to delete campaign" });
     }
   });
 
