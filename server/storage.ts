@@ -167,6 +167,15 @@ export class MemStorage implements IStorage {
     return this.campaigns.get(id);
   }
 
+  async getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined> {
+    for (const campaign of this.campaigns.values()) {
+      if (campaign.phoneNumber === phoneNumber) {
+        return campaign;
+      }
+    }
+    return undefined;
+  }
+
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
     const id = this.currentCampaignId++;
     const newCampaign: Campaign = {

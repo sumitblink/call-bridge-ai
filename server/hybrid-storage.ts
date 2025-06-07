@@ -46,6 +46,10 @@ class HybridStorage implements IStorage {
     return this.trySupabaseOperation(() => this.supabaseStorage.getCampaign(id));
   }
 
+  async getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined> {
+    return this.trySupabaseOperation(() => this.supabaseStorage.getCampaignByPhoneNumber(phoneNumber));
+  }
+
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
     return this.trySupabaseOperation(() => this.supabaseStorage.createCampaign(campaign));
   }
