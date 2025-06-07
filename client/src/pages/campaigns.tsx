@@ -1,0 +1,471 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Edit, Trash2, Play, Pause, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertCampaignSchema, type Campaign, type InsertCampaign } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const campaignFormSchema = insertCampaignSchema.extend({
+  name: insertCampaignSchema.shape.name.min(1, "Name is required"),
+  description: insertCampaignSchema.shape.description.optional(),
+});
+
+function CampaignCard({ campaign, onEdit, onDelete }: { 
+  campaign: Campaign; 
+  onEdit: (campaign: Campaign) => void;
+  onDelete: (id: number) => void;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async (status: string) => {
+      const response = await fetch(`/api/campaigns/${campaign.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) throw new Error("Failed to update status");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Success",
+        description: "Campaign status updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update campaign status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active": return "bg-green-100 text-green-800";
+      case "paused": return "bg-yellow-100 text-yellow-800";
+      case "completed": return "bg-blue-100 text-blue-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const canToggleStatus = (status: string) => {
+    return status === "active" || status === "paused" || status === "draft";
+  };
+
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-lg">{campaign.name}</CardTitle>
+            <CardDescription className="mt-1">
+              {campaign.description || "No description provided"}
+            </CardDescription>
+          </div>
+          <Badge className={getStatusColor(campaign.status)}>
+            {campaign.status}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="text-sm">
+            <span className="text-muted-foreground">Progress:</span>
+            <div className="font-medium">{campaign.progress}%</div>
+          </div>
+          <div className="text-sm">
+            <span className="text-muted-foreground">Calls Made:</span>
+            <div className="font-medium">{campaign.callsMade}</div>
+          </div>
+          <div className="text-sm">
+            <span className="text-muted-foreground">Success Rate:</span>
+            <div className="font-medium">{campaign.successRate}%</div>
+          </div>
+          <div className="text-sm">
+            <span className="text-muted-foreground">Created:</span>
+            <div className="font-medium">
+              {new Date(campaign.createdAt).toLocaleDateString()}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {canToggleStatus(campaign.status) && (
+            <Button
+              size="sm"
+              variant={campaign.status === "active" ? "outline" : "default"}
+              onClick={() => 
+                updateStatusMutation.mutate(
+                  campaign.status === "active" ? "paused" : "active"
+                )
+              }
+              disabled={updateStatusMutation.isPending}
+            >
+              {campaign.status === "active" ? (
+                <>
+                  <Pause className="w-4 h-4 mr-1" />
+                  Pause
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-1" />
+                  Start
+                </>
+              )}
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={() => onEdit(campaign)}>
+            <Edit className="w-4 h-4 mr-1" />
+            Edit
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => onDelete(campaign.id)}
+            className="text-red-600 hover:text-red-700"
+          >
+            <Trash2 className="w-4 h-4 mr-1" />
+            Delete
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CampaignForm({ 
+  campaign, 
+  onSuccess, 
+  onCancel 
+}: { 
+  campaign?: Campaign; 
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const form = useForm<InsertCampaign>({
+    resolver: zodResolver(campaignFormSchema),
+    defaultValues: {
+      name: campaign?.name || "",
+      description: campaign?.description || "",
+      status: campaign?.status || "draft",
+      progress: campaign?.progress || 0,
+      callsMade: campaign?.callsMade || 0,
+      successRate: campaign?.successRate || "0.00",
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: InsertCampaign) => {
+      const response = await fetch("/api/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to create campaign");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Success",
+        description: "Campaign created successfully",
+      });
+      onSuccess();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create campaign",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: InsertCampaign) => {
+      const response = await fetch(`/api/campaigns/${campaign!.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to update campaign");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Success",
+        description: "Campaign updated successfully",
+      });
+      onSuccess();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update campaign",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: InsertCampaign) => {
+    if (campaign) {
+      updateMutation.mutate(data);
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Campaign Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter campaign name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Enter campaign description (optional)" 
+                  {...field} 
+                  value={field.value || ""}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="paused">Paused</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isPending}>
+            {isPending ? "Saving..." : campaign ? "Update Campaign" : "Create Campaign"}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
+
+export default function Campaigns() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | undefined>();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: campaigns, isLoading, error } = useQuery({
+    queryKey: ["/api/campaigns"],
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/campaigns/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete campaign");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Success",
+        description: "Campaign deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete campaign",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEdit = (campaign: Campaign) => {
+    setEditingCampaign(campaign);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("Are you sure you want to delete this campaign?")) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const handleFormSuccess = () => {
+    setIsDialogOpen(false);
+    setEditingCampaign(undefined);
+  };
+
+  const handleFormCancel = () => {
+    setIsDialogOpen(false);
+    setEditingCampaign(undefined);
+  };
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <div className="text-red-600 mb-2">⚠️ Database Connection Error</div>
+              <p className="text-sm text-muted-foreground">
+                Unable to connect to the database. Please ensure your DATABASE_URL is correctly configured with your Supabase connection string.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
+          <p className="text-muted-foreground">Manage your call center campaigns</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setEditingCampaign(undefined)}>
+              <Plus className="w-4 h-4 mr-2" />
+              New Campaign
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingCampaign ? "Edit Campaign" : "Create New Campaign"}
+              </DialogTitle>
+              <DialogDescription>
+                {editingCampaign 
+                  ? "Update the campaign details below." 
+                  : "Fill in the details to create a new campaign."
+                }
+              </DialogDescription>
+            </DialogHeader>
+            <CampaignForm
+              campaign={editingCampaign}
+              onSuccess={handleFormSuccess}
+              onCancel={handleFormCancel}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : !campaigns || campaigns.length === 0 ? (
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No campaigns yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first campaign to get started with call center management.
+              </p>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create First Campaign
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {campaigns && campaigns.map((campaign: Campaign) => (
+            <CampaignCard
+              key={campaign.id}
+              campaign={campaign}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
