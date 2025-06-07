@@ -295,5 +295,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Export SupabaseStorage as the main storage implementation
+// Export SupabaseStorage as the main storage implementation  
 export { storage } from './supabase-storage';

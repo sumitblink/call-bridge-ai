@@ -15,6 +15,7 @@ import { insertCampaignSchema, type Campaign, type InsertCampaign } from "@share
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DatabaseStatus } from "@/components/DatabaseStatus";
 
 const campaignFormSchema = insertCampaignSchema.extend({
   name: insertCampaignSchema.shape.name.min(1, "Name is required"),
@@ -370,17 +371,16 @@ export default function Campaigns() {
 
   if (error) {
     return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">
-              <div className="text-red-600 mb-2">⚠️ Database Connection Error</div>
-              <p className="text-sm text-muted-foreground">
-                Unable to connect to the database. Please ensure your DATABASE_URL is correctly configured with your Supabase connection string.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
+          <p className="text-muted-foreground">Manage your call center campaigns</p>
+        </div>
+        <DatabaseStatus 
+          isConnected={false} 
+          error={error instanceof Error ? error.message : "Connection failed"}
+          onRetry={() => queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] })}
+        />
       </div>
     );
   }
