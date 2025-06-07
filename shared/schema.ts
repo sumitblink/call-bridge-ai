@@ -16,6 +16,7 @@ export const campaigns = pgTable("campaigns", {
   progress: integer("progress").notNull().default(0), // 0-100
   callsMade: integer("calls_made").notNull().default(0),
   successRate: decimal("success_rate", { precision: 5, scale: 2 }).default("0.00"),
+  phoneNumber: text("phone_number"), // Twilio phone number for this campaign
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

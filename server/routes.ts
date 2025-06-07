@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertCampaignSchema } from "@shared/schema";
 import { z } from "zod";
+import twilio from "twilio";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint
@@ -135,6 +136,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching calls:", error);
       res.status(500).json({ message: "Failed to fetch calls" });
+    }
+  });
+
+  // Twilio inbound call webhook
+  app.post("/api/call/inbound", async (req, res) => {
+    try {
+      const { To: phoneNumber } = req.body;
+      
+      if (!phoneNumber) {
+        const twiml = new twilio.twiml.VoiceResponse();
+        twiml.say("Invalid request. Goodbye.");
+        twiml.hangup();
+        return res.type('text/xml').send(twiml.toString());
+      }
+
+      // Look up campaign by phone number
+      const campaign = await storage.getCampaignByPhoneNumber(phoneNumber);
+      
+      const twiml = new twilio.twiml.VoiceResponse();
+      
+      if (campaign && campaign.status === 'active') {
+        twiml.say("You are being connected");
+        twiml.dial('+1234567890'); // Dummy buyer number
+      } else {
+        twiml.say("Campaign not found. Goodbye.");
+        twiml.hangup();
+      }
+      
+      res.type('text/xml').send(twiml.toString());
+    } catch (error) {
+      console.error("Error processing inbound call:", error);
+      const twiml = new twilio.twiml.VoiceResponse();
+      twiml.say("System error. Please try again later.");
+      twiml.hangup();
+      res.type('text/xml').send(twiml.toString());
     }
   });
 

@@ -30,6 +30,11 @@ export class SupabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined> {
+    const result = await db.select().from(campaigns).where(eq(campaigns.phoneNumber, phoneNumber)).limit(1);
+    return result[0];
+  }
+
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
     const result = await db.insert(campaigns).values({
       ...campaign,
