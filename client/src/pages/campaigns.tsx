@@ -38,11 +38,10 @@ function BuyerCount({ campaignId }: { campaignId: number }) {
   );
 }
 
-function CampaignCard({ campaign, onEdit, onDelete, onManageBuyers }: { 
+function CampaignCard({ campaign, onEdit, onDelete }: { 
   campaign: Campaign; 
   onEdit: (campaign: Campaign) => void;
   onDelete: (id: number) => void;
-  onManageBuyers: (campaignId: number) => void;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -153,10 +152,7 @@ function CampaignCard({ campaign, onEdit, onDelete, onManageBuyers }: {
             <Edit className="w-4 h-4 mr-1" />
             Edit
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onManageBuyers(campaign.id)}>
-            <Users className="w-4 h-4 mr-1" />
-            Buyers
-          </Button>
+
           <Button 
             size="sm" 
             variant="outline" 
@@ -459,6 +455,43 @@ function CampaignForm({
           )}
         />
 
+        {/* Buyer Selection Section */}
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Assign Buyers</label>
+            <p className="text-sm text-gray-500">Select buyers to receive calls from this campaign</p>
+          </div>
+          
+          {availableBuyers && availableBuyers.length > 0 ? (
+            <div className="grid gap-2">
+              {availableBuyers.map((buyer) => (
+                <div key={buyer.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <input
+                    type="checkbox"
+                    id={`buyer-${buyer.id}`}
+                    checked={selectedBuyers.includes(buyer.id)}
+                    onChange={() => toggleBuyer(buyer.id)}
+                    className="rounded"
+                  />
+                  <div className="flex-1">
+                    <label htmlFor={`buyer-${buyer.id}`} className="text-sm font-medium cursor-pointer">
+                      {buyer.name}
+                    </label>
+                    <p className="text-xs text-gray-500">{buyer.email}</p>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {buyer.acceptanceRate} acceptance
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 p-4 border rounded-lg text-center">
+              No buyers available. Create buyers first to assign them to campaigns.
+            </div>
+          )}
+        </div>
+
         <FormField
           control={form.control}
           name="status"
@@ -499,8 +532,6 @@ function CampaignForm({
 export default function Campaigns() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | undefined>();
-  const [buyerDialogOpen, setBuyerDialogOpen] = useState(false);
-  const [selectedCampaignId, setSelectedCampaignId] = useState<number | undefined>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -554,10 +585,7 @@ export default function Campaigns() {
     setEditingCampaign(undefined);
   };
 
-  const handleManageBuyers = (campaignId: number) => {
-    setSelectedCampaignId(campaignId);
-    setBuyerDialogOpen(true);
-  };
+
 
   if (error) {
     return (
@@ -653,7 +681,6 @@ export default function Campaigns() {
               campaign={campaign}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onManageBuyers={handleManageBuyers}
             />
           ))}
         </div>
