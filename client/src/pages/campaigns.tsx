@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Play, Pause, BarChart3 } from "lucide-react";
+import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertCampaignSchema, type Campaign, type InsertCampaign } from "@shared/schema";
+import { insertCampaignSchema, type Campaign, type InsertCampaign, type Buyer } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,10 +23,11 @@ const campaignFormSchema = insertCampaignSchema.extend({
   description: insertCampaignSchema.shape.description.optional(),
 });
 
-function CampaignCard({ campaign, onEdit, onDelete }: { 
+function CampaignCard({ campaign, onEdit, onDelete, onManageBuyers }: { 
   campaign: Campaign; 
   onEdit: (campaign: Campaign) => void;
   onDelete: (id: number) => void;
+  onManageBuyers: (campaignId: number) => void;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -136,6 +137,10 @@ function CampaignCard({ campaign, onEdit, onDelete }: {
           <Button size="sm" variant="outline" onClick={() => onEdit(campaign)}>
             <Edit className="w-4 h-4 mr-1" />
             Edit
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => onManageBuyers(campaign.id)}>
+            <Users className="w-4 h-4 mr-1" />
+            Buyers
           </Button>
           <Button 
             size="sm" 
@@ -407,6 +412,8 @@ function CampaignForm({
 export default function Campaigns() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | undefined>();
+  const [buyerDialogOpen, setBuyerDialogOpen] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<number | undefined>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -458,6 +465,11 @@ export default function Campaigns() {
   const handleFormCancel = () => {
     setIsDialogOpen(false);
     setEditingCampaign(undefined);
+  };
+
+  const handleManageBuyers = (campaignId: number) => {
+    setSelectedCampaignId(campaignId);
+    setBuyerDialogOpen(true);
   };
 
   if (error) {
@@ -554,11 +566,178 @@ export default function Campaigns() {
               campaign={campaign}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onManageBuyers={handleManageBuyers}
             />
           ))}
         </div>
       )}
+
+      {/* Buyer Management Dialog */}
+      <BuyerManagementDialog
+        campaignId={selectedCampaignId}
+        open={buyerDialogOpen}
+        onOpenChange={setBuyerDialogOpen}
+      />
       </div>
     </Layout>
+  );
+}
+
+function BuyerManagementDialog({ 
+  campaignId, 
+  open, 
+  onOpenChange 
+}: { 
+  campaignId: number | undefined; 
+  open: boolean; 
+  onOpenChange: (open: boolean) => void; 
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: availableBuyers } = useQuery<Buyer[]>({
+    queryKey: ["/api/buyers"],
+    enabled: open,
+  });
+
+  const { data: campaignBuyers } = useQuery<Buyer[]>({
+    queryKey: ["/api/campaigns", campaignId, "buyers"],
+    enabled: open && !!campaignId,
+  });
+
+  const addBuyerMutation = useMutation({
+    mutationFn: async ({ buyerId, priority }: { buyerId: number; priority: number }) => {
+      const response = await fetch(`/api/campaigns/${campaignId}/buyers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ buyerId, priority }),
+      });
+      if (!response.ok) throw new Error("Failed to add buyer");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns", campaignId, "buyers"] });
+      toast({
+        title: "Success",
+        description: "Buyer added to campaign successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add buyer to campaign",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const removeBuyerMutation = useMutation({
+    mutationFn: async (buyerId: number) => {
+      const response = await fetch(`/api/campaigns/${campaignId}/buyers/${buyerId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to remove buyer");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns", campaignId, "buyers"] });
+      toast({
+        title: "Success",
+        description: "Buyer removed from campaign successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove buyer from campaign",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddBuyer = (buyerId: number) => {
+    addBuyerMutation.mutate({ buyerId, priority: 1 });
+  };
+
+  const handleRemoveBuyer = (buyerId: number) => {
+    removeBuyerMutation.mutate(buyerId);
+  };
+
+  const assignedBuyerIds = new Set(campaignBuyers?.map(b => b.id) || []);
+  const unassignedBuyers = availableBuyers?.filter(buyer => !assignedBuyerIds.has(buyer.id)) || [];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Manage Campaign Buyers</DialogTitle>
+          <DialogDescription>
+            Add or remove buyers from this campaign. Buyers will receive calls based on their priority.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Assigned Buyers */}
+          <div>
+            <h3 className="text-sm font-medium mb-3">Assigned Buyers ({campaignBuyers?.length || 0})</h3>
+            {campaignBuyers && campaignBuyers.length > 0 ? (
+              <div className="space-y-2">
+                {campaignBuyers.map((buyer) => (
+                  <div
+                    key={buyer.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div>
+                      <div className="font-medium">{buyer.name}</div>
+                      <div className="text-sm text-gray-500">{buyer.email}</div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRemoveBuyer(buyer.id)}
+                      disabled={removeBuyerMutation.isPending}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No buyers assigned to this campaign</p>
+            )}
+          </div>
+
+          {/* Available Buyers */}
+          <div>
+            <h3 className="text-sm font-medium mb-3">Available Buyers ({unassignedBuyers.length})</h3>
+            {unassignedBuyers.length > 0 ? (
+              <div className="space-y-2">
+                {unassignedBuyers.map((buyer) => (
+                  <div
+                    key={buyer.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div>
+                      <div className="font-medium">{buyer.name}</div>
+                      <div className="text-sm text-gray-500">{buyer.email}</div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAddBuyer(buyer.id)}
+                      disabled={addBuyerMutation.isPending}
+                    >
+                      Add to Campaign
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">All available buyers are already assigned</p>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
