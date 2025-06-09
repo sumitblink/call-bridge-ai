@@ -6,7 +6,7 @@ const navigation = [
   { name: "Campaigns", href: "/campaigns", icon: BellRing, current: false },
   { name: "Agents", href: "/agents", icon: Users, current: false },
   { name: "Calls", href: "/calls", icon: PhoneCall, current: false },
-  { name: "Analytics", href: "/analytics", icon: BarChart3, current: false },
+  { name: "Webhook Setup", href: "/webhook-test", icon: Phone, current: false },
   { name: "Settings", href: "/settings", icon: Settings, current: false },
 ];
 
