@@ -7,7 +7,41 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause } from "lucide-react";
-import type { Call, Campaign } from "@/lib/types";
+import Layout from "@/components/Layout";
+
+interface Call {
+  id: number;
+  campaignId: number | null;
+  buyerId: number | null;
+  callSid: string;
+  fromNumber: string;
+  toNumber: string;
+  duration: number;
+  status: string;
+  callQuality: string | null;
+  recordingUrl: string | null;
+  cost: string;
+  revenue: string;
+  geoLocation: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Campaign {
+  id: number;
+  name: string;
+  description: string | null;
+  status: string;
+  phoneNumber: string | null;
+  routingType: string;
+  maxConcurrentCalls: number;
+  callCap: number;
+  geoTargeting: string[] | null;
+  timeZoneRestriction: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function CallsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -64,213 +98,217 @@ export default function CallsPage() {
 
   if (isLoadingCalls || isLoadingCampaigns) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <Layout>
+        <div className="container mx-auto p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Live Call Monitoring</h1>
-          <p className="text-gray-600 mt-1">Monitor and manage all incoming calls in real-time</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
-      </div>
-
-      {/* Real-time Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Live Calls</CardTitle>
-            <Phone className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{liveCallsCount}</div>
-            <p className="text-xs text-muted-foreground">Currently active</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Calls Today</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCallsToday}</div>
-            <p className="text-xs text-muted-foreground">Since midnight</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Duration</CardTitle>
-            <Clock className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatDuration(avgCallDuration)}</div>
-            <p className="text-xs text-muted-foreground">Per call</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Total earned</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters & Search
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Input
-              placeholder="Search by phone, Call SID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="ringing">Ringing</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="busy">Busy</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={campaignFilter} onValueChange={setCampaignFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by campaign" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Campaigns</SelectItem>
-                {campaigns.map((campaign) => (
-                  <SelectItem key={campaign.id} value={campaign.id.toString()}>
-                    {campaign.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setStatusFilter("all");
-                setCampaignFilter("all");
-                setSearchTerm("");
-              }}
-            >
-              Clear Filters
+    <Layout>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Live Call Monitoring</h1>
+            <p className="text-gray-600 mt-1">Monitor and manage all incoming calls in real-time</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Export
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Call List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Call Activity ({filteredCalls.length})</CardTitle>
-          <CardDescription>
-            Real-time view of all calls with actions and monitoring
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Time</TableHead>
-                  <TableHead>From</TableHead>
-                  <TableHead>To</TableHead>
-                  <TableHead>Campaign</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Revenue</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCalls.length === 0 ? (
+        {/* Real-time Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Live Calls</CardTitle>
+              <Phone className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{liveCallsCount}</div>
+              <p className="text-xs text-muted-foreground">Currently active</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Calls Today</CardTitle>
+              <Users className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalCallsToday}</div>
+              <p className="text-xs text-muted-foreground">Since midnight</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Duration</CardTitle>
+              <Clock className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatDuration(avgCallDuration)}</div>
+              <p className="text-xs text-muted-foreground">Per call</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">Total earned</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filters & Search
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Input
+                placeholder="Search by phone, Call SID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="ringing">Ringing</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="busy">Busy</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={campaignFilter} onValueChange={setCampaignFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by campaign" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Campaigns</SelectItem>
+                  {campaigns.map((campaign) => (
+                    <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                      {campaign.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setStatusFilter("all");
+                  setCampaignFilter("all");
+                  setSearchTerm("");
+                }}
+              >
+                Clear Filters
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Call List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Call Activity ({filteredCalls.length})</CardTitle>
+            <CardDescription>
+              Real-time view of all calls with actions and monitoring
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
-                      <div className="text-gray-500">
-                        <Phone className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No calls found matching your filters</p>
-                      </div>
-                    </TableCell>
+                    <TableHead>Time</TableHead>
+                    <TableHead>From</TableHead>
+                    <TableHead>To</TableHead>
+                    <TableHead>Campaign</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Revenue</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filteredCalls.map((call) => {
-                    const campaign = campaigns.find((c) => c.id === call.campaignId);
-                    return (
-                      <TableRow key={call.id} className="hover:bg-gray-50">
-                        <TableCell className="text-sm">
-                          {new Date(call.createdAt).toLocaleTimeString()}
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">{call.fromNumber}</TableCell>
-                        <TableCell className="font-mono text-sm">{call.toNumber}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-sm">{campaign?.name || 'Unknown'}</span>
-                            <span className="text-xs text-gray-500">ID: {call.campaignId}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(call.status)}>
-                            {call.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDuration(call.duration)}</TableCell>
-                        <TableCell>${parseFloat(call.revenue || "0").toFixed(2)}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            {call.status === 'in-progress' && (
-                              <Button size="sm" variant="outline">
-                                <Pause className="h-3 w-3" />
-                              </Button>
-                            )}
-                            {call.recordingUrl && (
-                              <Button size="sm" variant="outline">
-                                <Play className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredCalls.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        <div className="text-gray-500">
+                          <Phone className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>No calls found matching your filters</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredCalls.map((call) => {
+                      const campaign = campaigns.find((c) => c.id === call.campaignId);
+                      return (
+                        <TableRow key={call.id} className="hover:bg-gray-50">
+                          <TableCell className="text-sm">
+                            {new Date(call.createdAt).toLocaleTimeString()}
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">{call.fromNumber}</TableCell>
+                          <TableCell className="font-mono text-sm">{call.toNumber}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-sm">{campaign?.name || 'Unknown'}</span>
+                              <span className="text-xs text-gray-500">ID: {call.campaignId}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(call.status)}>
+                              {call.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatDuration(call.duration)}</TableCell>
+                          <TableCell>${parseFloat(call.revenue || "0").toFixed(2)}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              {call.status === 'in-progress' && (
+                                <Button size="sm" variant="outline">
+                                  <Pause className="h-3 w-3" />
+                                </Button>
+                              )}
+                              {call.recordingUrl && (
+                                <Button size="sm" variant="outline">
+                                  <Play className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </Layout>
   );
 }
