@@ -233,6 +233,11 @@ export class SupabaseStorage implements IStorage {
     return result[0];
   }
 
+  async deleteAgent(id: number): Promise<boolean> {
+    const result = await db.delete(agents).where(eq(agents.id, id));
+    return result.rowCount > 0;
+  }
+
   // Calls
   async getCalls(): Promise<Call[]> {
     return await db.select().from(calls).orderBy(desc(calls.createdAt));
