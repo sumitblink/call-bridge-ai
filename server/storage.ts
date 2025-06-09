@@ -340,6 +340,10 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async deleteAgent(id: number): Promise<boolean> {
+    return this.agents.delete(id);
+  }
+
   // Calls
   async getCalls(): Promise<Call[]> {
     const calls: Call[] = [];

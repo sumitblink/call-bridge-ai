@@ -66,6 +66,7 @@ export default function AgentsPage() {
       toast({ title: "Agent updated successfully" });
       setEditingAgent(null);
       setFormData({ name: "", email: "", status: "active" });
+      setIsCreating(false); // Close the dialog
     }
   });
 
