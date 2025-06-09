@@ -633,7 +633,10 @@ function BuyerManagementDialog({
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns", campaignId, "buyers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
       toast({
         title: "Success",
         description: "Buyer added to campaign successfully",
@@ -653,20 +656,27 @@ function BuyerManagementDialog({
       const response = await fetch(`/api/campaigns/${campaignId}/buyers/${buyerId}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Failed to remove buyer");
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Failed to remove buyer: ${errorData}`);
+      }
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns", campaignId, "buyers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
       toast({
         title: "Success",
         description: "Buyer removed from campaign successfully",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Remove buyer error:", error);
       toast({
         title: "Error",
-        description: "Failed to remove buyer from campaign",
+        description: error.message || "Failed to remove buyer from campaign",
         variant: "destructive",
       });
     },
