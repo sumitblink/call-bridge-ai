@@ -297,6 +297,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Campaign phone number lookup
+  app.get("/api/campaigns/phone/:phoneNumber", async (req, res) => {
+    try {
+      const phoneNumber = req.params.phoneNumber;
+      const campaign = await storage.getCampaignByPhoneNumber(phoneNumber);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found for this phone number" });
+      }
+      
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error finding campaign by phone:", error);
+      res.status(500).json({ message: "Failed to lookup campaign" });
+    }
+  });
+
+  // Ping buyers for a campaign
+  app.post("/api/campaigns/:id/ping", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+
+      const callData = req.body;
+      const buyers = await storage.pingBuyersForCall(campaignId, callData);
+      
+      res.json(buyers);
+    } catch (error) {
+      console.error("Error pinging buyers:", error);
+      res.status(500).json({ message: "Failed to ping buyers" });
+    }
+  });
+
+  // Post call to specific buyer
+  app.post("/api/buyers/:id/post", async (req, res) => {
+    try {
+      const buyerId = parseInt(req.params.id);
+      if (isNaN(buyerId)) {
+        return res.status(400).json({ message: "Invalid buyer ID" });
+      }
+
+      const callData = req.body;
+      const success = await storage.postCallToBuyer(buyerId, callData);
+      
+      res.json({ success, message: success ? "Call posted successfully" : "Failed to post call" });
+    } catch (error) {
+      console.error("Error posting call to buyer:", error);
+      res.status(500).json({ message: "Failed to post call" });
+    }
+  });
+
+  // Get call logs for a specific call
+  app.get("/api/calls/:id/logs", async (req, res) => {
+    try {
+      const callId = parseInt(req.params.id);
+      if (isNaN(callId)) {
+        return res.status(400).json({ message: "Invalid call ID" });
+      }
+
+      const logs = await storage.getCallLogs(callId);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching call logs:", error);
+      res.status(500).json({ message: "Failed to fetch call logs" });
+    }
+  });
+
+  // Create a new call
+  app.post("/api/calls", async (req, res) => {
+    try {
+      const callData = req.body;
+      const call = await storage.createCall(callData);
+      res.status(201).json(call);
+    } catch (error) {
+      console.error("Error creating call:", error);
+      res.status(500).json({ message: "Failed to create call" });
+    }
+  });
+
   // Enhanced Twilio webhook with ping/post routing
   app.post("/api/call/inbound", async (req, res) => {
     try {
