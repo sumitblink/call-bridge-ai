@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./hybrid-storage";
-import { insertCampaignSchema, insertBuyerSchema } from "@shared/schema";
+import { insertCampaignSchema, insertBuyerSchema, insertAgentSchema } from "@shared/schema";
 import { twilioService } from "./twilio-service";
 import { z } from "zod";
 import twilio from "twilio";
@@ -435,6 +435,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
       twiml.say("System error. Please try again later.");
       twiml.hangup();
       res.type('text/xml').send(twiml.toString());
+    }
+  });
+
+  // =============================================================================
+  // AGENT ROUTES
+  // =============================================================================
+
+  // Get all agents
+  app.get("/api/agents", async (req, res) => {
+    try {
+      const agents = await storage.getAgents();
+      res.json(agents);
+    } catch (error) {
+      console.error("Error fetching agents:", error);
+      res.status(500).json({ message: "Failed to fetch agents" });
+    }
+  });
+
+  // Get single agent
+  app.get("/api/agents/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid agent ID" });
+      }
+
+      const agent = await storage.getAgent(id);
+      if (!agent) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+
+      res.json(agent);
+    } catch (error) {
+      console.error("Error fetching agent:", error);
+      res.status(500).json({ message: "Failed to fetch agent" });
+    }
+  });
+
+  // Create new agent
+  app.post("/api/agents", async (req, res) => {
+    try {
+      const validatedData = insertAgentSchema.parse(req.body);
+      const agent = await storage.createAgent(validatedData);
+      res.status(201).json(agent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid agent data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating agent:", error);
+      res.status(500).json({ message: "Failed to create agent" });
+    }
+  });
+
+  // Update agent
+  app.patch("/api/agents/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid agent ID" });
+      }
+
+      const validatedData = insertAgentSchema.partial().parse(req.body);
+      const agent = await storage.updateAgent(id, validatedData);
+      
+      if (!agent) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+
+      res.json(agent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid agent data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating agent:", error);
+      res.status(500).json({ message: "Failed to update agent" });
     }
   });
 
