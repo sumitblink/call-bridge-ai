@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users } from "lucide-react";
 import Layout from "@/components/Layout";
@@ -183,6 +183,18 @@ function CampaignForm({
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedBuyers, setSelectedBuyers] = useState<number[]>([]);
+
+  // Fetch buyers for selection
+  const { data: availableBuyers } = useQuery<Buyer[]>({
+    queryKey: ["/api/buyers"],
+  });
+
+  // Fetch current campaign buyers if editing
+  const { data: campaignBuyers } = useQuery<Buyer[]>({
+    queryKey: ["/api/campaigns", campaign?.id, "buyers"],
+    enabled: !!campaign?.id,
+  });
 
   const form = useForm<InsertCampaign>({
     resolver: zodResolver(campaignFormSchema),
@@ -197,6 +209,13 @@ function CampaignForm({
     },
   });
 
+  // Initialize selected buyers when campaign buyers are loaded
+  useEffect(() => {
+    if (campaignBuyers) {
+      setSelectedBuyers(campaignBuyers.map(buyer => buyer.id));
+    }
+  }, [campaignBuyers]);
+
   const createMutation = useMutation({
     mutationFn: async (data: InsertCampaign) => {
       const response = await fetch("/api/campaigns", {
@@ -207,7 +226,11 @@ function CampaignForm({
       if (!response.ok) throw new Error("Failed to create campaign");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (result) => {
+      // Assign buyers after campaign creation
+      if (selectedBuyers.length > 0) {
+        await assignBuyers(result.id);
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
@@ -235,7 +258,9 @@ function CampaignForm({
       if (!response.ok) throw new Error("Failed to update campaign");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (result) => {
+      // Update buyer assignments after campaign update
+      await assignBuyers(campaign!.id);
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
@@ -253,12 +278,59 @@ function CampaignForm({
     },
   });
 
-  const onSubmit = (data: InsertCampaign) => {
+  const onSubmit = async (data: InsertCampaign) => {
     if (campaign) {
       updateMutation.mutate(data);
     } else {
       createMutation.mutate(data);
     }
+  };
+
+  // Handle buyer assignment after campaign creation/update
+  const assignBuyers = async (campaignId: number) => {
+    if (selectedBuyers.length === 0) return;
+
+    // Get current campaign buyers
+    const currentBuyers = campaignBuyers?.map(b => b.id) || [];
+    
+    // Add new buyers
+    const buyersToAdd = selectedBuyers.filter(id => !currentBuyers.includes(id));
+    const buyersToRemove = currentBuyers.filter(id => !selectedBuyers.includes(id));
+
+    // Add buyers
+    for (const buyerId of buyersToAdd) {
+      try {
+        await fetch(`/api/campaigns/${campaignId}/buyers`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ buyerId, priority: 1 }),
+        });
+      } catch (error) {
+        console.error("Failed to add buyer:", error);
+      }
+    }
+
+    // Remove buyers  
+    for (const buyerId of buyersToRemove) {
+      try {
+        await fetch(`/api/campaigns/${campaignId}/buyers/${buyerId}`, {
+          method: "DELETE",
+        });
+      } catch (error) {
+        console.error("Failed to remove buyer:", error);
+      }
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
+  };
+
+  const toggleBuyer = (buyerId: number) => {
+    setSelectedBuyers(prev => 
+      prev.includes(buyerId) 
+        ? prev.filter(id => id !== buyerId)
+        : [...prev, buyerId]
+    );
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
