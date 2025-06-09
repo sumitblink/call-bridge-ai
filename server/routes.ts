@@ -667,6 +667,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =============================================================================
+  // INTEGRATIONS API ENDPOINTS
+  // =============================================================================
+
+  // URL Parameters endpoints
+  app.get("/api/integrations/url-parameters", async (req, res) => {
+    try {
+      const result = await storage.getUrlParameters();
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching URL parameters:", error);
+      res.status(500).json({ error: "Failed to fetch URL parameters" });
+    }
+  });
+
+  app.post("/api/integrations/url-parameters", async (req, res) => {
+    try {
+      const result = await storage.createUrlParameter(req.body);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error creating URL parameter:", error);
+      res.status(500).json({ error: "Failed to create URL parameter" });
+    }
+  });
+
+  // Tracking Pixels endpoints
+  app.get("/api/integrations/pixels", async (req, res) => {
+    try {
+      const result = await storage.getTrackingPixels();
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching tracking pixels:", error);
+      res.status(500).json({ error: "Failed to fetch tracking pixels" });
+    }
+  });
+
+  app.post("/api/integrations/pixels", async (req, res) => {
+    try {
+      const result = await storage.createTrackingPixel(req.body);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error creating tracking pixel:", error);
+      res.status(500).json({ error: "Failed to create tracking pixel" });
+    }
+  });
+
+  // Webhook Configs endpoints
+  app.get("/api/integrations/webhooks", async (req, res) => {
+    try {
+      const result = await storage.getWebhookConfigs();
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching webhook configs:", error);
+      res.status(500).json({ error: "Failed to fetch webhook configs" });
+    }
+  });
+
+  app.post("/api/integrations/webhooks", async (req, res) => {
+    try {
+      const result = await storage.createWebhookConfig(req.body);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error creating webhook config:", error);
+      res.status(500).json({ error: "Failed to create webhook config" });
+    }
+  });
+
+  // API Authentications endpoints
+  app.get("/api/integrations/authentications", async (req, res) => {
+    try {
+      const result = await storage.getApiAuthentications();
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching API authentications:", error);
+      res.status(500).json({ error: "Failed to fetch API authentications" });
+    }
+  });
+
+  app.post("/api/integrations/authentications", async (req, res) => {
+    try {
+      const result = await storage.createApiAuthentication(req.body);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error creating API authentication:", error);
+      res.status(500).json({ error: "Failed to create API authentication" });
+    }
+  });
+
+  // Platform Integrations endpoints
+  app.get("/api/integrations/platforms", async (req, res) => {
+    try {
+      const result = await storage.getPlatformIntegrations();
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching platform integrations:", error);
+      res.status(500).json({ error: "Failed to fetch platform integrations" });
+    }
+  });
+
+  app.post("/api/integrations/platforms", async (req, res) => {
+    try {
+      const result = await storage.createPlatformIntegration(req.body);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error creating platform integration:", error);
+      res.status(500).json({ error: "Failed to create platform integration" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

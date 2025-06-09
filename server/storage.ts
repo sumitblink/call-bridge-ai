@@ -69,6 +69,18 @@ export interface IStorage {
     activeBuyers: number;
     avgResponseTime: number;
   }>;
+
+  // Integrations
+  getUrlParameters(): Promise<any[]>;
+  createUrlParameter(data: any): Promise<any>;
+  getTrackingPixels(): Promise<any[]>;
+  createTrackingPixel(data: any): Promise<any>;
+  getWebhookConfigs(): Promise<any[]>;
+  createWebhookConfig(data: any): Promise<any>;
+  getApiAuthentications(): Promise<any[]>;
+  createApiAuthentication(data: any): Promise<any>;
+  getPlatformIntegrations(): Promise<any[]>;
+  createPlatformIntegration(data: any): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
