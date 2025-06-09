@@ -564,6 +564,47 @@ export class MemStorage implements IStorage {
       avgResponseTime
     };
   }
+
+  // Integration methods - returning empty arrays for in-memory storage
+  async getUrlParameters(): Promise<any[]> {
+    return [];
+  }
+
+  async createUrlParameter(data: any): Promise<any> {
+    return { id: Date.now(), ...data };
+  }
+
+  async getTrackingPixels(): Promise<any[]> {
+    return [];
+  }
+
+  async createTrackingPixel(data: any): Promise<any> {
+    return { id: Date.now(), ...data };
+  }
+
+  async getWebhookConfigs(): Promise<any[]> {
+    return [];
+  }
+
+  async createWebhookConfig(data: any): Promise<any> {
+    return { id: Date.now(), ...data };
+  }
+
+  async getApiAuthentications(): Promise<any[]> {
+    return [];
+  }
+
+  async createApiAuthentication(data: any): Promise<any> {
+    return { id: Date.now(), ...data };
+  }
+
+  async getPlatformIntegrations(): Promise<any[]> {
+    return [];
+  }
+
+  async createPlatformIntegration(data: any): Promise<any> {
+    return { id: Date.now(), ...data };
+  }
 }
 
 // Export SupabaseStorage as the main storage implementation  

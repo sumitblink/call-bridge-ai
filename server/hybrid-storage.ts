@@ -314,6 +314,77 @@ class HybridStorage implements IStorage {
       () => this.memStorage.getStats()
     );
   }
+
+  // Integrations
+  async getUrlParameters(): Promise<any[]> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getUrlParameters(),
+      () => this.memStorage.getUrlParameters()
+    );
+  }
+
+  async createUrlParameter(data: any): Promise<any> {
+    return this.executeOperation(
+      () => this.supabaseStorage.createUrlParameter(data),
+      () => this.memStorage.createUrlParameter(data)
+    );
+  }
+
+  async getTrackingPixels(): Promise<any[]> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getTrackingPixels(),
+      () => this.memStorage.getTrackingPixels()
+    );
+  }
+
+  async createTrackingPixel(data: any): Promise<any> {
+    return this.executeOperation(
+      () => this.supabaseStorage.createTrackingPixel(data),
+      () => this.memStorage.createTrackingPixel(data)
+    );
+  }
+
+  async getWebhookConfigs(): Promise<any[]> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getWebhookConfigs(),
+      () => this.memStorage.getWebhookConfigs()
+    );
+  }
+
+  async createWebhookConfig(data: any): Promise<any> {
+    return this.executeOperation(
+      () => this.supabaseStorage.createWebhookConfig(data),
+      () => this.memStorage.createWebhookConfig(data)
+    );
+  }
+
+  async getApiAuthentications(): Promise<any[]> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getApiAuthentications(),
+      () => this.memStorage.getApiAuthentications()
+    );
+  }
+
+  async createApiAuthentication(data: any): Promise<any> {
+    return this.executeOperation(
+      () => this.supabaseStorage.createApiAuthentication(data),
+      () => this.memStorage.createApiAuthentication(data)
+    );
+  }
+
+  async getPlatformIntegrations(): Promise<any[]> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getPlatformIntegrations(),
+      () => this.memStorage.getPlatformIntegrations()
+    );
+  }
+
+  async createPlatformIntegration(data: any): Promise<any> {
+    return this.executeOperation(
+      () => this.supabaseStorage.createPlatformIntegration(data),
+      () => this.memStorage.createPlatformIntegration(data)
+    );
+  }
 }
 
 export const storage = new HybridStorage();

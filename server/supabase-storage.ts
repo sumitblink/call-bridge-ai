@@ -8,6 +8,11 @@ import {
   buyers,
   campaignBuyers,
   callLogs,
+  urlParameters,
+  trackingPixels,
+  webhookConfigs,
+  apiAuthentications,
+  platformIntegrations,
   type Campaign, 
   type InsertCampaign, 
   type Agent, 
@@ -288,6 +293,52 @@ export class SupabaseStorage implements IStorage {
       activeBuyers: activeBuyersList.length,
       avgResponseTime,
     };
+  }
+
+  // Integration methods
+  async getUrlParameters(): Promise<any[]> {
+    return await db.select().from(urlParameters);
+  }
+
+  async createUrlParameter(data: any): Promise<any> {
+    const [result] = await db.insert(urlParameters).values(data).returning();
+    return result;
+  }
+
+  async getTrackingPixels(): Promise<any[]> {
+    return await db.select().from(trackingPixels);
+  }
+
+  async createTrackingPixel(data: any): Promise<any> {
+    const [result] = await db.insert(trackingPixels).values(data).returning();
+    return result;
+  }
+
+  async getWebhookConfigs(): Promise<any[]> {
+    return await db.select().from(webhookConfigs);
+  }
+
+  async createWebhookConfig(data: any): Promise<any> {
+    const [result] = await db.insert(webhookConfigs).values(data).returning();
+    return result;
+  }
+
+  async getApiAuthentications(): Promise<any[]> {
+    return await db.select().from(apiAuthentications);
+  }
+
+  async createApiAuthentication(data: any): Promise<any> {
+    const [result] = await db.insert(apiAuthentications).values(data).returning();
+    return result;
+  }
+
+  async getPlatformIntegrations(): Promise<any[]> {
+    return await db.select().from(platformIntegrations);
+  }
+
+  async createPlatformIntegration(data: any): Promise<any> {
+    const [result] = await db.insert(platformIntegrations).values(data).returning();
+    return result;
   }
 }
 
