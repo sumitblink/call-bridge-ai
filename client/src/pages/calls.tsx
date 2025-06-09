@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause } from "lucide-react";
+import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded } from "lucide-react";
 import Layout from "@/components/Layout";
 
 interface Call {
@@ -20,6 +20,11 @@ interface Call {
   status: string;
   callQuality: string | null;
   recordingUrl: string | null;
+  recordingSid: string | null;
+  recordingStatus: string | null;
+  recordingDuration: number | null;
+  transcription: string | null;
+  transcriptionStatus: string | null;
   cost: string;
   revenue: string;
   geoLocation: string | null;
@@ -47,6 +52,8 @@ export default function CallsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  
+  const { toast } = useToast();
 
   const { data: calls = [], isLoading: isLoadingCalls } = useQuery<Call[]>({
     queryKey: ["/api/calls"],
@@ -95,6 +102,96 @@ export default function CallsPage() {
     : 0;
 
   const totalRevenue = calls.reduce((sum, call) => sum + parseFloat(call.revenue || "0"), 0);
+
+  // Call recording mutations
+  const startRecordingMutation = useMutation({
+    mutationFn: async (callSid: string) => apiRequest(`/api/calls/${callSid}/recording/start`, "POST"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/calls"] });
+      toast({ title: "Recording started successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to start recording", variant: "destructive" });
+    }
+  });
+
+  const stopRecordingMutation = useMutation({
+    mutationFn: async ({ callSid, recordingSid }: { callSid: string; recordingSid: string }) => 
+      apiRequest(`/api/calls/${callSid}/recording/stop`, "POST", { recordingSid }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/calls"] });
+      toast({ title: "Recording stopped successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to stop recording", variant: "destructive" });
+    }
+  });
+
+  // Call control mutations
+  const transferCallMutation = useMutation({
+    mutationFn: async ({ callSid, targetNumber }: { callSid: string; targetNumber: string }) => 
+      apiRequest(`/api/calls/${callSid}/transfer`, "POST", { targetNumber }),
+    onSuccess: () => {
+      toast({ title: "Call transfer initiated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to transfer call", variant: "destructive" });
+    }
+  });
+
+  const holdCallMutation = useMutation({
+    mutationFn: async (callSid: string) => apiRequest(`/api/calls/${callSid}/hold`, "POST"),
+    onSuccess: () => {
+      toast({ title: "Call placed on hold" });
+    },
+    onError: () => {
+      toast({ title: "Failed to hold call", variant: "destructive" });
+    }
+  });
+
+  const resumeCallMutation = useMutation({
+    mutationFn: async (callSid: string) => apiRequest(`/api/calls/${callSid}/resume`, "POST"),
+    onSuccess: () => {
+      toast({ title: "Call resumed" });
+    },
+    onError: () => {
+      toast({ title: "Failed to resume call", variant: "destructive" });
+    }
+  });
+
+  const muteCallMutation = useMutation({
+    mutationFn: async (callSid: string) => apiRequest(`/api/calls/${callSid}/mute`, "POST"),
+    onSuccess: () => {
+      toast({ title: "Call muted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to mute call", variant: "destructive" });
+    }
+  });
+
+  const handleStartRecording = (callSid: string) => {
+    startRecordingMutation.mutate(callSid);
+  };
+
+  const handleStopRecording = (callSid: string, recordingSid: string) => {
+    stopRecordingMutation.mutate({ callSid, recordingSid });
+  };
+
+  const handleTransferCall = (callSid: string) => {
+    const targetNumber = prompt("Enter phone number to transfer to:");
+    if (targetNumber) {
+      transferCallMutation.mutate({ callSid, targetNumber });
+    }
+  };
+
+  const getRecordingStatusColor = (status: string | null) => {
+    switch (status) {
+      case "completed": return "bg-green-100 text-green-800";
+      case "processing": return "bg-yellow-100 text-yellow-800";
+      case "failed": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
 
   if (isLoadingCalls || isLoadingCampaigns) {
     return (
@@ -248,6 +345,7 @@ export default function CallsPage() {
                     <TableHead>Campaign</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Duration</TableHead>
+                    <TableHead>Recording</TableHead>
                     <TableHead>Revenue</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -255,7 +353,7 @@ export default function CallsPage() {
                 <TableBody>
                   {filteredCalls.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
+                      <TableCell colSpan={9} className="text-center py-8">
                         <div className="text-gray-500">
                           <Phone className="h-12 w-12 mx-auto mb-4 opacity-50" />
                           <p>No calls found matching your filters</p>
@@ -284,16 +382,90 @@ export default function CallsPage() {
                             </Badge>
                           </TableCell>
                           <TableCell>{formatDuration(call.duration)}</TableCell>
-                          <TableCell>${parseFloat(call.revenue || "0").toFixed(2)}</TableCell>
                           <TableCell>
-                            <div className="flex gap-1">
-                              {call.status === 'in-progress' && (
-                                <Button size="sm" variant="outline">
-                                  <Pause className="h-3 w-3" />
-                                </Button>
+                            <div className="flex flex-col gap-1">
+                              {call.recordingStatus && (
+                                <Badge className={getRecordingStatusColor(call.recordingStatus)} variant="outline">
+                                  {call.recordingStatus}
+                                </Badge>
                               )}
                               {call.recordingUrl && (
-                                <Button size="sm" variant="outline">
+                                <Button size="xs" variant="outline" className="h-6 text-xs">
+                                  <Play className="h-2 w-2 mr-1" />
+                                  Play
+                                </Button>
+                              )}
+                              {call.transcription && (
+                                <span className="text-xs text-gray-500" title={call.transcription}>
+                                  Transcribed
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>${parseFloat(call.revenue || "0").toFixed(2)}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1 flex-wrap">
+                              {call.status === 'in-progress' && (
+                                <>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={() => holdCallMutation.mutate(call.callSid)}
+                                    title="Hold Call"
+                                  >
+                                    <Pause className="h-3 w-3" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={() => muteCallMutation.mutate(call.callSid)}
+                                    title="Mute Call"
+                                  >
+                                    <MicOff className="h-3 w-3" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={() => handleTransferCall(call.callSid)}
+                                    title="Transfer Call"
+                                  >
+                                    <PhoneForwarded className="h-3 w-3" />
+                                  </Button>
+                                </>
+                              )}
+                              
+                              {/* Recording Controls */}
+                              {call.status === 'in-progress' && !call.recordingSid && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => handleStartRecording(call.callSid)}
+                                  title="Start Recording"
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Square className="h-3 w-3" />
+                                </Button>
+                              )}
+                              
+                              {call.recordingSid && call.recordingStatus === 'processing' && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => handleStopRecording(call.callSid, call.recordingSid)}
+                                  title="Stop Recording"
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Square className="h-3 w-3 fill-current" />
+                                </Button>
+                              )}
+                              
+                              {call.recordingUrl && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => window.open(call.recordingUrl, '_blank')}
+                                  title="Play Recording"
+                                >
                                   <Play className="h-3 w-3" />
                                 </Button>
                               )}

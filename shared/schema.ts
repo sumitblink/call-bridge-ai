@@ -59,6 +59,11 @@ export const calls = pgTable("calls", {
   status: varchar("status", { length: 50 }).notNull(), // ringing, in_progress, completed, failed, busy, no_answer
   callQuality: varchar("call_quality", { length: 20 }), // good, poor, excellent
   recordingUrl: varchar("recording_url", { length: 512 }),
+  recordingSid: varchar("recording_sid", { length: 100 }),
+  recordingStatus: varchar("recording_status", { length: 50 }), // processing, completed, failed
+  recordingDuration: integer("recording_duration"), // in seconds
+  transcription: text("transcription"),
+  transcriptionStatus: varchar("transcription_status", { length: 50 }), // pending, completed, failed
   cost: decimal("cost", { precision: 10, scale: 4 }).default("0.0000"),
   revenue: decimal("revenue", { precision: 10, scale: 4 }).default("0.0000"),
   geoLocation: varchar("geo_location", { length: 100 }),

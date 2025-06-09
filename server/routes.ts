@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./hybrid-storage";
 import { insertCampaignSchema, insertBuyerSchema } from "@shared/schema";
+import { twilioService } from "./twilio-service";
 import { z } from "zod";
 import twilio from "twilio";
 
@@ -434,6 +435,235 @@ export async function registerRoutes(app: Express): Promise<Server> {
       twiml.say("System error. Please try again later.");
       twiml.hangup();
       res.type('text/xml').send(twiml.toString());
+    }
+  });
+
+  // =============================================================================
+  // TWILIO CALL RECORDING API ENDPOINTS
+  // =============================================================================
+
+  // Start call recording
+  app.post("/api/calls/:callSid/recording/start", async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const result = await twilioService.enableCallRecording(callSid);
+      res.json(result);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      res.status(500).json({ error: "Failed to start recording" });
+    }
+  });
+
+  // Stop call recording
+  app.post("/api/calls/:callSid/recording/stop", async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const { recordingSid } = req.body;
+      const result = await twilioService.stopCallRecording(callSid, recordingSid);
+      res.json(result);
+    } catch (error) {
+      console.error("Error stopping recording:", error);
+      res.status(500).json({ error: "Failed to stop recording" });
+    }
+  });
+
+  // Get recording status
+  app.get("/api/recordings/:recordingSid/status", async (req, res) => {
+    try {
+      const { recordingSid } = req.params;
+      const result = await twilioService.getRecordingStatus(recordingSid);
+      res.json(result);
+    } catch (error) {
+      console.error("Error getting recording status:", error);
+      res.status(500).json({ error: "Failed to get recording status" });
+    }
+  });
+
+  // Transcribe recording
+  app.post("/api/recordings/:recordingSid/transcribe", async (req, res) => {
+    try {
+      const { recordingSid } = req.params;
+      const result = await twilioService.transcribeRecording(recordingSid);
+      res.json(result);
+    } catch (error) {
+      console.error("Error transcribing recording:", error);
+      res.status(500).json({ error: "Failed to transcribe recording" });
+    }
+  });
+
+  // =============================================================================
+  // TWILIO CALL CONTROL API ENDPOINTS
+  // =============================================================================
+
+  // Transfer call
+  app.post("/api/calls/:callSid/transfer", async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const { targetNumber } = req.body;
+      const result = await twilioService.transferCall(callSid, targetNumber);
+      res.json(result);
+    } catch (error) {
+      console.error("Error transferring call:", error);
+      res.status(500).json({ error: "Failed to transfer call" });
+    }
+  });
+
+  // Hold call
+  app.post("/api/calls/:callSid/hold", async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const result = await twilioService.holdCall(callSid);
+      res.json(result);
+    } catch (error) {
+      console.error("Error holding call:", error);
+      res.status(500).json({ error: "Failed to hold call" });
+    }
+  });
+
+  // Resume call
+  app.post("/api/calls/:callSid/resume", async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const result = await twilioService.resumeCall(callSid);
+      res.json(result);
+    } catch (error) {
+      console.error("Error resuming call:", error);
+      res.status(500).json({ error: "Failed to resume call" });
+    }
+  });
+
+  // Mute call
+  app.post("/api/calls/:callSid/mute", async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const result = await twilioService.muteCall(callSid);
+      res.json(result);
+    } catch (error) {
+      console.error("Error muting call:", error);
+      res.status(500).json({ error: "Failed to mute call" });
+    }
+  });
+
+  // Unmute call
+  app.post("/api/calls/:callSid/unmute", async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const result = await twilioService.unmuteCall(callSid);
+      res.json(result);
+    } catch (error) {
+      console.error("Error unmuting call:", error);
+      res.status(500).json({ error: "Failed to unmute call" });
+    }
+  });
+
+  // Create conference call
+  app.post("/api/conference/create", async (req, res) => {
+    try {
+      const { participants } = req.body;
+      const result = await twilioService.createConferenceCall(participants);
+      res.json(result);
+    } catch (error) {
+      console.error("Error creating conference:", error);
+      res.status(500).json({ error: "Failed to create conference call" });
+    }
+  });
+
+  // =============================================================================
+  // TWILIO IVR API ENDPOINTS
+  // =============================================================================
+
+  // Create IVR flow for campaign
+  app.post("/api/campaigns/:campaignId/ivr", async (req, res) => {
+    try {
+      const { campaignId } = req.params;
+      const { greeting, options } = req.body;
+      const result = await twilioService.createIVRFlow(parseInt(campaignId), { greeting, options });
+      res.json(result);
+    } catch (error) {
+      console.error("Error creating IVR flow:", error);
+      res.status(500).json({ error: "Failed to create IVR flow" });
+    }
+  });
+
+  // Handle IVR response
+  app.post("/api/ivr/response", async (req, res) => {
+    try {
+      const { callSid, digit, flowSid } = req.body;
+      const result = await twilioService.handleIVRResponse(callSid, digit, flowSid);
+      
+      // Generate TwiML response based on IVR action
+      const twiml = new twilio.twiml.VoiceResponse();
+      
+      switch (result.action) {
+        case 'transfer':
+          twiml.dial(result.destination);
+          break;
+        case 'queue':
+          twiml.enqueue(result.destination);
+          break;
+        case 'voicemail':
+          twiml.say("Please leave a message after the beep.");
+          twiml.record({ action: '/api/ivr/voicemail', maxLength: 30 });
+          break;
+        case 'operator':
+          twiml.say("Connecting you to an operator.");
+          twiml.dial(result.destination);
+          break;
+        case 'prompt':
+          twiml.say(result.nextPrompt);
+          twiml.gather({
+            numDigits: 1,
+            action: '/api/ivr/response'
+          });
+          break;
+      }
+      
+      res.type('text/xml').send(twiml.toString());
+    } catch (error) {
+      console.error("Error handling IVR response:", error);
+      const twiml = new twilio.twiml.VoiceResponse();
+      twiml.say("System error. Please try again later.");
+      twiml.hangup();
+      res.type('text/xml').send(twiml.toString());
+    }
+  });
+
+  // Play IVR message
+  app.post("/api/calls/:callSid/ivr/play", async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const { message } = req.body;
+      const result = await twilioService.playIVRMessage(callSid, message);
+      res.json(result);
+    } catch (error) {
+      console.error("Error playing IVR message:", error);
+      res.status(500).json({ error: "Failed to play IVR message" });
+    }
+  });
+
+  // =============================================================================
+  // TWILIO WEBHOOK HANDLERS
+  // =============================================================================
+
+  // Recording status callback
+  app.post("/api/webhooks/recording-status", async (req, res) => {
+    try {
+      await twilioService.handleRecordingStatusCallback(req.body);
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error("Error handling recording status callback:", error);
+      res.status(500).send('Error');
+    }
+  });
+
+  // Call status callback
+  app.post("/api/webhooks/call-status", async (req, res) => {
+    try {
+      await twilioService.handleCallStatusCallback(req.body);
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error("Error handling call status callback:", error);
+      res.status(500).send('Error');
     }
   });
 
