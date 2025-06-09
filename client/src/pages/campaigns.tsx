@@ -31,10 +31,19 @@ function BuyerCount({ campaignId }: { campaignId: number }) {
   if (isLoading) return <span className="text-gray-400">Loading...</span>;
   
   const count = campaignBuyers?.length || 0;
+  const buyerNames = campaignBuyers?.map(buyer => buyer.name).join(", ") || "None";
+  
   return (
-    <span className={count > 0 ? "text-green-600" : "text-gray-500"}>
-      {count} {count === 1 ? "buyer" : "buyers"}
-    </span>
+    <div className="text-sm">
+      <span className={count > 0 ? "text-green-600 font-medium" : "text-gray-500"}>
+        {count} {count === 1 ? "buyer" : "buyers"}
+      </span>
+      {count > 0 && (
+        <div className="text-xs text-gray-500 mt-1">
+          {buyerNames}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -117,9 +126,7 @@ function CampaignCard({ campaign, onEdit, onDelete }: {
           </div>
           <div className="text-sm">
             <span className="text-muted-foreground">Assigned Buyers:</span>
-            <div className="font-medium">
-              <BuyerCount campaignId={campaign.id} />
-            </div>
+            <div className="mt-1"><BuyerCount campaignId={campaign.id} /></div>
           </div>
         </div>
         
