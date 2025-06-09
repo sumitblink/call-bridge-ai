@@ -635,7 +635,7 @@ export default function Campaigns() {
               New Campaign
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingCampaign ? "Edit Campaign" : "Create New Campaign"}
@@ -647,11 +647,13 @@ export default function Campaigns() {
                 }
               </DialogDescription>
             </DialogHeader>
-            <CampaignForm
-              campaign={editingCampaign}
-              onSuccess={handleFormSuccess}
-              onCancel={handleFormCancel}
-            />
+            <div className="max-h-[calc(90vh-120px)] overflow-y-auto">
+              <CampaignForm
+                campaign={editingCampaign}
+                onSuccess={handleFormSuccess}
+                onCancel={handleFormCancel}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </div>
