@@ -103,12 +103,15 @@ export class MemStorage implements IStorage {
   private agents: Map<number, Agent> = new Map();
   private calls: Map<number, Call> = new Map();
   private callLogs: Map<number, CallLog> = new Map();
+  private publishers: Map<number, any> = new Map();
+  private publisherCampaigns: Map<string, any> = new Map();
   private currentUserId: number = 1;
   private currentCampaignId: number = 1;
   private currentBuyerId: number = 1;
   private currentAgentId: number = 1;
   private currentCallId: number = 1;
   private currentCallLogId: number = 1;
+  private currentPublisherId: number = 1;
 
   constructor() {
     this.initializeSampleData();
@@ -622,37 +625,86 @@ export class MemStorage implements IStorage {
     return { id: Date.now(), ...data };
   }
 
-  // Publisher methods - returning empty arrays for in-memory storage
+  // Publisher methods - full implementation for in-memory storage
   async getPublishers(): Promise<any[]> {
-    return [];
+    return Array.from(this.publishers.values());
   }
 
   async getPublisher(id: number): Promise<any | undefined> {
-    return undefined;
+    return this.publishers.get(id);
   }
 
   async createPublisher(publisher: any): Promise<any> {
-    return { id: Date.now(), ...publisher };
+    const id = this.currentPublisherId++;
+    const newPublisher = { 
+      id, 
+      ...publisher,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.publishers.set(id, newPublisher);
+    return newPublisher;
   }
 
   async updatePublisher(id: number, publisher: any): Promise<any | undefined> {
-    return { id, ...publisher };
+    const existing = this.publishers.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { 
+      ...existing, 
+      ...publisher, 
+      id,
+      updatedAt: new Date()
+    };
+    this.publishers.set(id, updated);
+    return updated;
   }
 
   async deletePublisher(id: number): Promise<boolean> {
-    return true;
+    // First delete all publisher-campaign relationships
+    const keysToDelete = [];
+    for (const [key, relationship] of this.publisherCampaigns.entries()) {
+      if (relationship.publisherId === id) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach(key => this.publisherCampaigns.delete(key));
+    
+    // Then delete the publisher
+    return this.publishers.delete(id);
   }
 
   async getPublisherCampaigns(publisherId: number): Promise<any[]> {
-    return [];
+    const relationships = Array.from(this.publisherCampaigns.values())
+      .filter(rel => rel.publisherId === publisherId);
+    
+    const campaigns = [];
+    for (const rel of relationships) {
+      const campaign = this.campaigns.get(rel.campaignId);
+      if (campaign) {
+        campaigns.push(campaign);
+      }
+    }
+    return campaigns;
   }
 
   async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any> {
-    return { id: Date.now(), publisherId, campaignId, customPayout };
+    const key = `${publisherId}-${campaignId}`;
+    const relationship = {
+      id: Date.now(),
+      publisherId,
+      campaignId,
+      customPayout,
+      isActive: true,
+      createdAt: new Date()
+    };
+    this.publisherCampaigns.set(key, relationship);
+    return relationship;
   }
 
   async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
-    return true;
+    const key = `${publisherId}-${campaignId}`;
+    return this.publisherCampaigns.delete(key);
   }
 }
 
