@@ -88,16 +88,16 @@ function CampaignCard({ campaign, onEdit, onDelete }: {
       <CardContent>
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="text-sm">
-            <span className="text-muted-foreground">Progress:</span>
-            <div className="font-medium">{campaign.progress}%</div>
+            <span className="text-muted-foreground">Phone Number:</span>
+            <div className="font-medium">{campaign.phoneNumber || "Not set"}</div>
           </div>
           <div className="text-sm">
-            <span className="text-muted-foreground">Calls Made:</span>
-            <div className="font-medium">{campaign.callsMade}</div>
+            <span className="text-muted-foreground">Call Cap:</span>
+            <div className="font-medium">{campaign.callCap} calls/day</div>
           </div>
           <div className="text-sm">
-            <span className="text-muted-foreground">Success Rate:</span>
-            <div className="font-medium">{campaign.successRate}%</div>
+            <span className="text-muted-foreground">Routing:</span>
+            <div className="font-medium">{campaign.routingType.replace('_', ' ')}</div>
           </div>
           <div className="text-sm">
             <span className="text-muted-foreground">Created:</span>
@@ -168,10 +168,11 @@ function CampaignForm({
     defaultValues: {
       name: campaign?.name || "",
       description: campaign?.description || "",
+      phoneNumber: campaign?.phoneNumber || "",
+      routingType: campaign?.routingType || "round_robin",
+      maxConcurrentCalls: campaign?.maxConcurrentCalls || 5,
+      callCap: campaign?.callCap || 100,
       status: campaign?.status || "draft",
-      progress: campaign?.progress || 0,
-      callsMade: campaign?.callsMade || 0,
-      successRate: campaign?.successRate || "0.00",
     },
   });
 
@@ -272,6 +273,95 @@ function CampaignForm({
                 />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="phoneNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Campaign Phone Number</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="+1-555-123-4567" 
+                  {...field} 
+                  value={field.value ?? ""}
+                />
+              </FormControl>
+              <FormMessage />
+              <p className="text-sm text-gray-500">
+                This is the number customers will call to reach this campaign
+              </p>
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="routingType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Routing Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select routing type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="round_robin">Round Robin</SelectItem>
+                    <SelectItem value="priority_based">Priority Based</SelectItem>
+                    <SelectItem value="weighted">Weighted</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="maxConcurrentCalls"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Max Concurrent Calls</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    min="1" 
+                    max="100"
+                    {...field} 
+                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="callCap"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Daily Call Cap</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  min="1" 
+                  placeholder="100"
+                  {...field} 
+                  onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                />
+              </FormControl>
+              <FormMessage />
+              <p className="text-sm text-gray-500">
+                Maximum number of calls this campaign can handle per day
+              </p>
             </FormItem>
           )}
         />
