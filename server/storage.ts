@@ -14,7 +14,23 @@ export interface IStorage {
   updateCampaign(id: number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined>;
   deleteCampaign(id: number): Promise<boolean>;
 
-  // Agents
+  // Buyers
+  getBuyers(): Promise<Buyer[]>;
+  getBuyer(id: number): Promise<Buyer | undefined>;
+  createBuyer(buyer: InsertBuyer): Promise<Buyer>;
+  updateBuyer(id: number, buyer: Partial<InsertBuyer>): Promise<Buyer | undefined>;
+  deleteBuyer(id: number): Promise<boolean>;
+  
+  // Campaign-Buyer Relations
+  getCampaignBuyers(campaignId: number): Promise<Buyer[]>;
+  addBuyerToCampaign(campaignId: number, buyerId: number, priority?: number): Promise<CampaignBuyer>;
+  removeBuyerFromCampaign(campaignId: number, buyerId: number): Promise<boolean>;
+  
+  // Call Routing & Ping/Post
+  pingBuyersForCall(campaignId: number, callData: any): Promise<Buyer[]>;
+  postCallToBuyer(buyerId: number, callData: any): Promise<boolean>;
+
+  // Agents (backward compatibility)
   getAgents(): Promise<Agent[]>;
   getAgent(id: number): Promise<Agent | undefined>;
   createAgent(agent: InsertAgent): Promise<Agent>;
@@ -24,6 +40,10 @@ export interface IStorage {
   getCalls(): Promise<Call[]>;
   getCallsByCampaign(campaignId: number): Promise<Call[]>;
   createCall(call: InsertCall): Promise<Call>;
+  
+  // Call Logs
+  getCallLogs(callId: number): Promise<CallLog[]>;
+  createCallLog(log: InsertCallLog): Promise<CallLog>;
 
   // Stats
   getStats(): Promise<{
@@ -31,6 +51,8 @@ export interface IStorage {
     totalCalls: number;
     successRate: string;
     activeAgents: number;
+    activeBuyers: number;
+    avgResponseTime: number;
   }>;
 }
 
