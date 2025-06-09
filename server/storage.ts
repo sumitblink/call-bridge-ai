@@ -81,12 +81,17 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private campaigns: Map<number, Campaign>;
+  private buyers: Map<number, Buyer>;
+  private campaignBuyers: Map<string, CampaignBuyer>;
   private agents: Map<number, Agent>;
   private calls: Map<number, Call>;
+  private callLogs: Map<number, CallLog>;
   private currentUserId: number;
   private currentCampaignId: number;
+  private currentBuyerId: number;
   private currentAgentId: number;
   private currentCallId: number;
+  private currentCallLogId: number;
 
   constructor() {
     this.users = new Map();
@@ -224,12 +229,7 @@ export class MemStorage implements IStorage {
     const id = this.currentCampaignId++;
     const newCampaign: Campaign = {
       id,
-      name: campaign.name,
-      description: campaign.description ?? null,
-      status: campaign.status ?? "draft",
-      progress: campaign.progress ?? 0,
-      callsMade: campaign.callsMade ?? 0,
-      successRate: campaign.successRate ?? "0.00",
+      ...campaign,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -267,11 +267,10 @@ export class MemStorage implements IStorage {
     const id = this.currentAgentId++;
     const newAgent: Agent = {
       id,
-      name: agent.name,
-      email: agent.email,
-      status: agent.status ?? "offline",
-      campaignId: agent.campaignId ?? null,
+      ...agent,
+      callsHandled: 0,
       createdAt: new Date(),
+      updatedAt: new Date()
     };
     this.agents.set(id, newAgent);
     return newAgent;
@@ -284,6 +283,7 @@ export class MemStorage implements IStorage {
     const updated: Agent = {
       ...existing,
       ...agent,
+      updatedAt: new Date()
     };
     this.agents.set(id, updated);
     return updated;
@@ -304,16 +304,28 @@ export class MemStorage implements IStorage {
     const id = this.currentCallId++;
     const newCall: Call = {
       id,
-      campaignId: call.campaignId,
-      agentId: call.agentId ?? null,
-      phoneNumber: call.phoneNumber,
-      status: call.status,
-      duration: call.duration ?? null,
-      notes: call.notes ?? null,
+      ...call,
       createdAt: new Date(),
+      updatedAt: new Date()
     };
     this.calls.set(id, newCall);
     return newCall;
+  }
+
+  // Call Logs
+  async getCallLogs(callId: number): Promise<CallLog[]> {
+    return Array.from(this.callLogs.values()).filter(log => log.callId === callId);
+  }
+
+  async createCallLog(log: InsertCallLog): Promise<CallLog> {
+    const id = this.currentCallLogId++;
+    const newLog: CallLog = {
+      id,
+      ...log,
+      createdAt: new Date()
+    };
+    this.callLogs.set(id, newLog);
+    return newLog;
   }
 
   // Stats
