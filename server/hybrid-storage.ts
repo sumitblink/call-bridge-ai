@@ -199,63 +199,105 @@ class HybridStorage implements IStorage {
 
   // Campaign-Buyer Relations
   async getCampaignBuyers(campaignId: number): Promise<Buyer[]> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getCampaignBuyers(campaignId));
+    return this.executeOperation(
+      () => this.supabaseStorage.getCampaignBuyers(campaignId),
+      () => this.memStorage.getCampaignBuyers(campaignId)
+    );
   }
 
   async addBuyerToCampaign(campaignId: number, buyerId: number, priority = 1): Promise<CampaignBuyer> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.addBuyerToCampaign(campaignId, buyerId, priority));
+    return this.executeOperation(
+      () => this.supabaseStorage.addBuyerToCampaign(campaignId, buyerId, priority),
+      () => this.memStorage.addBuyerToCampaign(campaignId, buyerId, priority)
+    );
   }
 
   async removeBuyerFromCampaign(campaignId: number, buyerId: number): Promise<boolean> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.removeBuyerFromCampaign(campaignId, buyerId));
+    return this.executeOperation(
+      () => this.supabaseStorage.removeBuyerFromCampaign(campaignId, buyerId),
+      () => this.memStorage.removeBuyerFromCampaign(campaignId, buyerId)
+    );
   }
 
   // Call Routing & Ping/Post
   async pingBuyersForCall(campaignId: number, callData: any): Promise<Buyer[]> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.pingBuyersForCall(campaignId, callData));
+    return this.executeOperation(
+      () => this.supabaseStorage.pingBuyersForCall(campaignId, callData),
+      () => this.memStorage.pingBuyersForCall(campaignId, callData)
+    );
   }
 
   async postCallToBuyer(buyerId: number, callData: any): Promise<boolean> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.postCallToBuyer(buyerId, callData));
+    return this.executeOperation(
+      () => this.supabaseStorage.postCallToBuyer(buyerId, callData),
+      () => this.memStorage.postCallToBuyer(buyerId, callData)
+    );
   }
 
   // Agents (backward compatibility)
   async getAgents(): Promise<Agent[]> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getAgents());
+    return this.executeOperation(
+      () => this.supabaseStorage.getAgents(),
+      () => this.memStorage.getAgents()
+    );
   }
 
   async getAgent(id: number): Promise<Agent | undefined> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getAgent(id));
+    return this.executeOperation(
+      () => this.supabaseStorage.getAgent(id),
+      () => this.memStorage.getAgent(id)
+    );
   }
 
   async createAgent(agent: InsertAgent): Promise<Agent> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.createAgent(agent));
+    return this.executeOperation(
+      () => this.supabaseStorage.createAgent(agent),
+      () => this.memStorage.createAgent(agent)
+    );
   }
 
   async updateAgent(id: number, agent: Partial<InsertAgent>): Promise<Agent | undefined> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.updateAgent(id, agent));
+    return this.executeOperation(
+      () => this.supabaseStorage.updateAgent(id, agent),
+      () => this.memStorage.updateAgent(id, agent)
+    );
   }
 
   // Calls
   async getCalls(): Promise<Call[]> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getCalls());
+    return this.executeOperation(
+      () => this.supabaseStorage.getCalls(),
+      () => this.memStorage.getCalls()
+    );
   }
 
   async getCallsByCampaign(campaignId: number): Promise<Call[]> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getCallsByCampaign(campaignId));
+    return this.executeOperation(
+      () => this.supabaseStorage.getCallsByCampaign(campaignId),
+      () => this.memStorage.getCallsByCampaign(campaignId)
+    );
   }
 
   async createCall(call: InsertCall): Promise<Call> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.createCall(call));
+    return this.executeOperation(
+      () => this.supabaseStorage.createCall(call),
+      () => this.memStorage.createCall(call)
+    );
   }
 
   // Call Logs
   async getCallLogs(callId: number): Promise<CallLog[]> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getCallLogs(callId));
+    return this.executeOperation(
+      () => this.supabaseStorage.getCallLogs(callId),
+      () => this.memStorage.getCallLogs(callId)
+    );
   }
 
   async createCallLog(log: InsertCallLog): Promise<CallLog> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.createCallLog(log));
+    return this.executeOperation(
+      () => this.supabaseStorage.createCallLog(log),
+      () => this.memStorage.createCallLog(log)
+    );
   }
 
   // Stats
@@ -267,7 +309,10 @@ class HybridStorage implements IStorage {
     activeBuyers: number;
     avgResponseTime: number;
   }> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getStats());
+    return this.executeOperation(
+      () => this.supabaseStorage.getStats(),
+      () => this.memStorage.getStats()
+    );
   }
 }
 

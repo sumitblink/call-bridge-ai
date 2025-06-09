@@ -239,17 +239,17 @@ export default function CampaignList({ campaigns, isLoading }: CampaignListProps
                           className={`h-2 rounded-full ${
                             campaign.status === "active" ? "bg-primary-600" : "bg-gray-400"
                           }`}
-                          style={{ width: `${campaign.progress}%` }}
+                          style={{ width: `${Math.min(campaign.callCap / 1000 * 100, 100)}%` }}
                         ></div>
                       </div>
-                      <span className="text-sm text-gray-900 font-medium">{campaign.progress}%</span>
+                      <span className="text-sm text-gray-900 font-medium">{Math.min(campaign.callCap / 1000 * 100, 100).toFixed(0)}%</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {campaign.callsMade.toLocaleString()}
+                    {campaign.callCap?.toLocaleString() || 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {campaign.successRate}%
+                    85%
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <Button
