@@ -96,12 +96,17 @@ export class MemStorage implements IStorage {
   constructor() {
     this.users = new Map();
     this.campaigns = new Map();
+    this.buyers = new Map();
+    this.campaignBuyers = new Map();
     this.agents = new Map();
     this.calls = new Map();
+    this.callLogs = new Map();
     this.currentUserId = 1;
     this.currentCampaignId = 1;
+    this.currentBuyerId = 1;
     this.currentAgentId = 1;
     this.currentCallId = 1;
+    this.currentCallLogId = 1;
 
     // Initialize with sample data
     this.initializeSampleData();
@@ -109,83 +114,92 @@ export class MemStorage implements IStorage {
 
   private initializeSampleData() {
     // Sample campaigns
-    const sampleCampaigns: Campaign[] = [
-      {
-        id: 1,
-        name: "Customer Satisfaction Survey",
-        description: "Monthly satisfaction tracking",
-        status: "active",
-        progress: 75,
-        callsMade: 1247,
-        successRate: "72.30",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 2,
-        name: "Product Launch Outreach",
-        description: "New product announcement calls",
-        status: "active",
-        progress: 45,
-        callsMade: 892,
-        successRate: "68.70",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 3,
-        name: "Debt Collection Follow-up",
-        description: "Outstanding payment reminders",
-        status: "paused",
-        progress: 30,
-        callsMade: 456,
-        successRate: "41.20",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 4,
-        name: "Healthcare Appointment Reminders",
-        description: "Patient appointment confirmations",
-        status: "active",
-        progress: 90,
-        callsMade: 2103,
-        successRate: "94.10",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
-
-    sampleCampaigns.forEach((campaign) => {
-      this.campaigns.set(campaign.id, campaign);
+    this.campaigns.set(1, {
+      id: 1,
+      name: "Home Insurance Lead Gen",
+      description: "Insurance leads for homeowners",
+      status: "active",
+      phoneNumber: "+17177347577",
+      routingType: "round_robin",
+      maxConcurrentCalls: 5,
+      callCap: 100,
+      geoTargeting: ["US"],
+      timeZoneRestriction: "EST",
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
-    this.currentCampaignId = 5;
+    this.campaigns.set(2, {
+      id: 2,
+      name: "Auto Insurance Campaign",
+      description: "Auto insurance quote generation",
+      status: "active",
+      phoneNumber: null,
+      routingType: "weighted",
+      maxConcurrentCalls: 3,
+      callCap: 50,
+      geoTargeting: ["CA", "TX"],
+      timeZoneRestriction: "PST",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    // Sample buyers - using correct schema fields
+    this.buyers.set(1, {
+      id: 1,
+      name: "LeadGen Pro",
+      email: "contact@leadgenpro.com",
+      phoneNumber: "+12125551234",
+      status: "active",
+      endpoint: "https://api.leadgenpro.com/webhook",
+      priority: 1,
+      dailyCap: 50,
+      concurrencyLimit: 3,
+      acceptanceRate: "75.50",
+      avgResponseTime: 150,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    this.buyers.set(2, {
+      id: 2,
+      name: "Insurance Direct",
+      email: "leads@insurancedirect.com",
+      phoneNumber: "+13235556789",
+      status: "active",
+      endpoint: "https://webhook.insurancedirect.com/leads",
+      priority: 2,
+      dailyCap: 100,
+      concurrencyLimit: 5,
+      acceptanceRate: "82.30",
+      avgResponseTime: 200,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
 
     // Sample agents
-    const sampleAgents: Agent[] = [
-      {
-        id: 1,
-        name: "Alice Johnson",
-        email: "alice@callcenter.com",
-        status: "online",
-        campaignId: 1,
-        createdAt: new Date(),
-      },
-      {
-        id: 2,
-        name: "Bob Smith",
-        email: "bob@callcenter.com",
-        status: "online",
-        campaignId: 2,
-        createdAt: new Date(),
-      },
-    ];
-
-    sampleAgents.forEach((agent) => {
-      this.agents.set(agent.id, agent);
+    this.agents.set(1, {
+      id: 1,
+      name: "Sarah Johnson",
+      email: "sarah@company.com",
+      status: "active",
+      callsHandled: 45,
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
+    this.agents.set(2, {
+      id: 2,
+      name: "Mike Chen",
+      email: "mike@company.com",
+      status: "active",
+      callsHandled: 32,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    this.currentCampaignId = 3;
+    this.currentBuyerId = 3;
     this.currentAgentId = 3;
   }
 
@@ -229,7 +243,15 @@ export class MemStorage implements IStorage {
     const id = this.currentCampaignId++;
     const newCampaign: Campaign = {
       id,
-      ...campaign,
+      name: campaign.name,
+      description: campaign.description ?? null,
+      status: campaign.status ?? "active",
+      phoneNumber: campaign.phoneNumber ?? null,
+      routingType: campaign.routingType ?? "round_robin",
+      maxConcurrentCalls: campaign.maxConcurrentCalls ?? 1,
+      callCap: campaign.callCap ?? 100,
+      geoTargeting: campaign.geoTargeting ?? null,
+      timeZoneRestriction: campaign.timeZoneRestriction ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -267,8 +289,10 @@ export class MemStorage implements IStorage {
     const id = this.currentAgentId++;
     const newAgent: Agent = {
       id,
-      ...agent,
-      callsHandled: 0,
+      name: agent.name,
+      email: agent.email,
+      status: agent.status ?? "offline",
+      callsHandled: agent.callsHandled ?? 0,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -304,12 +328,111 @@ export class MemStorage implements IStorage {
     const id = this.currentCallId++;
     const newCall: Call = {
       id,
-      ...call,
+      campaignId: call.campaignId ?? null,
+      buyerId: call.buyerId ?? null,
+      callSid: call.callSid,
+      fromNumber: call.fromNumber,
+      toNumber: call.toNumber,
+      duration: call.duration ?? 0,
+      status: call.status,
+      callQuality: call.callQuality ?? null,
+      recordingUrl: call.recordingUrl ?? null,
+      cost: call.cost ?? "0.0000",
+      revenue: call.revenue ?? "0.0000",
+      geoLocation: call.geoLocation ?? null,
+      userAgent: call.userAgent ?? null,
       createdAt: new Date(),
       updatedAt: new Date()
     };
     this.calls.set(id, newCall);
     return newCall;
+  }
+
+  // Buyers
+  async getBuyers(): Promise<Buyer[]> {
+    return Array.from(this.buyers.values());
+  }
+
+  async getBuyer(id: number): Promise<Buyer | undefined> {
+    return this.buyers.get(id);
+  }
+
+  async createBuyer(buyer: InsertBuyer): Promise<Buyer> {
+    const id = this.currentBuyerId++;
+    const newBuyer: Buyer = {
+      id,
+      name: buyer.name,
+      email: buyer.email,
+      phoneNumber: buyer.phoneNumber,
+      status: buyer.status ?? "active",
+      endpoint: buyer.endpoint ?? null,
+      priority: buyer.priority ?? 1,
+      dailyCap: buyer.dailyCap ?? 50,
+      concurrencyLimit: buyer.concurrencyLimit ?? 3,
+      acceptanceRate: buyer.acceptanceRate ?? "0.00",
+      avgResponseTime: buyer.avgResponseTime ?? 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.buyers.set(id, newBuyer);
+    return newBuyer;
+  }
+
+  async updateBuyer(id: number, buyer: Partial<InsertBuyer>): Promise<Buyer | undefined> {
+    const existing = this.buyers.get(id);
+    if (!existing) return undefined;
+    
+    const updated: Buyer = {
+      ...existing,
+      ...buyer,
+      updatedAt: new Date()
+    };
+    this.buyers.set(id, updated);
+    return updated;
+  }
+
+  async deleteBuyer(id: number): Promise<boolean> {
+    return this.buyers.delete(id);
+  }
+
+  // Campaign-Buyer Relations
+  async getCampaignBuyers(campaignId: number): Promise<Buyer[]> {
+    const campaignBuyerEntries = Array.from(this.campaignBuyers.values())
+      .filter(cb => cb.campaignId === campaignId);
+    
+    return campaignBuyerEntries
+      .map(cb => this.buyers.get(cb.buyerId))
+      .filter(buyer => buyer !== undefined) as Buyer[];
+  }
+
+  async addBuyerToCampaign(campaignId: number, buyerId: number, priority = 1): Promise<CampaignBuyer> {
+    const key = `${campaignId}-${buyerId}`;
+    const campaignBuyer: CampaignBuyer = {
+      id: this.campaignBuyers.size + 1,
+      campaignId,
+      buyerId,
+      isActive: true,
+      priority,
+      createdAt: new Date()
+    };
+    this.campaignBuyers.set(key, campaignBuyer);
+    return campaignBuyer;
+  }
+
+  async removeBuyerFromCampaign(campaignId: number, buyerId: number): Promise<boolean> {
+    const key = `${campaignId}-${buyerId}`;
+    return this.campaignBuyers.delete(key);
+  }
+
+  // Call Routing & Ping/Post
+  async pingBuyersForCall(campaignId: number, callData: any): Promise<Buyer[]> {
+    const campaignBuyers = await this.getCampaignBuyers(campaignId);
+    return campaignBuyers.filter(buyer => buyer.status === 'active');
+  }
+
+  async postCallToBuyer(buyerId: number, callData: any): Promise<boolean> {
+    const buyer = await this.getBuyer(buyerId);
+    return buyer !== undefined && buyer.status === 'active';
   }
 
   // Call Logs
@@ -321,8 +444,12 @@ export class MemStorage implements IStorage {
     const id = this.currentCallLogId++;
     const newLog: CallLog = {
       id,
-      ...log,
-      createdAt: new Date()
+      callId: log.callId,
+      buyerId: log.buyerId ?? null,
+      action: log.action,
+      response: log.response ?? null,
+      responseTime: log.responseTime ?? null,
+      timestamp: log.timestamp ?? new Date()
     };
     this.callLogs.set(id, newLog);
     return newLog;
