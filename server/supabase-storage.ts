@@ -77,6 +77,10 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deleteCampaign(id: number): Promise<boolean> {
+    // First delete all campaign-buyer relationships
+    await db.delete(campaignBuyers).where(eq(campaignBuyers.campaignId, id));
+    
+    // Then delete the campaign
     const result = await db.delete(campaigns).where(eq(campaigns.id, id));
     return result.rowCount > 0;
   }

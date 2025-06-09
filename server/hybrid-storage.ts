@@ -28,7 +28,7 @@ import { MemStorage } from './storage';
 class HybridStorage implements IStorage {
   private supabaseStorage: SupabaseStorage;
   private memStorage: MemStorage;
-  private useSupabase: boolean = false; // Start with memory storage for immediate data
+  private useSupabase: boolean = true; // Use Supabase as primary storage
 
   constructor() {
     this.supabaseStorage = new SupabaseStorage();
@@ -87,8 +87,8 @@ class HybridStorage implements IStorage {
       try {
         return await supabaseOp();
       } catch (error) {
-        console.warn('Supabase operation failed, falling back to memory storage:', error);
-        this.useSupabase = false;
+        console.warn('Supabase operation failed, trying memory storage:', error);
+        // Don't disable Supabase permanently, just fallback for this operation
         return await memoryOp();
       }
     } else {
