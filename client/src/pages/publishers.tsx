@@ -14,6 +14,7 @@ import { z } from "zod";
 import { Plus, Edit, Trash2, DollarSign, Target, Settings, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import Layout from "@/components/Layout";
 
 const publisherSchema = z.object({
   name: z.string().min(1, "Publisher name is required"),
@@ -182,17 +183,22 @@ export default function Publishers() {
   };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64">Loading publishers...</div>;
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">Loading publishers...</div>
+      </Layout>
+    );
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Publishers</h1>
-          <p className="text-muted-foreground">Manage traffic sources and affiliate partners</p>
-        </div>
-        <Dialog open={isCreateOpen || !!editingPublisher} onOpenChange={(open) => {
+    <Layout>
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Publishers</h1>
+            <p className="text-muted-foreground">Manage traffic sources and affiliate partners</p>
+          </div>
+          <Dialog open={isCreateOpen || !!editingPublisher} onOpenChange={(open) => {
           setIsCreateOpen(open);
           if (!open) {
             setEditingPublisher(null);
@@ -397,7 +403,7 @@ export default function Publishers() {
             </Form>
           </DialogContent>
         </Dialog>
-      </div>
+        </div>
 
       <div className="grid gap-6">
         {publishers.length === 0 ? (
@@ -479,6 +485,7 @@ export default function Publishers() {
           ))
         )}
       </div>
-    </div>
+      </div>
+    </Layout>
   );
 }
