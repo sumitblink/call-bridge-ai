@@ -8,6 +8,8 @@ import Campaigns from "@/pages/campaigns";
 import Buyers from "@/pages/buyers";
 import Agents from "@/pages/agents";
 import Calls from "@/pages/calls";
+import CallControl from "@/pages/call-control";
+import IVRSetup from "@/pages/ivr-setup";
 import WebhookTest from "@/pages/webhook-test";
 import WebhookSetup from "@/pages/webhook-setup";
 import NotFound from "@/pages/not-found";
@@ -21,6 +23,8 @@ function Router() {
       <Route path="/buyers" component={Buyers} />
       <Route path="/agents" component={Agents} />
       <Route path="/calls" component={Calls} />
+      <Route path="/call-control" component={CallControl} />
+      <Route path="/ivr-setup" component={IVRSetup} />
       <Route path="/webhook-test" component={WebhookTest} />
       <Route path="/webhook-setup" component={WebhookSetup} />
       <Route component={NotFound} />
