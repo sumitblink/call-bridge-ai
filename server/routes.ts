@@ -937,7 +937,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!success) {
         return res.status(404).json({ error: "Publisher not found" });
       }
-      res.status(204).send();
+      res.json({ message: "Publisher deleted successfully" });
     } catch (error) {
       console.error("Error deleting publisher:", error);
       res.status(500).json({ error: "Failed to delete publisher" });

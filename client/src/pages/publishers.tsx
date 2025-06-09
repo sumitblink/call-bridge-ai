@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -73,7 +74,7 @@ export default function Publishers() {
 
   // Create publisher mutation
   const createPublisher = useMutation({
-    mutationFn: (data: PublisherFormData) => apiRequest("/api/publishers", "POST", {
+    mutationFn: (data: PublisherFormData) => apiRequest("POST", "/api/publishers", {
       ...data,
       payoutAmount: parseFloat(data.payoutAmount),
       minCallDuration: parseInt(data.minCallDuration),
@@ -92,7 +93,7 @@ export default function Publishers() {
   // Update publisher mutation
   const updatePublisher = useMutation({
     mutationFn: ({ id, data }: { id: number; data: PublisherFormData }) => 
-      apiRequest(`/api/publishers/${id}`, "PUT", {
+      apiRequest("PUT", `/api/publishers/${id}`, {
         ...data,
         payoutAmount: parseFloat(data.payoutAmount),
         minCallDuration: parseInt(data.minCallDuration),
@@ -110,7 +111,7 @@ export default function Publishers() {
 
   // Delete publisher mutation
   const deletePublisher = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/publishers/${id}`, "DELETE"),
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/publishers/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/publishers"] });
       toast({ title: "Publisher deleted successfully" });
@@ -433,9 +434,30 @@ export default function Publishers() {
                     <Button variant="outline" size="sm" onClick={() => handleEdit(publisher)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(publisher.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Publisher</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{publisher.name}"? This action cannot be undone and will remove all associated campaign relationships.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => deletePublisher.mutate(publisher.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </CardHeader>
