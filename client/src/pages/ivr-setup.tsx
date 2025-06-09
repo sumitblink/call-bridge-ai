@@ -178,11 +178,7 @@ export default function IVRSetupPage() {
   return (
     <Layout>
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">IVR System Setup</h1>
-            <p className="text-gray-600 mt-1">Create interactive voice response flows for your campaigns</p>
-          </div>
+        <div className="flex items-center justify-end mb-8">
           <Dialog open={isCreating} onOpenChange={setIsCreating}>
             <DialogTrigger asChild>
               <Button>

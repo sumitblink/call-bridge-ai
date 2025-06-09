@@ -623,11 +623,7 @@ export default function Campaigns() {
   return (
     <Layout>
       <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
-          <p className="text-muted-foreground">Manage your call center campaigns</p>
-        </div>
+      <div className="flex items-center justify-end mb-6">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => setEditingCampaign(undefined)}>

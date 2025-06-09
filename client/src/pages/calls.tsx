@@ -210,11 +210,7 @@ export default function CallsPage() {
   return (
     <Layout>
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Live Call Monitoring</h1>
-            <p className="text-gray-600 mt-1">Monitor and manage all incoming calls in real-time</p>
-          </div>
+        <div className="flex items-center justify-end mb-8">
           <div className="flex gap-2">
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
