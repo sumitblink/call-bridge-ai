@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import Campaigns from "@/pages/campaigns";
+import Buyers from "@/pages/buyers";
 import WebhookTest from "@/pages/webhook-test";
 import NotFound from "@/pages/not-found";
 
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/campaigns" component={Campaigns} />
+      <Route path="/buyers" component={Buyers} />
       <Route path="/webhook-test" component={WebhookTest} />
       <Route component={NotFound} />
     </Switch>

@@ -1,4 +1,26 @@
-import { campaigns, agents, calls, users, type Campaign, type InsertCampaign, type Agent, type InsertAgent, type Call, type InsertCall, type User, type InsertUser } from "@shared/schema";
+import {
+  campaigns,
+  agents,
+  calls,
+  users,
+  buyers,
+  campaignBuyers,
+  callLogs,
+  type Campaign,
+  type InsertCampaign,
+  type Agent,
+  type InsertAgent,
+  type Call,
+  type InsertCall,
+  type User,
+  type InsertUser,
+  type Buyer,
+  type InsertBuyer,
+  type CampaignBuyer,
+  type InsertCampaignBuyer,
+  type CallLog,
+  type InsertCallLog,
+} from "@shared/schema";
 
 export interface IStorage {
   // Users

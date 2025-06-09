@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { insertCampaignSchema } from "@shared/schema";
+import { storage } from "./hybrid-storage";
+import { insertCampaignSchema, insertBuyerSchema } from "@shared/schema";
 import { z } from "zod";
 import twilio from "twilio";
 
@@ -139,10 +139,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Twilio inbound call webhook
+  // Buyer Management Routes
+
+  // Get all buyers
+  app.get("/api/buyers", async (req, res) => {
+    try {
+      const buyers = await storage.getBuyers();
+      res.json(buyers);
+    } catch (error) {
+      console.error("Error fetching buyers:", error);
+      res.status(500).json({ message: "Failed to fetch buyers" });
+    }
+  });
+
+  // Get single buyer
+  app.get("/api/buyers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid buyer ID" });
+      }
+
+      const buyer = await storage.getBuyer(id);
+      if (!buyer) {
+        return res.status(404).json({ message: "Buyer not found" });
+      }
+
+      res.json(buyer);
+    } catch (error) {
+      console.error("Error fetching buyer:", error);
+      res.status(500).json({ message: "Failed to fetch buyer" });
+    }
+  });
+
+  // Create new buyer
+  app.post("/api/buyers", async (req, res) => {
+    try {
+      const validatedData = insertBuyerSchema.parse(req.body);
+      const buyer = await storage.createBuyer(validatedData);
+      res.status(201).json(buyer);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid buyer data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating buyer:", error);
+      res.status(500).json({ message: "Failed to create buyer" });
+    }
+  });
+
+  // Update buyer
+  app.patch("/api/buyers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid buyer ID" });
+      }
+
+      const validatedData = insertBuyerSchema.partial().parse(req.body);
+      const buyer = await storage.updateBuyer(id, validatedData);
+      
+      if (!buyer) {
+        return res.status(404).json({ message: "Buyer not found" });
+      }
+
+      res.json(buyer);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid buyer data", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error updating buyer:", error);
+      res.status(500).json({ message: "Failed to update buyer" });
+    }
+  });
+
+  // Delete buyer
+  app.delete("/api/buyers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid buyer ID" });
+      }
+
+      const success = await storage.deleteBuyer(id);
+      if (!success) {
+        return res.status(404).json({ message: "Buyer not found" });
+      }
+
+      res.json({ message: "Buyer deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting buyer:", error);
+      res.status(500).json({ message: "Failed to delete buyer" });
+    }
+  });
+
+  // Get buyers for a campaign
+  app.get("/api/campaigns/:id/buyers", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+
+      const buyers = await storage.getCampaignBuyers(campaignId);
+      res.json(buyers);
+    } catch (error) {
+      console.error("Error fetching campaign buyers:", error);
+      res.status(500).json({ message: "Failed to fetch campaign buyers" });
+    }
+  });
+
+  // Enhanced Twilio webhook with ping/post routing
   app.post("/api/call/inbound", async (req, res) => {
     try {
-      const { To: phoneNumber } = req.body;
+      const { To: phoneNumber, From: fromNumber, CallSid: callSid } = req.body;
       
       if (!phoneNumber) {
         const twiml = new twilio.twiml.VoiceResponse();
@@ -153,12 +268,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Look up campaign by phone number
       const campaign = await storage.getCampaignByPhoneNumber(phoneNumber);
-      
       const twiml = new twilio.twiml.VoiceResponse();
       
       if (campaign && campaign.status === 'active') {
-        twiml.say("You are being connected");
-        twiml.dial('+1234567890'); // Dummy buyer number
+        // Get active buyers for this campaign
+        const buyers = await storage.pingBuyersForCall(campaign.id, {
+          fromNumber,
+          toNumber: phoneNumber,
+          callSid
+        });
+
+        if (buyers.length > 0) {
+          // Route to first available buyer (priority-based)
+          const buyer = buyers[0];
+          
+          // Create call record
+          await storage.createCall({
+            campaignId: campaign.id,
+            buyerId: buyer.id,
+            callSid,
+            fromNumber,
+            toNumber: phoneNumber,
+            status: 'ringing'
+          });
+
+          twiml.say("You are being connected");
+          twiml.dial(buyer.phoneNumber);
+        } else {
+          twiml.say("No buyers available. Please try again later.");
+          twiml.hangup();
+        }
       } else {
         twiml.say("Campaign not found. Goodbye.");
         twiml.hangup();
