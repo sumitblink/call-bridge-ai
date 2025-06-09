@@ -443,6 +443,16 @@ export class MemStorage implements IStorage {
   }
 
   async deleteBuyer(id: number): Promise<boolean> {
+    // First delete all campaign-buyer relationships
+    const keysToDelete = [];
+    for (const [key, relationship] of this.campaignBuyers.entries()) {
+      if (relationship.buyerId === id) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach(key => this.campaignBuyers.delete(key));
+    
+    // Then delete the buyer
     return this.buyers.delete(id);
   }
 
