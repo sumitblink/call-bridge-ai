@@ -41,14 +41,19 @@ export default function AgentsPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => apiRequest("/api/agents", "POST", data),
-    onSuccess: () => {
+    mutationFn: async (data: any) => {
+      console.log("Creating agent with data:", data);
+      return apiRequest("/api/agents", "POST", data);
+    },
+    onSuccess: (result) => {
+      console.log("Agent created successfully:", result);
       queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
       toast({ title: "Agent created successfully" });
       setIsCreating(false);
       setFormData({ name: "", email: "", status: "active" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Failed to create agent:", error);
       toast({ title: "Failed to create agent", variant: "destructive" });
     }
   });
