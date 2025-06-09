@@ -254,6 +254,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add buyer to campaign
+  app.post("/api/campaigns/:id/buyers", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+
+      const { buyerId, priority = 1 } = req.body;
+      if (!buyerId || isNaN(parseInt(buyerId))) {
+        return res.status(400).json({ message: "Valid buyer ID is required" });
+      }
+
+      const campaignBuyer = await storage.addBuyerToCampaign(campaignId, parseInt(buyerId), priority);
+      res.json(campaignBuyer);
+    } catch (error) {
+      console.error("Error adding buyer to campaign:", error);
+      res.status(500).json({ message: "Failed to add buyer to campaign" });
+    }
+  });
+
+  // Remove buyer from campaign
+  app.delete("/api/campaigns/:id/buyers/:buyerId", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const buyerId = parseInt(req.params.buyerId);
+      
+      if (isNaN(campaignId) || isNaN(buyerId)) {
+        return res.status(400).json({ message: "Invalid campaign or buyer ID" });
+      }
+
+      const success = await storage.removeBuyerFromCampaign(campaignId, buyerId);
+      if (success) {
+        res.json({ message: "Buyer removed from campaign successfully" });
+      } else {
+        res.status(404).json({ message: "Buyer not found in campaign" });
+      }
+    } catch (error) {
+      console.error("Error removing buyer from campaign:", error);
+      res.status(500).json({ message: "Failed to remove buyer from campaign" });
+    }
+  });
+
   // Enhanced Twilio webhook with ping/post routing
   app.post("/api/call/inbound", async (req, res) => {
     try {
