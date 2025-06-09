@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import Campaigns from "@/pages/campaigns";
 import Buyers from "@/pages/buyers";
+import Publishers from "@/pages/publishers";
 import Agents from "@/pages/agents";
 import Calls from "@/pages/calls";
 import CallControl from "@/pages/call-control";
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/campaigns" component={Campaigns} />
       <Route path="/buyers" component={Buyers} />
+      <Route path="/publishers" component={Publishers} />
       <Route path="/agents" component={Agents} />
       <Route path="/calls" component={Calls} />
       <Route path="/call-control" component={CallControl} />

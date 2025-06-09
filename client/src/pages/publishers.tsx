@@ -72,14 +72,11 @@ export default function Publishers() {
 
   // Create publisher mutation
   const createPublisher = useMutation({
-    mutationFn: (data: PublisherFormData) => apiRequest("/api/publishers", {
-      method: "POST",
-      body: JSON.stringify({
-        ...data,
-        payoutAmount: parseFloat(data.payoutAmount),
-        minCallDuration: parseInt(data.minCallDuration),
-        allowedTargets: data.allowedTargets ? data.allowedTargets.split(",").map(t => t.trim()) : [],
-      }),
+    mutationFn: (data: PublisherFormData) => apiRequest("/api/publishers", "POST", {
+      ...data,
+      payoutAmount: parseFloat(data.payoutAmount),
+      minCallDuration: parseInt(data.minCallDuration),
+      allowedTargets: data.allowedTargets ? data.allowedTargets.split(",").map(t => t.trim()) : [],
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/publishers"] });
@@ -94,14 +91,11 @@ export default function Publishers() {
   // Update publisher mutation
   const updatePublisher = useMutation({
     mutationFn: ({ id, data }: { id: number; data: PublisherFormData }) => 
-      apiRequest(`/api/publishers/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          ...data,
-          payoutAmount: parseFloat(data.payoutAmount),
-          minCallDuration: parseInt(data.minCallDuration),
-          allowedTargets: data.allowedTargets ? data.allowedTargets.split(",").map(t => t.trim()) : [],
-        }),
+      apiRequest(`/api/publishers/${id}`, "PUT", {
+        ...data,
+        payoutAmount: parseFloat(data.payoutAmount),
+        minCallDuration: parseInt(data.minCallDuration),
+        allowedTargets: data.allowedTargets ? data.allowedTargets.split(",").map(t => t.trim()) : [],
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/publishers"] });
@@ -115,7 +109,7 @@ export default function Publishers() {
 
   // Delete publisher mutation
   const deletePublisher = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/publishers/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => apiRequest(`/api/publishers/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/publishers"] });
       toast({ title: "Publisher deleted successfully" });
