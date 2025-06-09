@@ -385,6 +385,63 @@ class HybridStorage implements IStorage {
       () => this.memStorage.createPlatformIntegration(data)
     );
   }
+
+  // Publishers
+  async getPublishers(): Promise<any[]> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getPublishers(),
+      () => this.memStorage.getPublishers()
+    );
+  }
+
+  async getPublisher(id: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getPublisher(id),
+      () => this.memStorage.getPublisher(id)
+    );
+  }
+
+  async createPublisher(publisher: any): Promise<any> {
+    return this.executeOperation(
+      () => this.supabaseStorage.createPublisher(publisher),
+      () => this.memStorage.createPublisher(publisher)
+    );
+  }
+
+  async updatePublisher(id: number, publisher: any): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.supabaseStorage.updatePublisher(id, publisher),
+      () => this.memStorage.updatePublisher(id, publisher)
+    );
+  }
+
+  async deletePublisher(id: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.supabaseStorage.deletePublisher(id),
+      () => this.memStorage.deletePublisher(id)
+    );
+  }
+
+  async getPublisherCampaigns(publisherId: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getPublisherCampaigns(publisherId),
+      () => this.memStorage.getPublisherCampaigns(publisherId)
+    );
+  }
+
+  async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any> {
+    return this.executeOperation(
+      () => this.supabaseStorage.addPublisherToCampaign(publisherId, campaignId, customPayout),
+      () => this.memStorage.addPublisherToCampaign(publisherId, campaignId, customPayout)
+    );
+  }
+
+  async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.supabaseStorage.removePublisherFromCampaign(publisherId, campaignId),
+      () => this.memStorage.removePublisherFromCampaign(publisherId, campaignId)
+    );
+  }
 }
 
 export const storage = new HybridStorage();

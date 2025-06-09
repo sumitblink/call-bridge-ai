@@ -13,6 +13,8 @@ import {
   webhookConfigs,
   apiAuthentications,
   platformIntegrations,
+  publishers,
+  publisherCampaigns,
   type Campaign, 
   type InsertCampaign, 
   type Agent, 
@@ -339,6 +341,72 @@ export class SupabaseStorage implements IStorage {
   async createPlatformIntegration(data: any): Promise<any> {
     const [result] = await db.insert(platformIntegrations).values(data).returning();
     return result;
+  }
+
+  // Publishers methods
+  async getPublishers(): Promise<any[]> {
+    return await db.select().from(publishers);
+  }
+
+  async getPublisher(id: number): Promise<any | undefined> {
+    const result = await db.select().from(publishers).where(eq(publishers.id, id));
+    return result[0];
+  }
+
+  async createPublisher(publisher: any): Promise<any> {
+    const [result] = await db.insert(publishers).values(publisher).returning();
+    return result;
+  }
+
+  async updatePublisher(id: number, publisher: any): Promise<any | undefined> {
+    const [result] = await db.update(publishers).set(publisher).where(eq(publishers.id, id)).returning();
+    return result;
+  }
+
+  async deletePublisher(id: number): Promise<boolean> {
+    const result = await db.delete(publishers).where(eq(publishers.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getPublisherCampaigns(publisherId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: campaigns.id,
+        name: campaigns.name,
+        status: campaigns.status,
+        description: campaigns.description,
+        phoneNumber: campaigns.phoneNumber,
+        routingType: campaigns.routingType,
+        maxConcurrentCalls: campaigns.maxConcurrentCalls,
+        callCap: campaigns.callCap,
+        geoTargeting: campaigns.geoTargeting,
+        timeZoneRestriction: campaigns.timeZoneRestriction,
+        createdAt: campaigns.createdAt,
+        updatedAt: campaigns.updatedAt,
+      })
+      .from(publisherCampaigns)
+      .innerJoin(campaigns, eq(publisherCampaigns.campaignId, campaigns.id))
+      .where(eq(publisherCampaigns.publisherId, publisherId));
+    return result;
+  }
+
+  async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any> {
+    const [result] = await db.insert(publisherCampaigns).values({
+      publisherId,
+      campaignId,
+      customPayout,
+      isActive: true,
+    }).returning();
+    return result;
+  }
+
+  async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
+    const result = await db.delete(publisherCampaigns)
+      .where(and(
+        eq(publisherCampaigns.publisherId, publisherId),
+        eq(publisherCampaigns.campaignId, campaignId)
+      ));
+    return result.rowCount > 0;
   }
 }
 

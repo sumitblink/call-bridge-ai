@@ -81,6 +81,18 @@ export interface IStorage {
   createApiAuthentication(data: any): Promise<any>;
   getPlatformIntegrations(): Promise<any[]>;
   createPlatformIntegration(data: any): Promise<any>;
+
+  // Publishers
+  getPublishers(): Promise<Publisher[]>;
+  getPublisher(id: number): Promise<Publisher | undefined>;
+  createPublisher(publisher: InsertPublisher): Promise<Publisher>;
+  updatePublisher(id: number, publisher: Partial<InsertPublisher>): Promise<Publisher | undefined>;
+  deletePublisher(id: number): Promise<boolean>;
+  
+  // Publisher-Campaign Relations
+  getPublisherCampaigns(publisherId: number): Promise<Campaign[]>;
+  addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<PublisherCampaign>;
+  removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -604,6 +616,39 @@ export class MemStorage implements IStorage {
 
   async createPlatformIntegration(data: any): Promise<any> {
     return { id: Date.now(), ...data };
+  }
+
+  // Publisher methods - returning empty arrays for in-memory storage
+  async getPublishers(): Promise<any[]> {
+    return [];
+  }
+
+  async getPublisher(id: number): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async createPublisher(publisher: any): Promise<any> {
+    return { id: Date.now(), ...publisher };
+  }
+
+  async updatePublisher(id: number, publisher: any): Promise<any | undefined> {
+    return { id, ...publisher };
+  }
+
+  async deletePublisher(id: number): Promise<boolean> {
+    return true;
+  }
+
+  async getPublisherCampaigns(publisherId: number): Promise<any[]> {
+    return [];
+  }
+
+  async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any> {
+    return { id: Date.now(), publisherId, campaignId, customPayout };
+  }
+
+  async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
+    return true;
   }
 }
 

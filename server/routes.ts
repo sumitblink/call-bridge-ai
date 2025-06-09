@@ -776,6 +776,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =============================================================================
+  // PUBLISHERS API ENDPOINTS
+  // =============================================================================
+
+  // Publishers endpoints
+  app.get("/api/publishers", async (req, res) => {
+    try {
+      const result = await storage.getPublishers();
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching publishers:", error);
+      res.status(500).json({ error: "Failed to fetch publishers" });
+    }
+  });
+
+  app.get("/api/publishers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = await storage.getPublisher(id);
+      if (!result) {
+        return res.status(404).json({ error: "Publisher not found" });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching publisher:", error);
+      res.status(500).json({ error: "Failed to fetch publisher" });
+    }
+  });
+
+  app.post("/api/publishers", async (req, res) => {
+    try {
+      const result = await storage.createPublisher(req.body);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error creating publisher:", error);
+      res.status(500).json({ error: "Failed to create publisher" });
+    }
+  });
+
+  app.put("/api/publishers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = await storage.updatePublisher(id, req.body);
+      if (!result) {
+        return res.status(404).json({ error: "Publisher not found" });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating publisher:", error);
+      res.status(500).json({ error: "Failed to update publisher" });
+    }
+  });
+
+  app.delete("/api/publishers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deletePublisher(id);
+      if (!success) {
+        return res.status(404).json({ error: "Publisher not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting publisher:", error);
+      res.status(500).json({ error: "Failed to delete publisher" });
+    }
+  });
+
+  // Publisher-Campaign relationships
+  app.get("/api/publishers/:id/campaigns", async (req, res) => {
+    try {
+      const publisherId = parseInt(req.params.id);
+      const result = await storage.getPublisherCampaigns(publisherId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching publisher campaigns:", error);
+      res.status(500).json({ error: "Failed to fetch publisher campaigns" });
+    }
+  });
+
+  app.post("/api/publishers/:publisherId/campaigns/:campaignId", async (req, res) => {
+    try {
+      const publisherId = parseInt(req.params.publisherId);
+      const campaignId = parseInt(req.params.campaignId);
+      const { customPayout } = req.body;
+      const result = await storage.addPublisherToCampaign(publisherId, campaignId, customPayout);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error adding publisher to campaign:", error);
+      res.status(500).json({ error: "Failed to add publisher to campaign" });
+    }
+  });
+
+  app.delete("/api/publishers/:publisherId/campaigns/:campaignId", async (req, res) => {
+    try {
+      const publisherId = parseInt(req.params.publisherId);
+      const campaignId = parseInt(req.params.campaignId);
+      const success = await storage.removePublisherFromCampaign(publisherId, campaignId);
+      if (!success) {
+        return res.status(404).json({ error: "Publisher-campaign relationship not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing publisher from campaign:", error);
+      res.status(500).json({ error: "Failed to remove publisher from campaign" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
