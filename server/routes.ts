@@ -519,6 +519,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete agent
+  app.delete("/api/agents/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid agent ID" });
+      }
+
+      const success = await storage.deleteAgent(id);
+      if (!success) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+
+      res.json({ message: "Agent deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting agent:", error);
+      res.status(500).json({ message: "Failed to delete agent" });
+    }
+  });
+
   // =============================================================================
   // TWILIO CALL RECORDING API ENDPOINTS
   // =============================================================================

@@ -43,7 +43,7 @@ export default function AgentsPage() {
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       console.log("Creating agent with data:", data);
-      return apiRequest("/api/agents", "POST", data);
+      return apiRequest("POST", "/api/agents", data);
     },
     onSuccess: (result) => {
       console.log("Agent created successfully:", result);
@@ -59,12 +59,23 @@ export default function AgentsPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...data }: any) => apiRequest(`/api/agents/${id}`, "PATCH", data),
+    mutationFn: async ({ id, ...data }: any) => apiRequest("PATCH", `/api/agents/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
       toast({ title: "Agent updated successfully" });
       setEditingAgent(null);
       setFormData({ name: "", email: "", status: "active" });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => apiRequest("DELETE", `/api/agents/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
+      toast({ title: "Agent deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete agent", variant: "destructive" });
     }
   });
 

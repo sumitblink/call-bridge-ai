@@ -263,6 +263,13 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async deleteAgent(id: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.supabaseStorage.deleteAgent(id),
+      () => this.memStorage.deleteAgent(id)
+    );
+  }
+
   // Calls
   async getCalls(): Promise<Call[]> {
     return this.executeOperation(

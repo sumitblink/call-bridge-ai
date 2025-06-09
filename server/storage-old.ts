@@ -57,6 +57,7 @@ export interface IStorage {
   getAgent(id: number): Promise<Agent | undefined>;
   createAgent(agent: InsertAgent): Promise<Agent>;
   updateAgent(id: number, agent: Partial<InsertAgent>): Promise<Agent | undefined>;
+  deleteAgent(id: number): Promise<boolean>;
 
   // Calls
   getCalls(): Promise<Call[]>;
@@ -311,6 +312,10 @@ export class MemStorage implements IStorage {
     };
     this.agents.set(id, updated);
     return updated;
+  }
+
+  async deleteAgent(id: number): Promise<boolean> {
+    return this.agents.delete(id);
   }
 
   // Calls
