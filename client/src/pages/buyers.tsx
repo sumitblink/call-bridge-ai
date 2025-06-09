@@ -14,6 +14,7 @@ import { insertBuyerSchema, type Buyer, type InsertBuyer } from "@shared/schema"
 import { apiRequest } from "@/lib/queryClient";
 import { Trash2, Edit2, Plus, Phone, Mail, Globe, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Layout from "@/components/Layout";
 
 function BuyerCard({ buyer, onEdit, onDelete }: { 
   buyer: Buyer; 
@@ -449,23 +450,26 @@ export default function Buyers() {
 
   if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 bg-gray-200 rounded-lg animate-pulse" />
-          ))}
+      <Layout>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded-lg animate-pulse" />
+            ))}
+          </div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Buyer Management</h1>
-          <p className="text-muted-foreground">Manage your call buyers and routing preferences</p>
-        </div>
+    <Layout>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Buyer Management</h1>
+            <p className="text-muted-foreground">Manage your call buyers and routing preferences</p>
+          </div>
         <Button onClick={handleCreate}>
           <Plus className="h-4 w-4 mr-2" />
           Add Buyer
@@ -498,6 +502,7 @@ export default function Buyers() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />
-    </div>
+      </div>
+    </Layout>
   );
 }
