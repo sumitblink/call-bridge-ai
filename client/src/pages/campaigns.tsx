@@ -23,6 +23,21 @@ const campaignFormSchema = insertCampaignSchema.extend({
   description: insertCampaignSchema.shape.description.optional(),
 });
 
+function BuyerCount({ campaignId }: { campaignId: number }) {
+  const { data: campaignBuyers, isLoading } = useQuery<Buyer[]>({
+    queryKey: ["/api/campaigns", campaignId, "buyers"],
+  });
+
+  if (isLoading) return <span className="text-gray-400">Loading...</span>;
+  
+  const count = campaignBuyers?.length || 0;
+  return (
+    <span className={count > 0 ? "text-green-600" : "text-gray-500"}>
+      {count} {count === 1 ? "buyer" : "buyers"}
+    </span>
+  );
+}
+
 function CampaignCard({ campaign, onEdit, onDelete, onManageBuyers }: { 
   campaign: Campaign; 
   onEdit: (campaign: Campaign) => void;
@@ -102,9 +117,9 @@ function CampaignCard({ campaign, onEdit, onDelete, onManageBuyers }: {
             <div className="font-medium">{campaign.routingType.replace('_', ' ')}</div>
           </div>
           <div className="text-sm">
-            <span className="text-muted-foreground">Created:</span>
+            <span className="text-muted-foreground">Assigned Buyers:</span>
             <div className="font-medium">
-              {new Date(campaign.createdAt).toLocaleDateString()}
+              <BuyerCount campaignId={campaign.id} />
             </div>
           </div>
         </div>
@@ -582,6 +597,8 @@ export default function Campaigns() {
     </Layout>
   );
 }
+
+
 
 function BuyerManagementDialog({ 
   campaignId, 
