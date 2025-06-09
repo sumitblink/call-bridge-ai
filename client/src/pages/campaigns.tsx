@@ -25,14 +25,20 @@ const campaignFormSchema = insertCampaignSchema.extend({
 
 function BuyerCount({ campaignId }: { campaignId: number }) {
   const { data: campaignBuyers, isLoading, error } = useQuery<Buyer[]>({
-    queryKey: ["/api/campaigns", campaignId, "buyers"],
+    queryKey: ["campaigns", campaignId, "buyers"],
+    queryFn: async () => {
+      const response = await fetch(`/api/campaigns/${campaignId}/buyers`);
+      if (!response.ok) throw new Error('Failed to fetch buyers');
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   if (isLoading) return <span className="text-gray-400">Loading...</span>;
   if (error) return <span className="text-red-400">Error loading buyers</span>;
   
   const count = campaignBuyers?.length || 0;
-  const buyerNames = campaignBuyers?.map(buyer => buyer.name).join(", ") || "None";
+  const buyerNames = campaignBuyers?.map((buyer: any) => buyer.name).join(", ") || "None";
   
   return (
     <div className="text-sm">
@@ -327,6 +333,7 @@ function CampaignForm({
 
     queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
     queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
+    queryClient.invalidateQueries({ queryKey: ["campaigns"] }); // Invalidate all campaign buyer queries
   };
 
   const toggleBuyer = (buyerId: number) => {
