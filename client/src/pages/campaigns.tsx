@@ -273,6 +273,7 @@ function CampaignForm({
       await assignBuyers(campaign!.id);
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] }); // Invalidate all campaign buyer queries
       toast({
         title: "Success",
         description: "Campaign updated successfully",
@@ -565,6 +566,7 @@ export default function Campaigns() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] }); // Invalidate all campaign buyer queries
       toast({
         title: "Success",
         description: "Campaign deleted successfully",
