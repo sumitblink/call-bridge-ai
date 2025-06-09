@@ -1,11 +1,18 @@
-import { 
-  type Campaign, 
-  type InsertCampaign, 
-  type Agent, 
-  type InsertAgent, 
-  type Call, 
-  type InsertCall, 
-  type User, 
+import {
+  campaigns,
+  agents,
+  calls,
+  users,
+  buyers,
+  campaignBuyers,
+  callLogs,
+  type Campaign,
+  type InsertCampaign,
+  type Agent,
+  type InsertAgent,
+  type Call,
+  type InsertCall,
+  type User,
   type InsertUser,
   type Buyer,
   type InsertBuyer,
@@ -13,7 +20,7 @@ import {
   type InsertCampaignBuyer,
   type CallLog,
   type InsertCallLog,
-} from '@shared/schema';
+} from "@shared/schema";
 
 export interface IStorage {
   // Users
@@ -72,21 +79,36 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User> = new Map();
-  private campaigns: Map<number, Campaign> = new Map();
-  private buyers: Map<number, Buyer> = new Map();
-  private campaignBuyers: Map<string, CampaignBuyer> = new Map();
-  private agents: Map<number, Agent> = new Map();
-  private calls: Map<number, Call> = new Map();
-  private callLogs: Map<number, CallLog> = new Map();
-  private currentUserId: number = 1;
-  private currentCampaignId: number = 1;
-  private currentBuyerId: number = 1;
-  private currentAgentId: number = 1;
-  private currentCallId: number = 1;
-  private currentCallLogId: number = 1;
+  private users: Map<number, User>;
+  private campaigns: Map<number, Campaign>;
+  private buyers: Map<number, Buyer>;
+  private campaignBuyers: Map<string, CampaignBuyer>;
+  private agents: Map<number, Agent>;
+  private calls: Map<number, Call>;
+  private callLogs: Map<number, CallLog>;
+  private currentUserId: number;
+  private currentCampaignId: number;
+  private currentBuyerId: number;
+  private currentAgentId: number;
+  private currentCallId: number;
+  private currentCallLogId: number;
 
   constructor() {
+    this.users = new Map();
+    this.campaigns = new Map();
+    this.buyers = new Map();
+    this.campaignBuyers = new Map();
+    this.agents = new Map();
+    this.calls = new Map();
+    this.callLogs = new Map();
+    this.currentUserId = 1;
+    this.currentCampaignId = 1;
+    this.currentBuyerId = 1;
+    this.currentAgentId = 1;
+    this.currentCallId = 1;
+    this.currentCallLogId = 1;
+
+    // Initialize with sample data
     this.initializeSampleData();
   }
 
@@ -187,32 +209,21 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    for (const user of this.users.values()) {
-      if (user.username === username) {
-        return user;
-      }
-    }
-    return undefined;
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { 
-      id, 
-      username: insertUser.username, 
-      password: insertUser.password 
-    };
+    const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
   }
 
   // Campaigns
   async getCampaigns(): Promise<Campaign[]> {
-    const campaigns: Campaign[] = [];
-    for (const campaign of this.campaigns.values()) {
-      campaigns.push(campaign);
-    }
-    return campaigns;
+    return [...this.campaigns.values()];
   }
 
   async getCampaign(id: number): Promise<Campaign | undefined> {
@@ -251,11 +262,11 @@ export class MemStorage implements IStorage {
   async updateCampaign(id: number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
     const existing = this.campaigns.get(id);
     if (!existing) return undefined;
-    
+
     const updated: Campaign = {
       ...existing,
       ...campaign,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
     this.campaigns.set(id, updated);
     return updated;
@@ -267,11 +278,7 @@ export class MemStorage implements IStorage {
 
   // Agents
   async getAgents(): Promise<Agent[]> {
-    const agents: Agent[] = [];
-    for (const agent of this.agents.values()) {
-      agents.push(agent);
-    }
-    return agents;
+    return Array.from(this.agents.values());
   }
 
   async getAgent(id: number): Promise<Agent | undefined> {
@@ -284,7 +291,7 @@ export class MemStorage implements IStorage {
       id,
       name: agent.name,
       email: agent.email,
-      status: agent.status ?? "active",
+      status: agent.status ?? "offline",
       callsHandled: agent.callsHandled ?? 0,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -296,7 +303,7 @@ export class MemStorage implements IStorage {
   async updateAgent(id: number, agent: Partial<InsertAgent>): Promise<Agent | undefined> {
     const existing = this.agents.get(id);
     if (!existing) return undefined;
-    
+
     const updated: Agent = {
       ...existing,
       ...agent,
@@ -308,21 +315,13 @@ export class MemStorage implements IStorage {
 
   // Calls
   async getCalls(): Promise<Call[]> {
-    const calls: Call[] = [];
-    for (const call of this.calls.values()) {
-      calls.push(call);
-    }
-    return calls;
+    return Array.from(this.calls.values());
   }
 
   async getCallsByCampaign(campaignId: number): Promise<Call[]> {
-    const calls: Call[] = [];
-    for (const call of this.calls.values()) {
-      if (call.campaignId === campaignId) {
-        calls.push(call);
-      }
-    }
-    return calls;
+    return Array.from(this.calls.values()).filter(
+      (call) => call.campaignId === campaignId
+    );
   }
 
   async createCall(call: InsertCall): Promise<Call> {
@@ -351,11 +350,7 @@ export class MemStorage implements IStorage {
 
   // Buyers
   async getBuyers(): Promise<Buyer[]> {
-    const buyers: Buyer[] = [];
-    for (const buyer of this.buyers.values()) {
-      buyers.push(buyer);
-    }
-    return buyers;
+    return Array.from(this.buyers.values());
   }
 
   async getBuyer(id: number): Promise<Buyer | undefined> {
@@ -402,21 +397,12 @@ export class MemStorage implements IStorage {
 
   // Campaign-Buyer Relations
   async getCampaignBuyers(campaignId: number): Promise<Buyer[]> {
-    const campaignBuyerEntries: CampaignBuyer[] = [];
-    for (const cb of this.campaignBuyers.values()) {
-      if (cb.campaignId === campaignId) {
-        campaignBuyerEntries.push(cb);
-      }
-    }
+    const campaignBuyerEntries = Array.from(this.campaignBuyers.values())
+      .filter(cb => cb.campaignId === campaignId);
     
-    const buyers: Buyer[] = [];
-    for (const cb of campaignBuyerEntries) {
-      const buyer = this.buyers.get(cb.buyerId);
-      if (buyer) {
-        buyers.push(buyer);
-      }
-    }
-    return buyers;
+    return campaignBuyerEntries
+      .map(cb => this.buyers.get(cb.buyerId))
+      .filter(buyer => buyer !== undefined) as Buyer[];
   }
 
   async addBuyerToCampaign(campaignId: number, buyerId: number, priority = 1): Promise<CampaignBuyer> {
@@ -441,13 +427,7 @@ export class MemStorage implements IStorage {
   // Call Routing & Ping/Post
   async pingBuyersForCall(campaignId: number, callData: any): Promise<Buyer[]> {
     const campaignBuyers = await this.getCampaignBuyers(campaignId);
-    const activeBuyers: Buyer[] = [];
-    for (const buyer of campaignBuyers) {
-      if (buyer.status === 'active') {
-        activeBuyers.push(buyer);
-      }
-    }
-    return activeBuyers;
+    return campaignBuyers.filter(buyer => buyer.status === 'active');
   }
 
   async postCallToBuyer(buyerId: number, callData: any): Promise<boolean> {
@@ -457,13 +437,7 @@ export class MemStorage implements IStorage {
 
   // Call Logs
   async getCallLogs(callId: number): Promise<CallLog[]> {
-    const logs: CallLog[] = [];
-    for (const log of this.callLogs.values()) {
-      if (log.callId === callId) {
-        logs.push(log);
-      }
-    }
-    return logs;
+    return Array.from(this.callLogs.values()).filter(log => log.callId === callId);
   }
 
   async createCallLog(log: InsertCallLog): Promise<CallLog> {
@@ -490,43 +464,13 @@ export class MemStorage implements IStorage {
     activeBuyers: number;
     avgResponseTime: number;
   }> {
-    let activeCampaigns = 0;
-    for (const campaign of this.campaigns.values()) {
-      if (campaign.status === 'active') {
-        activeCampaigns++;
-      }
-    }
-
+    const activeCampaigns = [...this.campaigns.values()].filter(c => c.status === 'active').length;
     const totalCalls = this.calls.size;
-    
-    let successfulCalls = 0;
-    for (const call of this.calls.values()) {
-      if (call.status === 'completed') {
-        successfulCalls++;
-      }
-    }
-    
+    const successfulCalls = [...this.calls.values()].filter(c => c.status === 'completed').length;
     const successRate = totalCalls > 0 ? `${Math.round((successfulCalls / totalCalls) * 100)}%` : "0%";
-    
-    let activeAgents = 0;
-    for (const agent of this.agents.values()) {
-      if (agent.status === 'active') {
-        activeAgents++;
-      }
-    }
-    
-    let activeBuyers = 0;
-    for (const buyer of this.buyers.values()) {
-      if (buyer.status === 'active') {
-        activeBuyers++;
-      }
-    }
-    
-    let totalResponseTime = 0;
-    for (const buyer of this.buyers.values()) {
-      totalResponseTime += buyer.avgResponseTime;
-    }
-    const avgResponseTime = this.buyers.size > 0 ? totalResponseTime / this.buyers.size : 0;
+    const activeAgents = [...this.agents.values()].filter(a => a.status === 'active').length;
+    const activeBuyers = [...this.buyers.values()].filter(b => b.status === 'active').length;
+    const avgResponseTime = [...this.buyers.values()].reduce((sum, buyer) => sum + buyer.avgResponseTime, 0) / Math.max(this.buyers.size, 1);
 
     return {
       activeCampaigns,
