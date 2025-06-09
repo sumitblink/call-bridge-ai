@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -236,3 +236,48 @@ export type InsertCallLog = z.infer<typeof insertCallLogSchema>;
 
 export type Agent = typeof agents.$inferSelect;
 export type InsertAgent = z.infer<typeof insertAgentSchema>;
+
+// Publishers (Traffic Sources) table
+export const publishers = pgTable('publishers', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  phone: text('phone'),
+  status: text('status').notNull().default('active'), // 'active', 'paused', 'suspended'
+  payoutType: text('payout_type').notNull().default('per_call'), // 'per_call', 'per_minute', 'revenue_share'
+  payoutAmount: decimal('payout_amount', { precision: 10, scale: 2 }).notNull().default('0.00'),
+  minCallDuration: integer('min_call_duration').default(0), // seconds
+  allowedTargets: text('allowed_targets').array(), // campaign IDs they can send traffic to
+  trackingSettings: text('tracking_settings'), // custom tracking parameters as JSON string
+  totalCalls: integer('total_calls').default(0),
+  totalPayout: decimal('total_payout', { precision: 10, scale: 2 }).default('0.00'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Publisher-Campaign relations
+export const publisherCampaigns = pgTable('publisher_campaigns', {
+  id: serial('id').primaryKey(),
+  publisherId: integer('publisher_id').references(() => publishers.id).notNull(),
+  campaignId: integer('campaign_id').references(() => campaigns.id).notNull(),
+  customPayout: decimal('custom_payout', { precision: 10, scale: 2 }), // override default payout for this campaign
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const insertPublisherSchema = createInsertSchema(publishers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPublisherCampaignSchema = createInsertSchema(publisherCampaigns).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Publisher = typeof publishers.$inferSelect;
+export type InsertPublisher = z.infer<typeof insertPublisherSchema>;
+
+export type PublisherCampaign = typeof publisherCampaigns.$inferSelect;
+export type InsertPublisherCampaign = z.infer<typeof insertPublisherCampaignSchema>;
