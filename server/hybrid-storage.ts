@@ -23,86 +23,178 @@ import {
 } from '@shared/schema';
 import type { IStorage } from './storage';
 import { SupabaseStorage } from './supabase-storage';
+import { MemStorage } from './storage';
 
 class HybridStorage implements IStorage {
   private supabaseStorage: SupabaseStorage;
-  private useSupabase: boolean = true;
+  private memStorage: MemStorage;
+  private useSupabase: boolean = false; // Start with memory storage for immediate data
 
   constructor() {
     this.supabaseStorage = new SupabaseStorage();
+    this.memStorage = new MemStorage();
+    this.initializeDatabase();
   }
 
-  private async trySupabaseOperation<T>(operation: () => Promise<T>): Promise<T> {
-    if (!this.useSupabase) {
-      throw new Error('Database not available');
-    }
-    
+  private async initializeDatabase() {
+    // Try to use Supabase, fall back to memory storage if it fails
     try {
-      return await operation();
+      const campaigns = await this.supabaseStorage.getCampaigns();
+      if (campaigns.length === 0) {
+        console.log('Database is empty, populating with sample data...');
+        await this.populateDatabase();
+      }
+      this.useSupabase = true;
+      console.log('Using Supabase database with sample data');
     } catch (error) {
-      console.warn('Supabase operation failed, database may not be configured properly:', error);
-      // Don't switch to memory storage automatically - require proper database setup
-      throw error;
+      console.log('Database not available, using memory storage with sample data');
+      this.useSupabase = false;
+    }
+  }
+
+  private async populateDatabase() {
+    try {
+      // Add sample campaigns
+      const campaigns = await this.memStorage.getCampaigns();
+      for (const campaign of campaigns) {
+        const { id, createdAt, updatedAt, ...campaignData } = campaign;
+        await this.supabaseStorage.createCampaign(campaignData);
+      }
+
+      // Add sample buyers
+      const buyers = await this.memStorage.getBuyers();
+      for (const buyer of buyers) {
+        const { id, createdAt, updatedAt, ...buyerData } = buyer;
+        await this.supabaseStorage.createBuyer(buyerData);
+      }
+
+      // Add sample agents
+      const agents = await this.memStorage.getAgents();
+      for (const agent of agents) {
+        const { id, createdAt, updatedAt, ...agentData } = agent;
+        await this.supabaseStorage.createAgent(agentData);
+      }
+    } catch (error) {
+      console.warn('Failed to populate database with sample data:', error);
+    }
+  }
+
+  private async executeOperation<T>(
+    supabaseOp: () => Promise<T>,
+    memoryOp: () => Promise<T>
+  ): Promise<T> {
+    if (this.useSupabase) {
+      try {
+        return await supabaseOp();
+      } catch (error) {
+        console.warn('Supabase operation failed, falling back to memory storage:', error);
+        this.useSupabase = false;
+        return await memoryOp();
+      }
+    } else {
+      return await memoryOp();
     }
   }
 
   // Users
   async getUser(id: number): Promise<User | undefined> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getUser(id));
+    return this.executeOperation(
+      () => this.supabaseStorage.getUser(id),
+      () => this.memStorage.getUser(id)
+    );
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getUserByUsername(username));
+    return this.executeOperation(
+      () => this.supabaseStorage.getUserByUsername(username),
+      () => this.memStorage.getUserByUsername(username)
+    );
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.createUser(user));
+    return this.executeOperation(
+      () => this.supabaseStorage.createUser(user),
+      () => this.memStorage.createUser(user)
+    );
   }
 
   // Campaigns
   async getCampaigns(): Promise<Campaign[]> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getCampaigns());
+    return this.executeOperation(
+      () => this.supabaseStorage.getCampaigns(),
+      () => this.memStorage.getCampaigns()
+    );
   }
 
   async getCampaign(id: number): Promise<Campaign | undefined> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getCampaign(id));
+    return this.executeOperation(
+      () => this.supabaseStorage.getCampaign(id),
+      () => this.memStorage.getCampaign(id)
+    );
   }
 
   async getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getCampaignByPhoneNumber(phoneNumber));
+    return this.executeOperation(
+      () => this.supabaseStorage.getCampaignByPhoneNumber(phoneNumber),
+      () => this.memStorage.getCampaignByPhoneNumber(phoneNumber)
+    );
   }
 
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.createCampaign(campaign));
+    return this.executeOperation(
+      () => this.supabaseStorage.createCampaign(campaign),
+      () => this.memStorage.createCampaign(campaign)
+    );
   }
 
   async updateCampaign(id: number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.updateCampaign(id, campaign));
+    return this.executeOperation(
+      () => this.supabaseStorage.updateCampaign(id, campaign),
+      () => this.memStorage.updateCampaign(id, campaign)
+    );
   }
 
   async deleteCampaign(id: number): Promise<boolean> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.deleteCampaign(id));
+    return this.executeOperation(
+      () => this.supabaseStorage.deleteCampaign(id),
+      () => this.memStorage.deleteCampaign(id)
+    );
   }
 
   // Buyers
   async getBuyers(): Promise<Buyer[]> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getBuyers());
+    return this.executeOperation(
+      () => this.supabaseStorage.getBuyers(),
+      () => this.memStorage.getBuyers()
+    );
   }
 
   async getBuyer(id: number): Promise<Buyer | undefined> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.getBuyer(id));
+    return this.executeOperation(
+      () => this.supabaseStorage.getBuyer(id),
+      () => this.memStorage.getBuyer(id)
+    );
   }
 
   async createBuyer(buyer: InsertBuyer): Promise<Buyer> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.createBuyer(buyer));
+    return this.executeOperation(
+      () => this.supabaseStorage.createBuyer(buyer),
+      () => this.memStorage.createBuyer(buyer)
+    );
   }
 
   async updateBuyer(id: number, buyer: Partial<InsertBuyer>): Promise<Buyer | undefined> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.updateBuyer(id, buyer));
+    return this.executeOperation(
+      () => this.supabaseStorage.updateBuyer(id, buyer),
+      () => this.memStorage.updateBuyer(id, buyer)
+    );
   }
 
   async deleteBuyer(id: number): Promise<boolean> {
-    return this.trySupabaseOperation(() => this.supabaseStorage.deleteBuyer(id));
+    return this.executeOperation(
+      () => this.supabaseStorage.deleteBuyer(id),
+      () => this.memStorage.deleteBuyer(id)
+    );
   }
 
   // Campaign-Buyer Relations
