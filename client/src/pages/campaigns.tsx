@@ -24,14 +24,21 @@ const campaignFormSchema = insertCampaignSchema.extend({
 });
 
 function BuyerCount({ campaignId }: { campaignId: number }) {
-  const { data: campaignBuyers, isLoading } = useQuery<Buyer[]>({
+  const { data: campaignBuyers, isLoading, error } = useQuery<Buyer[]>({
     queryKey: ["/api/campaigns", campaignId, "buyers"],
+    staleTime: 0, // Force fresh data
+    cacheTime: 0, // Don't cache
   });
 
   if (isLoading) return <span className="text-gray-400">Loading...</span>;
+  if (error) return <span className="text-red-400">Error loading buyers</span>;
   
   const count = campaignBuyers?.length || 0;
   const buyerNames = campaignBuyers?.map(buyer => buyer.name).join(", ") || "None";
+  
+  // Debug logging
+  console.log(`Campaign ${campaignId} buyers:`, campaignBuyers);
+  console.log(`Count: ${count}, Names: ${buyerNames}`);
   
   return (
     <div className="text-sm">
