@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
+import CallFlow from "@/pages/call-flow";
 import Campaigns from "@/pages/campaigns";
 import Buyers from "@/pages/buyers";
 import Publishers from "@/pages/publishers";
@@ -21,6 +22,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/call-flow" component={CallFlow} />
       <Route path="/campaigns" component={Campaigns} />
       <Route path="/buyers" component={Buyers} />
       <Route path="/publishers" component={Publishers} />

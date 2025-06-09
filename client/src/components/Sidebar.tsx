@@ -1,8 +1,9 @@
 import { Link, useLocation } from "wouter";
-import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic, Zap, UserCheck } from "lucide-react";
+import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, GitBranch } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3, current: true },
+  { name: "Call Flow Demo", href: "/call-flow", icon: GitBranch, current: false },
   { name: "Campaigns", href: "/campaigns", icon: BellRing, current: false },
   { name: "Buyers", href: "/buyers", icon: DollarSign, current: false },
   { name: "Publishers", href: "/publishers", icon: UserCheck, current: false },
