@@ -8,6 +8,7 @@ import Campaigns from "@/pages/campaigns";
 import Buyers from "@/pages/buyers";
 import Calls from "@/pages/calls";
 import WebhookTest from "@/pages/webhook-test";
+import WebhookSetup from "@/pages/webhook-setup";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/buyers" component={Buyers} />
       <Route path="/calls" component={Calls} />
       <Route path="/webhook-test" component={WebhookTest} />
+      <Route path="/webhook-setup" component={WebhookSetup} />
       <Route component={NotFound} />
     </Switch>
   );
