@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import Campaigns from "@/pages/campaigns";
 import Buyers from "@/pages/buyers";
+import Calls from "@/pages/calls";
 import WebhookTest from "@/pages/webhook-test";
 import NotFound from "@/pages/not-found";
 
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/campaigns" component={Campaigns} />
       <Route path="/buyers" component={Buyers} />
+      <Route path="/calls" component={Calls} />
       <Route path="/webhook-test" component={WebhookTest} />
       <Route component={NotFound} />
     </Switch>
