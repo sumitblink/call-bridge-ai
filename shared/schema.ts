@@ -93,6 +93,90 @@ export const agents = pgTable("agents", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Integration system tables
+export const urlParameters = pgTable("url_parameters", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  parameter: varchar("parameter", { length: 100 }).notNull(),
+  description: text("description"),
+  value: varchar("value", { length: 256 }).notNull(),
+  campaignId: integer("campaign_id").references(() => campaigns.id),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const trackingPixels = pgTable("tracking_pixels", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // analytics, conversion, remarketing
+  code: text("code").notNull(),
+  campaigns: text("campaigns").array(), // array of campaign IDs
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const webhookConfigs = pgTable("webhook_configs", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  url: varchar("url", { length: 512 }).notNull(),
+  events: text("events").array().notNull(), // call.started, call.answered, call.completed, etc.
+  headers: text("headers"), // JSON string of headers
+  secret: varchar("secret", { length: 256 }), // webhook signature secret
+  retryCount: integer("retry_count").default(3).notNull(),
+  timeout: integer("timeout").default(30).notNull(), // seconds
+  isActive: boolean("is_active").default(true).notNull(),
+  lastTriggered: timestamp("last_triggered"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const webhookLogs = pgTable("webhook_logs", {
+  id: serial("id").primaryKey(),
+  webhookConfigId: integer("webhook_config_id").references(() => webhookConfigs.id).notNull(),
+  event: varchar("event", { length: 100 }).notNull(),
+  payload: text("payload"), // JSON payload sent
+  response: text("response"), // Response received
+  statusCode: integer("status_code"),
+  attempt: integer("attempt").default(1).notNull(),
+  success: boolean("success").notNull(),
+  error: text("error"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const apiAuthentications = pgTable("api_authentications", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // api_key, oauth, basic_auth
+  service: varchar("service", { length: 100 }).notNull(), // twilio, salesforce, hubspot, etc.
+  apiKey: varchar("api_key", { length: 512 }),
+  secretKey: varchar("secret_key", { length: 512 }),
+  accessToken: varchar("access_token", { length: 512 }),
+  refreshToken: varchar("refresh_token", { length: 512 }),
+  tokenExpiry: timestamp("token_expiry"),
+  config: text("config"), // JSON config for service-specific settings
+  isActive: boolean("is_active").default(true).notNull(),
+  lastUsed: timestamp("last_used"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const platformIntegrations = pgTable("platform_integrations", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  platform: varchar("platform", { length: 100 }).notNull(), // salesforce, hubspot, zapier, etc.
+  type: varchar("type", { length: 50 }).notNull(), // crm, marketing, automation
+  status: varchar("status", { length: 50 }).default("disconnected").notNull(), // connected, disconnected, error
+  authId: integer("auth_id").references(() => apiAuthentications.id),
+  config: text("config"), // JSON configuration
+  syncEnabled: boolean("sync_enabled").default(false).notNull(),
+  lastSync: timestamp("last_sync"),
+  lastError: text("last_error"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,

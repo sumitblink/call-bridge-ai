@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic } from "lucide-react";
+import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic, Zap } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3, current: true },
@@ -9,6 +9,7 @@ const navigation = [
   { name: "Calls", href: "/calls", icon: PhoneCall, current: false },
   { name: "Call Control", href: "/call-control", icon: PhoneForwarded, current: false },
   { name: "IVR Setup", href: "/ivr-setup", icon: Mic, current: false },
+  { name: "Integrations", href: "/integrations", icon: Zap, current: false },
   { name: "Webhook Setup", href: "/webhook-test", icon: Phone, current: false },
   { name: "Settings", href: "/settings", icon: Settings, current: false },
 ];
