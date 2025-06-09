@@ -138,8 +138,9 @@ function BuyerForm({
 
   const createBuyerMutation = useMutation({
     mutationFn: async (data: InsertBuyer) => {
-      const response = await apiRequest("/api/buyers", {
+      const response = await fetch("/api/buyers", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
       if (!response.ok) {
@@ -165,8 +166,9 @@ function BuyerForm({
 
   const updateBuyerMutation = useMutation({
     mutationFn: async (data: InsertBuyer) => {
-      const response = await apiRequest(`/api/buyers/${buyer!.id}`, {
+      const response = await fetch(`/api/buyers/${buyer!.id}`, {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
       if (!response.ok) {
@@ -285,7 +287,7 @@ function BuyerForm({
                 <FormItem>
                   <FormLabel>Webhook Endpoint (Optional)</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://api.buyer.com/webhook" />
+                    <Input {...field} value={field.value || ""} placeholder="https://api.buyer.com/webhook" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -407,7 +409,7 @@ export default function Buyers() {
 
   const deleteBuyerMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest(`/api/buyers/${id}`, {
+      const response = await fetch(`/api/buyers/${id}`, {
         method: "DELETE",
       });
       if (!response.ok) {
@@ -470,9 +472,9 @@ export default function Buyers() {
         </Button>
       </div>
 
-      {buyers && buyers.length > 0 ? (
+      {buyers && Array.isArray(buyers) && buyers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {buyers.map((buyer: Buyer) => (
+          {(buyers as Buyer[]).map((buyer: Buyer) => (
             <BuyerCard
               key={buyer.id}
               buyer={buyer}
