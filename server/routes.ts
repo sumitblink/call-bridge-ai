@@ -234,6 +234,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Campaign-Buyer relationships
+  app.get('/api/campaigns/:id/buyers', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const buyers = await storage.getCampaignBuyers(id);
+      res.json(buyers);
+    } catch (error) {
+      console.error("Error fetching campaign buyers:", error);
+      res.status(500).json({ error: "Failed to fetch campaign buyers" });
+    }
+  });
+
+  app.post('/api/campaigns/:id/buyers', async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const { buyerId, priority = 1 } = req.body;
+      const result = await storage.addBuyerToCampaign(campaignId, buyerId, priority);
+      res.json(result);
+    } catch (error) {
+      console.error("Error adding buyer to campaign:", error);
+      res.status(500).json({ error: "Failed to add buyer to campaign" });
+    }
+  });
+
+  app.delete('/api/campaigns/:campaignId/buyers/:buyerId', async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const buyerId = parseInt(req.params.buyerId);
+      const success = await storage.removeBuyerFromCampaign(campaignId, buyerId);
+      if (!success) {
+        return res.status(404).json({ error: "Campaign-buyer relationship not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing buyer from campaign:", error);
+      res.status(500).json({ error: "Failed to remove buyer from campaign" });
+    }
+  });
+
   // Buyers
   app.get('/api/buyers', async (req, res) => {
     try {
