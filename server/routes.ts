@@ -94,6 +94,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/forgot-password', (req, res) => {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email is required" 
+      });
+    }
+
+    // Check if user exists (either demo user or registered user)
+    const isDemoUser = email === "demo@callcenter.com";
+    const registeredUser = registeredUsers.get(email);
+    
+    if (!isDemoUser && !registeredUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "No account found with this email address" 
+      });
+    }
+
+    // In a real application, you would:
+    // 1. Generate a secure reset token
+    // 2. Store it with an expiration time
+    // 3. Send an email with the reset link
+    
+    // For demo purposes, we'll simulate the email being sent
+    console.log(`Password reset requested for: ${email}`);
+    console.log(`Reset link would be sent to: ${email}`);
+    
+    res.json({ 
+      success: true, 
+      message: "Password reset link sent to your email" 
+    });
+  });
+
   app.post('/api/signup', (req, res) => {
     const { email, password, firstName, lastName } = req.body;
     

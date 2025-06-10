@@ -108,6 +108,14 @@ export default function Auth() {
     window.location.href = "/api/auth/facebook";
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const email = formData.get("forgotEmail") as string;
+
+    forgotPasswordMutation.mutate({ email });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -124,12 +132,15 @@ export default function Auth() {
 
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="login" className="text-sm font-medium">
                 Sign In
               </TabsTrigger>
               <TabsTrigger value="signup" className="text-sm font-medium">
                 Sign Up
+              </TabsTrigger>
+              <TabsTrigger value="forgot" className="text-sm font-medium">
+                Reset
               </TabsTrigger>
             </TabsList>
 
@@ -157,7 +168,20 @@ export default function Auth() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      <button 
+                        type="button"
+                        className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+                        onClick={() => {
+                          const tabs = document.querySelector('[role="tablist"]');
+                          const resetTab = tabs?.querySelector('[value="forgot"]') as HTMLElement;
+                          resetTab?.click();
+                        }}
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
@@ -323,6 +347,48 @@ export default function Auth() {
               <CardFooter className="text-center">
                 <p className="text-sm text-gray-600">
                   Already have an account?{" "}
+                  <button className="text-blue-600 hover:text-blue-500 font-medium">
+                    Sign in
+                  </button>
+                </p>
+              </CardFooter>
+            </TabsContent>
+
+            <TabsContent value="forgot">
+              <CardHeader className="space-y-1 text-center pb-4">
+                <CardTitle className="text-2xl font-semibold">Reset Password</CardTitle>
+                <CardDescription>
+                  Enter your email and we'll send you a reset link
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="forgotEmail">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="forgotEmail"
+                        name="forgotEmail"
+                        type="email"
+                        placeholder="Enter your email"
+                        className="pl-10 h-11"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium"
+                    disabled={forgotPasswordMutation.isPending}
+                  >
+                    {forgotPasswordMutation.isPending ? "Sending..." : "Send Reset Link"}
+                  </Button>
+                </form>
+              </CardContent>
+              <CardFooter className="text-center">
+                <p className="text-sm text-gray-600">
+                  Remember your password?{" "}
                   <button className="text-blue-600 hover:text-blue-500 font-medium">
                     Sign in
                   </button>
