@@ -297,6 +297,10 @@ function CampaignForm({
   });
 
   const onSubmit = async (data: InsertCampaign) => {
+    console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
+    console.log("Is form valid:", form.formState.isValid);
+    
     if (campaign) {
       updateMutation.mutate(data);
     } else {
