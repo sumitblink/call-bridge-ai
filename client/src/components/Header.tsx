@@ -80,7 +80,7 @@ export default function Header() {
   const queryClient = useQueryClient();
 
   const logoutMutation = useMutation({
-    mutationFn: () => apiRequest('/api/logout', { method: 'POST' }),
+    mutationFn: () => apiRequest('POST', '/api/logout', {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       toast({
@@ -112,17 +112,8 @@ export default function Header() {
     });
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/logout', { method: 'POST' });
-      window.location.href = '/';
-    } catch (error) {
-      toast({
-        title: "Logout Failed",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
 
   const getUserInitials = () => {
