@@ -3,6 +3,8 @@ import { Bell, Plus, User, LogOut, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,6 +77,26 @@ export default function Header() {
   const [location] = useLocation();
   const { user } = useAuth();
   const pageInfo = getPageInfo(location);
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    mutationFn: () => apiRequest('/api/logout', { method: 'POST' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      window.location.href = '/';
+    },
+    onError: () => {
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleNewCampaign = () => {
     toast({
@@ -104,23 +126,25 @@ export default function Header() {
   };
 
   const getUserInitials = () => {
-    if (user && 'firstName' in user && 'lastName' in user && user.firstName && user.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    const userData = user as any;
+    if (userData?.firstName && userData?.lastName) {
+      return `${userData.firstName[0]}${userData.lastName[0]}`.toUpperCase();
     }
-    if (user && 'email' in user && user.email) {
-      return user.email[0].toUpperCase();
+    if (userData?.email) {
+      return userData.email[0].toUpperCase();
     }
-    return 'U';
+    return 'DU';
   };
 
   const getUserDisplayName = () => {
-    if (user && 'firstName' in user && 'lastName' in user && user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
+    const userData = user as any;
+    if (userData?.firstName && userData?.lastName) {
+      return `${userData.firstName} ${userData.lastName}`;
     }
-    if (user && 'email' in user && user.email) {
-      return user.email;
+    if (userData?.email) {
+      return userData.email;
     }
-    return 'User';
+    return 'Demo User';
   };
 
   return (
@@ -159,7 +183,7 @@ export default function Header() {
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
                   <AvatarImage 
-                    src={user && 'profileImageUrl' in user ? user.profileImageUrl || "" : ""} 
+                    src={(user as any)?.profileImageUrl || ""} 
                     alt={getUserDisplayName()} 
                   />
                   <AvatarFallback className="bg-primary-100 text-primary-700">
@@ -173,7 +197,7 @@ export default function Header() {
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{getUserDisplayName()}</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    {user && 'email' in user ? user.email : 'demo@callcenter.com'}
+                    {(user as any)?.email || 'demo@callcenter.com'}
                   </p>
                 </div>
               </DropdownMenuLabel>
