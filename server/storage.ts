@@ -291,16 +291,40 @@ export class MemStorage implements IStorage {
   }
 
   async deleteCampaign(id: number): Promise<boolean> {
-    // First remove all campaign-buyer relationships
-    const toRemove: string[] = [];
-    for (const [key, cb] of this.campaignBuyers.entries()) {
-      if (cb.campaignId === id) {
-        toRemove.push(key);
+    // Delete all related records first to avoid foreign key constraint violations
+    
+    // Delete call logs for calls related to this campaign
+    const callsToRemove: number[] = [];
+    for (const [callId, call] of this.calls.entries()) {
+      if (call.campaignId === id) {
+        callsToRemove.push(callId);
       }
     }
-    toRemove.forEach(key => this.campaignBuyers.delete(key));
     
-    // Then delete the campaign
+    // Remove call logs for these calls
+    for (const callId of callsToRemove) {
+      const logsToRemove: number[] = [];
+      for (const [logId, log] of this.callLogs.entries()) {
+        if (log.callId === callId) {
+          logsToRemove.push(logId);
+        }
+      }
+      logsToRemove.forEach(logId => this.callLogs.delete(logId));
+    }
+    
+    // Remove the calls
+    callsToRemove.forEach(callId => this.calls.delete(callId));
+    
+    // Remove campaign-buyer relationships
+    const campaignBuyersToRemove: string[] = [];
+    for (const [key, cb] of this.campaignBuyers.entries()) {
+      if (cb.campaignId === id) {
+        campaignBuyersToRemove.push(key);
+      }
+    }
+    campaignBuyersToRemove.forEach(key => this.campaignBuyers.delete(key));
+    
+    // Finally delete the campaign
     return this.campaigns.delete(id);
   }
 
