@@ -144,16 +144,7 @@ export default function Header() {
             </span>
           </Button>
           
-          {/* New Item Button - show on pages that support creating items */}
-          {['/campaigns', '/buyers', '/publishers', '/agents', '/integrations'].includes(location) && (
-            <Button 
-              onClick={handleNewItem}
-              className="bg-primary-600 text-white hover:bg-primary-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {getNewButtonText(location)}
-            </Button>
-          )}
+          
         </div>
       </div>
     </header>
