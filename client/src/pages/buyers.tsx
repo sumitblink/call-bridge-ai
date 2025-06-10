@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -404,6 +404,20 @@ export default function Buyers() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Function to handle opening dialog from header button
+  const openNewBuyerDialog = () => {
+    setEditingBuyer(undefined);
+    setDialogOpen(true);
+  };
+
+  // Make the function available globally for header button
+  useEffect(() => {
+    (window as any).openNewBuyerDialog = openNewBuyerDialog;
+    return () => {
+      delete (window as any).openNewBuyerDialog;
+    };
+  }, []);
+
   const { data: buyers, isLoading } = useQuery({
     queryKey: ["/api/buyers"],
   });
@@ -465,16 +479,10 @@ export default function Buyers() {
   return (
     <Layout>
       <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Buyer Management</h1>
-            <p className="text-muted-foreground">Manage your call buyers and routing preferences</p>
-          </div>
-        <Button onClick={handleCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Buyer
-        </Button>
-      </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Buyer Management</h1>
+          <p className="text-muted-foreground">Manage your call buyers and routing preferences</p>
+        </div>
 
       {buyers && Array.isArray(buyers) && buyers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
