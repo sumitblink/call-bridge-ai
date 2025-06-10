@@ -23,33 +23,33 @@ import {
   type InsertCallLog,
 } from '@shared/schema';
 import type { IStorage } from './storage';
-import { SupabaseStorage } from './supabase-storage';
+import { DatabaseStorage } from './storage-db';
 import { MemStorage } from './storage';
 
 class HybridStorage implements IStorage {
-  private supabaseStorage: SupabaseStorage;
+  private databaseStorage: DatabaseStorage;
   private memStorage: MemStorage;
-  private useSupabase: boolean = true; // Use Supabase as primary storage
+  private useDatabase: boolean = true; // Use PostgreSQL as primary storage
 
   constructor() {
-    this.supabaseStorage = new SupabaseStorage();
+    this.databaseStorage = new DatabaseStorage();
     this.memStorage = new MemStorage();
     this.initializeDatabase();
   }
 
   private async initializeDatabase() {
-    // Try to use Supabase, fall back to memory storage if it fails
+    // Try to use PostgreSQL database, fall back to memory storage if it fails
     try {
-      const campaigns = await this.supabaseStorage.getCampaigns();
+      const campaigns = await this.databaseStorage.getCampaigns();
       if (campaigns.length === 0) {
         console.log('Database is empty, populating with sample data...');
         await this.populateDatabase();
       }
-      this.useSupabase = true;
-      console.log('Using Supabase database with sample data');
+      this.useDatabase = true;
+      console.log('Using PostgreSQL database with sample data');
     } catch (error) {
       console.log('Database not available, using memory storage with sample data');
-      this.useSupabase = false;
+      this.useDatabase = false;
     }
   }
 
