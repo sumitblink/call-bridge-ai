@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertCampaignSchema, type Campaign, type InsertCampaign, type Buyer } from "@shared/schema";
+import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,7 +23,11 @@ import { DatabaseStatus } from "@/components/DatabaseStatus";
 const campaignFormSchema = insertCampaignSchema.extend({
   name: insertCampaignSchema.shape.name.min(1, "Name is required"),
   description: insertCampaignSchema.shape.description.optional(),
+}).omit({
+  userId: true, // Remove userId from client-side validation since it's added server-side
 });
+
+type CampaignFormData = z.infer<typeof campaignFormSchema>;
 
 function BuyerCount({ campaignId }: { campaignId: number }) {
   const { data: campaignBuyers, isLoading, error } = useQuery<Buyer[]>({
@@ -207,7 +212,7 @@ function CampaignForm({
     enabled: !!campaign?.id,
   });
 
-  const form = useForm<InsertCampaign>({
+  const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignFormSchema),
     defaultValues: {
       name: campaign?.name || "",
@@ -296,15 +301,15 @@ function CampaignForm({
     },
   });
 
-  const onSubmit = async (data: InsertCampaign) => {
+  const onSubmit = async (data: CampaignFormData) => {
     console.log("Form submitted with data:", data);
     console.log("Form errors:", form.formState.errors);
     console.log("Is form valid:", form.formState.isValid);
     
     if (campaign) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(data as InsertCampaign);
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(data as InsertCampaign);
     }
   };
 
@@ -360,7 +365,10 @@ function CampaignForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4"
+            onClick={(e) => {
+              console.log("Form clicked");
+            }}>
         <FormField
           control={form.control}
           name="name"
@@ -547,7 +555,15 @@ function CampaignForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isPending}>
+          <Button 
+            type="submit" 
+            disabled={isPending}
+            onClick={(e) => {
+              console.log("Button clicked!");
+              console.log("Form state:", form.formState);
+              console.log("Form values:", form.getValues());
+            }}
+          >
             {isPending ? "Saving..." : campaign ? "Update Campaign" : "Create Campaign"}
           </Button>
         </div>
