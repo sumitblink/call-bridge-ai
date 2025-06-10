@@ -157,10 +157,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Campaign-Buyer relations
-  async getCampaignBuyers(campaignId: number): Promise<Buyer[]> {
+  async getCampaignBuyers(campaignId: number): Promise<(Buyer & { campaignPriority: number })[]> {
     const result = await db
       .select({
         id: buyers.id,
+        userId: buyers.userId,
         name: buyers.name,
         email: buyers.email,
         phoneNumber: buyers.phoneNumber,
@@ -173,6 +174,7 @@ export class DatabaseStorage implements IStorage {
         avgResponseTime: buyers.avgResponseTime,
         createdAt: buyers.createdAt,
         updatedAt: buyers.updatedAt,
+        campaignPriority: campaignBuyers.priority,
       })
       .from(buyers)
       .innerJoin(campaignBuyers, eq(campaignBuyers.buyerId, buyers.id))

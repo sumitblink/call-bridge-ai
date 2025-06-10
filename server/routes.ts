@@ -4,6 +4,7 @@ import { storage } from "./storage-db";
 import { insertCampaignSchema, insertBuyerSchema, insertAgentSchema } from "@shared/schema";
 import { twilioService } from "./twilio-service";
 import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
+import { CallRouter } from "./call-routing";
 import { z } from "zod";
 import twilio from "twilio";
 import fetch from "node-fetch";
