@@ -7,6 +7,7 @@ import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixe
 import { z } from "zod";
 import twilio from "twilio";
 import fetch from "node-fetch";
+import { userStorage } from "./user-storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -238,7 +239,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all campaigns
   app.get("/api/campaigns", async (req, res) => {
     try {
-      const campaigns = await storage.getCampaigns();
+      const sessionUser = (req.session as any)?.user;
+      if (!sessionUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Get user-specific campaigns
+      const campaigns = userStorage.getUserCampaigns(sessionUser.id);
       res.json(campaigns);
     } catch (error) {
       console.error("Error fetching campaigns:", error);

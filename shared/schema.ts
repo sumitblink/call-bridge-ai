@@ -27,6 +27,7 @@ export const users = pgTable("users", {
 
 export const campaigns = pgTable("campaigns", {
   id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   name: varchar("name", { length: 256 }).notNull(),
   description: text("description"),
   status: varchar("status", { length: 50 }).default("active").notNull(),
@@ -42,6 +43,7 @@ export const campaigns = pgTable("campaigns", {
 
 export const buyers = pgTable("buyers", {
   id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   name: varchar("name", { length: 256 }).notNull(),
   email: varchar("email", { length: 256 }).notNull(),
   phoneNumber: varchar("phone_number", { length: 20 }).notNull(),
