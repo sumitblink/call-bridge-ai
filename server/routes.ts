@@ -228,42 +228,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/campaigns', async (req: any, res) => {
+  app.post('/api/campaigns', requireAuth, async (req: any, res) => {
     try {
-      console.log("Raw request user:", req.user);
-      console.log("Raw request user ID:", req.user?.id);
-      
-      // For testing purposes, use a default user ID if not authenticated
-      let userId = req.user?.id;
-      if (!userId) {
-        userId = 1; // Default for testing
-        console.log("No user ID found, using default:", userId);
-      }
-      
-      console.log("Creating campaign with data:", req.body);
-      console.log("Final User ID:", userId, "Type:", typeof userId);
-      
-      // Prepare data with userId included
+      const userId = req.user?.id;
       const campaignData = {
         ...req.body,
-        userId: Number(userId) // Ensure it's a number
+        userId: Number(userId)
       };
       
-      console.log("Campaign data with userId:", campaignData);
-      
       const validatedData = insertCampaignSchema.parse(campaignData);
-      console.log("Validated data:", validatedData);
-      
       const campaign = await storage.createCampaign(validatedData);
-      console.log("Campaign created:", campaign);
       
       res.status(201).json(campaign);
     } catch (error) {
       console.error("Error creating campaign:", error);
-      if (error instanceof Error) {
-        console.error("Error message:", error.message);
-        console.error("Error stack:", error.stack);
-      }
       res.status(500).json({ 
         error: "Failed to create campaign",
         details: error instanceof Error ? error.message : "Unknown error"
