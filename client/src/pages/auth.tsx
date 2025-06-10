@@ -144,9 +144,9 @@ export default function Auth() {
                   <Button
                     type="submit"
                     className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium"
-                    disabled={isLoading}
+                    disabled={loginMutation.isPending}
                   >
-                    {isLoading ? "Signing in..." : "Sign In"}
+                    {loginMutation.isPending ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
 
@@ -186,7 +186,7 @@ export default function Auth() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <form onSubmit={handleEmailLogin} className="space-y-4">
+                <form onSubmit={handleEmailSignup} className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First name</Label>
@@ -194,6 +194,7 @@ export default function Auth() {
                         <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input
                           id="firstName"
+                          name="firstName"
                           placeholder="John"
                           className="pl-10 h-11"
                           required
@@ -204,6 +205,7 @@ export default function Auth() {
                       <Label htmlFor="lastName">Last name</Label>
                       <Input
                         id="lastName"
+                        name="lastName"
                         placeholder="Doe"
                         className="h-11"
                         required
@@ -216,6 +218,7 @@ export default function Auth() {
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         id="signupEmail"
+                        name="signupEmail"
                         type="email"
                         placeholder="Enter your email"
                         className="pl-10 h-11"
@@ -229,6 +232,7 @@ export default function Auth() {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         id="signupPassword"
+                        name="signupPassword"
                         type="password"
                         placeholder="Create a password"
                         className="pl-10 h-11"
@@ -239,9 +243,9 @@ export default function Auth() {
                   <Button
                     type="submit"
                     className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium"
-                    disabled={isLoading}
+                    disabled={signupMutation.isPending}
                   >
-                    {isLoading ? "Creating account..." : "Create Account"}
+                    {signupMutation.isPending ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
 
