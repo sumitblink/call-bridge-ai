@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./hybrid-storage";
 import { insertCampaignSchema, insertBuyerSchema, insertAgentSchema } from "@shared/schema";
 import { twilioService } from "./twilio-service";
+import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
 import { z } from "zod";
 import twilio from "twilio";
 
@@ -940,6 +941,214 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting tracking pixel:", error);
       res.status(500).json({ error: "Failed to delete tracking pixel" });
+    }
+  });
+
+  // Fire pixels for a specific event and campaign
+  app.post("/api/pixels/fire", async (req, res) => {
+    try {
+      const {
+        event,
+        campaignId,
+        macroData
+      }: {
+        event: 'call_start' | 'call_complete' | 'call_transfer';
+        campaignId: number;
+        macroData: PixelMacroData;
+      } = req.body;
+
+      if (!event || !campaignId || !macroData) {
+        return res.status(400).json({ 
+          error: "Missing required fields: event, campaignId, macroData" 
+        });
+      }
+
+      // Get all pixels that should fire for this event and campaign
+      const allPixels = await storage.getTrackingPixels();
+      const relevantPixels = allPixels.filter(pixel => 
+        pixel.fireOnEvent === event && 
+        pixel.assignedCampaigns?.includes(campaignId.toString()) &&
+        pixel.isActive
+      );
+
+      if (relevantPixels.length === 0) {
+        return res.json({ 
+          message: "No pixels found for this event and campaign",
+          firedPixels: []
+        });
+      }
+
+      // Fire each relevant pixel
+      const results = await Promise.allSettled(
+        relevantPixels.map(async (pixel) => {
+          try {
+            // Replace macros in pixel code
+            const processedCode = PixelService.replaceMacros(pixel.code, macroData);
+            
+            // Extract URL if needed based on pixel type
+            const finalCode = PixelService.extractUrlFromCode(processedCode, pixel.pixelType);
+            
+            // Fire the pixel
+            const result = await PixelService.firePixel(
+              pixel.pixelType as 'postback' | 'image' | 'javascript', 
+              finalCode
+            );
+
+            return {
+              pixelId: pixel.id,
+              pixelName: pixel.name,
+              pixelType: pixel.pixelType,
+              success: result.success,
+              response: result.response,
+              error: result.error,
+              processedCode: finalCode.substring(0, 200) // Truncate for logging
+            };
+          } catch (error) {
+            return {
+              pixelId: pixel.id,
+              pixelName: pixel.name,
+              pixelType: pixel.pixelType,
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            };
+          }
+        })
+      );
+
+      const firedPixels = results.map(result => 
+        result.status === 'fulfilled' ? result.value : result.reason
+      );
+
+      const successCount = firedPixels.filter(p => p.success).length;
+      const totalCount = firedPixels.length;
+
+      res.json({
+        message: `Fired ${successCount}/${totalCount} pixels successfully`,
+        event,
+        campaignId,
+        firedPixels,
+        summary: {
+          total: totalCount,
+          successful: successCount,
+          failed: totalCount - successCount
+        }
+      });
+
+    } catch (error) {
+      console.error("Error firing pixels:", error);
+      res.status(500).json({ error: "Failed to fire pixels" });
+    }
+  });
+
+  // Fire a specific pixel by ID
+  app.post("/api/pixels/:id/fire", async (req, res) => {
+    try {
+      const pixelId = parseInt(req.params.id);
+      const { macroData }: { macroData: PixelMacroData } = req.body;
+
+      if (!macroData) {
+        return res.status(400).json({ error: "Missing macroData" });
+      }
+
+      // Get the specific pixel
+      const allPixels = await storage.getTrackingPixels();
+      const pixel = allPixels.find(p => p.id === pixelId);
+
+      if (!pixel) {
+        return res.status(404).json({ error: "Pixel not found" });
+      }
+
+      if (!pixel.isActive) {
+        return res.status(400).json({ error: "Pixel is inactive" });
+      }
+
+      try {
+        // Replace macros in pixel code
+        const processedCode = PixelService.replaceMacros(pixel.code, macroData);
+        
+        // Extract URL if needed based on pixel type
+        const finalCode = PixelService.extractUrlFromCode(processedCode, pixel.pixelType);
+        
+        // Fire the pixel
+        const result = await PixelService.firePixel(
+          pixel.pixelType as 'postback' | 'image' | 'javascript', 
+          finalCode
+        );
+
+        res.json({
+          message: "Pixel fired successfully",
+          pixelId: pixel.id,
+          pixelName: pixel.name,
+          pixelType: pixel.pixelType,
+          success: result.success,
+          response: result.response,
+          error: result.error,
+          processedCode: finalCode.substring(0, 200) // Truncate for security
+        });
+
+      } catch (error) {
+        res.status(500).json({
+          error: "Failed to fire pixel",
+          details: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+
+    } catch (error) {
+      console.error("Error firing specific pixel:", error);
+      res.status(500).json({ error: "Failed to fire pixel" });
+    }
+  });
+
+  // Test pixel code with sample data
+  app.post("/api/pixels/test", async (req, res) => {
+    try {
+      const {
+        pixelType,
+        code,
+        sampleData
+      }: {
+        pixelType: 'postback' | 'image' | 'javascript';
+        code: string;
+        sampleData?: Partial<PixelMacroData>;
+      } = req.body;
+
+      if (!pixelType || !code) {
+        return res.status(400).json({ error: "Missing pixelType or code" });
+      }
+
+      // Use sample data or default test data
+      const testMacroData: PixelMacroData = {
+        call_id: 'test_call_123',
+        campaign_id: '1',
+        phone_number: '+1234567890',
+        timestamp: new Date().toISOString(),
+        caller_id: '+0987654321',
+        duration: '60',
+        status: 'completed',
+        buyer_id: '1',
+        agent_id: '1',
+        recording_url: 'https://example.com/recording.mp3',
+        ...sampleData
+      };
+
+      // Replace macros in pixel code
+      const processedCode = PixelService.replaceMacros(code, testMacroData);
+      
+      // Extract URL if needed based on pixel type
+      const finalCode = PixelService.extractUrlFromCode(processedCode, pixelType);
+
+      res.json({
+        message: "Pixel test completed",
+        originalCode: code,
+        processedCode: finalCode,
+        macroData: testMacroData,
+        pixelType,
+        note: "This is a test - no actual pixel was fired"
+      });
+
+    } catch (error) {
+      console.error("Error testing pixel:", error);
+      res.status(500).json({ error: "Failed to test pixel" });
     }
   });
 

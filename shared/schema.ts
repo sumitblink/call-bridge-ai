@@ -109,9 +109,10 @@ export const urlParameters = pgTable("url_parameters", {
 export const trackingPixels = pgTable("tracking_pixels", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
-  type: varchar("type", { length: 50 }).notNull(), // analytics, conversion, remarketing
-  code: text("code").notNull(),
-  campaigns: text("campaigns").array(), // array of campaign IDs
+  pixelType: varchar("pixel_type", { length: 50 }).notNull(), // 'postback', 'image', 'javascript'
+  fireOnEvent: varchar("fire_on_event", { length: 50 }).notNull(), // 'call_start', 'call_complete', 'call_transfer'
+  code: text("code").notNull(), // contains macros like {call_id}, {phone_number}, {timestamp}
+  assignedCampaigns: text("assigned_campaigns").array(), // array of campaign IDs
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
