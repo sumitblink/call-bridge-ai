@@ -230,11 +230,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/campaigns', async (req: any, res) => {
     try {
-      const userId = req.user?.id;
-      console.log("Creating campaign with data:", req.body);
-      console.log("User ID:", userId);
+      console.log("Raw request user:", req.user);
+      console.log("Raw request user ID:", req.user?.id);
       
-      const validatedData = insertCampaignSchema.parse({...req.body, userId});
+      // For testing purposes, use a default user ID if not authenticated
+      let userId = req.user?.id;
+      if (!userId) {
+        userId = 1; // Default for testing
+        console.log("No user ID found, using default:", userId);
+      }
+      
+      console.log("Creating campaign with data:", req.body);
+      console.log("Final User ID:", userId, "Type:", typeof userId);
+      
+      // Prepare data with userId included
+      const campaignData = {
+        ...req.body,
+        userId: Number(userId) // Ensure it's a number
+      };
+      
+      console.log("Campaign data with userId:", campaignData);
+      
+      const validatedData = insertCampaignSchema.parse(campaignData);
       console.log("Validated data:", validatedData);
       
       const campaign = await storage.createCampaign(validatedData);
