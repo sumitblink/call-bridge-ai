@@ -18,7 +18,7 @@ export class TwilioService {
         .recordings
         .create({
           recordingChannels: 'dual',
-          recordingStatusCallback: `${process.env.REPLIT_DOMAINS}/api/webhooks/recording-status`
+          recordingStatusCallback: `https://${process.env.REPLIT_DOMAINS}/api/webhooks/recording-status`
         });
 
       console.log(`[Twilio] Started recording for call ${callSid}, Recording SID: ${recording.sid}`);
@@ -163,7 +163,7 @@ export class TwilioService {
           to: participant,
           from: TWILIO_PHONE_NUMBER!,
           twiml: `<Response><Dial><Conference>${conferenceName}</Conference></Dial></Response>`,
-          statusCallback: `${process.env.REPLIT_DOMAINS}/api/webhooks/call-status`
+          statusCallback: `https://${process.env.REPLIT_DOMAINS}/api/webhooks/call-status`
         });
       }));
       
@@ -178,11 +178,15 @@ export class TwilioService {
   // Create outbound call
   async createOutboundCall(to: string, campaignId?: number): Promise<{ callSid: string }> {
     try {
+      const baseUrl = process.env.REPLIT_DOMAINS?.startsWith('http') 
+        ? process.env.REPLIT_DOMAINS 
+        : `https://${process.env.REPLIT_DOMAINS}`;
+        
       const call = await twilioClient.calls.create({
         to: to,
         from: TWILIO_PHONE_NUMBER!,
-        url: `${process.env.REPLIT_DOMAINS}/api/twiml/outbound?campaignId=${campaignId || ''}`,
-        statusCallback: `${process.env.REPLIT_DOMAINS}/api/webhooks/call-status`,
+        url: `${baseUrl}/api/twiml/outbound?campaignId=${campaignId || ''}`,
+        statusCallback: `${baseUrl}/api/webhooks/call-status`,
         record: true
       });
       
