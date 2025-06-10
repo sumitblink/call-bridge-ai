@@ -113,9 +113,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: "User already exists" });
       }
 
+      // Create username from email
+      const username = email.split('@')[0];
+
       // Create new user
       const newUser = await storage.createUser({
-        id: `user_${Date.now()}`,
+        username,
         email,
         password,
         firstName,
