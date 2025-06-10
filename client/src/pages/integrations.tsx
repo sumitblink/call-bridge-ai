@@ -356,7 +356,7 @@ export default function IntegrationsPage() {
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-gray-600">
                         {selectedCampaignId !== "all" 
-                          ? `Campaign-specific code for: ${campaigns.find((c: any) => c.id.toString() === selectedCampaignId)?.name || "Unknown"}`
+                          ? `Campaign-specific code for: ${campaigns.find((c) => c.id.toString() === selectedCampaignId)?.name || "Unknown"}`
                           : `Campaigns: ${pixel.campaigns.join(", ") || "All campaigns"}`
                         }
                       </div>
