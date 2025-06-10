@@ -18,16 +18,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Return user data from session
-      const userData = {
-        id: sessionUser.id,
-        email: "demo@callcenter.com",
-        firstName: "Demo",
-        lastName: "User",
-        profileImageUrl: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      // Get user data from storage
+      let userData = await storage.getUser(sessionUser.id);
+      
+      // If user doesn't exist in storage, create default user data based on session
+      if (!userData) {
+        userData = {
+          id: sessionUser.id,
+          email: sessionUser.email || "demo@callcenter.com",
+          firstName: sessionUser.firstName || "Demo",
+          lastName: sessionUser.lastName || "User", 
+          profileImageUrl: sessionUser.profileImageUrl || null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }
+      
       res.json(userData);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -48,7 +54,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Simple demo credentials validation
     if (email === "demo@callcenter.com" && password === "demo123") {
-      (req.session as any).user = { id: "dev-user-123" };
+      (req.session as any).user = { 
+        id: "dev-user-123",
+        email: "demo@callcenter.com",
+        firstName: "John",
+        lastName: "Smith",
+        profileImageUrl: null
+      };
       res.json({ success: true, message: "Logged in successfully" });
     } else {
       res.status(401).json({ 
@@ -79,7 +91,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // For demo, create account and log them in
     const userId = "user-" + Date.now();
-    (req.session as any).user = { id: userId };
+    (req.session as any).user = { 
+      id: userId,
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+      profileImageUrl: null
+    };
     res.json({ success: true, message: "Account created successfully" });
   });
 
