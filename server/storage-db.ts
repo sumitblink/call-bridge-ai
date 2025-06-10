@@ -90,10 +90,7 @@ export class DatabaseStorage implements IStorage {
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
     const [newCampaign] = await db
       .insert(campaigns)
-      .values({
-        ...campaign,
-        userId: campaign.userId || 'demo-user'
-      })
+      .values(campaign)
       .returning();
     return newCampaign;
   }

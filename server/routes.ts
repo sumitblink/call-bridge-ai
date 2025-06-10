@@ -10,19 +10,149 @@ import twilio from "twilio";
 import fetch from "node-fetch";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup Replit Auth with PostgreSQL session storage
-  await setupAuth(app);
+  // Configure session middleware for custom auth
+  const session = (await import('express-session')).default;
+  const connectPg = (await import('connect-pg-simple')).default;
+  const pgStore = connectPg(session);
+  
+  const sessionStore = new pgStore({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: false,
+    ttl: 7 * 24 * 60 * 60, // 1 week
+    tableName: "sessions",
+  });
+
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
+    }
+  }));
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      const sessionUser = req.session?.user;
+      if (!sessionUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      let userData = await storage.getUser(sessionUser.id);
+      if (!userData) {
+        userData = {
+          id: sessionUser.id,
+          email: sessionUser.email,
+          firstName: sessionUser.firstName,
+          lastName: sessionUser.lastName,
+          profileImageUrl: sessionUser.profileImageUrl,
+          password: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      }
+      
+      res.json(userData);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
+  });
+
+  // Custom login endpoint
+  app.post('/api/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user || user.password !== password) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Store user in session
+      (req.session as any).user = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl
+      };
+
+      res.json({ message: "Login successful", user: { 
+        id: user.id, 
+        email: user.email, 
+        firstName: user.firstName, 
+        lastName: user.lastName 
+      }});
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  // Custom signup endpoint
+  app.post('/api/signup', async (req, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({ message: "User already exists" });
+      }
+
+      // Create new user
+      const newUser = await storage.createUser({
+        id: `user_${Date.now()}`,
+        email,
+        password,
+        firstName,
+        lastName,
+        profileImageUrl: null
+      });
+
+      // Store user in session
+      (req.session as any).user = {
+        id: newUser.id,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        profileImageUrl: newUser.profileImageUrl
+      };
+
+      res.json({ message: "Account created successfully", user: { 
+        id: newUser.id, 
+        email: newUser.email, 
+        firstName: newUser.firstName, 
+        lastName: newUser.lastName 
+      }});
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({ message: "Signup failed" });
+    }
+  });
+
+  // Logout endpoint
+  app.post('/api/logout', async (req, res) => {
+    req.session?.destroy((err: any) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.json({ message: "Logout successful" });
+    });
   });
 
   // Dashboard stats
