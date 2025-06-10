@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users } from "lucide-react";
 import Layout from "@/components/Layout";
@@ -554,6 +554,20 @@ export default function Campaigns() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Function to handle opening dialog from header button
+  const openNewCampaignDialog = () => {
+    setEditingCampaign(undefined);
+    setIsDialogOpen(true);
+  };
+
+  // Make the function available globally for header button
+  React.useEffect(() => {
+    (window as any).openNewCampaignDialog = openNewCampaignDialog;
+    return () => {
+      delete (window as any).openNewCampaignDialog;
+    };
+  }, []);
+
   const { data: campaigns, isLoading, error } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"],
   });
@@ -638,14 +652,7 @@ export default function Campaigns() {
   return (
     <Layout>
       <div className="p-6">
-      <div className="flex items-center justify-end mb-6">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingCampaign(undefined)}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Campaign
-            </Button>
-          </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
             <DialogHeader className="flex-shrink-0">
               <DialogTitle>
