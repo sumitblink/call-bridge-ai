@@ -22,7 +22,8 @@ import {
   ExternalLink,
   Globe,
   Zap,
-  Shield
+  Shield,
+  Play
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -38,372 +39,304 @@ interface URLParameter {
 }
 
 interface Pixel {
-  id: string;
+  id: number;
   name: string;
-  type: string;
-  fireOn: string; // page_view, form_submit, call_start, call_complete, call_transfer
-  url?: string; // External tracking URL
+  pixelType: 'postback' | 'image' | 'javascript';
+  fireOnEvent: 'call_start' | 'call_complete' | 'call_transfer';
   code: string;
-  campaigns: string[];
-  authentication?: string;
+  assignedCampaigns: string[];
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface WebhookConfig {
-  id: string;
+interface Campaign {
+  id: number;
   name: string;
-  url: string;
-  events: string[];
-  headers: Record<string, string>;
-  isActive: boolean;
-  retryCount: number;
-}
-
-interface Authentication {
-  id: string;
-  name: string;
-  type: string;
-  apiKey: string;
-  secretKey?: string;
-  isActive: boolean;
-}
-
-interface Platform {
-  id: string;
-  name: string;
-  type: string;
-  status: string;
-  config: Record<string, any>;
-  lastSync?: string;
 }
 
 export default function IntegrationsPage() {
-  const [activeTab, setActiveTab] = useState("url-parameters");
+  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string>("all");
+  const [selectedCampaignId, setSelectedCampaignId] = useState("all");
+  const [testResult, setTestResult] = useState<any>(null);
+
+  // Form states
   const [pixelForm, setPixelForm] = useState({
     name: "",
-    type: "analytics",
-    fireOn: "page_view",
-    url: "",
+    pixelType: "postback" as 'postback' | 'image' | 'javascript',
+    fireOnEvent: "call_complete" as 'call_start' | 'call_complete' | 'call_transfer',
     code: "",
-    campaigns: [] as string[],
+    assignedCampaigns: [] as string[],
     isActive: true
   });
 
-  const { toast } = useToast();
-
-  // Fetch campaigns for dropdown
-  const { data: campaigns = [] } = useQuery<any[]>({
+  // Fetch campaigns for assignment
+  const { data: campaigns = [] } = useQuery<Campaign[]>({
     queryKey: ['/api/campaigns'],
-  });
-
-  // Fetch URL Parameters from API
-  const { data: urlParameters = [], isLoading: urlLoading } = useQuery<URLParameter[]>({
-    queryKey: ['/api/integrations/url-parameters'],
-    select: (data: any[]) => data.map((param: any) => ({
-      id: param.id.toString(),
-      name: param.name,
-      parameter: param.parameter,
-      description: param.description || "",
-      value: param.value,
-      isActive: param.isActive
+    select: (data: any[]) => data.map((campaign: any) => ({
+      id: campaign.id,
+      name: campaign.name
     }))
   });
 
-  // Fetch Tracking Pixels from API
-  const { data: pixels = [], isLoading: pixelsLoading } = useQuery<Pixel[]>({
+  // Fetch pixels
+  const { data: pixels = [], isLoading: isLoadingPixels } = useQuery<Pixel[]>({
     queryKey: ['/api/integrations/pixels'],
     select: (data: any[]) => data.map((pixel: any) => ({
-      id: pixel.id.toString(),
+      id: pixel.id,
       name: pixel.name,
-      type: pixel.type,
-      fireOn: pixel.fireOn || 'page_view',
-      url: pixel.url,
+      pixelType: pixel.pixelType || pixel.pixel_type,
+      fireOnEvent: pixel.fireOnEvent || pixel.fire_on_event,
       code: pixel.code,
-      campaigns: Array.isArray(pixel.campaigns) ? pixel.campaigns : [],
-      authentication: pixel.authentication,
-      isActive: pixel.isActive
+      assignedCampaigns: pixel.assignedCampaigns || pixel.assigned_campaigns || [],
+      isActive: pixel.isActive !== false,
+      createdAt: pixel.createdAt || pixel.created_at,
+      updatedAt: pixel.updatedAt || pixel.updated_at
     }))
   });
 
-  // Fetch Webhooks from API
-  const { data: webhooks = [], isLoading: webhooksLoading } = useQuery<WebhookConfig[]>({
-    queryKey: ['/api/webhook-configs'],
-    select: (data: any[]) => data.map((webhook: any) => ({
-      id: webhook.id.toString(),
-      name: webhook.name,
-      url: webhook.url,
-      events: Array.isArray(webhook.events) ? webhook.events : 
-               typeof webhook.events === 'string' ? JSON.parse(webhook.events) : [],
-      headers: typeof webhook.headers === 'string' ? JSON.parse(webhook.headers || '{}') : webhook.headers || {},
-      isActive: webhook.isActive,
-      retryCount: webhook.retryCount || 3
-    }))
-  });
-
-  // Fetch API Authentications from API
-  const { data: authentications = [], isLoading: authLoading } = useQuery<Authentication[]>({
-    queryKey: ['/api/integrations/authentications'],
-    select: (data: any[]) => data.map((auth: any) => ({
-      id: auth.id.toString(),
-      name: auth.name,
-      type: auth.type,
-      apiKey: auth.apiKey || "***************",
-      secretKey: auth.secretKey ? "***************" : undefined,
-      isActive: auth.isActive
-    }))
-  });
-
-  // Fetch Platform Integrations from API
-  const { data: platforms = [], isLoading: platformsLoading } = useQuery<Platform[]>({
-    queryKey: ['/api/integrations/platforms'],
-    select: (data: any[]) => data.map((platform: any) => ({
-      id: platform.id.toString(),
-      name: platform.name,
-      type: platform.type,
-      status: platform.status,
-      config: typeof platform.config === 'string' ? JSON.parse(platform.config || '{}') : platform.config || {},
-      lastSync: platform.lastSync
-    }))
-  });
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({ title: "Copied to clipboard" });
-  };
-
-  // Filter pixels based on selected campaign
+  // Filter pixels by campaign
   const filteredPixels = selectedCampaignId === "all" 
     ? pixels 
-    : pixels.filter(pixel => 
-        pixel.campaigns.includes(selectedCampaignId) || 
-        pixel.campaigns.length === 0
+    : pixels.filter((pixel: Pixel) => 
+        pixel.assignedCampaigns?.includes(selectedCampaignId)
       );
-
-  // Generate campaign-specific pixel code
-  const generateCampaignPixelCode = (pixel: Pixel, campaignId: string) => {
-    if (campaignId === "all") return pixel.code;
-    
-    const campaign = campaigns.find((c) => c.id.toString() === campaignId);
-    if (!campaign) return pixel.code;
-
-    return pixel.code
-      .replace(/\{campaign\.id\}/g, campaign.id.toString())
-      .replace(/\{campaign\.name\}/g, campaign.name)
-      .replace(/\{campaign\.phone_number\}/g, campaign.phoneNumber || "")
-      .replace(/G-XXXXXXXXXX/g, `G-${campaign.id}${Date.now().toString().slice(-6)}`)
-      .replace(/XXXXXXXXXXXXXXX/g, `${campaign.id}${Date.now().toString().slice(-9)}`);
-  };
 
   // Create pixel mutation
   const createPixelMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest('POST', '/api/integrations/pixels', data);
-      return await res.json();
+      const payload = {
+        name: data.name,
+        pixelType: data.pixelType,
+        fireOnEvent: data.fireOnEvent,
+        code: data.code,
+        assignedCampaigns: data.assignedCampaigns,
+        isActive: data.isActive
+      };
+      return apiRequest('/api/integrations/pixels', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
     },
     onSuccess: () => {
-      toast({ title: "Pixel created successfully" });
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
       setIsDialogOpen(false);
       resetPixelForm();
+      toast({
+        title: "Success",
+        description: "Tracking pixel created successfully"
+      });
     },
-    onError: () => {
-      toast({ title: "Failed to create pixel", variant: "destructive" });
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create pixel",
+        variant: "destructive"
+      });
     }
   });
 
   // Update pixel mutation
   const updatePixelMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest('PUT', `/api/integrations/pixels/${editingItem.id}`, data);
-      return await res.json();
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const payload = {
+        name: data.name,
+        pixelType: data.pixelType,
+        fireOnEvent: data.fireOnEvent,
+        code: data.code,
+        assignedCampaigns: data.assignedCampaigns,
+        isActive: data.isActive
+      };
+      return apiRequest(`/api/integrations/pixels/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
     },
     onSuccess: () => {
-      toast({ title: "Pixel updated successfully" });
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
       setIsDialogOpen(false);
       setEditingItem(null);
       resetPixelForm();
+      toast({
+        title: "Success",
+        description: "Tracking pixel updated successfully"
+      });
     },
-    onError: () => {
-      toast({ title: "Failed to update pixel", variant: "destructive" });
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update pixel",
+        variant: "destructive"
+      });
     }
   });
 
   // Delete pixel mutation
   const deletePixelMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await apiRequest('DELETE', `/api/integrations/pixels/${id}`);
-      return await res.json();
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/integrations/pixels/${id}`, {
+        method: 'DELETE'
+      });
     },
     onSuccess: () => {
-      toast({ title: "Pixel deleted successfully" });
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
+      toast({
+        title: "Success",
+        description: "Tracking pixel deleted successfully"
+      });
     },
-    onError: () => {
-      toast({ title: "Failed to delete pixel", variant: "destructive" });
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete pixel",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Test pixel mutation
+  const testPixelMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest('/api/pixels/test', {
+        method: 'POST',
+        body: JSON.stringify({
+          pixelType: data.pixelType,
+          code: data.code,
+          sampleData: {
+            call_id: 'test_call_123',
+            campaign_id: '1',
+            phone_number: '+1234567890',
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+    },
+    onSuccess: (data) => {
+      setTestResult(data);
+      toast({
+        title: "Test Complete",
+        description: "Pixel code tested with sample data"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Test Failed",
+        description: error.message || "Failed to test pixel",
+        variant: "destructive"
+      });
     }
   });
 
   const resetPixelForm = () => {
     setPixelForm({
       name: "",
-      type: "analytics",
-      fireOn: "page_view",
-      url: "",
+      pixelType: "postback",
+      fireOnEvent: "call_complete",
       code: "",
-      campaigns: [],
+      assignedCampaigns: [],
       isActive: true
     });
+    setTestResult(null);
+  };
+
+  const handlePixelSubmit = () => {
+    if (editingItem) {
+      updatePixelMutation.mutate({ id: editingItem.id, data: pixelForm });
+    } else {
+      createPixelMutation.mutate(pixelForm);
+    }
   };
 
   const handleEditPixel = (pixel: Pixel) => {
     setEditingItem(pixel);
     setPixelForm({
       name: pixel.name,
-      type: pixel.type,
-      fireOn: pixel.fireOn || "page_view",
-      url: pixel.url || "",
+      pixelType: pixel.pixelType,
+      fireOnEvent: pixel.fireOnEvent,
       code: pixel.code,
-      campaigns: pixel.campaigns,
+      assignedCampaigns: pixel.assignedCampaigns || [],
       isActive: pixel.isActive
     });
+    setTestResult(null);
     setIsDialogOpen(true);
   };
 
-  const handleSavePixel = () => {
-    if (!pixelForm.name || !pixelForm.code) {
-      toast({ title: "Please fill in required fields", variant: "destructive" });
-      return;
-    }
+  const testPixelCode = () => {
+    testPixelMutation.mutate({
+      pixelType: pixelForm.pixelType,
+      code: pixelForm.code
+    });
+  };
 
-    if (editingItem) {
-      updatePixelMutation.mutate(pixelForm);
-    } else {
-      createPixelMutation.mutate(pixelForm);
+  const getPixelCodePlaceholder = (type: string) => {
+    switch (type) {
+      case 'postback':
+        return 'https://example.com/postback?call_id={call_id}&campaign_id={campaign_id}&phone={phone_number}&timestamp={timestamp}';
+      case 'image':
+        return '<img src="https://example.com/pixel.gif?call_id={call_id}&campaign_id={campaign_id}" width="1" height="1" />';
+      case 'javascript':
+        return `// Example JavaScript pixel
+gtag('event', 'conversion', {
+  'call_id': '{call_id}',
+  'campaign_id': '{campaign_id}',
+  'phone_number': '{phone_number}',
+  'timestamp': '{timestamp}'
+});`;
+      default:
+        return '';
     }
   };
 
-  const generateTrackingURL = (baseUrl: string, parameters: URLParameter[]) => {
-    const params = parameters
-      .filter(p => p.isActive)
-      .map(p => `${p.parameter}=${p.value}`)
-      .join('&');
-    return `${baseUrl}?${params}`;
+  const getPixelTypeIcon = (type: string) => {
+    switch (type) {
+      case 'postback':
+        return <ExternalLink className="h-4 w-4" />;
+      case 'image':
+        return <Globe className="h-4 w-4" />;
+      case 'javascript':
+        return <Code className="h-4 w-4" />;
+      default:
+        return <Code className="h-4 w-4" />;
+    }
+  };
+
+  const getEventBadgeColor = (event: string) => {
+    switch (event) {
+      case 'call_start':
+        return 'bg-blue-100 text-blue-800';
+      case 'call_complete':
+        return 'bg-green-100 text-green-800';
+      case 'call_transfer':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Integrations</h1>
-            <p className="text-gray-600 mt-1">Connect your call routing platform with external services</p>
-          </div>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Integrations</h1>
+          <p className="text-gray-600">Manage tracking pixels, webhooks, and third-party integrations</p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="url-parameters" className="flex items-center gap-2">
-              <Link2 className="h-4 w-4" />
-              URL Parameters
-            </TabsTrigger>
-            <TabsTrigger value="pixels" className="flex items-center gap-2">
-              <Code className="h-4 w-4" />
-              Pixels
-            </TabsTrigger>
-            <TabsTrigger value="webhooks" className="flex items-center gap-2">
-              <Webhook className="h-4 w-4" />
-              Webhooks
-            </TabsTrigger>
-            <TabsTrigger value="authentications" className="flex items-center gap-2">
-              <Key className="h-4 w-4" />
-              Authentications
-            </TabsTrigger>
-            <TabsTrigger value="platforms" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Platforms
-            </TabsTrigger>
+        <Tabs defaultValue="pixels" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="pixels">Tracking Pixels</TabsTrigger>
+            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+            <TabsTrigger value="apis">API Keys</TabsTrigger>
+            <TabsTrigger value="platforms">Platforms</TabsTrigger>
           </TabsList>
 
-          {/* URL Parameters Tab */}
-          <TabsContent value="url-parameters" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">URL Parameters</h2>
-                <p className="text-gray-600">Configure dynamic URL parameters for tracking and attribution</p>
-              </div>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Parameter
-              </Button>
-            </div>
-
-            <div className="grid gap-4">
-              {urlParameters.map((param) => (
-                <Card key={param.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-medium">{param.name}</h3>
-                          <Badge className={param.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                            {param.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-3">{param.description}</p>
-                        <div className="flex items-center gap-2">
-                          <code className="bg-gray-100 px-2 py-1 rounded text-sm">
-                            {param.parameter}={param.value}
-                          </code>
-                          <Button size="sm" variant="outline" onClick={() => copyToClipboard(`${param.parameter}=${param.value}`)}>
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Generated Tracking URL</CardTitle>
-                <CardDescription>Preview how your URLs will look with current parameters</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gray-50 p-3 rounded font-mono text-sm">
-                  {generateTrackingURL("https://yoursite.com/landing", urlParameters)}
-                </div>
-                <Button 
-                  className="mt-3" 
-                  variant="outline" 
-                  onClick={() => copyToClipboard(generateTrackingURL("https://yoursite.com/landing", urlParameters))}
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy URL
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Pixels Tab */}
+          {/* Tracking Pixels Tab */}
           <TabsContent value="pixels" className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold">Tracking Pixels</h2>
-                <p className="text-gray-600">Manage conversion tracking and analytics pixels</p>
+                <p className="text-gray-600">Manage conversion tracking with macro replacement</p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
@@ -414,7 +347,7 @@ export default function IntegrationsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Campaigns</SelectItem>
-                      {campaigns.map((campaign: any) => (
+                      {campaigns.map((campaign) => (
                         <SelectItem key={campaign.id} value={campaign.id.toString()}>
                           {campaign.name}
                         </SelectItem>
@@ -432,11 +365,11 @@ export default function IntegrationsPage() {
                       Add Pixel
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>{editingItem ? 'Edit Pixel' : 'Create New Pixel'}</DialogTitle>
                       <DialogDescription>
-                        Configure tracking pixel for campaign attribution and analytics
+                        Configure tracking pixel with macro replacement for real-time call data
                       </DialogDescription>
                     </DialogHeader>
                     
@@ -448,338 +381,249 @@ export default function IntegrationsPage() {
                             id="pixel-name"
                             value={pixelForm.name}
                             onChange={(e) => setPixelForm({...pixelForm, name: e.target.value})}
-                            placeholder="Enter pixel name"
+                            placeholder="e.g., Google Analytics Conversion"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="pixel-type">Type</Label>
-                          <Select value={pixelForm.type} onValueChange={(value) => setPixelForm({...pixelForm, type: value})}>
+                          <Label htmlFor="pixel-type">Pixel Type *</Label>
+                          <Select 
+                            value={pixelForm.pixelType} 
+                            onValueChange={(value) => setPixelForm({...pixelForm, pixelType: value as 'postback' | 'image' | 'javascript'})}
+                          >
                             <SelectTrigger>
-                              <SelectValue />
+                              <SelectValue placeholder="Select pixel type" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="analytics">Analytics</SelectItem>
-                              <SelectItem value="conversion">Conversion</SelectItem>
-                              <SelectItem value="remarketing">Remarketing</SelectItem>
+                              <SelectItem value="postback">Postback URL</SelectItem>
+                              <SelectItem value="image">Image Pixel</SelectItem>
+                              <SelectItem value="javascript">JavaScript Code</SelectItem>
                             </SelectContent>
                           </Select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="fire-on">Fire Pixel On</Label>
-                          <Select value={pixelForm.fireOn} onValueChange={(value) => setPixelForm({...pixelForm, fireOn: value})}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="page_view">Page View</SelectItem>
-                              <SelectItem value="form_submit">Form Submit</SelectItem>
-                              <SelectItem value="call_start">Call Start</SelectItem>
-                              <SelectItem value="call_complete">Call Complete</SelectItem>
-                              <SelectItem value="call_transfer">Call Transfer</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="pixel-url">Tracking URL (Optional)</Label>
-                          <Input
-                            id="pixel-url"
-                            value={pixelForm.url}
-                            onChange={(e) => setPixelForm({...pixelForm, url: e.target.value})}
-                            placeholder="https://tracking.example.com/pixel"
-                          />
                         </div>
                       </div>
 
                       <div>
-                        <Label htmlFor="pixel-code">Pixel Code *</Label>
+                        <Label htmlFor="fire-on-event">Fire On Event *</Label>
+                        <Select 
+                          value={pixelForm.fireOnEvent} 
+                          onValueChange={(value) => setPixelForm({...pixelForm, fireOnEvent: value as 'call_start' | 'call_complete' | 'call_transfer'})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select when to fire pixel" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="call_start">Call Start</SelectItem>
+                            <SelectItem value="call_complete">Call Complete</SelectItem>
+                            <SelectItem value="call_transfer">Call Transfer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="pixel-code">
+                          Pixel Code *
+                          <span className="text-sm text-gray-500 ml-2">
+                            Use macros: {'{call_id}'}, {'{campaign_id}'}, {'{phone_number}'}, {'{timestamp}'}, {'{caller_id}'}, {'{duration}'}, {'{status}'}
+                          </span>
+                        </Label>
                         <Textarea
                           id="pixel-code"
+                          rows={6}
                           value={pixelForm.code}
                           onChange={(e) => setPixelForm({...pixelForm, code: e.target.value})}
-                          placeholder="<script><!-- Your tracking pixel code --></script>"
-                          rows={6}
+                          placeholder={getPixelCodePlaceholder(pixelForm.pixelType)}
                           className="font-mono text-sm"
                         />
                       </div>
 
                       <div>
-                        <Label>Campaigns</Label>
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          {campaigns.map((campaign) => (
-                            <label key={campaign.id} className="flex items-center space-x-2">
+                        <Label>Assign to Campaigns</Label>
+                        <div className="grid grid-cols-2 gap-2 mt-2 max-h-32 overflow-y-auto">
+                          {campaigns?.map((campaign) => (
+                            <div key={campaign.id} className="flex items-center space-x-2">
                               <input
                                 type="checkbox"
-                                checked={pixelForm.campaigns.includes(campaign.id.toString())}
+                                id={`campaign-${campaign.id}`}
+                                checked={pixelForm.assignedCampaigns.includes(campaign.id.toString())}
                                 onChange={(e) => {
                                   const campaignId = campaign.id.toString();
                                   if (e.target.checked) {
                                     setPixelForm({
                                       ...pixelForm,
-                                      campaigns: [...pixelForm.campaigns, campaignId]
+                                      assignedCampaigns: [...pixelForm.assignedCampaigns, campaignId]
                                     });
                                   } else {
                                     setPixelForm({
                                       ...pixelForm,
-                                      campaigns: pixelForm.campaigns.filter(id => id !== campaignId)
+                                      assignedCampaigns: pixelForm.assignedCampaigns.filter(id => id !== campaignId)
                                     });
                                   }
                                 }}
                                 className="rounded"
                               />
-                              <span className="text-sm">{campaign.name}</span>
-                            </label>
+                              <Label htmlFor={`campaign-${campaign.id}`} className="text-sm">
+                                {campaign.name}
+                              </Label>
+                            </div>
                           ))}
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex justify-end gap-2 mt-6">
-                      <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button 
-                        onClick={handleSavePixel}
-                        disabled={createPixelMutation.isPending || updatePixelMutation.isPending}
-                      >
-                        {editingItem ? 'Update Pixel' : 'Create Pixel'}
-                      </Button>
+                      <div className="flex items-center gap-4">
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={testPixelCode}
+                          disabled={!pixelForm.code || !pixelForm.pixelType || testPixelMutation.isPending}
+                        >
+                          <Zap className="h-4 w-4 mr-2" />
+                          {testPixelMutation.isPending ? "Testing..." : "Test Pixel"}
+                        </Button>
+                        <Button 
+                          onClick={handlePixelSubmit}
+                          disabled={createPixelMutation.isPending || updatePixelMutation.isPending || !pixelForm.name || !pixelForm.code || !pixelForm.pixelType || !pixelForm.fireOnEvent}
+                        >
+                          {(createPixelMutation.isPending || updatePixelMutation.isPending) ? "Saving..." : editingItem ? "Update Pixel" : "Create Pixel"}
+                        </Button>
+                      </div>
+
+                      {testResult && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                          <h4 className="font-medium mb-2">Test Result:</h4>
+                          <div className="space-y-2">
+                            <div>
+                              <Label className="text-sm">Original Code:</Label>
+                              <pre className="bg-white p-2 rounded text-xs overflow-x-auto">{testResult.originalCode}</pre>
+                            </div>
+                            <div>
+                              <Label className="text-sm">Processed Code:</Label>
+                              <pre className="bg-white p-2 rounded text-xs overflow-x-auto">{testResult.processedCode}</pre>
+                            </div>
+                            <div className="text-sm text-gray-600">{testResult.note}</div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </DialogContent>
                 </Dialog>
               </div>
             </div>
 
-            <div className="grid gap-4">
-              {filteredPixels.map((pixel) => (
-                <Card key={pixel.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-medium">{pixel.name}</h3>
-                        <Badge variant="outline">{pixel.type}</Badge>
-                        <Badge variant="secondary">
-                          Fire On: {pixel.fireOn?.replace('_', ' ') || 'page view'}
+            {/* Pixels List */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {isLoadingPixels ? (
+                <div className="col-span-full text-center py-8">Loading pixels...</div>
+              ) : filteredPixels.length === 0 ? (
+                <div className="col-span-full text-center py-8">
+                  <Code className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Tracking Pixels</h3>
+                  <p className="text-gray-600 mb-4">Create your first tracking pixel to start monitoring conversions</p>
+                  <Button onClick={() => {
+                    setEditingItem(null);
+                    resetPixelForm();
+                    setIsDialogOpen(true);
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create First Pixel
+                  </Button>
+                </div>
+              ) : (
+                filteredPixels.map((pixel) => (
+                  <Card key={pixel.id} className="relative">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          {getPixelTypeIcon(pixel.pixelType)}
+                          <CardTitle className="text-base">{pixel.name}</CardTitle>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditPixel(pixel)}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => deletePixelMutation.mutate(pixel.id)}
+                            disabled={deletePixelMutation.isPending}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge className={getEventBadgeColor(pixel.fireOnEvent)}>
+                          {pixel.fireOnEvent.replace('_', ' ')}
+                        </Badge>
+                        <Badge variant="outline">
+                          {pixel.pixelType}
                         </Badge>
                         <Badge className={pixel.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
                           {pixel.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => handleEditPixel(pixel)}>
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => deletePixelMutation.mutate(pixel.id)}
-                          disabled={deletePixelMutation.isPending}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+
+                      <div>
+                        <Label className="text-xs text-gray-500">Pixel Code:</Label>
+                        <pre className="bg-gray-50 p-2 rounded text-xs overflow-hidden">
+                          {pixel.code.length > 100 ? `${pixel.code.substring(0, 100)}...` : pixel.code}
+                        </pre>
                       </div>
-                    </div>
-                    
-                    <div className="bg-gray-50 p-3 rounded text-sm font-mono mb-3 max-h-32 overflow-y-auto">
-                      {selectedCampaignId !== "all" 
-                        ? generateCampaignPixelCode(pixel, selectedCampaignId)
-                        : pixel.code}
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-600">
-                        {selectedCampaignId !== "all" 
-                          ? `Campaign-specific code for: ${campaigns.find((c) => c.id.toString() === selectedCampaignId)?.name || "Unknown"}`
-                          : `Campaigns: ${pixel.campaigns.join(", ") || "All campaigns"}`
-                        }
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => copyToClipboard(
-                          selectedCampaignId !== "all" 
-                            ? generateCampaignPixelCode(pixel, selectedCampaignId)
-                            : pixel.code
-                        )}
-                      >
-                        <Copy className="h-3 w-3 mr-2" />
-                        Copy Code
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+
+                      {pixel.assignedCampaigns && pixel.assignedCampaigns.length > 0 && (
+                        <div>
+                          <Label className="text-xs text-gray-500">Campaigns ({pixel.assignedCampaigns.length}):</Label>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {pixel.assignedCampaigns.slice(0, 3).map((campaignId) => {
+                              const campaign = campaigns.find(c => c.id.toString() === campaignId);
+                              return campaign ? (
+                                <Badge key={campaignId} variant="secondary" className="text-xs">
+                                  {campaign.name}
+                                </Badge>
+                              ) : null;
+                            })}
+                            {pixel.assignedCampaigns.length > 3 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{pixel.assignedCampaigns.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
 
-          {/* Webhooks Tab */}
+          {/* Other tabs content */}
           <TabsContent value="webhooks" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">Webhooks</h2>
-                <p className="text-gray-600">Configure real-time event notifications</p>
-              </div>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Webhook
-              </Button>
-            </div>
-
-            <div className="grid gap-4">
-              {webhooks.map((webhook) => (
-                <Card key={webhook.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-medium">{webhook.name}</h3>
-                        <Badge className={webhook.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                          {webhook.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          <ExternalLink className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div>
-                        <Label className="text-sm font-medium">Endpoint URL</Label>
-                        <div className="bg-gray-50 p-2 rounded text-sm font-mono">{webhook.url}</div>
-                      </div>
-                      
-                      <div>
-                        <Label className="text-sm font-medium">Events</Label>
-                        <div className="flex gap-2 mt-1">
-                          {webhook.events.map((event) => (
-                            <Badge key={event} variant="outline">{event}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="text-sm text-gray-600">
-                        Retry attempts: {webhook.retryCount}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="text-center py-8">
+              <Webhook className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium mb-2">Webhooks</h3>
+              <p className="text-gray-600">Webhook configuration coming soon</p>
             </div>
           </TabsContent>
 
-          {/* Authentications Tab */}
-          <TabsContent value="authentications" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">API Authentications</h2>
-                <p className="text-gray-600">Manage API keys and authentication credentials</p>
-              </div>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Authentication
-              </Button>
-            </div>
-
-            <div className="grid gap-4">
-              {authentications.map((auth) => (
-                <Card key={auth.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Shield className="h-5 w-5 text-blue-600" />
-                          <h3 className="font-medium">{auth.name}</h3>
-                          <Badge variant="outline">{auth.type}</Badge>
-                          <Badge className={auth.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                            {auth.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </div>
-                        <div className="space-y-2">
-                          <div>
-                            <Label className="text-xs text-gray-500">API Key</Label>
-                            <div className="font-mono text-sm">{auth.apiKey}</div>
-                          </div>
-                          {auth.secretKey && (
-                            <div>
-                              <Label className="text-xs text-gray-500">Secret Key</Label>
-                              <div className="font-mono text-sm">{auth.secretKey}</div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+          <TabsContent value="apis" className="space-y-6">
+            <div className="text-center py-8">
+              <Key className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium mb-2">API Keys</h3>
+              <p className="text-gray-600">API key management coming soon</p>
             </div>
           </TabsContent>
 
-          {/* Platforms Tab */}
           <TabsContent value="platforms" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">Platform Integrations</h2>
-                <p className="text-gray-600">Connect with CRM systems and marketing platforms</p>
-              </div>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Platform
-              </Button>
-            </div>
-
-            <div className="grid gap-4">
-              {platforms.map((platform) => (
-                <Card key={platform.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Globe className="h-5 w-5 text-purple-600" />
-                          <h3 className="font-medium">{platform.name}</h3>
-                          <Badge variant="outline">{platform.type}</Badge>
-                          <Badge className={
-                            platform.status === "connected" ? "bg-green-100 text-green-800" : 
-                            platform.status === "disconnected" ? "bg-red-100 text-red-800" :
-                            "bg-yellow-100 text-yellow-800"
-                          }>
-                            {platform.status}
-                          </Badge>
-                        </div>
-                        {platform.lastSync && (
-                          <div className="text-sm text-gray-600">
-                            Last sync: {new Date(platform.lastSync).toLocaleString()}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          <Zap className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Settings className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="text-center py-8">
+              <Settings className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium mb-2">Platform Integrations</h3>
+              <p className="text-gray-600">Platform integrations coming soon</p>
             </div>
           </TabsContent>
         </Tabs>
