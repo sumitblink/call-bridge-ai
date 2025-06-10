@@ -58,6 +58,26 @@ export default function Auth() {
     },
   });
 
+  const forgotPasswordMutation = useMutation({
+    mutationFn: async (data: { email: string }) => {
+      const response = await apiRequest("POST", "/api/forgot-password", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Reset Link Sent",
+        description: "Check your email for password reset instructions.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Reset Failed",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
 
 
   const handleEmailLogin = async (e: React.FormEvent) => {
