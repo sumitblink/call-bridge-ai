@@ -1,13 +1,22 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage-db";
-import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertCampaignSchema, insertBuyerSchema, insertAgentSchema } from "@shared/schema";
 import { twilioService } from "./twilio-service";
 import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
 import { z } from "zod";
 import twilio from "twilio";
 import fetch from "node-fetch";
+
+// Custom authentication middleware for session-based auth
+const requireAuth = (req: any, res: Response, next: NextFunction) => {
+  const sessionUser = req.session?.user;
+  if (!sessionUser) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  req.user = sessionUser;
+  next();
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure session middleware for custom auth
@@ -50,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: sessionUser.firstName,
           lastName: sessionUser.lastName,
           profileImageUrl: sessionUser.profileImageUrl,
-          password: null,
+          password: "",
           createdAt: new Date(),
           updatedAt: new Date()
         };
@@ -170,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Campaigns
-  app.get('/api/campaigns', isAuthenticated, async (req: any, res) => {
+  app.get('/api/campaigns', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
       const campaigns = await storage.getCampaigns(userId);
@@ -195,7 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/campaigns', isAuthenticated, async (req: any, res) => {
+  app.post('/api/campaigns', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
       const validatedData = insertCampaignSchema.parse({...req.body, userId});
@@ -291,7 +300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Buyers
-  app.get('/api/buyers', isAuthenticated, async (req: any, res) => {
+  app.get('/api/buyers', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
       const buyers = await storage.getBuyers(userId);
@@ -302,7 +311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/buyers', isAuthenticated, async (req: any, res) => {
+  app.post('/api/buyers', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
       const validatedData = insertBuyerSchema.parse({...req.body, userId});
