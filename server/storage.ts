@@ -124,6 +124,7 @@ export class MemStorage implements IStorage {
     // Sample campaigns
     this.campaigns.set(1, {
       id: 1,
+      userId: "demo-user-1",
       name: "Home Insurance Lead Gen",
       description: "Insurance leads for homeowners",
       status: "active",
@@ -139,6 +140,7 @@ export class MemStorage implements IStorage {
 
     this.campaigns.set(2, {
       id: 2,
+      userId: "demo-user-1",
       name: "Auto Insurance Campaign",
       description: "Auto insurance quote generation",
       status: "active",

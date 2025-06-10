@@ -175,8 +175,10 @@ export default function CallsPage() {
     startRecordingMutation.mutate(callSid);
   };
 
-  const handleStopRecording = (callSid: string, recordingSid: string) => {
-    stopRecordingMutation.mutate({ callSid, recordingSid });
+  const handleStopRecording = (callSid: string, recordingSid: string | null) => {
+    if (recordingSid) {
+      stopRecordingMutation.mutate({ callSid, recordingSid });
+    }
   };
 
   const handleTransferCall = (callSid: string) => {
@@ -388,7 +390,7 @@ export default function CallsPage() {
                                 </Badge>
                               )}
                               {call.recordingUrl && (
-                                <Button size="xs" variant="outline" className="h-6 text-xs">
+                                <Button size="sm" variant="outline" className="h-6 text-xs">
                                   <Play className="h-2 w-2 mr-1" />
                                   Play
                                 </Button>
@@ -461,7 +463,7 @@ export default function CallsPage() {
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  onClick={() => window.open(call.recordingUrl, '_blank')}
+                                  onClick={() => call.recordingUrl && window.open(call.recordingUrl, '_blank')}
                                   title="Play Recording"
                                 >
                                   <Play className="h-3 w-3" />
@@ -482,3 +484,6 @@ export default function CallsPage() {
     </Layout>
   );
 }
+
+// Export the component as both default and named export for compatibility
+export { CallsPage as Calls };
