@@ -105,8 +105,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCampaign(id: number): Promise<boolean> {
-    const result = await db.delete(campaigns).where(eq(campaigns.id, id));
-    return result.rowCount > 0;
+    try {
+      // First delete related campaign_buyers entries
+      await db.delete(campaignBuyers).where(eq(campaignBuyers.campaignId, id));
+      
+      // Then delete the campaign
+      const result = await db.delete(campaigns).where(eq(campaigns.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      return false;
+    }
   }
 
   // Buyer operations
@@ -146,7 +155,6 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .select({
         id: buyers.id,
-        userId: buyers.userId,
         name: buyers.name,
         email: buyers.email,
         phoneNumber: buyers.phoneNumber,

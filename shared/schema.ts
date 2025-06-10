@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, json, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, json, index, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -43,29 +43,28 @@ export const campaigns = pgTable("campaigns", {
 
 export const buyers = pgTable("buyers", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  name: varchar("name", { length: 256 }).notNull(),
-  email: varchar("email", { length: 256 }).notNull(),
-  phoneNumber: varchar("phone_number", { length: 20 }).notNull(),
-  endpoint: varchar("endpoint", { length: 512 }), // webhook endpoint for ping/post
-  status: varchar("status", { length: 50 }).default("active").notNull(),
-  priority: integer("priority").default(1).notNull(), // routing priority
-  dailyCap: integer("daily_cap").default(50).notNull(),
-  concurrencyLimit: integer("concurrency_limit").default(3).notNull(),
-  acceptanceRate: decimal("acceptance_rate", { precision: 5, scale: 2 }).default("0.00").notNull(),
-  avgResponseTime: integer("avg_response_time").default(0).notNull(), // in milliseconds
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  name: varchar("name").notNull(),
+  email: varchar("email"),
+  phoneNumber: varchar("phone_number"),
+  endpoint: varchar("endpoint"), // webhook endpoint for ping/post
+  status: varchar("status").default("active"),
+  priority: integer("priority").default(1),
+  dailyCap: integer("daily_cap").default(100),
+  concurrencyLimit: integer("concurrency_limit").default(5),
+  acceptanceRate: varchar("acceptance_rate").default("95%"),
+  avgResponseTime: integer("avg_response_time").default(200), // in milliseconds
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const campaignBuyers = pgTable("campaign_buyers", {
-  id: serial("id").primaryKey(),
   campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
   buyerId: integer("buyer_id").references(() => buyers.id).notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  priority: integer("priority").default(1).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+  priority: integer("priority").default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.campaignId, table.buyerId] })
+}));
 
 export const calls = pgTable("calls", {
   id: serial("id").primaryKey(),
