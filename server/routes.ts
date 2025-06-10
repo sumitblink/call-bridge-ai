@@ -231,12 +231,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/campaigns', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
+      console.log("Creating campaign with data:", req.body);
+      console.log("User ID:", userId);
+      
       const validatedData = insertCampaignSchema.parse({...req.body, userId});
+      console.log("Validated data:", validatedData);
+      
       const campaign = await storage.createCampaign(validatedData);
+      console.log("Campaign created:", campaign);
+      
       res.status(201).json(campaign);
     } catch (error) {
       console.error("Error creating campaign:", error);
-      res.status(500).json({ error: "Failed to create campaign" });
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+      res.status(500).json({ 
+        error: "Failed to create campaign",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

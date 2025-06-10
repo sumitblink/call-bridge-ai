@@ -229,12 +229,19 @@ function CampaignForm({
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertCampaign) => {
+      console.log("Creating campaign with data:", data);
       const response = await fetch("/api/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error("Failed to create campaign");
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        console.error("Campaign creation failed:", errorData);
+        throw new Error(errorData.details || errorData.error || "Failed to create campaign");
+      }
+      
       return response.json();
     },
     onSuccess: async (result) => {
@@ -250,10 +257,11 @@ function CampaignForm({
       });
       onSuccess();
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Create mutation error:", error);
       toast({
         title: "Error",
-        description: "Failed to create campaign",
+        description: error.message || "Failed to create campaign",
         variant: "destructive",
       });
     },
