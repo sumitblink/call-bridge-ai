@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Phone, Mail, Lock, User, Chrome } from "lucide-react";
+import { FaFacebook } from "react-icons/fa";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -81,6 +82,10 @@ export default function Auth() {
 
   const handleGoogleLogin = () => {
     window.location.href = "/api/auth/google";
+  };
+
+  const handleFacebookLogin = () => {
+    window.location.href = "/api/auth/facebook";
   };
 
   return (
@@ -163,15 +168,26 @@ export default function Auth() {
                   </div>
                 </div>
 
-                <Button
-                  variant="outline"
-                  className="w-full h-11 border-gray-200 hover:bg-gray-50"
-                  disabled={isLoading}
-                  onClick={handleGoogleLogin}
-                >
-                  <Chrome className="h-4 w-4 mr-2" />
-                  Continue with Google
-                </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 border-gray-200 hover:bg-gray-50"
+                    disabled={isLoading}
+                    onClick={handleGoogleLogin}
+                  >
+                    <Chrome className="h-4 w-4 mr-2" />
+                    Google
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 border-gray-200 hover:bg-gray-50"
+                    disabled={isLoading}
+                    onClick={handleFacebookLogin}
+                  >
+                    <FaFacebook className="h-4 w-4 mr-2 text-blue-600" />
+                    Facebook
+                  </Button>
+                </div>
               </CardContent>
               <CardFooter className="text-center">
                 <p className="text-sm text-gray-600">
@@ -263,15 +279,26 @@ export default function Auth() {
                   </div>
                 </div>
 
-                <Button
-                  variant="outline"
-                  className="w-full h-11 border-gray-200 hover:bg-gray-50"
-                  disabled={isLoading}
-                  onClick={handleGoogleLogin}
-                >
-                  <Chrome className="h-4 w-4 mr-2" />
-                  Sign up with Google
-                </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 border-gray-200 hover:bg-gray-50"
+                    disabled={isLoading}
+                    onClick={handleGoogleLogin}
+                  >
+                    <Chrome className="h-4 w-4 mr-2" />
+                    Google
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 border-gray-200 hover:bg-gray-50"
+                    disabled={isLoading}
+                    onClick={handleFacebookLogin}
+                  >
+                    <FaFacebook className="h-4 w-4 mr-2 text-blue-600" />
+                    Facebook
+                  </Button>
+                </div>
               </CardContent>
               <CardFooter className="text-center">
                 <p className="text-sm text-gray-600">
