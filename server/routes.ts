@@ -385,6 +385,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced Twilio Webhook Endpoints for Multi-Number Support
+  app.post('/api/webhooks/voice', async (req, res) => {
+    try {
+      const { To: toNumber, From: fromNumber, CallSid } = req.body;
+      
+      console.log(`[Webhook] Incoming call from ${fromNumber} to ${toNumber}, CallSid: ${CallSid}`);
+      
+      // Find campaign by phone number
+      const campaign = await storage.getCampaignByPhoneNumber(toNumber);
+      
+      if (!campaign) {
+        console.log(`[Webhook] No campaign found for number ${toNumber}`);
+        return res.type('text/xml').send(`
+          <Response>
+            <Say>Sorry, this number is not configured for call routing.</Say>
+            <Hangup/>
+          </Response>
+        `);
+      }
+
+      console.log(`[Webhook] Found campaign: ${campaign.name} (ID: ${campaign.id})`);
+      
+      // Get available buyers for this campaign
+      const buyers = await storage.getCampaignBuyers(campaign.id);
+      
+      if (buyers.length === 0) {
+        console.log(`[Webhook] No buyers available for campaign ${campaign.id}`);
+        return res.type('text/xml').send(`
+          <Response>
+            <Say>All representatives are currently busy. Please try again later.</Say>
+            <Hangup/>
+          </Response>
+        `);
+      }
+
+      // Select buyer based on routing algorithm (round robin for now)
+      const selectedBuyer = buyers[0]; // Simplified selection
+      
+      console.log(`[Webhook] Routing call to buyer: ${selectedBuyer.name} (${selectedBuyer.phoneNumber})`);
+      
+      // Create call record
+      await storage.createCall({
+        campaignId: campaign.id,
+        buyerId: selectedBuyer.id,
+        callSid: CallSid,
+        fromNumber,
+        toNumber,
+        status: 'ringing',
+        startTime: new Date(),
+      });
+
+      // Generate TwiML to dial the buyer
+      const twiml = `
+        <Response>
+          <Say>Connecting your call, please hold.</Say>
+          <Dial timeout="30" callerId="${fromNumber}">
+            <Number statusCallback="https://${req.hostname}/api/webhooks/call-status">${selectedBuyer.phoneNumber}</Number>
+          </Dial>
+          <Say>The call could not be connected. Goodbye.</Say>
+        </Response>
+      `;
+      
+      res.type('text/xml').send(twiml);
+      
+    } catch (error) {
+      console.error('[Webhook] Error processing voice webhook:', error);
+      res.type('text/xml').send(`
+        <Response>
+          <Say>An error occurred. Please try again later.</Say>
+          <Hangup/>
+        </Response>
+      `);
+    }
+  });
+
+  app.post('/api/webhooks/call-status', async (req, res) => {
+    try {
+      const { CallSid, CallStatus, CallDuration } = req.body;
+      
+      console.log(`[Webhook] Call status update: ${CallSid} - ${CallStatus}`);
+      
+      // Log call status update
+      await storage.createCallLog({
+        callSid: CallSid,
+        status: CallStatus,
+        duration: CallDuration ? parseInt(CallDuration) : null,
+        timestamp: new Date(),
+        details: JSON.stringify(req.body)
+      });
+      
+      res.status(200).send('OK');
+      
+    } catch (error) {
+      console.error('[Webhook] Error processing call status:', error);
+      res.status(500).send('Error');
+    }
+  });
+
+  // Campaign phone number lookup endpoint
+  app.get('/api/campaigns/by-phone/:phoneNumber', async (req, res) => {
+    try {
+      const { phoneNumber } = req.params;
+      const campaign = await storage.getCampaignByPhoneNumber(phoneNumber);
+      
+      if (!campaign) {
+        return res.status(404).json({ error: 'Campaign not found for this phone number' });
+      }
+      
+      res.json(campaign);
+    } catch (error) {
+      console.error('Error finding campaign by phone number:', error);
+      res.status(500).json({ error: 'Failed to find campaign' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
