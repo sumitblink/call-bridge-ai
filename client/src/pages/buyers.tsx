@@ -194,6 +194,7 @@ function BuyerForm({
   });
 
   const onSubmit = (data: InsertBuyer) => {
+    console.log("Submitting buyer data:", data);
     if (buyer) {
       updateBuyerMutation.mutate(data);
     } else {
