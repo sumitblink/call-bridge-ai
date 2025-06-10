@@ -41,8 +41,11 @@ interface Pixel {
   id: string;
   name: string;
   type: string;
+  fireOn: string; // page_view, form_submit, call_start, call_complete, call_transfer
+  url?: string; // External tracking URL
   code: string;
   campaigns: string[];
+  authentication?: string;
   isActive: boolean;
 }
 
@@ -107,8 +110,11 @@ export default function IntegrationsPage() {
       id: pixel.id.toString(),
       name: pixel.name,
       type: pixel.type,
+      fireOn: pixel.fireOn || 'page_view',
+      url: pixel.url,
       code: pixel.code,
       campaigns: Array.isArray(pixel.campaigns) ? pixel.campaigns : [],
+      authentication: pixel.authentication,
       isActive: pixel.isActive
     }))
   });
@@ -333,6 +339,9 @@ export default function IntegrationsPage() {
                       <div className="flex items-center gap-3">
                         <h3 className="font-medium">{pixel.name}</h3>
                         <Badge variant="outline">{pixel.type}</Badge>
+                        <Badge variant="secondary">
+                          Fire On: {pixel.fireOn?.replace('_', ' ') || 'page view'}
+                        </Badge>
                         <Badge className={pixel.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
                           {pixel.isActive ? "Active" : "Inactive"}
                         </Badge>
