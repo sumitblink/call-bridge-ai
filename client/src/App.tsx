@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Auth from "@/pages/auth";
+import Documentation from "@/pages/documentation";
 import Campaigns from "@/pages/campaigns";
 import Buyers from "@/pages/buyers";
 import Publishers from "@/pages/publishers";
@@ -34,24 +35,27 @@ function Router() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Auth />;
-  }
-
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/campaigns" component={Campaigns} />
-      <Route path="/buyers" component={Buyers} />
-      <Route path="/publishers" component={Publishers} />
-      <Route path="/agents" component={Agents} />
-      <Route path="/calls" component={Calls} />
-      <Route path="/call-control" component={CallControl} />
-      <Route path="/ivr-setup" component={IVRSetup} />
-      <Route path="/integrations" component={Integrations} />
-      <Route path="/webhook-test" component={WebhookTest} />
-      <Route path="/twilio-test" component={TwilioTest} />
+      <Route path="/documentation" component={Documentation} />
+      {!isAuthenticated ? (
+        <Route path="/" component={Auth} />
+      ) : (
+        <>
+          <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/campaigns" component={Campaigns} />
+          <Route path="/buyers" component={Buyers} />
+          <Route path="/publishers" component={Publishers} />
+          <Route path="/agents" component={Agents} />
+          <Route path="/calls" component={Calls} />
+          <Route path="/call-control" component={CallControl} />
+          <Route path="/ivr-setup" component={IVRSetup} />
+          <Route path="/integrations" component={Integrations} />
+          <Route path="/webhook-test" component={WebhookTest} />
+          <Route path="/twilio-test" component={TwilioTest} />
+        </>
+      )}
       <Route component={NotFound} />
     </Switch>
   );

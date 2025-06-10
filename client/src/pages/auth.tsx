@@ -399,46 +399,14 @@ export default function Auth() {
           </Tabs>
         </Card>
 
-        {/* Documentation and Help Section */}
-        <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-          <div className="text-center mb-4">
-            <BookOpen className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-            <h3 className="text-lg font-semibold text-gray-800">Need Help Getting Started?</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Complete documentation and setup guides for your call center platform
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Documentation 
-              trigger={
-                <Button variant="outline" className="bg-white hover:bg-blue-50 border-blue-200">
-                  <HelpCircle className="h-4 w-4 mr-2" />
-                  View Documentation
-                </Button>
-              }
-            />
-            <Button variant="outline" className="bg-white hover:bg-blue-50 border-blue-200" asChild>
-              <a href="/MULTI_TWILIO_SETUP.md" target="_blank" rel="noopener noreferrer">
-                <Phone className="h-4 w-4 mr-2" />
-                Twilio Setup Guide
-              </a>
-            </Button>
-          </div>
-
-          <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200">
-            <h4 className="font-medium text-gray-800 mb-2">Quick Demo Access</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div className="p-2 bg-blue-50 rounded">
-                <strong>Demo Account 1:</strong><br />
-                sumit@example.com / demo123
-              </div>
-              <div className="p-2 bg-green-50 rounded">
-                <strong>Demo Account 2:</strong><br />
-                kiran@example.com / kiran123
-              </div>
-            </div>
-          </div>
+        {/* Documentation Link */}
+        <div className="text-center mt-6">
+          <Button variant="outline" className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300" asChild>
+            <a href="/documentation">
+              <BookOpen className="h-4 w-4 mr-2" />
+              View Documentation
+            </a>
+          </Button>
         </div>
 
         <div className="text-center mt-6">
