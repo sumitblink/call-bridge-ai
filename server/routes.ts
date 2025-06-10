@@ -47,6 +47,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true, message: "Account created successfully" });
   });
 
+  app.post('/api/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: "Logout failed" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ success: true, message: "Logged out successfully" });
+    });
+  });
+
   app.get('/api/login', (req, res) => {
     // Redirect to dashboard for development
     res.redirect('/dashboard');

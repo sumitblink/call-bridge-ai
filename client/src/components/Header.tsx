@@ -1,7 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Bell, Plus } from "lucide-react";
+import { Bell, Plus, User, LogOut, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const getPageInfo = (pathname: string) => {
   switch (pathname) {
@@ -63,6 +73,7 @@ const getPageInfo = (pathname: string) => {
 export default function Header() {
   const { toast } = useToast();
   const [location] = useLocation();
+  const { user } = useAuth();
   const pageInfo = getPageInfo(location);
 
   const handleNewCampaign = () => {
@@ -77,6 +88,39 @@ export default function Header() {
       title: "Notifications",
       description: "You have 3 new notifications.",
     });
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+      window.location.href = '/';
+    } catch (error) {
+      toast({
+        title: "Logout Failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getUserInitials = () => {
+    if (user && 'firstName' in user && 'lastName' in user && user.firstName && user.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    if (user && 'email' in user && user.email) {
+      return user.email[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+  const getUserDisplayName = () => {
+    if (user && 'firstName' in user && 'lastName' in user && user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user && 'email' in user && user.email) {
+      return user.email;
+    }
+    return 'User';
   };
 
   return (
@@ -108,6 +152,47 @@ export default function Header() {
             <Plus className="h-4 w-4 mr-2" />
             New Campaign
           </Button>
+
+          {/* User Profile Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage 
+                    src={user && 'profileImageUrl' in user ? user.profileImageUrl || "" : ""} 
+                    alt={getUserDisplayName()} 
+                  />
+                  <AvatarFallback className="bg-primary-100 text-primary-700">
+                    {getUserInitials()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{getUserDisplayName()}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user && 'email' in user ? user.email : 'demo@callcenter.com'}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
