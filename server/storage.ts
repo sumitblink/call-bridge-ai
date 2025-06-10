@@ -157,6 +157,7 @@ export class MemStorage implements IStorage {
     // Sample buyers - using correct schema fields
     this.buyers.set(1, {
       id: 1,
+      userId: "demo-user-1",
       name: "LeadGen Pro",
       email: "contact@leadgenpro.com",
       phoneNumber: "+12125551234",
@@ -173,6 +174,7 @@ export class MemStorage implements IStorage {
 
     this.buyers.set(2, {
       id: 2,
+      userId: "demo-user-1",
       name: "Insurance Direct",
       email: "leads@insurancedirect.com",
       phoneNumber: "+13235556789",
@@ -239,11 +241,11 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const user: User = { 
       id: insertUser.id,
-      email: insertUser.email,
-      password: insertUser.password,
-      firstName: insertUser.firstName,
-      lastName: insertUser.lastName,
-      profileImageUrl: insertUser.profileImageUrl,
+      email: insertUser.email ?? null,
+      password: insertUser.password ?? null,
+      firstName: insertUser.firstName ?? null,
+      lastName: insertUser.lastName ?? null,
+      profileImageUrl: insertUser.profileImageUrl ?? null,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -277,6 +279,7 @@ export class MemStorage implements IStorage {
     const id = this.currentCampaignId++;
     const newCampaign: Campaign = {
       id,
+      userId: campaign.userId,
       name: campaign.name,
       description: campaign.description ?? null,
       status: campaign.status ?? "active",
@@ -463,6 +466,7 @@ export class MemStorage implements IStorage {
     const id = this.currentBuyerId++;
     const newBuyer: Buyer = {
       id,
+      userId: buyer.userId,
       name: buyer.name,
       email: buyer.email,
       phoneNumber: buyer.phoneNumber,
