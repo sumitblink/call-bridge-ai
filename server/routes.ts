@@ -347,12 +347,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/buyers', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
+      console.log("Creating buyer for user:", userId);
+      console.log("Request body:", req.body);
+      
       const validatedData = insertBuyerSchema.parse({...req.body, userId});
+      console.log("Validated data:", validatedData);
+      
       const buyer = await storage.createBuyer(validatedData);
+      console.log("Created buyer:", buyer);
       res.status(201).json(buyer);
     } catch (error) {
       console.error("Error creating buyer:", error);
-      res.status(500).json({ error: "Failed to create buyer" });
+      if (error.name === 'ZodError') {
+        res.status(400).json({ error: "Validation error", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Failed to create buyer", message: error.message });
+      }
     }
   });
 

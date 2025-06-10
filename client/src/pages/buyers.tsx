@@ -140,16 +140,21 @@ function BuyerForm({
 
   const createBuyerMutation = useMutation({
     mutationFn: async (data: InsertBuyer) => {
+      console.log("Creating buyer with data:", data);
       const response = await fetch("/api/buyers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      console.log("Response status:", response.status);
       if (!response.ok) {
         const error = await response.json();
+        console.error("Error response:", error);
         throw new Error(error.message || "Failed to create buyer");
       }
-      return response.json();
+      const result = await response.json();
+      console.log("Success response:", result);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
