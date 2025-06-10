@@ -72,6 +72,9 @@ export default function IntegrationsPage() {
     isActive: true
   });
 
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [customUrl, setCustomUrl] = useState("");
+
   // Fetch campaigns for assignment
   const { data: campaigns = [] } = useQuery<Campaign[]>({
     queryKey: ['/api/campaigns'],
@@ -238,7 +241,171 @@ export default function IntegrationsPage() {
       assignedCampaigns: [],
       isActive: true
     });
+    setSelectedTemplate("");
+    setCustomUrl("");
     setTestResult(null);
+  };
+
+  // Pixel templates for popular tracking services
+  const getPixelTemplates = () => {
+    return {
+      postback: [
+        {
+          id: "google_analytics",
+          name: "Google Analytics 4 (Measurement Protocol)",
+          description: "Track conversions in Google Analytics 4",
+          code: "https://www.google-analytics.com/mp/collect?measurement_id=G-XXXXXXXXXX&api_secret=YOUR_API_SECRET&client_id={call_id}&events=[{\"name\":\"conversion\",\"params\":{\"call_id\":\"{call_id}\",\"campaign_id\":\"{campaign_id}\",\"phone_number\":\"{phone_number}\",\"timestamp\":\"{timestamp}\",\"value\":100,\"currency\":\"USD\"}}]"
+        },
+        {
+          id: "facebook_conversions",
+          name: "Facebook Conversions API",
+          description: "Track phone call conversions in Facebook",
+          code: "https://graph.facebook.com/v18.0/YOUR_PIXEL_ID/events?access_token=YOUR_ACCESS_TOKEN&data=[{\"event_name\":\"Lead\",\"event_time\":\"{timestamp}\",\"action_source\":\"phone_call\",\"custom_data\":{\"call_id\":\"{call_id}\",\"campaign_id\":\"{campaign_id}\",\"phone_number\":\"{phone_number}\"}}]"
+        },
+        {
+          id: "google_ads",
+          name: "Google Ads Conversion Tracking",
+          description: "Track conversions for Google Ads campaigns",
+          code: "https://www.googleadservices.com/pagead/conversion/CONVERSION_ID/?label=CONVERSION_LABEL&value=100&currency_code=USD&oid={call_id}&external_id={campaign_id}"
+        },
+        {
+          id: "ringba_postback",
+          name: "Ringba Postback",
+          description: "Standard Ringba-style postback URL",
+          code: "https://your-tracking-platform.com/postback?call_id={call_id}&campaign_id={campaign_id}&caller_id={caller_id}&duration={duration}&status={status}&timestamp={timestamp}"
+        },
+        {
+          id: "custom_postback",
+          name: "Custom Postback URL",
+          description: "Enter your own postback URL",
+          code: ""
+        }
+      ],
+      image: [
+        {
+          id: "google_analytics_pixel",
+          name: "Google Analytics Tracking Pixel",
+          description: "1x1 pixel for Google Analytics",
+          code: "<img src=\"https://www.google-analytics.com/collect?v=1&tid=UA-XXXXXXXXX-X&cid={call_id}&t=event&ec=calls&ea=conversion&el={campaign_id}&ev=1\" width=\"1\" height=\"1\" style=\"display:none;\" />"
+        },
+        {
+          id: "facebook_pixel",
+          name: "Facebook Pixel",
+          description: "Facebook tracking pixel for conversions",
+          code: "<img src=\"https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=Lead&cd[call_id]={call_id}&cd[campaign_id]={campaign_id}&cd[phone_number]={phone_number}&noscript=1\" width=\"1\" height=\"1\" style=\"display:none;\" />"
+        },
+        {
+          id: "custom_pixel",
+          name: "Custom Image Pixel",
+          description: "Enter your own tracking pixel URL",
+          code: ""
+        }
+      ],
+      javascript: [
+        {
+          id: "google_analytics_gtag",
+          name: "Google Analytics 4 (gtag)",
+          description: "Track events using Google Analytics gtag",
+          code: `// Google Analytics 4 Event Tracking
+gtag('event', 'conversion', {
+  'call_id': '{call_id}',
+  'campaign_id': '{campaign_id}',
+  'phone_number': '{phone_number}',
+  'timestamp': '{timestamp}',
+  'value': 100,
+  'currency': 'USD'
+});`
+        },
+        {
+          id: "facebook_pixel_js",
+          name: "Facebook Pixel Event",
+          description: "Track lead events with Facebook Pixel",
+          code: `// Facebook Pixel Lead Event
+fbq('track', 'Lead', {
+  call_id: '{call_id}',
+  campaign_id: '{campaign_id}',
+  phone_number: '{phone_number}',
+  timestamp: '{timestamp}',
+  value: 100,
+  currency: 'USD'
+});`
+        },
+        {
+          id: "google_ads_gtag",
+          name: "Google Ads Conversion (gtag)",
+          description: "Track Google Ads conversions",
+          code: `// Google Ads Conversion Tracking
+gtag('event', 'conversion', {
+  'send_to': 'AW-CONVERSION_ID/CONVERSION_LABEL',
+  'value': 100,
+  'currency': 'USD',
+  'transaction_id': '{call_id}',
+  'custom_parameters': {
+    'campaign_id': '{campaign_id}',
+    'phone_number': '{phone_number}',
+    'timestamp': '{timestamp}'
+  }
+});`
+        },
+        {
+          id: "custom_javascript",
+          name: "Custom JavaScript",
+          description: "Enter your own JavaScript tracking code",
+          code: ""
+        }
+      ]
+    };
+  };
+
+  // Generate pixel code based on template selection
+  const generatePixelCode = (templateId: string, customUrl: string = "") => {
+    const templates = getPixelTemplates();
+    const template = templates[pixelForm.pixelType as keyof typeof templates]?.find(t => t.id === templateId);
+    
+    if (!template) return "";
+    
+    if (templateId.includes("custom") && customUrl) {
+      switch (pixelForm.pixelType) {
+        case "postback":
+          return customUrl.includes("?") 
+            ? `${customUrl}&call_id={call_id}&campaign_id={campaign_id}&phone_number={phone_number}&timestamp={timestamp}`
+            : `${customUrl}?call_id={call_id}&campaign_id={campaign_id}&phone_number={phone_number}&timestamp={timestamp}`;
+        case "image":
+          return `<img src="${customUrl}?call_id={call_id}&campaign_id={campaign_id}&phone_number={phone_number}&timestamp={timestamp}" width="1" height="1" style="display:none;" />`;
+        case "javascript":
+          return `// Custom JavaScript tracking code
+// You can access call data using these variables:
+// {call_id}, {campaign_id}, {phone_number}, {timestamp}
+${customUrl}`;
+        default:
+          return customUrl;
+      }
+    }
+    
+    return template.code;
+  };
+
+  // Handle template selection
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    const generatedCode = generatePixelCode(templateId, customUrl);
+    setPixelForm({...pixelForm, code: generatedCode});
+    
+    // Auto-generate pixel name based on template
+    const templates = getPixelTemplates();
+    const template = templates[pixelForm.pixelType as keyof typeof templates]?.find(t => t.id === templateId);
+    if (template && !pixelForm.name) {
+      setPixelForm(prev => ({...prev, name: template.name, code: generatedCode}));
+    }
+  };
+
+  // Handle custom URL input
+  const handleCustomUrlChange = (url: string) => {
+    setCustomUrl(url);
+    if (selectedTemplate.includes("custom")) {
+      const generatedCode = generatePixelCode(selectedTemplate, url);
+      setPixelForm({...pixelForm, code: generatedCode});
+    }
   };
 
   const handlePixelSubmit = () => {
@@ -420,20 +587,77 @@ gtag('event', 'conversion', {
                       </div>
 
                       <div>
+                        <Label>Choose Template (Recommended for Beginners)</Label>
+                        <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                          <p className="text-sm text-blue-800">
+                            <strong>New to tracking pixels?</strong> Select from pre-built templates for popular services like Google Analytics, Facebook, and Google Ads. The system will automatically generate the code with proper macro replacements.
+                          </p>
+                        </div>
+                        <Select 
+                          value={selectedTemplate} 
+                          onValueChange={handleTemplateSelect}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a pre-built template or start from scratch" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getPixelTemplates()[pixelForm.pixelType as keyof ReturnType<typeof getPixelTemplates>]?.map((template) => (
+                              <SelectItem key={template.id} value={template.id}>
+                                <div>
+                                  <div className="font-medium">{template.name}</div>
+                                  <div className="text-xs text-gray-500">{template.description}</div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {selectedTemplate && !selectedTemplate.includes("custom") && (
+                          <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded">
+                            <div className="text-sm text-amber-800">
+                              <strong>Setup Required:</strong> Replace placeholder values like YOUR_PIXEL_ID, YOUR_API_SECRET, etc. with your actual credentials from your tracking platform.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {selectedTemplate.includes("custom") && (
+                        <div>
+                          <Label htmlFor="custom-url">
+                            {pixelForm.pixelType === "javascript" ? "Your JavaScript Code" : "Your URL"}
+                          </Label>
+                          <Input
+                            id="custom-url"
+                            value={customUrl}
+                            onChange={(e) => handleCustomUrlChange(e.target.value)}
+                            placeholder={
+                              pixelForm.pixelType === "postback" 
+                                ? "https://your-tracking-platform.com/postback" 
+                                : pixelForm.pixelType === "image"
+                                ? "https://your-tracking-platform.com/pixel.gif"
+                                : "console.log('Call received:', {call_id});"
+                            }
+                          />
+                        </div>
+                      )}
+
+                      <div>
                         <Label htmlFor="pixel-code">
-                          Pixel Code *
+                          Generated Pixel Code *
                           <span className="text-sm text-gray-500 ml-2">
-                            Use macros: {'{call_id}'}, {'{campaign_id}'}, {'{phone_number}'}, {'{timestamp}'}, {'{caller_id}'}, {'{duration}'}, {'{status}'}
+                            Macros: {'{call_id}'}, {'{campaign_id}'}, {'{phone_number}'}, {'{timestamp}'}, etc.
                           </span>
                         </Label>
                         <Textarea
                           id="pixel-code"
-                          rows={6}
+                          rows={8}
                           value={pixelForm.code}
                           onChange={(e) => setPixelForm({...pixelForm, code: e.target.value})}
-                          placeholder={getPixelCodePlaceholder(pixelForm.pixelType)}
+                          placeholder="Select a template above or enter your custom pixel code here"
                           className="font-mono text-sm"
                         />
+                        <div className="text-xs text-gray-500 mt-1">
+                          {selectedTemplate ? "Code generated from template. You can edit it if needed." : "Manual entry - use templates above for easier setup."}
+                        </div>
                       </div>
 
                       <div>
