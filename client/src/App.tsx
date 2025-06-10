@@ -34,27 +34,25 @@ function Router() {
     );
   }
 
+  if (!isAuthenticated) {
+    return <Auth />;
+  }
+
   return (
     <Switch>
-      {!isAuthenticated ? (
-        <Route component={Auth} />
-      ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/campaigns" component={Campaigns} />
-          <Route path="/buyers" component={Buyers} />
-          <Route path="/publishers" component={Publishers} />
-          <Route path="/agents" component={Agents} />
-          <Route path="/calls" component={Calls} />
-          <Route path="/call-control" component={CallControl} />
-          <Route path="/ivr-setup" component={IVRSetup} />
-          <Route path="/integrations" component={Integrations} />
-          <Route path="/webhook-test" component={WebhookTest} />
-          <Route path="/twilio-test" component={TwilioTest} />
-          <Route component={NotFound} />
-        </>
-      )}
+      <Route path="/" component={Dashboard} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/campaigns" component={Campaigns} />
+      <Route path="/buyers" component={Buyers} />
+      <Route path="/publishers" component={Publishers} />
+      <Route path="/agents" component={Agents} />
+      <Route path="/calls" component={Calls} />
+      <Route path="/call-control" component={CallControl} />
+      <Route path="/ivr-setup" component={IVRSetup} />
+      <Route path="/integrations" component={Integrations} />
+      <Route path="/webhook-test" component={WebhookTest} />
+      <Route path="/twilio-test" component={TwilioTest} />
+      <Route component={NotFound} />
     </Switch>
   );
 }

@@ -36,14 +36,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/login', (req, res) => {
-    // Simple login - set a session flag
-    (req.session as any).user = { id: "dev-user-123" };
-    res.json({ success: true, message: "Logged in successfully" });
+    const { email, password } = req.body;
+    
+    // Basic validation - require actual credentials
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email and password are required" 
+      });
+    }
+
+    // Simple demo credentials validation
+    if (email === "demo@callcenter.com" && password === "demo123") {
+      (req.session as any).user = { id: "dev-user-123" };
+      res.json({ success: true, message: "Logged in successfully" });
+    } else {
+      res.status(401).json({ 
+        success: false, 
+        message: "Invalid email or password" 
+      });
+    }
   });
 
   app.post('/api/signup', (req, res) => {
-    // Simple signup - set a session flag (same as login for now)
-    (req.session as any).user = { id: "dev-user-" + Date.now() };
+    const { email, password, firstName, lastName } = req.body;
+    
+    // Basic validation - require actual credentials
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "All fields are required" 
+      });
+    }
+
+    // Simple password validation
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Password must be at least 6 characters" 
+      });
+    }
+
+    // For demo, create account and log them in
+    const userId = "user-" + Date.now();
+    (req.session as any).user = { id: userId };
     res.json({ success: true, message: "Account created successfully" });
   });
 

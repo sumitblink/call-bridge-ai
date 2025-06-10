@@ -112,6 +112,12 @@ export default function Auth() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-medium text-blue-800 mb-1">Demo Credentials:</p>
+                  <p className="text-sm text-blue-700">Email: demo@callcenter.com</p>
+                  <p className="text-sm text-blue-700">Password: demo123</p>
+                </div>
+
                 <form onSubmit={handleEmailLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
