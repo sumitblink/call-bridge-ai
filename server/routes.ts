@@ -965,14 +965,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Simple TwiML endpoint for test calls
   app.get("/twiml", (req, res) => {
     const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Goodbye!');
+    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Thank you for testing. This call will now end.');
+    twiml.pause({ length: 1 });
+    twiml.say({ voice: 'alice' }, 'Goodbye!');
     twiml.hangup();
     res.type('text/xml').send(twiml.toString());
   });
 
   app.post("/twiml", (req, res) => {
     const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Goodbye!');
+    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Thank you for testing. This call will now end.');
+    twiml.pause({ length: 1 });
+    twiml.say({ voice: 'alice' }, 'Goodbye!');
     twiml.hangup();
     res.type('text/xml').send(twiml.toString());
   });
