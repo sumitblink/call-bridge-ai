@@ -63,6 +63,7 @@ export const campaignBuyers = pgTable("campaign_buyers", {
   campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
   buyerId: integer("buyer_id").references(() => buyers.id).notNull(),
   priority: integer("priority").default(1),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
   pk: primaryKey({ columns: [table.campaignId, table.buyerId] })
@@ -221,8 +222,9 @@ export const insertBuyerSchema = createInsertSchema(buyers).omit({
 });
 
 export const insertCampaignBuyerSchema = createInsertSchema(campaignBuyers).omit({
-  id: true,
   createdAt: true,
+}).extend({
+  isActive: z.boolean().optional(),
 });
 
 export const insertCallSchema = createInsertSchema(calls).omit({

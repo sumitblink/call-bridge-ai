@@ -22,7 +22,7 @@ function BuyerCard({ buyer, onEdit, onDelete }: {
   onEdit: (buyer: Buyer) => void;
   onDelete: (id: number) => void;
 }) {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
       case 'paused': return 'bg-yellow-100 text-yellow-800';
@@ -31,8 +31,8 @@ function BuyerCard({ buyer, onEdit, onDelete }: {
     }
   };
 
-  const getPriorityColor = (priority: number) => {
-    if (priority <= 2) return 'bg-red-100 text-red-800';
+  const getPriorityColor = (priority: number | null) => {
+    if (!priority || priority <= 2) return 'bg-red-100 text-red-800';
     if (priority <= 5) return 'bg-yellow-100 text-yellow-800';
     return 'bg-green-100 text-green-800';
   };
@@ -282,7 +282,14 @@ function BuyerForm({
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="+1234567890" value={field.value || ""} />
+                      <Input 
+                        placeholder="+1234567890"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -362,7 +369,6 @@ function BuyerForm({
                     <FormLabel>Concurrency Limit</FormLabel>
                     <FormControl>
                       <Input 
-                        {...field} 
                         type="number" 
                         min="1"
                         value={field.value || ""}
@@ -370,6 +376,9 @@ function BuyerForm({
                           const value = e.target.value;
                           field.onChange(value === "" ? undefined : parseInt(value) || 3);
                         }}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />
@@ -385,7 +394,6 @@ function BuyerForm({
                     <FormLabel>Avg Response Time (ms)</FormLabel>
                     <FormControl>
                       <Input 
-                        {...field} 
                         type="number" 
                         min="0"
                         value={field.value || ""}
@@ -393,6 +401,9 @@ function BuyerForm({
                           const value = e.target.value;
                           field.onChange(value === "" ? undefined : parseInt(value) || 0);
                         }}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />
