@@ -219,6 +219,8 @@ export const insertBuyerSchema = createInsertSchema(buyers).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  userId: z.number().optional(), // Made optional for client-side validation
 });
 
 export const insertCampaignBuyerSchema = createInsertSchema(campaignBuyers).omit({
