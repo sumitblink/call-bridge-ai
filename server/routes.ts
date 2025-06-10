@@ -553,6 +553,238 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tracking Pixels API
+  app.get('/api/integrations/pixels', async (req, res) => {
+    try {
+      const pixels = await storage.getTrackingPixels();
+      res.json(pixels);
+    } catch (error) {
+      console.error("Error fetching tracking pixels:", error);
+      res.status(500).json({ error: "Failed to fetch tracking pixels" });
+    }
+  });
+
+  app.post('/api/integrations/pixels', async (req, res) => {
+    try {
+      const { name, pixelType, fireOnEvent, code, assignedCampaigns, isActive } = req.body;
+      
+      // Validate required fields
+      if (!name || !pixelType || !fireOnEvent || !code) {
+        return res.status(400).json({ error: "Missing required fields: name, pixelType, fireOnEvent, code" });
+      }
+
+      // Validate pixel type
+      if (!['postback', 'image', 'javascript'].includes(pixelType)) {
+        return res.status(400).json({ error: "Invalid pixelType. Must be: postback, image, or javascript" });
+      }
+
+      // Validate fire event
+      const validEvents = ['incoming', 'connected', 'completed', 'converted', 'error', 'payout', 'recording', 'finalized'];
+      if (!validEvents.includes(fireOnEvent)) {
+        return res.status(400).json({ error: `Invalid fireOnEvent. Must be one of: ${validEvents.join(', ')}` });
+      }
+
+      const pixelData = {
+        name,
+        pixelType,
+        fireOnEvent,
+        code,
+        assignedCampaigns: assignedCampaigns || [],
+        isActive: isActive !== undefined ? isActive : true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const pixel = await storage.createTrackingPixel(pixelData);
+      res.status(201).json(pixel);
+    } catch (error) {
+      console.error("Error creating tracking pixel:", error);
+      res.status(500).json({ error: "Failed to create tracking pixel" });
+    }
+  });
+
+  app.put('/api/integrations/pixels/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, pixelType, fireOnEvent, code, assignedCampaigns, isActive } = req.body;
+
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid pixel ID" });
+      }
+
+      // Validate pixel type if provided
+      if (pixelType && !['postback', 'image', 'javascript'].includes(pixelType)) {
+        return res.status(400).json({ error: "Invalid pixelType. Must be: postback, image, or javascript" });
+      }
+
+      // Validate fire event if provided
+      if (fireOnEvent) {
+        const validEvents = ['incoming', 'connected', 'completed', 'converted', 'error', 'payout', 'recording', 'finalized'];
+        if (!validEvents.includes(fireOnEvent)) {
+          return res.status(400).json({ error: `Invalid fireOnEvent. Must be one of: ${validEvents.join(', ')}` });
+        }
+      }
+
+      const updateData = {
+        ...(name && { name }),
+        ...(pixelType && { pixelType }),
+        ...(fireOnEvent && { fireOnEvent }),
+        ...(code && { code }),
+        ...(assignedCampaigns !== undefined && { assignedCampaigns }),
+        ...(isActive !== undefined && { isActive }),
+        updatedAt: new Date()
+      };
+
+      const pixel = await storage.updateTrackingPixel(id, updateData);
+      if (!pixel) {
+        return res.status(404).json({ error: "Tracking pixel not found" });
+      }
+      res.json(pixel);
+    } catch (error) {
+      console.error("Error updating tracking pixel:", error);
+      res.status(500).json({ error: "Failed to update tracking pixel" });
+    }
+  });
+
+  app.delete('/api/integrations/pixels/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid pixel ID" });
+      }
+
+      const success = await storage.deleteTrackingPixel(id);
+      if (!success) {
+        return res.status(404).json({ error: "Tracking pixel not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting tracking pixel:", error);
+      res.status(500).json({ error: "Failed to delete tracking pixel" });
+    }
+  });
+
+  // Pixel Testing API
+  app.post('/api/pixels/test', async (req, res) => {
+    try {
+      const { pixelType, code, sampleData } = req.body;
+
+      if (!pixelType || !code) {
+        return res.status(400).json({ error: "Missing required fields: pixelType, code" });
+      }
+
+      // Use provided sample data or create default test data
+      const testData: PixelMacroData = sampleData || {
+        call_id: 'test_call_' + Date.now(),
+        campaign_id: '1',
+        phone_number: '+1234567890',
+        timestamp: new Date().toISOString(),
+        caller_id: '+1987654321',
+        duration: '120',
+        status: 'completed',
+        buyer_id: '1',
+        agent_id: '1',
+        recording_url: 'https://example.com/recording.mp3',
+        custom_field_1: 'test_value_1',
+        custom_field_2: 'test_value_2',
+        custom_field_3: 'test_value_3'
+      };
+
+      // Replace macros in the code
+      const processedCode = PixelService.replaceMacros(code, testData);
+
+      let result;
+      switch (pixelType) {
+        case 'postback':
+          result = await PixelService.firePostbackPixel(processedCode);
+          break;
+        case 'image':
+          result = await PixelService.fireImagePixel(processedCode);
+          break;
+        case 'javascript':
+          result = PixelService.executeJavaScriptPixel(processedCode);
+          break;
+        default:
+          return res.status(400).json({ error: "Invalid pixel type" });
+      }
+
+      res.json({
+        success: result.success,
+        processedCode,
+        testData,
+        result: result.response || result.error,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error testing pixel:", error);
+      res.status(500).json({ error: "Failed to test pixel" });
+    }
+  });
+
+  // Pixel Fire API (for real-time firing during call events)
+  app.post('/api/pixels/fire', async (req, res) => {
+    try {
+      const { pixelId, event, campaignId, macroData }: PixelFireRequest = req.body;
+
+      if (!pixelId || !event || !campaignId || !macroData) {
+        return res.status(400).json({ error: "Missing required fields: pixelId, event, campaignId, macroData" });
+      }
+
+      // Get pixel from storage
+      const pixels = await storage.getTrackingPixels();
+      const pixel = pixels.find(p => p.id === pixelId);
+
+      if (!pixel) {
+        return res.status(404).json({ error: "Pixel not found" });
+      }
+
+      if (!pixel.isActive) {
+        return res.status(400).json({ error: "Pixel is not active" });
+      }
+
+      // Check if pixel should fire for this event
+      const eventMapping = {
+        'call_start': 'incoming',
+        'call_complete': 'completed',
+        'call_transfer': 'connected'
+      };
+
+      const mappedEvent = eventMapping[event] || event;
+      if (pixel.fireOnEvent !== mappedEvent) {
+        return res.json({ 
+          success: true, 
+          message: `Pixel not fired - configured for '${pixel.fireOnEvent}' events, received '${mappedEvent}'` 
+        });
+      }
+
+      // Check if pixel is assigned to this campaign
+      if (pixel.assignedCampaigns && pixel.assignedCampaigns.length > 0) {
+        if (!pixel.assignedCampaigns.includes(campaignId.toString())) {
+          return res.json({ 
+            success: true, 
+            message: "Pixel not fired - not assigned to this campaign" 
+          });
+        }
+      }
+
+      // Replace macros and fire the pixel
+      const processedCode = PixelService.replaceMacros(pixel.code, macroData);
+      const result = await PixelService.firePixel(pixel.pixelType as 'postback' | 'image' | 'javascript', processedCode);
+
+      res.json({
+        success: result.success,
+        pixelName: pixel.name,
+        pixelType: pixel.pixelType,
+        event: mappedEvent,
+        result: result.response || result.error,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error firing pixel:", error);
+      res.status(500).json({ error: "Failed to fire pixel" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

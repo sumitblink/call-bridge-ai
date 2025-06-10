@@ -160,7 +160,34 @@ export class PixelService {
   static async firePixel(
     pixelType: 'postback' | 'image' | 'javascript',
     processedCode: string
+  ): Promise<{ success: boolean; response?: any; error?: string }>;
+  
+  /**
+   * Fire a pixel using PixelFireRequest
+   */
+  static async firePixel(
+    request: PixelFireRequest
+  ): Promise<{ success: boolean; response?: any; error?: string }>;
+  
+  static async firePixel(
+    pixelTypeOrRequest: 'postback' | 'image' | 'javascript' | PixelFireRequest,
+    processedCode?: string
   ): Promise<{ success: boolean; response?: any; error?: string }> {
+    // Handle overloaded method signatures
+    if (typeof pixelTypeOrRequest === 'object') {
+      // PixelFireRequest format - this will be handled by the calling code
+      // which needs to get the pixel details and call this method with pixelType and processedCode
+      throw new Error('PixelFireRequest format should be handled by calling code');
+    }
+
+    const pixelType = pixelTypeOrRequest;
+    if (!processedCode) {
+      return {
+        success: false,
+        error: 'processedCode is required',
+      };
+    }
+
     switch (pixelType) {
       case 'postback':
         return await this.firePostbackPixel(processedCode);
