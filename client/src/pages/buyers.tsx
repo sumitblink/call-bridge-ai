@@ -44,21 +44,21 @@ function BuyerCard({ buyer, onEdit, onDelete }: {
           <CardTitle className="text-lg">{buyer.name}</CardTitle>
           <div className="flex items-center gap-2">
             <Badge className={getStatusColor(buyer.status)}>
-              {buyer.status}
+              {buyer.status || 'Unknown'}
             </Badge>
             <Badge className={getPriorityColor(buyer.priority)}>
-              Priority {buyer.priority}
+              Priority {buyer.priority || 1}
             </Badge>
           </div>
         </div>
         <CardDescription className="flex items-center gap-4 text-sm">
           <span className="flex items-center gap-1">
             <Mail className="h-3 w-3" />
-            {buyer.email}
+            {buyer.email || 'No email'}
           </span>
           <span className="flex items-center gap-1">
             <Phone className="h-3 w-3" />
-            {buyer.phoneNumber}
+            {buyer.phoneNumber || 'No phone'}
           </span>
         </CardDescription>
       </CardHeader>
@@ -234,7 +234,7 @@ function BuyerForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || "active"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select status" />
