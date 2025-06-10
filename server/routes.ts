@@ -669,6 +669,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create outbound call
+  app.post("/api/calls/outbound", async (req, res) => {
+    try {
+      const { to, campaignId } = req.body;
+      if (!to) {
+        return res.status(400).json({ error: "Phone number is required" });
+      }
+      
+      const result = await twilioService.createOutboundCall(to, campaignId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error creating outbound call:", error);
+      res.status(500).json({ error: "Failed to create outbound call" });
+    }
+  });
+
   // =============================================================================
   // TWILIO IVR API ENDPOINTS
   // =============================================================================
@@ -690,7 +706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ivr/response", async (req, res) => {
     try {
       const { callSid, digit, flowSid } = req.body;
-      const result = await twilioService.handleIVRResponse(callSid, digit, flowSid);
+      const result = await twilioService.handleIVRResponse(callSid, digit, flowSid || '');
       
       // Generate TwiML response based on IVR action
       const twiml = new twilio.twiml.VoiceResponse();
@@ -711,7 +727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           twiml.dial(result.destination);
           break;
         case 'prompt':
-          twiml.say(result.nextPrompt);
+          twiml.say(result.nextPrompt || 'Please make a selection');
           twiml.gather({
             numDigits: 1,
             action: '/api/ivr/response'
@@ -739,6 +755,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error playing IVR message:", error);
       res.status(500).json({ error: "Failed to play IVR message" });
+    }
+  });
+
+  // =============================================================================
+  // TWIML ENDPOINTS
+  // =============================================================================
+
+  // TwiML for outbound calls
+  app.post("/api/twiml/outbound", async (req, res) => {
+    try {
+      const { campaignId } = req.query;
+      
+      const twiml = new twilio.twiml.VoiceResponse();
+      twiml.say({ voice: 'alice' }, 'Hello! This is an outbound call from your campaign.');
+      
+      if (campaignId) {
+        // Get campaign IVR flow if exists
+        twiml.gather({
+          numDigits: 1,
+          action: '/api/ivr/response',
+          timeout: 10
+        }).say({ voice: 'alice' }, 'Press 1 to speak with a representative, or press 2 for more information.');
+      } else {
+        twiml.say({ voice: 'alice' }, 'Thank you for your time. Have a great day!');
+        twiml.hangup();
+      }
+      
+      res.type('text/xml').send(twiml.toString());
+    } catch (error) {
+      console.error("Error generating outbound TwiML:", error);
+      const twiml = new twilio.twiml.VoiceResponse();
+      twiml.say({ voice: 'alice' }, 'We are experiencing technical difficulties. Please try again later.');
+      twiml.hangup();
+      res.type('text/xml').send(twiml.toString());
+    }
+  });
+
+  // TwiML for inbound calls (webhook URL for your Twilio phone number)
+  app.post("/api/twiml/inbound", async (req, res) => {
+    try {
+      const { From, To, CallSid } = req.body;
+      
+      // Find campaign by phone number
+      const campaign = await storage.getCampaignByPhoneNumber(To);
+      
+      const twiml = new twilio.twiml.VoiceResponse();
+      
+      if (campaign) {
+        twiml.say({ voice: 'alice' }, `Welcome to ${campaign.name}. Please hold while we connect you.`);
+        
+        // Get buyers for this campaign and attempt ping/post
+        const buyers = await storage.getCampaignBuyers(campaign.id);
+        
+        if (buyers.length > 0) {
+          // Ping buyers first
+          const availableBuyers = await storage.pingBuyersForCall(campaign.id, {
+            callerId: From,
+            callerLocation: "Unknown",
+            callDuration: 0
+          });
+          
+          if (availableBuyers.length > 0) {
+            // Transfer to highest priority buyer
+            const primaryBuyer = availableBuyers[0];
+            twiml.dial(primaryBuyer.phoneNumber);
+          } else {
+            twiml.say({ voice: 'alice' }, 'All representatives are currently busy. Please try again later.');
+            twiml.hangup();
+          }
+        } else {
+          twiml.say({ voice: 'alice' }, 'No representatives are available. Please try again later.');
+          twiml.hangup();
+        }
+      } else {
+        twiml.say({ voice: 'alice' }, 'Thank you for calling. This number is not currently in service.');
+        twiml.hangup();
+      }
+      
+      res.type('text/xml').send(twiml.toString());
+    } catch (error) {
+      console.error("Error generating inbound TwiML:", error);
+      const twiml = new twilio.twiml.VoiceResponse();
+      twiml.say({ voice: 'alice' }, 'We are experiencing technical difficulties. Please try again later.');
+      twiml.hangup();
+      res.type('text/xml').send(twiml.toString());
     }
   });
 

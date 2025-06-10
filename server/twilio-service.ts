@@ -154,10 +154,44 @@ export class TwilioService {
   }
 
   async createConferenceCall(participants: string[]): Promise<{ conferenceSid: string }> {
-    const conferenceSid = `CF${Math.random().toString(36).substr(2, 32)}`;
-    
-    console.log(`[Twilio] Created conference ${conferenceSid} with participants:`, participants);
-    return { conferenceSid };
+    try {
+      const conferenceName = `conf_${Date.now()}`;
+      
+      // Create conference by making calls to participants
+      const calls = await Promise.all(participants.map(async (participant) => {
+        return await twilioClient.calls.create({
+          to: participant,
+          from: TWILIO_PHONE_NUMBER!,
+          twiml: `<Response><Dial><Conference>${conferenceName}</Conference></Dial></Response>`,
+          statusCallback: `${process.env.REPLIT_DOMAINS}/api/webhooks/call-status`
+        });
+      }));
+      
+      console.log(`[Twilio] Created conference ${conferenceName} with participants:`, participants);
+      return { conferenceSid: conferenceName };
+    } catch (error) {
+      console.error(`[Twilio] Error creating conference:`, error);
+      throw error;
+    }
+  }
+
+  // Create outbound call
+  async createOutboundCall(to: string, campaignId?: number): Promise<{ callSid: string }> {
+    try {
+      const call = await twilioClient.calls.create({
+        to: to,
+        from: TWILIO_PHONE_NUMBER!,
+        url: `${process.env.REPLIT_DOMAINS}/api/twiml/outbound?campaignId=${campaignId || ''}`,
+        statusCallback: `${process.env.REPLIT_DOMAINS}/api/webhooks/call-status`,
+        record: true
+      });
+      
+      console.log(`[Twilio] Created outbound call ${call.sid} to ${to}`);
+      return { callSid: call.sid };
+    } catch (error) {
+      console.error(`[Twilio] Error creating outbound call:`, error);
+      throw error;
+    }
   }
 
   // IVR Methods
