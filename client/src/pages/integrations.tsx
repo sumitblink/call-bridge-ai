@@ -118,10 +118,7 @@ export default function IntegrationsPage() {
         assignedCampaigns: data.assignedCampaigns,
         isActive: data.isActive
       };
-      return apiRequest('/api/integrations/pixels', {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
+      return apiRequest('POST', '/api/integrations/pixels', payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
@@ -152,10 +149,7 @@ export default function IntegrationsPage() {
         assignedCampaigns: data.assignedCampaigns,
         isActive: data.isActive
       };
-      return apiRequest(`/api/integrations/pixels/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(payload)
-      });
+      return apiRequest('PUT', `/api/integrations/pixels/${id}`, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
@@ -179,9 +173,7 @@ export default function IntegrationsPage() {
   // Delete pixel mutation
   const deletePixelMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/integrations/pixels/${id}`, {
-        method: 'DELETE'
-      });
+      return apiRequest('DELETE', `/api/integrations/pixels/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
@@ -202,26 +194,33 @@ export default function IntegrationsPage() {
   // Test pixel mutation
   const testPixelMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/pixels/test', {
-        method: 'POST',
-        body: JSON.stringify({
-          pixelType: data.pixelType,
-          code: data.code,
-          sampleData: {
-            call_id: 'test_call_123',
-            campaign_id: '1',
-            phone_number: '+1234567890',
-            timestamp: new Date().toISOString()
-          }
-        })
+      return apiRequest('POST', '/api/pixels/test', {
+        pixelType: data.pixelType,
+        code: data.code,
+        sampleData: {
+          call_id: 'test_call_123',
+          campaign_id: '1',
+          phone_number: '+1234567890',
+          timestamp: new Date().toISOString()
+        }
       });
     },
-    onSuccess: (data) => {
-      setTestResult(data);
-      toast({
-        title: "Test Complete",
-        description: "Pixel code tested with sample data"
-      });
+    onSuccess: async (response) => {
+      try {
+        const data = await response.json();
+        setTestResult(data);
+        toast({
+          title: "Test Complete",
+          description: "Pixel code tested with sample data"
+        });
+      } catch (error) {
+        console.error("Error parsing test response:", error);
+        toast({
+          title: "Test Error",
+          description: "Failed to parse test results",
+          variant: "destructive"
+        });
+      }
     },
     onError: (error: any) => {
       toast({
