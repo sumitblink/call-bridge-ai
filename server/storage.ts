@@ -324,6 +324,15 @@ export class MemStorage implements IStorage {
     }
     campaignBuyersToRemove.forEach(key => this.campaignBuyers.delete(key));
     
+    // Remove publisher-campaign relationships
+    const publisherCampaignsToRemove: string[] = [];
+    for (const [key, pc] of this.publisherCampaigns.entries()) {
+      if (pc.campaignId === id) {
+        publisherCampaignsToRemove.push(key);
+      }
+    }
+    publisherCampaignsToRemove.forEach(key => this.publisherCampaigns.delete(key));
+    
     // Finally delete the campaign
     return this.campaigns.delete(id);
   }
