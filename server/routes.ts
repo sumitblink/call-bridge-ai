@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/campaigns', requireAuth, async (req: any, res) => {
+  app.post('/api/campaigns', async (req: any, res) => {
     try {
       const userId = req.user?.id;
       console.log("Creating campaign with data:", req.body);

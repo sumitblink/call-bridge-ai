@@ -72,7 +72,7 @@ export const calls = pgTable("calls", {
   id: serial("id").primaryKey(),
   campaignId: integer("campaign_id").references(() => campaigns.id),
   buyerId: integer("buyer_id").references(() => buyers.id),
-  callSid: varchar("call_sid", { length: 100 }).notNull(),
+  callSid: varchar("call_sid", { length: 100 }),
   fromNumber: varchar("from_number", { length: 20 }).notNull(),
   toNumber: varchar("to_number", { length: 20 }).notNull(),
   duration: integer("duration").default(0).notNull(),
