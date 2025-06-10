@@ -3,7 +3,9 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
+import Auth from "@/pages/auth";
 import Campaigns from "@/pages/campaigns";
 import Buyers from "@/pages/buyers";
 import Publishers from "@/pages/publishers";
@@ -17,21 +19,47 @@ import TwilioTest from "@/pages/twilio-test";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg mx-auto mb-4 animate-pulse">
+            <div className="w-6 h-6 bg-white rounded-full opacity-75"></div>
+          </div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/campaigns" component={Campaigns} />
-      <Route path="/buyers" component={Buyers} />
-      <Route path="/publishers" component={Publishers} />
-      <Route path="/agents" component={Agents} />
-      <Route path="/calls" component={Calls} />
-      <Route path="/call-control" component={CallControl} />
-      <Route path="/ivr-setup" component={IVRSetup} />
-      <Route path="/integrations" component={Integrations} />
-      <Route path="/webhook-test" component={WebhookTest} />
-      <Route path="/twilio-test" component={TwilioTest} />
-      <Route component={NotFound} />
+      {!isAuthenticated ? (
+        <>
+          <Route path="/auth" component={Auth} />
+          <Route path="/" component={Auth} />
+          <Route component={Auth} />
+        </>
+      ) : (
+        <>
+          <Route path="/auth" component={Dashboard} />
+          <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/campaigns" component={Campaigns} />
+          <Route path="/buyers" component={Buyers} />
+          <Route path="/publishers" component={Publishers} />
+          <Route path="/agents" component={Agents} />
+          <Route path="/calls" component={Calls} />
+          <Route path="/call-control" component={CallControl} />
+          <Route path="/ivr-setup" component={IVRSetup} />
+          <Route path="/integrations" component={Integrations} />
+          <Route path="/webhook-test" component={WebhookTest} />
+          <Route path="/twilio-test" component={TwilioTest} />
+          <Route component={NotFound} />
+        </>
+      )}
     </Switch>
   );
 }
