@@ -104,29 +104,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
 
-    // Check if user exists (either demo user or registered user)
+    // For security, always return success regardless of whether email exists
+    // This prevents email enumeration attacks
+    
+    // Check demo user and local registered users
     const isDemoUser = email === "demo@callcenter.com";
     const registeredUser = registeredUsers.get(email);
     
-    if (!isDemoUser && !registeredUser) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "No account found with this email address" 
-      });
-    }
-
-    // In a real application, you would:
-    // 1. Generate a secure reset token
-    // 2. Store it with an expiration time
-    // 3. Send an email with the reset link
-    
-    // For demo purposes, we'll simulate the email being sent
     console.log(`Password reset requested for: ${email}`);
-    console.log(`Reset link would be sent to: ${email}`);
     
+    if (isDemoUser) {
+      console.log("Demo user password reset - would redirect to login with demo credentials");
+    } else if (registeredUser) {
+      console.log(`Registered user found - would send reset email to: ${email}`);
+    } else {
+      console.log(`User authenticated with Replit Auth - would send reset instructions to: ${email}`);
+    }
+    
+    // Always return success message for security
     res.json({ 
       success: true, 
-      message: "Password reset link sent to your email" 
+      message: "If an account exists with this email, you'll receive reset instructions" 
     });
   });
 
