@@ -160,6 +160,20 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
+  async getBuyerCampaignAssignments(buyerId: number): Promise<{ campaignId: number; campaignName: string; isActive: boolean }[]> {
+    const result = await db
+      .select({
+        campaignId: campaigns.id,
+        campaignName: campaigns.name,
+        isActive: sql<boolean>`${campaigns.status} = 'active'`
+      })
+      .from(campaignBuyers)
+      .innerJoin(campaigns, eq(campaignBuyers.campaignId, campaigns.id))
+      .where(eq(campaignBuyers.buyerId, buyerId));
+    
+    return result;
+  }
+
   // Campaign-Buyer relations
   async getCampaignBuyers(campaignId: number): Promise<Buyer[]> {
     const result = await db

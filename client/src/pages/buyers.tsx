@@ -429,12 +429,7 @@ function BuyerForm({
               <Button 
                 type="submit" 
                 disabled={createBuyerMutation.isPending || updateBuyerMutation.isPending}
-                onClick={(e) => {
-                  console.log("Button clicked!");
-                  console.log("Form valid:", form.formState.isValid);
-                  console.log("Form errors:", form.formState.errors);
-                  console.log("Form values:", form.getValues());
-                }}
+
               >
                 {buyer ? "Update Buyer" : "Create Buyer"}
               </Button>
@@ -487,9 +482,30 @@ export default function Buyers() {
     setDialogOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    setBuyerToDelete(id);
-    setDeleteDialogOpen(true);
+  const handleDelete = async (id: number) => {
+    // Check if buyer is assigned to campaigns
+    try {
+      const response = await fetch(`/api/buyers/${id}/campaigns`);
+      const assignments = await response.json();
+      
+      const activeCampaigns = assignments.filter((a: any) => a.isActive);
+      
+      if (activeCampaigns.length > 0) {
+        const campaignNames = activeCampaigns.map((a: any) => a.campaignName).join(', ');
+        const confirmed = window.confirm(
+          `Warning: This buyer is assigned to ${activeCampaigns.length} active campaign(s): ${campaignNames}\n\n` +
+          `Deleting this buyer will remove them from all campaigns. Are you sure you want to continue?`
+        );
+        if (!confirmed) return;
+      }
+      
+      setBuyerToDelete(id);
+      setDeleteDialogOpen(true);
+    } catch (error) {
+      console.error("Error checking campaign assignments:", error);
+      setBuyerToDelete(id);
+      setDeleteDialogOpen(true);
+    }
   };
 
   const confirmDelete = () => {

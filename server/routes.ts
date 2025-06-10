@@ -381,6 +381,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/buyers/:id/campaigns', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const assignments = await storage.getBuyerCampaignAssignments(id);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching buyer campaign assignments:", error);
+      res.status(500).json({ error: "Failed to fetch campaign assignments" });
+    }
+  });
+
   app.delete('/api/buyers/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
