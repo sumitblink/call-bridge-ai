@@ -1,36 +1,49 @@
 import { storage } from "./hybrid-storage";
+import twilio from 'twilio';
 
-// Twilio client setup - we'll use environment variables for production
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || 'demo_account_sid';
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || 'demo_auth_token';
+// Twilio client setup with real credentials
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+
+// Initialize Twilio client
+const twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
 export class TwilioService {
   
   // Call Recording Methods
   async enableCallRecording(callSid: string): Promise<{ recordingSid: string }> {
-    // In production, this would make actual Twilio API calls
-    // For demo purposes, we'll simulate the recording functionality
-    
-    const recordingSid = `RE${Math.random().toString(36).substr(2, 32)}`;
-    
-    // Simulate Twilio recording API call
-    const recordingData = {
-      recordingSid,
-      status: 'in-progress',
-      duration: null,
-      recordingUrl: null
-    };
+    try {
+      const recording = await twilioClient.calls(callSid)
+        .recordings
+        .create({
+          recordingChannels: 'dual',
+          recordingStatusCallback: `${process.env.REPLIT_DOMAINS}/api/webhooks/recording-status`
+        });
 
-    console.log(`[Twilio] Started recording for call ${callSid}, Recording SID: ${recordingSid}`);
-    return { recordingSid };
+      console.log(`[Twilio] Started recording for call ${callSid}, Recording SID: ${recording.sid}`);
+      return { recordingSid: recording.sid };
+    } catch (error) {
+      console.error(`[Twilio] Error starting recording for call ${callSid}:`, error);
+      throw error;
+    }
   }
 
   async stopCallRecording(callSid: string, recordingSid: string): Promise<{ recordingUrl: string }> {
-    // Simulate stopping recording and getting the URL
-    const recordingUrl = `https://api.twilio.com/recordings/${recordingSid}.mp3`;
-    
-    console.log(`[Twilio] Stopped recording for call ${callSid}, URL: ${recordingUrl}`);
-    return { recordingUrl };
+    try {
+      // Twilio recordings automatically stop when call ends
+      // We can fetch the recording to get its URL
+      const recording = await twilioClient.recordings(recordingSid).fetch();
+      
+      const recordingUrl = recording.uri ? `https://api.twilio.com${recording.uri.replace('.json', '.mp3')}` : 
+                          `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Recordings/${recordingSid}.mp3`;
+      
+      console.log(`[Twilio] Recording ${recordingSid} for call ${callSid}, URL: ${recordingUrl}`);
+      return { recordingUrl };
+    } catch (error) {
+      console.error(`[Twilio] Error fetching recording ${recordingSid}:`, error);
+      throw error;
+    }
   }
 
   async getRecordingStatus(recordingSid: string): Promise<{
@@ -38,15 +51,18 @@ export class TwilioService {
     duration: number | null;
     recordingUrl: string | null;
   }> {
-    // Simulate checking recording status
-    const statuses = ['processing', 'completed', 'failed'];
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-    
-    return {
-      status,
-      duration: status === 'completed' ? Math.floor(Math.random() * 300) + 30 : null,
-      recordingUrl: status === 'completed' ? `https://api.twilio.com/recordings/${recordingSid}.mp3` : null
-    };
+    try {
+      const recording = await twilioClient.recordings(recordingSid).fetch();
+      
+      return {
+        status: recording.status,
+        duration: recording.duration ? parseInt(recording.duration) : null,
+        recordingUrl: recording.uri ? `https://api.twilio.com${recording.uri.replace('.json', '.mp3')}` : null
+      };
+    } catch (error) {
+      console.error(`[Twilio] Error fetching recording status ${recordingSid}:`, error);
+      throw error;
+    }
   }
 
   async transcribeRecording(recordingSid: string): Promise<{ transcription: string }> {
@@ -66,30 +82,75 @@ export class TwilioService {
 
   // Real-time Call Control Methods
   async transferCall(callSid: string, targetNumber: string): Promise<{ status: string }> {
-    console.log(`[Twilio] Transferring call ${callSid} to ${targetNumber}`);
-    
-    // Simulate call transfer
-    return { status: 'transfer-initiated' };
+    try {
+      const call = await twilioClient.calls(callSid).update({
+        twiml: `<Response><Dial>${targetNumber}</Dial></Response>`
+      });
+      
+      console.log(`[Twilio] Transferring call ${callSid} to ${targetNumber}`);
+      return { status: 'transfer-initiated' };
+    } catch (error) {
+      console.error(`[Twilio] Error transferring call ${callSid}:`, error);
+      throw error;
+    }
   }
 
   async holdCall(callSid: string): Promise<{ status: string }> {
-    console.log(`[Twilio] Putting call ${callSid} on hold`);
-    return { status: 'on-hold' };
+    try {
+      const call = await twilioClient.calls(callSid).update({
+        twiml: '<Response><Play loop="0">http://com.twilio.music.guitars.s3.amazonaws.com/BusyStrings.wav</Play></Response>'
+      });
+      
+      console.log(`[Twilio] Putting call ${callSid} on hold`);
+      return { status: 'on-hold' };
+    } catch (error) {
+      console.error(`[Twilio] Error holding call ${callSid}:`, error);
+      throw error;
+    }
   }
 
   async resumeCall(callSid: string): Promise<{ status: string }> {
-    console.log(`[Twilio] Resuming call ${callSid}`);
-    return { status: 'resumed' };
+    try {
+      const call = await twilioClient.calls(callSid).update({
+        twiml: '<Response><Pause length="1"/></Response>'
+      });
+      
+      console.log(`[Twilio] Resuming call ${callSid}`);
+      return { status: 'resumed' };
+    } catch (error) {
+      console.error(`[Twilio] Error resuming call ${callSid}:`, error);
+      throw error;
+    }
   }
 
   async muteCall(callSid: string): Promise<{ status: string }> {
-    console.log(`[Twilio] Muting call ${callSid}`);
-    return { status: 'muted' };
+    try {
+      // Mute is typically handled at the participant level in conferences
+      // For regular calls, we can use TwiML to control audio
+      const call = await twilioClient.calls(callSid).update({
+        twiml: '<Response><Pause length="3600"/></Response>' // Long pause to simulate mute
+      });
+      
+      console.log(`[Twilio] Muting call ${callSid}`);
+      return { status: 'muted' };
+    } catch (error) {
+      console.error(`[Twilio] Error muting call ${callSid}:`, error);
+      throw error;
+    }
   }
 
   async unmuteCall(callSid: string): Promise<{ status: string }> {
-    console.log(`[Twilio] Unmuting call ${callSid}`);
-    return { status: 'unmuted' };
+    try {
+      const call = await twilioClient.calls(callSid).update({
+        twiml: '<Response><Pause length="1"/></Response>'
+      });
+      
+      console.log(`[Twilio] Unmuting call ${callSid}`);
+      return { status: 'unmuted' };
+    } catch (error) {
+      console.error(`[Twilio] Error unmuting call ${callSid}:`, error);
+      throw error;
+    }
   }
 
   async createConferenceCall(participants: string[]): Promise<{ conferenceSid: string }> {
