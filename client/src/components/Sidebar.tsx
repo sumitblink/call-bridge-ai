@@ -1,6 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic, Zap, UserCheck } from "lucide-react";
+import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3, current: true },
@@ -18,6 +22,27 @@ const navigation = [
 export default function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/logout', {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      window.location.href = '/';
+    },
+    onError: () => {
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const getUserDisplayName = () => {
     const userData = user as any;
@@ -39,6 +64,10 @@ export default function Sidebar() {
       return userData.email[0].toUpperCase();
     }
     return 'DU';
+  };
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
 
   return (
@@ -78,14 +107,25 @@ export default function Sidebar() {
 
       {/* User Profile */}
       <div className="px-4 py-4 border-t border-gray-200">
-        <div className="flex items-center">
-          <div className="w-8 h-8 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center font-medium text-xs">
-            {getUserInitials()}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center font-medium text-xs">
+              {getUserInitials()}
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-900">{getUserDisplayName()}</p>
+              <p className="text-xs text-gray-500">{(user as any)?.email || 'demo@callcenter.com'}</p>
+            </div>
           </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium text-gray-900">{getUserDisplayName()}</p>
-            <p className="text-xs text-gray-500">{(user as any)?.email || 'demo@callcenter.com'}</p>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            className="h-8 w-8 text-gray-400 hover:text-gray-600"
+            disabled={logoutMutation.isPending}
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>
