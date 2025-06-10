@@ -8,6 +8,36 @@ import { z } from "zod";
 import twilio from "twilio";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth routes
+  app.get('/api/auth/user', async (req: any, res) => {
+    try {
+      // For development, return a mock user
+      const mockUser = {
+        id: "dev-user-123",
+        email: "demo@callcenter.com",
+        firstName: "Demo",
+        lastName: "User",
+        profileImageUrl: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      res.json(mockUser);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(401).json({ message: "Unauthorized" });
+    }
+  });
+
+  app.get('/api/login', (req, res) => {
+    // Redirect to dashboard for development
+    res.redirect('/dashboard');
+  });
+
+  app.get('/api/logout', (req, res) => {
+    // Redirect to auth page for development
+    res.redirect('/auth');
+  });
+
   // Health check endpoint
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });

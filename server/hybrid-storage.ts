@@ -14,6 +14,7 @@ import {
   type InsertCall, 
   type User, 
   type InsertUser,
+  type UpsertUser,
   type Buyer,
   type InsertBuyer,
   type CampaignBuyer,
@@ -97,7 +98,7 @@ class HybridStorage implements IStorage {
   }
 
   // Users
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     return this.executeOperation(
       () => this.supabaseStorage.getUser(id),
       () => this.memStorage.getUser(id)
@@ -115,6 +116,13 @@ class HybridStorage implements IStorage {
     return this.executeOperation(
       () => this.supabaseStorage.createUser(user),
       () => this.memStorage.createUser(user)
+    );
+  }
+
+  async upsertUser(user: UpsertUser): Promise<User> {
+    return this.executeOperation(
+      () => this.supabaseStorage.upsertUser(user),
+      () => this.memStorage.upsertUser(user)
     );
   }
 
