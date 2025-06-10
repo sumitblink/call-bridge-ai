@@ -191,6 +191,20 @@ export class TwilioService {
       });
       
       console.log(`[Twilio] Created outbound call ${call.sid} to ${to}`);
+      
+      // Store call in database
+      await storage.createCall({
+        callSid: call.sid,
+        fromNumber: TWILIO_PHONE_NUMBER!,
+        toNumber: to,
+        status: 'ringing',
+        duration: 0,
+        campaignId: campaignId || null,
+        buyerId: null,
+        cost: '0.00',
+        revenue: '0.00'
+      });
+      
       return { callSid: call.sid };
     } catch (error) {
       console.error(`[Twilio] Error creating outbound call:`, error);
@@ -271,11 +285,26 @@ export class TwilioService {
     
     // Update call status in storage
     const calls = await storage.getCalls();
-    const call = calls.find(c => c.callSid === CallSid);
+    const existingCall = calls.find(c => c.callSid === CallSid);
     
-    if (call && CallDuration) {
-      // Update call duration and status
-      console.log(`Call ${CallSid} completed with duration: ${CallDuration}s`);
+    if (existingCall) {
+      // Update existing call with new status and duration
+      const duration = CallDuration ? parseInt(CallDuration) : existingCall.duration;
+      console.log(`Call ${CallSid} updated: ${CallStatus}, duration: ${duration}s`);
+    } else if (CallStatus === 'ringing' || CallStatus === 'in-progress') {
+      // Create new call record for inbound calls
+      await storage.createCall({
+        callSid: CallSid,
+        fromNumber: From,
+        toNumber: To,
+        status: CallStatus,
+        duration: 0,
+        campaignId: null,
+        buyerId: null,
+        cost: '0.00',
+        revenue: '0.00'
+      });
+      console.log(`New inbound call ${CallSid} created: ${CallStatus}`);
     }
   }
 

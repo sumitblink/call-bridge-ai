@@ -49,34 +49,28 @@ export default function CallControlPage() {
 
   const { toast } = useToast();
 
-  // Mock active calls data - in production this would come from real-time API
-  const activeCalls: ActiveCall[] = [
-    {
-      id: 1,
-      callSid: "CA123abc456def789",
-      fromNumber: "+1234567890",
-      toNumber: "+17177347577",
-      status: "in-progress",
-      duration: 245,
-      campaignName: "Insurance Leads",
-      agentName: "Sarah Johnson",
-      isRecording: true,
+  // Fetch real calls data from API
+  const { data: callsData, isLoading } = useQuery({
+    queryKey: ["/api/calls"],
+    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
+  });
+
+  // Transform API data to match ActiveCall interface
+  const activeCalls: ActiveCall[] = (callsData && Array.isArray(callsData)) ? callsData
+    .filter((call: any) => ['ringing', 'in-progress', 'queued'].includes(call.status))
+    .map((call: any) => ({
+      id: call.id,
+      callSid: call.callSid,
+      fromNumber: call.fromNumber,
+      toNumber: call.toNumber,
+      status: call.status,
+      duration: call.duration || 0,
+      campaignName: call.campaignId ? `Campaign ${call.campaignId}` : "Unknown Campaign",
+      agentName: call.buyerId ? `Agent ${call.buyerId}` : undefined,
+      isRecording: !!call.recordingUrl,
       isMuted: false,
-      isOnHold: false
-    },
-    {
-      id: 2,
-      callSid: "CA987xyz654abc321",
-      fromNumber: "+1987654321",
-      toNumber: "+17177347577",
-      status: "ringing",
-      duration: 15,
-      campaignName: "Auto Leads",
-      isRecording: false,
-      isMuted: false,
-      isOnHold: false
-    }
-  ];
+      isOnHold: call.status === 'on-hold'
+    })) : [];
 
   // Call control mutations
   const transferMutation = useMutation({
