@@ -915,6 +915,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/integrations/pixels/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = await storage.updateTrackingPixel(id, req.body);
+      if (!result) {
+        return res.status(404).json({ error: "Tracking pixel not found" });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating tracking pixel:", error);
+      res.status(500).json({ error: "Failed to update tracking pixel" });
+    }
+  });
+
+  app.delete("/api/integrations/pixels/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteTrackingPixel(id);
+      if (!success) {
+        return res.status(404).json({ error: "Tracking pixel not found" });
+      }
+      res.json({ message: "Tracking pixel deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting tracking pixel:", error);
+      res.status(500).json({ error: "Failed to delete tracking pixel" });
+    }
+  });
+
   // Webhook Configs endpoints
   app.get("/api/webhook-configs", async (req, res) => {
     try {

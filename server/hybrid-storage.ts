@@ -351,6 +351,20 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async updateTrackingPixel(id: number, data: any): Promise<any> {
+    return this.executeOperation(
+      () => this.supabaseStorage.updateTrackingPixel(id, data),
+      () => this.memStorage.updateTrackingPixel(id, data)
+    );
+  }
+
+  async deleteTrackingPixel(id: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.supabaseStorage.deleteTrackingPixel(id),
+      () => this.memStorage.deleteTrackingPixel(id)
+    );
+  }
+
   async getWebhookConfigs(): Promise<any[]> {
     return this.executeOperation(
       () => this.supabaseStorage.getWebhookConfigs(),

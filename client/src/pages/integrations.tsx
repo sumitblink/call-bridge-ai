@@ -82,6 +82,15 @@ export default function IntegrationsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>("all");
+  const [pixelForm, setPixelForm] = useState({
+    name: "",
+    type: "analytics",
+    fireOn: "page_view",
+    url: "",
+    code: "",
+    campaigns: [] as string[],
+    isActive: true
+  });
 
   const { toast } = useToast();
 
@@ -186,6 +195,95 @@ export default function IntegrationsPage() {
       .replace(/\{campaign\.phone_number\}/g, campaign.phoneNumber || "")
       .replace(/G-XXXXXXXXXX/g, `G-${campaign.id}${Date.now().toString().slice(-6)}`)
       .replace(/XXXXXXXXXXXXXXX/g, `${campaign.id}${Date.now().toString().slice(-9)}`);
+  };
+
+  // Create pixel mutation
+  const createPixelMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('POST', '/api/integrations/pixels', data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Pixel created successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
+      setIsDialogOpen(false);
+      resetPixelForm();
+    },
+    onError: () => {
+      toast({ title: "Failed to create pixel", variant: "destructive" });
+    }
+  });
+
+  // Update pixel mutation
+  const updatePixelMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('PUT', `/api/integrations/pixels/${editingItem.id}`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Pixel updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
+      setIsDialogOpen(false);
+      setEditingItem(null);
+      resetPixelForm();
+    },
+    onError: () => {
+      toast({ title: "Failed to update pixel", variant: "destructive" });
+    }
+  });
+
+  // Delete pixel mutation
+  const deletePixelMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest('DELETE', `/api/integrations/pixels/${id}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Pixel deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete pixel", variant: "destructive" });
+    }
+  });
+
+  const resetPixelForm = () => {
+    setPixelForm({
+      name: "",
+      type: "analytics",
+      fireOn: "page_view",
+      url: "",
+      code: "",
+      campaigns: [],
+      isActive: true
+    });
+  };
+
+  const handleEditPixel = (pixel: Pixel) => {
+    setEditingItem(pixel);
+    setPixelForm({
+      name: pixel.name,
+      type: pixel.type,
+      fireOn: pixel.fireOn || "page_view",
+      url: pixel.url || "",
+      code: pixel.code,
+      campaigns: pixel.campaigns,
+      isActive: pixel.isActive
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleSavePixel = () => {
+    if (!pixelForm.name || !pixelForm.code) {
+      toast({ title: "Please fill in required fields", variant: "destructive" });
+      return;
+    }
+
+    if (editingItem) {
+      updatePixelMutation.mutate(pixelForm);
+    } else {
+      createPixelMutation.mutate(pixelForm);
+    }
   };
 
   const generateTrackingURL = (baseUrl: string, parameters: URLParameter[]) => {
@@ -324,10 +422,133 @@ export default function IntegrationsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Pixel
-                </Button>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => {
+                      setEditingItem(null);
+                      resetPixelForm();
+                    }}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Pixel
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>{editingItem ? 'Edit Pixel' : 'Create New Pixel'}</DialogTitle>
+                      <DialogDescription>
+                        Configure tracking pixel for campaign attribution and analytics
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="pixel-name">Name *</Label>
+                          <Input
+                            id="pixel-name"
+                            value={pixelForm.name}
+                            onChange={(e) => setPixelForm({...pixelForm, name: e.target.value})}
+                            placeholder="Enter pixel name"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="pixel-type">Type</Label>
+                          <Select value={pixelForm.type} onValueChange={(value) => setPixelForm({...pixelForm, type: value})}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="analytics">Analytics</SelectItem>
+                              <SelectItem value="conversion">Conversion</SelectItem>
+                              <SelectItem value="remarketing">Remarketing</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="fire-on">Fire Pixel On</Label>
+                          <Select value={pixelForm.fireOn} onValueChange={(value) => setPixelForm({...pixelForm, fireOn: value})}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="page_view">Page View</SelectItem>
+                              <SelectItem value="form_submit">Form Submit</SelectItem>
+                              <SelectItem value="call_start">Call Start</SelectItem>
+                              <SelectItem value="call_complete">Call Complete</SelectItem>
+                              <SelectItem value="call_transfer">Call Transfer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="pixel-url">Tracking URL (Optional)</Label>
+                          <Input
+                            id="pixel-url"
+                            value={pixelForm.url}
+                            onChange={(e) => setPixelForm({...pixelForm, url: e.target.value})}
+                            placeholder="https://tracking.example.com/pixel"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="pixel-code">Pixel Code *</Label>
+                        <Textarea
+                          id="pixel-code"
+                          value={pixelForm.code}
+                          onChange={(e) => setPixelForm({...pixelForm, code: e.target.value})}
+                          placeholder="<script><!-- Your tracking pixel code --></script>"
+                          rows={6}
+                          className="font-mono text-sm"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Campaigns</Label>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {campaigns.map((campaign) => (
+                            <label key={campaign.id} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={pixelForm.campaigns.includes(campaign.id.toString())}
+                                onChange={(e) => {
+                                  const campaignId = campaign.id.toString();
+                                  if (e.target.checked) {
+                                    setPixelForm({
+                                      ...pixelForm,
+                                      campaigns: [...pixelForm.campaigns, campaignId]
+                                    });
+                                  } else {
+                                    setPixelForm({
+                                      ...pixelForm,
+                                      campaigns: pixelForm.campaigns.filter(id => id !== campaignId)
+                                    });
+                                  }
+                                }}
+                                className="rounded"
+                              />
+                              <span className="text-sm">{campaign.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-6">
+                      <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleSavePixel}
+                        disabled={createPixelMutation.isPending || updatePixelMutation.isPending}
+                      >
+                        {editingItem ? 'Update Pixel' : 'Create Pixel'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
 
@@ -347,10 +568,15 @@ export default function IntegrationsPage() {
                         </Badge>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => handleEditPixel(pixel)}>
                           <Edit className="h-3 w-3" />
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => deletePixelMutation.mutate(pixel.id)}
+                          disabled={deletePixelMutation.isPending}
+                        >
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
