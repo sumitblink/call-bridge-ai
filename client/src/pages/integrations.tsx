@@ -507,7 +507,7 @@ gtag('event', 'conversion', {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 ml-[0px] mr-[0px] pl-[15px] pr-[15px] pt-[10px] pb-[10px]">
         <div>
           <h1 className="text-2xl font-bold">Integrations</h1>
           <p className="text-gray-600">Manage tracking pixels, webhooks, and third-party integrations</p>
