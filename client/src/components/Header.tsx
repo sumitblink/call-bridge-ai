@@ -70,49 +70,15 @@ export default function Header() {
 
   const pageInfo = getPageInfo(location);
 
-  const handleNewItem = () => {
-    const currentPage = location.toLowerCase();
-    
-    // Check for page-specific dialog functions
-    if (typeof (window as any).openNewCampaignDialog === 'function' && currentPage === '/campaigns') {
+  const handleNewCampaign = () => {
+    // Check if the global function exists (set by campaigns page)
+    if (typeof (window as any).openNewCampaignDialog === 'function') {
       (window as any).openNewCampaignDialog();
-    } else if (typeof (window as any).openNewBuyerDialog === 'function' && currentPage === '/buyers') {
-      (window as any).openNewBuyerDialog();
-    } else if (typeof (window as any).openNewPublisherDialog === 'function' && currentPage === '/publishers') {
-      (window as any).openNewPublisherDialog();
-    } else if (typeof (window as any).openNewAgentDialog === 'function' && currentPage === '/agents') {
-      (window as any).openNewAgentDialog();
-    } else if (typeof (window as any).openNewIntegrationDialog === 'function' && currentPage === '/integrations') {
-      (window as any).openNewIntegrationDialog();
     } else {
-      // Fallback toast message
-      const itemType = getNewItemType(currentPage);
       toast({
-        title: `New ${itemType}`,
-        description: `Navigate to the ${itemType.toLowerCase()} page to create a new ${itemType.toLowerCase()}.`,
+        title: "New Campaign",
+        description: "Navigate to campaigns page to create a new campaign.",
       });
-    }
-  };
-
-  const getNewItemType = (pathname: string) => {
-    switch (pathname) {
-      case '/campaigns': return 'Campaign';
-      case '/buyers': return 'Buyer';
-      case '/publishers': return 'Publisher';
-      case '/agents': return 'Agent';
-      case '/integrations': return 'Integration';
-      default: return 'Item';
-    }
-  };
-
-  const getNewButtonText = (pathname: string) => {
-    switch (pathname) {
-      case '/campaigns': return 'New Campaign';
-      case '/buyers': return 'New Buyer';
-      case '/publishers': return 'New Publisher';
-      case '/agents': return 'New Agent';
-      case '/integrations': return 'New Integration';
-      default: return 'New Item';
     }
   };
 
@@ -144,7 +110,16 @@ export default function Header() {
             </span>
           </Button>
           
-          
+          {/* New Campaign Button - only show on specific pages */}
+          {(location === '/' || location === '/dashboard' || location === '/campaigns') && (
+            <Button 
+              onClick={handleNewCampaign}
+              className="bg-primary-600 text-white hover:bg-primary-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Campaign
+            </Button>
+          )}
         </div>
       </div>
     </header>
