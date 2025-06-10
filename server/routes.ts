@@ -11,16 +11,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      // Check for session or auth token - for now return 401 to show auth page
-      const isAuthenticated = req.headers.authorization || req.session?.user;
+      // Check for session user
+      const sessionUser = (req.session as any)?.user;
       
-      if (!isAuthenticated) {
+      if (!sessionUser) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Return mock user if authenticated
-      const mockUser = {
-        id: "dev-user-123",
+      // Return user data from session
+      const userData = {
+        id: sessionUser.id,
         email: "demo@callcenter.com",
         firstName: "Demo",
         lastName: "User",
@@ -28,7 +28,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      res.json(mockUser);
+      res.json(userData);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(401).json({ message: "Unauthorized" });
@@ -37,11 +37,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/login', (req, res) => {
     // Simple login - set a session flag
-    if (!req.session) {
-      req.session = {};
-    }
-    req.session.user = { id: "dev-user-123" };
+    (req.session as any).user = { id: "dev-user-123" };
     res.json({ success: true, message: "Logged in successfully" });
+  });
+
+  app.post('/api/signup', (req, res) => {
+    // Simple signup - set a session flag (same as login for now)
+    (req.session as any).user = { id: "dev-user-" + Date.now() };
+    res.json({ success: true, message: "Account created successfully" });
   });
 
   app.get('/api/login', (req, res) => {

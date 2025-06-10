@@ -36,6 +36,27 @@ export default function Auth() {
     },
   });
 
+  const signupMutation = useMutation({
+    mutationFn: async (data: { email: string; password: string; firstName: string; lastName: string }) => {
+      const response = await apiRequest("POST", "/api/signup", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Account Created",
+        description: "Welcome to CallCenter Pro!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Signup Failed",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
 
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -45,6 +66,17 @@ export default function Auth() {
     const password = formData.get("password") as string;
 
     loginMutation.mutate({ email, password });
+  };
+
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const email = formData.get("signupEmail") as string;
+    const password = formData.get("signupPassword") as string;
+    const firstName = formData.get("firstName") as string;
+    const lastName = formData.get("lastName") as string;
+
+    signupMutation.mutate({ email, password, firstName, lastName });
   };
 
   return (
