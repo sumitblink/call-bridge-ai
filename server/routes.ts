@@ -170,9 +170,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Campaigns
-  app.get('/api/campaigns', async (req, res) => {
+  app.get('/api/campaigns', isAuthenticated, async (req: any, res) => {
     try {
-      const campaigns = await storage.getCampaigns();
+      const userId = req.user?.id;
+      const campaigns = await storage.getCampaigns(userId);
       res.json(campaigns);
     } catch (error) {
       console.error("Error fetching campaigns:", error);
@@ -194,9 +195,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/campaigns', async (req, res) => {
+  app.post('/api/campaigns', isAuthenticated, async (req: any, res) => {
     try {
-      const validatedData = insertCampaignSchema.parse(req.body);
+      const userId = req.user?.id;
+      const validatedData = insertCampaignSchema.parse({...req.body, userId});
       const campaign = await storage.createCampaign(validatedData);
       res.status(201).json(campaign);
     } catch (error) {
@@ -289,9 +291,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Buyers
-  app.get('/api/buyers', async (req, res) => {
+  app.get('/api/buyers', isAuthenticated, async (req: any, res) => {
     try {
-      const buyers = await storage.getBuyers();
+      const userId = req.user?.id;
+      const buyers = await storage.getBuyers(userId);
       res.json(buyers);
     } catch (error) {
       console.error("Error fetching buyers:", error);
@@ -299,9 +302,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/buyers', async (req, res) => {
+  app.post('/api/buyers', isAuthenticated, async (req: any, res) => {
     try {
-      const validatedData = insertBuyerSchema.parse(req.body);
+      const userId = req.user?.id;
+      const validatedData = insertBuyerSchema.parse({...req.body, userId});
       const buyer = await storage.createBuyer(validatedData);
       res.status(201).json(buyer);
     } catch (error) {

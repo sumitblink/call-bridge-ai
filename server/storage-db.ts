@@ -68,8 +68,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Campaign operations
-  async getCampaigns(): Promise<Campaign[]> {
+  async getCampaigns(userId?: number): Promise<Campaign[]> {
     try {
+      if (userId) {
+        return await db.select().from(campaigns).where(eq(campaigns.userId, userId));
+      }
       return await db.select().from(campaigns);
     } catch (error) {
       console.error('Error fetching campaigns from database:', error);
@@ -119,7 +122,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Buyer operations
-  async getBuyers(): Promise<Buyer[]> {
+  async getBuyers(userId?: number): Promise<Buyer[]> {
+    if (userId) {
+      return await db.select().from(buyers).where(eq(buyers.userId, userId));
+    }
     return await db.select().from(buyers);
   }
 
