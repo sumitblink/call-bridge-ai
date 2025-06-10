@@ -99,7 +99,7 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User> = new Map();
+  private users: Map<string, User> = new Map();
   private campaigns: Map<number, Campaign> = new Map();
   private buyers: Map<number, Buyer> = new Map();
   private campaignBuyers: Map<string, CampaignBuyer> = new Map();
@@ -212,13 +212,22 @@ export class MemStorage implements IStorage {
   }
 
   // Users
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    for (const user of this.users.values()) {
-      if (user.username === username) {
+    for (const user of Array.from(this.users.values())) {
+      if (user.email === username) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    for (const user of Array.from(this.users.values())) {
+      if (user.email === email) {
         return user;
       }
     }
@@ -226,13 +235,17 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
     const user: User = { 
-      id, 
-      username: insertUser.username, 
-      password: insertUser.password 
+      id: insertUser.id,
+      email: insertUser.email,
+      password: insertUser.password,
+      firstName: insertUser.firstName,
+      lastName: insertUser.lastName,
+      profileImageUrl: insertUser.profileImageUrl,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
-    this.users.set(id, user);
+    this.users.set(user.id, user);
     return user;
   }
 

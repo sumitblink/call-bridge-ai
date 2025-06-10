@@ -42,7 +42,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/login', async (req, res) => {
+  // Simple in-memory user storage for demonstration
+  const registeredUsers = new Map<string, {
+    id: string;
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    profileImageUrl: string | null;
+  }>();
+
+  app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     
     // Basic validation - require actual credentials
@@ -53,46 +63,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
 
-    try {
-      // Check for demo credentials first
-      if (email === "demo@callcenter.com" && password === "demo123") {
-        (req.session as any).user = { 
-          id: "dev-user-123",
-          email: "demo@callcenter.com",
-          firstName: "John",
-          lastName: "Smith",
-          profileImageUrl: null
-        };
-        return res.json({ success: true, message: "Logged in successfully" });
-      }
+    // Check for demo credentials first
+    if (email === "demo@callcenter.com" && password === "demo123") {
+      (req.session as any).user = { 
+        id: "dev-user-123",
+        email: "demo@callcenter.com",
+        firstName: "John",
+        lastName: "Smith",
+        profileImageUrl: null
+      };
+      return res.json({ success: true, message: "Logged in successfully" });
+    }
 
-      // Check for registered users
-      const user = await storage.getUserByEmail(email);
-      if (user && user.password === password) {
-        (req.session as any).user = { 
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          profileImageUrl: user.profileImageUrl
-        };
-        res.json({ success: true, message: "Logged in successfully" });
-      } else {
-        res.status(401).json({ 
-          success: false, 
-          message: "Invalid email or password" 
-        });
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ 
+    // Check for registered users
+    const user = registeredUsers.get(email);
+    if (user && user.password === password) {
+      (req.session as any).user = { 
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl
+      };
+      res.json({ success: true, message: "Logged in successfully" });
+    } else {
+      res.status(401).json({ 
         success: false, 
-        message: "Login failed. Please try again." 
+        message: "Invalid email or password" 
       });
     }
   });
 
-  app.post('/api/signup', async (req, res) => {
+  app.post('/api/signup', (req, res) => {
     const { email, password, firstName, lastName } = req.body;
     
     // Basic validation - require actual credentials
@@ -111,44 +113,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
 
-    try {
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "User with this email already exists" 
-        });
-      }
-
-      // Create user in database
-      const userId = "user-" + Date.now();
-      const newUser = await storage.createUser({
-        id: userId,
-        email: email,
-        password: password,
-        firstName: firstName,
-        lastName: lastName,
-        profileImageUrl: null
-      });
-
-      // Create session
-      (req.session as any).user = { 
-        id: newUser.id,
-        email: newUser.email,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        profileImageUrl: newUser.profileImageUrl
-      };
-      
-      res.json({ success: true, message: "Account created successfully" });
-    } catch (error) {
-      console.error("Signup error:", error);
-      res.status(500).json({ 
+    // Check if user already exists
+    if (registeredUsers.has(email)) {
+      return res.status(400).json({ 
         success: false, 
-        message: "Failed to create account. Please try again." 
+        message: "User with this email already exists" 
       });
     }
+
+    // Create user
+    const userId = "user-" + Date.now();
+    const newUser = {
+      id: userId,
+      email: email,
+      password: password,
+      firstName: firstName,
+      lastName: lastName,
+      profileImageUrl: null
+    };
+
+    // Store user
+    registeredUsers.set(email, newUser);
+
+    // Create session
+    (req.session as any).user = { 
+      id: newUser.id,
+      email: newUser.email,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      profileImageUrl: newUser.profileImageUrl
+    };
+    
+    res.json({ success: true, message: "Account created successfully" });
   });
 
   app.post('/api/logout', (req, res) => {
