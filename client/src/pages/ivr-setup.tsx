@@ -81,14 +81,13 @@ export default function IVRSetupPage() {
   });
 
   const createIVRMutation = useMutation({
-    mutationFn: async (data: { campaignId: number; greeting: string; options: IVROption[] }) =>
-      apiRequest(`/api/campaigns/${data.campaignId}/ivr`, {
-        method: 'POST',
-        body: JSON.stringify({ 
-          greeting: data.greeting, 
-          options: data.options 
-        })
-      }),
+    mutationFn: async (data: { campaignId: number; greeting: string; options: IVROption[] }) => {
+      const res = await apiRequest('POST', `/api/campaigns/${data.campaignId}/ivr`, { 
+        greeting: data.greeting, 
+        options: data.options 
+      });
+      return await res.json();
+    },
     onSuccess: () => {
       toast({ title: "IVR flow created successfully" });
       queryClient.invalidateQueries({ queryKey: ['/api/ivr-flows'] });

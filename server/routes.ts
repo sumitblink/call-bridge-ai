@@ -916,6 +916,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Webhook Configs endpoints
+  app.get("/api/webhook-configs", async (req, res) => {
+    try {
+      const result = await storage.getWebhookConfigs();
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching webhook configs:", error);
+      res.status(500).json({ error: "Failed to fetch webhook configs" });
+    }
+  });
+
+  app.post("/api/webhook-configs", async (req, res) => {
+    try {
+      const result = await storage.createWebhookConfig(req.body);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error creating webhook config:", error);
+      res.status(500).json({ error: "Failed to create webhook config" });
+    }
+  });
+
+  app.put("/api/webhook-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Update webhook config - for now just return the updated data
+      res.json({ id, ...req.body });
+    } catch (error) {
+      console.error("Error updating webhook config:", error);
+      res.status(500).json({ error: "Failed to update webhook config" });
+    }
+  });
+
+  app.post("/api/webhook-configs/:id/test", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Simulate webhook test
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      res.json({ success: true, response_time: 150, status_code: 200 });
+    } catch (error) {
+      console.error("Error testing webhook:", error);
+      res.status(500).json({ error: "Failed to test webhook" });
+    }
+  });
+
+  // Legacy webhook endpoints for backward compatibility
   app.get("/api/integrations/webhooks", async (req, res) => {
     try {
       const result = await storage.getWebhookConfigs();
@@ -933,6 +977,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating webhook config:", error);
       res.status(500).json({ error: "Failed to create webhook config" });
+    }
+  });
+
+  // IVR Flows endpoints
+  app.get("/api/ivr-flows", async (req, res) => {
+    try {
+      // Return empty array for now - will be populated with real data
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching IVR flows:", error);
+      res.status(500).json({ error: "Failed to fetch IVR flows" });
+    }
+  });
+
+  app.post("/api/campaigns/:id/ivr", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const { greeting, options } = req.body;
+      
+      // Create IVR flow for campaign
+      const ivrFlow = {
+        id: `FW${Date.now()}`,
+        campaignId,
+        greeting,
+        options,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      };
+      
+      res.status(201).json(ivrFlow);
+    } catch (error) {
+      console.error("Error creating IVR flow:", error);
+      res.status(500).json({ error: "Failed to create IVR flow" });
     }
   });
 

@@ -42,9 +42,9 @@ export default function WebhookSetupPage() {
   });
 
   // Fetch webhook configurations from API
-  const { data: webhooks = [], isLoading, error } = useQuery({
+  const { data: webhooks = [], isLoading, error } = useQuery<WebhookConfig[]>({
     queryKey: ['/api/webhook-configs'],
-    select: (data) => data.map((webhook: any) => ({
+    select: (data: any[]) => data.map((webhook: any) => ({
       ...webhook,
       headers: typeof webhook.headers === 'string' ? JSON.parse(webhook.headers || '{}') : webhook.headers
     }))
