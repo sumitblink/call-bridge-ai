@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -401,6 +402,8 @@ function BuyerForm({
 export default function Buyers() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBuyer, setEditingBuyer] = useState<Buyer | undefined>();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [buyerToDelete, setBuyerToDelete] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -438,8 +441,15 @@ export default function Buyers() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this buyer?")) {
-      deleteBuyerMutation.mutate(id);
+    setBuyerToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (buyerToDelete) {
+      deleteBuyerMutation.mutate(buyerToDelete);
+      setDeleteDialogOpen(false);
+      setBuyerToDelete(null);
     }
   };
 
@@ -502,6 +512,26 @@ export default function Buyers() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the buyer and remove them from all campaigns. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Buyer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </div>
     </Layout>
   );
