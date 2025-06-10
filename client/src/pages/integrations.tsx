@@ -510,16 +510,19 @@ gtag('event', 'conversion', {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Integrations</h1>
-          <p className="text-gray-600">Manage conversion tracking with intelligent pixel templates</p>
+          <p className="text-gray-600">Manage tracking pixels, webhooks, and third-party integrations</p>
         </div>
 
-        <div className="w-full">
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold">Tracking Pixels</h2>
-            <p className="text-gray-600">Manage conversion tracking with intelligent templates and macro replacement</p>
-          </div>
+        <Tabs defaultValue="pixels" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="pixels">Tracking Pixels</TabsTrigger>
+            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+            <TabsTrigger value="apis">API Keys</TabsTrigger>
+            <TabsTrigger value="platforms">Platforms</TabsTrigger>
+          </TabsList>
 
-          <div className="space-y-6">
+          {/* Tracking Pixels Tab */}
+          <TabsContent value="pixels" className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold">Tracking Pixels</h2>
