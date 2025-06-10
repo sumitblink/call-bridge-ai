@@ -260,7 +260,15 @@ function BuyerForm({
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input {...field} type="email" placeholder="buyer@example.com" />
+                      <Input 
+                        type="email" 
+                        placeholder="buyer@example.com"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -274,7 +282,7 @@ function BuyerForm({
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="+1234567890" />
+                      <Input {...field} placeholder="+1234567890" value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -309,7 +317,11 @@ function BuyerForm({
                         type="number" 
                         min="1" 
                         max="10"
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? undefined : parseInt(value) || 1);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -328,7 +340,11 @@ function BuyerForm({
                         {...field} 
                         type="number" 
                         min="1"
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? undefined : parseInt(value) || 50);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -349,7 +365,11 @@ function BuyerForm({
                         {...field} 
                         type="number" 
                         min="1"
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? undefined : parseInt(value) || 3);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -368,7 +388,11 @@ function BuyerForm({
                         {...field} 
                         type="number" 
                         min="0"
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? undefined : parseInt(value) || 0);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
