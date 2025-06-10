@@ -55,6 +55,20 @@ export class SupabaseStorage implements IStorage {
     return result[0];
   }
 
+  async upsertUser(userData: any): Promise<User> {
+    const result = await db.insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return result[0];
+  }
+
   // Campaigns
   async getCampaigns(): Promise<Campaign[]> {
     return await db.select().from(campaigns).orderBy(desc(campaigns.createdAt));

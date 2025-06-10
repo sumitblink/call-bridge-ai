@@ -21,6 +21,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: any): Promise<User>;
 
   // Campaigns
   getCampaigns(): Promise<Campaign[]>;
@@ -251,6 +252,21 @@ export class MemStorage implements IStorage {
     };
     this.users.set(user.id, user);
     return user;
+  }
+
+  async upsertUser(userData: any): Promise<User> {
+    const existingUser = this.users.get(userData.id);
+    if (existingUser) {
+      const updatedUser: User = {
+        ...existingUser,
+        ...userData,
+        updatedAt: new Date()
+      };
+      this.users.set(userData.id, updatedUser);
+      return updatedUser;
+    } else {
+      return this.createUser(userData);
+    }
   }
 
   // Campaigns
