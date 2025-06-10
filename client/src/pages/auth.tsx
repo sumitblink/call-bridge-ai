@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Phone, Mail, Lock, User } from "lucide-react";
+import { Phone, Mail, Lock, User, Chrome } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -117,6 +117,24 @@ export default function Auth() {
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full h-11 border-gray-200 hover:bg-gray-50"
+                  disabled={isLoading}
+                >
+                  <Chrome className="h-4 w-4 mr-2" />
+                  Continue with Google
+                </Button>
               </CardContent>
               <CardFooter className="text-center">
                 <p className="text-sm text-gray-600">
@@ -194,6 +212,24 @@ export default function Auth() {
                     {isLoading ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full h-11 border-gray-200 hover:bg-gray-50"
+                  disabled={isLoading}
+                >
+                  <Chrome className="h-4 w-4 mr-2" />
+                  Sign up with Google
+                </Button>
               </CardContent>
               <CardFooter className="text-center">
                 <p className="text-sm text-gray-600">
