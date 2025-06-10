@@ -1,1747 +1,785 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { storage } from "./hybrid-storage";
-import { insertCampaignSchema, insertBuyerSchema, insertAgentSchema } from "@shared/schema";
-import { twilioService } from "./twilio-service";
-import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
-import { z } from "zod";
-import twilio from "twilio";
-import fetch from "node-fetch";
-import { userStorage } from "./user-storage";
-
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth routes
-  app.get('/api/auth/user', async (req: any, res) => {
-    try {
-      // Check for session user
-      const sessionUser = (req.session as any)?.user;
-      
-      if (!sessionUser) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      // Get user data from storage
-      let userData = await storage.getUser(sessionUser.id);
-      
-      // If user doesn't exist in storage, create default user data based on session
-      if (!userData) {
-        userData = {
-          id: sessionUser.id,
-          email: sessionUser.email || "demo@callcenter.com",
-          firstName: sessionUser.firstName || "Demo",
-          lastName: sessionUser.lastName || "User", 
-          profileImageUrl: sessionUser.profileImageUrl || null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-      }
-      
-      res.json(userData);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(401).json({ message: "Unauthorized" });
-    }
-  });
-
-  // Simple in-memory user storage for demonstration
-  const registeredUsers = new Map<string, {
-    id: string;
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    profileImageUrl: string | null;
-  }>();
-
-  app.post('/api/login', (req, res) => {
-    const { email, password } = req.body;
-    
-    // Basic validation - require actual credentials
-    if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email and password are required" 
-      });
-    }
-
-    // Check for demo credentials first
-    if (email === "demo@callcenter.com" && password === "demo123") {
-      (req.session as any).user = { 
-        id: "dev-user-123",
-        email: "demo@callcenter.com",
-        firstName: "John",
-        lastName: "Smith",
-        profileImageUrl: null
-      };
-      return res.json({ success: true, message: "Logged in successfully" });
-    }
-
-    // Check for registered users
-    const user = registeredUsers.get(email);
-    if (user && user.password === password) {
-      (req.session as any).user = { 
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profileImageUrl: user.profileImageUrl
-      };
-      res.json({ success: true, message: "Logged in successfully" });
-    } else {
-      res.status(401).json({ 
-        success: false, 
-        message: "Invalid email or password" 
-      });
-    }
-  });
-
-  app.post('/api/forgot-password', (req, res) => {
-    const { email } = req.body;
-    
-    if (!email) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email is required" 
-      });
-    }
-
-    // For security, always return success regardless of whether email exists
-    // This prevents email enumeration attacks
-    
-    // Check demo user and local registered users
-    const isDemoUser = email === "demo@callcenter.com";
-    const registeredUser = registeredUsers.get(email);
-    
-    console.log(`Password reset requested for: ${email}`);
-    
-    if (isDemoUser) {
-      console.log("Demo user password reset - would redirect to login with demo credentials");
-    } else if (registeredUser) {
-      console.log(`Registered user found - would send reset email to: ${email}`);
-    } else {
-      console.log(`User authenticated with Replit Auth - would send reset instructions to: ${email}`);
-    }
-    
-    // Always return success message for security
-    res.json({ 
-      success: true, 
-      message: "If an account exists with this email, you'll receive reset instructions" 
-    });
-  });
-
-  app.post('/api/signup', (req, res) => {
-    const { email, password, firstName, lastName } = req.body;
-    
-    // Basic validation - require actual credentials
-    if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "All fields are required" 
-      });
-    }
-
-    // Simple password validation
-    if (password.length < 6) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Password must be at least 6 characters" 
-      });
-    }
-
-    // Check if user already exists
-    if (registeredUsers.has(email)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "User with this email already exists" 
-      });
-    }
-
-    // Create user
-    const userId = "user-" + Date.now();
-    const newUser = {
-      id: userId,
-      email: email,
-      password: password,
-      firstName: firstName,
-      lastName: lastName,
-      profileImageUrl: null
-    };
-
-    // Store user
-    registeredUsers.set(email, newUser);
-
-    // Create session
-    (req.session as any).user = { 
-      id: newUser.id,
-      email: newUser.email,
-      firstName: newUser.firstName,
-      lastName: newUser.lastName,
-      profileImageUrl: newUser.profileImageUrl
-    };
-    
-    res.json({ success: true, message: "Account created successfully" });
-  });
-
-  app.post('/api/logout', (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: "Logout failed" });
-      }
-      res.clearCookie('connect.sid');
-      res.json({ success: true, message: "Logged out successfully" });
-    });
-  });
-
-  app.get('/api/login', (req, res) => {
-    // Redirect to dashboard for development
-    res.redirect('/dashboard');
-  });
-
-  // Google OAuth routes
-  app.get('/api/auth/google', (req, res) => {
-    // For demo purposes, create a mock Google user
-    const mockGoogleUser = {
-      id: "google-user-" + Date.now(),
-      email: "user@gmail.com",
-      firstName: "Google",
-      lastName: "User",
-      profileImageUrl: "https://lh3.googleusercontent.com/a/default-user=s96-c"
-    };
-    
-    (req.session as any).user = mockGoogleUser;
-    res.redirect('/dashboard');
-  });
-
-  app.get('/api/auth/facebook', (req, res) => {
-    // For demo purposes, create a mock Facebook user
-    const mockFacebookUser = {
-      id: "facebook-user-" + Date.now(),
-      email: "user@facebook.com",
-      firstName: "Facebook",
-      lastName: "User",
-      profileImageUrl: "https://graph.facebook.com/me/picture?type=large"
-    };
-    
-    (req.session as any).user = mockFacebookUser;
-    res.redirect('/dashboard');
-  });
-
-  app.get('/api/logout', (req, res) => {
-    // Redirect to auth page for development
-    res.redirect('/auth');
-  });
-
-  // Health check endpoint
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
-  });
-
-  // Get all campaigns
-  app.get("/api/campaigns", async (req, res) => {
-    try {
-      const sessionUser = (req.session as any)?.user;
-      if (!sessionUser) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      // Get user-specific campaigns
-      const campaigns = userStorage.getUserCampaigns(sessionUser.id);
-      res.json(campaigns);
-    } catch (error) {
-      console.error("Error fetching campaigns:", error);
-      res.status(500).json({ message: "Failed to fetch campaigns" });
-    }
-  });
-
-  // Get single campaign
-  app.get("/api/campaigns/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid campaign ID" });
-      }
-
-      const campaign = await storage.getCampaign(id);
-      if (!campaign) {
-        return res.status(404).json({ message: "Campaign not found" });
-      }
-
-      res.json(campaign);
-    } catch (error) {
-      console.error("Error fetching campaign:", error);
-      res.status(500).json({ message: "Failed to fetch campaign" });
-    }
-  });
-
-  // Create new campaign
-  app.post("/api/campaigns", async (req, res) => {
-    try {
-      const validatedData = insertCampaignSchema.parse(req.body);
-      const campaign = await storage.createCampaign(validatedData);
-      res.status(201).json(campaign);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Validation error", 
-          errors: error.errors 
-        });
-      }
-      console.error("Error creating campaign:", error);
-      res.status(500).json({ message: "Failed to create campaign" });
-    }
-  });
-
-  // Update campaign
-  app.patch("/api/campaigns/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid campaign ID" });
-      }
-
-      // Validate the update data
-      const updateData = req.body;
-      if (updateData.status && !["active", "paused", "completed", "draft"].includes(updateData.status)) {
-        return res.status(400).json({ message: "Invalid status" });
-      }
-
-      const campaign = await storage.updateCampaign(id, updateData);
-      if (!campaign) {
-        return res.status(404).json({ message: "Campaign not found" });
-      }
-
-      res.json(campaign);
-    } catch (error) {
-      console.error("Error updating campaign:", error);
-      res.status(500).json({ message: "Failed to update campaign" });
-    }
-  });
-
-  // Delete campaign
-  app.delete("/api/campaigns/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid campaign ID" });
-      }
-
-      const success = await storage.deleteCampaign(id);
-      if (!success) {
-        return res.status(404).json({ message: "Campaign not found" });
-      }
-
-      res.json({ message: "Campaign deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting campaign:", error);
-      res.status(500).json({ message: "Failed to delete campaign" });
-    }
-  });
-
-  // Get dashboard stats
-  app.get("/api/stats", async (req, res) => {
-    try {
-      const sessionUser = (req.session as any)?.user;
-      if (!sessionUser) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      const stats = userStorage.getUserStats(sessionUser.id);
-      res.json(stats);
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-      res.status(500).json({ message: "Failed to fetch stats" });
-    }
-  });
-
-  // Get all agents
-  app.get("/api/agents", async (req, res) => {
-    try {
-      const agents = await storage.getAgents();
-      res.json(agents);
-    } catch (error) {
-      console.error("Error fetching agents:", error);
-      res.status(500).json({ message: "Failed to fetch agents" });
-    }
-  });
-
-  // Get all calls
-  app.get("/api/calls", async (req, res) => {
-    try {
-      const sessionUser = (req.session as any)?.user;
-      if (!sessionUser) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      const calls = userStorage.getUserCalls(sessionUser.id);
-      res.json(calls);
-    } catch (error) {
-      console.error("Error fetching calls:", error);
-      res.status(500).json({ message: "Failed to fetch calls" });
-    }
-  });
-
-  // Buyer Management Routes
-
-  // Get all buyers
-  app.get("/api/buyers", async (req, res) => {
-    try {
-      const sessionUser = (req.session as any)?.user;
-      if (!sessionUser) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      const buyers = userStorage.getUserBuyers(sessionUser.id);
-      res.json(buyers);
-    } catch (error) {
-      console.error("Error fetching buyers:", error);
-      res.status(500).json({ message: "Failed to fetch buyers" });
-    }
-  });
-
-  // Get single buyer
-  app.get("/api/buyers/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid buyer ID" });
-      }
-
-      const buyer = await storage.getBuyer(id);
-      if (!buyer) {
-        return res.status(404).json({ message: "Buyer not found" });
-      }
-
-      res.json(buyer);
-    } catch (error) {
-      console.error("Error fetching buyer:", error);
-      res.status(500).json({ message: "Failed to fetch buyer" });
-    }
-  });
-
-  // Create new buyer
-  app.post("/api/buyers", async (req, res) => {
-    try {
-      const validatedData = insertBuyerSchema.parse(req.body);
-      const buyer = await storage.createBuyer(validatedData);
-      res.status(201).json(buyer);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid buyer data", 
-          errors: error.errors 
-        });
-      }
-      console.error("Error creating buyer:", error);
-      res.status(500).json({ message: "Failed to create buyer" });
-    }
-  });
-
-  // Update buyer
-  app.patch("/api/buyers/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid buyer ID" });
-      }
-
-      const validatedData = insertBuyerSchema.partial().parse(req.body);
-      const buyer = await storage.updateBuyer(id, validatedData);
-      
-      if (!buyer) {
-        return res.status(404).json({ message: "Buyer not found" });
-      }
-
-      res.json(buyer);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid buyer data", 
-          errors: error.errors 
-        });
-      }
-      console.error("Error updating buyer:", error);
-      res.status(500).json({ message: "Failed to update buyer" });
-    }
-  });
-
-  // Delete buyer
-  app.delete("/api/buyers/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid buyer ID" });
-      }
-
-      const success = await storage.deleteBuyer(id);
-      if (!success) {
-        return res.status(404).json({ message: "Buyer not found" });
-      }
-
-      res.json({ message: "Buyer deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting buyer:", error);
-      res.status(500).json({ message: "Failed to delete buyer" });
-    }
-  });
-
-  // Get buyers for a campaign
-  app.get("/api/campaigns/:id/buyers", async (req, res) => {
-    try {
-      const campaignId = parseInt(req.params.id);
-      if (isNaN(campaignId)) {
-        return res.status(400).json({ message: "Invalid campaign ID" });
-      }
-
-      const buyers = await storage.getCampaignBuyers(campaignId);
-      res.json(buyers);
-    } catch (error) {
-      console.error("Error fetching campaign buyers:", error);
-      res.status(500).json({ message: "Failed to fetch campaign buyers" });
-    }
-  });
-
-  // Add buyer to campaign
-  app.post("/api/campaigns/:id/buyers", async (req, res) => {
-    try {
-      const campaignId = parseInt(req.params.id);
-      if (isNaN(campaignId)) {
-        return res.status(400).json({ message: "Invalid campaign ID" });
-      }
-
-      const { buyerId, priority = 1 } = req.body;
-      if (!buyerId || isNaN(parseInt(buyerId))) {
-        return res.status(400).json({ message: "Valid buyer ID is required" });
-      }
-
-      const campaignBuyer = await storage.addBuyerToCampaign(campaignId, parseInt(buyerId), priority);
-      res.json(campaignBuyer);
-    } catch (error) {
-      console.error("Error adding buyer to campaign:", error);
-      res.status(500).json({ message: "Failed to add buyer to campaign" });
-    }
-  });
-
-  // Remove buyer from campaign
-  app.delete("/api/campaigns/:id/buyers/:buyerId", async (req, res) => {
-    try {
-      const campaignId = parseInt(req.params.id);
-      const buyerId = parseInt(req.params.buyerId);
-      
-      if (isNaN(campaignId) || isNaN(buyerId)) {
-        return res.status(400).json({ message: "Invalid campaign or buyer ID" });
-      }
-
-      const success = await storage.removeBuyerFromCampaign(campaignId, buyerId);
-      if (success) {
-        res.json({ message: "Buyer removed from campaign successfully" });
-      } else {
-        res.status(404).json({ message: "Buyer not found in campaign" });
-      }
-    } catch (error) {
-      console.error("Error removing buyer from campaign:", error);
-      res.status(500).json({ message: "Failed to remove buyer from campaign" });
-    }
-  });
-
-  // Campaign phone number lookup
-  app.get("/api/campaigns/phone/:phoneNumber", async (req, res) => {
-    try {
-      const phoneNumber = req.params.phoneNumber;
-      const campaign = await storage.getCampaignByPhoneNumber(phoneNumber);
-      
-      if (!campaign) {
-        return res.status(404).json({ message: "Campaign not found for this phone number" });
-      }
-      
-      res.json(campaign);
-    } catch (error) {
-      console.error("Error finding campaign by phone:", error);
-      res.status(500).json({ message: "Failed to lookup campaign" });
-    }
-  });
-
-  // Ping buyers for a campaign
-  app.post("/api/campaigns/:id/ping", async (req, res) => {
-    try {
-      const campaignId = parseInt(req.params.id);
-      if (isNaN(campaignId)) {
-        return res.status(400).json({ message: "Invalid campaign ID" });
-      }
-
-      const callData = req.body;
-      const buyers = await storage.pingBuyersForCall(campaignId, callData);
-      
-      res.json(buyers);
-    } catch (error) {
-      console.error("Error pinging buyers:", error);
-      res.status(500).json({ message: "Failed to ping buyers" });
-    }
-  });
-
-  // Post call to specific buyer
-  app.post("/api/buyers/:id/post", async (req, res) => {
-    try {
-      const buyerId = parseInt(req.params.id);
-      if (isNaN(buyerId)) {
-        return res.status(400).json({ message: "Invalid buyer ID" });
-      }
-
-      const callData = req.body;
-      const success = await storage.postCallToBuyer(buyerId, callData);
-      
-      res.json({ success, message: success ? "Call posted successfully" : "Failed to post call" });
-    } catch (error) {
-      console.error("Error posting call to buyer:", error);
-      res.status(500).json({ message: "Failed to post call" });
-    }
-  });
-
-  // Get call logs for a specific call
-  app.get("/api/calls/:id/logs", async (req, res) => {
-    try {
-      const callId = parseInt(req.params.id);
-      if (isNaN(callId)) {
-        return res.status(400).json({ message: "Invalid call ID" });
-      }
-
-      const logs = await storage.getCallLogs(callId);
-      res.json(logs);
-    } catch (error) {
-      console.error("Error fetching call logs:", error);
-      res.status(500).json({ message: "Failed to fetch call logs" });
-    }
-  });
-
-  // Create a new call
-  app.post("/api/calls", async (req, res) => {
-    try {
-      const callData = req.body;
-      const call = await storage.createCall(callData);
-      res.status(201).json(call);
-    } catch (error) {
-      console.error("Error creating call:", error);
-      res.status(500).json({ message: "Failed to create call" });
-    }
-  });
-
-  // Enhanced Twilio webhook with ping/post routing
-  app.post("/api/call/inbound", async (req, res) => {
-    try {
-      const { To: phoneNumber, From: fromNumber, CallSid: callSid } = req.body;
-      
-      if (!phoneNumber) {
-        const twiml = new twilio.twiml.VoiceResponse();
-        twiml.say("Invalid request. Goodbye.");
-        twiml.hangup();
-        return res.type('text/xml').send(twiml.toString());
-      }
-
-      // Look up campaign by phone number
-      const campaign = await storage.getCampaignByPhoneNumber(phoneNumber);
-      const twiml = new twilio.twiml.VoiceResponse();
-      
-      if (campaign && campaign.status === 'active') {
-        // Get active buyers for this campaign
-        const buyers = await storage.pingBuyersForCall(campaign.id, {
-          fromNumber,
-          toNumber: phoneNumber,
-          callSid
-        });
-
-        if (buyers.length > 0) {
-          // Route to first available buyer (priority-based)
-          const buyer = buyers[0];
-          
-          // Create call record
-          await storage.createCall({
-            campaignId: campaign.id,
-            buyerId: buyer.id,
-            callSid,
-            fromNumber,
-            toNumber: phoneNumber,
-            status: 'ringing'
-          });
-
-          twiml.say("You are being connected");
-          twiml.dial(buyer.phoneNumber);
-        } else {
-          twiml.say("No buyers available. Please try again later.");
-          twiml.hangup();
-        }
-      } else {
-        twiml.say("Campaign not found. Goodbye.");
-        twiml.hangup();
-      }
-      
-      res.type('text/xml').send(twiml.toString());
-    } catch (error) {
-      console.error("Error processing inbound call:", error);
-      const twiml = new twilio.twiml.VoiceResponse();
-      twiml.say("System error. Please try again later.");
-      twiml.hangup();
-      res.type('text/xml').send(twiml.toString());
-    }
-  });
-
-  // =============================================================================
-  // AGENT ROUTES
-  // =============================================================================
-
-  // Get all agents
-  app.get("/api/agents", async (req, res) => {
-    try {
-      const agents = await storage.getAgents();
-      res.json(agents);
-    } catch (error) {
-      console.error("Error fetching agents:", error);
-      res.status(500).json({ message: "Failed to fetch agents" });
-    }
-  });
-
-  // Get single agent
-  app.get("/api/agents/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid agent ID" });
-      }
-
-      const agent = await storage.getAgent(id);
-      if (!agent) {
-        return res.status(404).json({ message: "Agent not found" });
-      }
-
-      res.json(agent);
-    } catch (error) {
-      console.error("Error fetching agent:", error);
-      res.status(500).json({ message: "Failed to fetch agent" });
-    }
-  });
-
-  // Create new agent
-  app.post("/api/agents", async (req, res) => {
-    try {
-      const validatedData = insertAgentSchema.parse(req.body);
-      const agent = await storage.createAgent(validatedData);
-      res.status(201).json(agent);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid agent data", 
-          errors: error.errors 
-        });
-      }
-      console.error("Error creating agent:", error);
-      res.status(500).json({ message: "Failed to create agent" });
-    }
-  });
-
-  // Update agent
-  app.patch("/api/agents/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid agent ID" });
-      }
-
-      const validatedData = insertAgentSchema.partial().parse(req.body);
-      const agent = await storage.updateAgent(id, validatedData);
-      
-      if (!agent) {
-        return res.status(404).json({ message: "Agent not found" });
-      }
-
-      res.json(agent);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid agent data", 
-          errors: error.errors 
-        });
-      }
-      console.error("Error updating agent:", error);
-      res.status(500).json({ message: "Failed to update agent" });
-    }
-  });
-
-  // Delete agent
-  app.delete("/api/agents/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid agent ID" });
-      }
-
-      const success = await storage.deleteAgent(id);
-      if (!success) {
-        return res.status(404).json({ message: "Agent not found" });
-      }
-
-      res.json({ message: "Agent deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting agent:", error);
-      res.status(500).json({ message: "Failed to delete agent" });
-    }
-  });
-
-  // =============================================================================
-  // TWILIO CALL RECORDING API ENDPOINTS
-  // =============================================================================
-
-  // Start call recording
-  app.post("/api/calls/:callSid/recording/start", async (req, res) => {
-    try {
-      const { callSid } = req.params;
-      const result = await twilioService.enableCallRecording(callSid);
-      res.json(result);
-    } catch (error) {
-      console.error("Error starting recording:", error);
-      res.status(500).json({ error: "Failed to start recording" });
-    }
-  });
-
-  // Stop call recording
-  app.post("/api/calls/:callSid/recording/stop", async (req, res) => {
-    try {
-      const { callSid } = req.params;
-      const { recordingSid } = req.body;
-      const result = await twilioService.stopCallRecording(callSid, recordingSid);
-      res.json(result);
-    } catch (error) {
-      console.error("Error stopping recording:", error);
-      res.status(500).json({ error: "Failed to stop recording" });
-    }
-  });
-
-  // Get recording status
-  app.get("/api/recordings/:recordingSid/status", async (req, res) => {
-    try {
-      const { recordingSid } = req.params;
-      const result = await twilioService.getRecordingStatus(recordingSid);
-      res.json(result);
-    } catch (error) {
-      console.error("Error getting recording status:", error);
-      res.status(500).json({ error: "Failed to get recording status" });
-    }
-  });
-
-  // Transcribe recording
-  app.post("/api/recordings/:recordingSid/transcribe", async (req, res) => {
-    try {
-      const { recordingSid } = req.params;
-      const result = await twilioService.transcribeRecording(recordingSid);
-      res.json(result);
-    } catch (error) {
-      console.error("Error transcribing recording:", error);
-      res.status(500).json({ error: "Failed to transcribe recording" });
-    }
-  });
-
-  // =============================================================================
-  // TWILIO CALL CONTROL API ENDPOINTS
-  // =============================================================================
-
-  // Transfer call
-  app.post("/api/calls/:callSid/transfer", async (req, res) => {
-    try {
-      const { callSid } = req.params;
-      const { targetNumber } = req.body;
-      const result = await twilioService.transferCall(callSid, targetNumber);
-      res.json(result);
-    } catch (error) {
-      console.error("Error transferring call:", error);
-      res.status(500).json({ error: "Failed to transfer call" });
-    }
-  });
-
-  // Hold call
-  app.post("/api/calls/:callSid/hold", async (req, res) => {
-    try {
-      const { callSid } = req.params;
-      const result = await twilioService.holdCall(callSid);
-      res.json(result);
-    } catch (error) {
-      console.error("Error holding call:", error);
-      res.status(500).json({ error: "Failed to hold call" });
-    }
-  });
-
-  // Resume call
-  app.post("/api/calls/:callSid/resume", async (req, res) => {
-    try {
-      const { callSid } = req.params;
-      const result = await twilioService.resumeCall(callSid);
-      res.json(result);
-    } catch (error) {
-      console.error("Error resuming call:", error);
-      res.status(500).json({ error: "Failed to resume call" });
-    }
-  });
-
-  // Mute call
-  app.post("/api/calls/:callSid/mute", async (req, res) => {
-    try {
-      const { callSid } = req.params;
-      const result = await twilioService.muteCall(callSid);
-      res.json(result);
-    } catch (error) {
-      console.error("Error muting call:", error);
-      res.status(500).json({ error: "Failed to mute call" });
-    }
-  });
-
-  // Unmute call
-  app.post("/api/calls/:callSid/unmute", async (req, res) => {
-    try {
-      const { callSid } = req.params;
-      const result = await twilioService.unmuteCall(callSid);
-      res.json(result);
-    } catch (error) {
-      console.error("Error unmuting call:", error);
-      res.status(500).json({ error: "Failed to unmute call" });
-    }
-  });
-
-  // Create conference call
-  app.post("/api/conference/create", async (req, res) => {
-    try {
-      const { participants } = req.body;
-      const result = await twilioService.createConferenceCall(participants);
-      res.json(result);
-    } catch (error) {
-      console.error("Error creating conference:", error);
-      res.status(500).json({ error: "Failed to create conference call" });
-    }
-  });
-
-  // Create outbound call
-  app.post("/api/calls/outbound", async (req, res) => {
-    try {
-      const { to, campaignId } = req.body;
-      if (!to) {
-        return res.status(400).json({ error: "Phone number is required" });
-      }
-      
-      const result = await twilioService.createOutboundCall(to, campaignId);
-      res.json(result);
-    } catch (error) {
-      console.error("Error creating outbound call:", error);
-      res.status(500).json({ error: "Failed to create outbound call" });
-    }
-  });
-
-  // =============================================================================
-  // TWILIO IVR API ENDPOINTS
-  // =============================================================================
-
-  // Create IVR flow for campaign
-  app.post("/api/campaigns/:campaignId/ivr", async (req, res) => {
-    try {
-      const { campaignId } = req.params;
-      const { greeting, options } = req.body;
-      const result = await twilioService.createIVRFlow(parseInt(campaignId), { greeting, options });
-      res.json(result);
-    } catch (error) {
-      console.error("Error creating IVR flow:", error);
-      res.status(500).json({ error: "Failed to create IVR flow" });
-    }
-  });
-
-  // Handle IVR response
-  app.post("/api/ivr/response", async (req, res) => {
-    try {
-      const { callSid, digit, flowSid } = req.body;
-      const result = await twilioService.handleIVRResponse(callSid, digit, flowSid || '');
-      
-      // Generate TwiML response based on IVR action
-      const twiml = new twilio.twiml.VoiceResponse();
-      
-      switch (result.action) {
-        case 'transfer':
-          twiml.dial(result.destination);
-          break;
-        case 'queue':
-          twiml.enqueue(result.destination);
-          break;
-        case 'voicemail':
-          twiml.say("Please leave a message after the beep.");
-          twiml.record({ action: '/api/ivr/voicemail', maxLength: 30 });
-          break;
-        case 'operator':
-          twiml.say("Connecting you to an operator.");
-          twiml.dial(result.destination);
-          break;
-        case 'prompt':
-          twiml.say(result.nextPrompt || 'Please make a selection');
-          twiml.gather({
-            numDigits: 1,
-            action: '/api/ivr/response'
-          });
-          break;
-      }
-      
-      res.type('text/xml').send(twiml.toString());
-    } catch (error) {
-      console.error("Error handling IVR response:", error);
-      const twiml = new twilio.twiml.VoiceResponse();
-      twiml.say("System error. Please try again later.");
-      twiml.hangup();
-      res.type('text/xml').send(twiml.toString());
-    }
-  });
-
-  // Play IVR message
-  app.post("/api/calls/:callSid/ivr/play", async (req, res) => {
-    try {
-      const { callSid } = req.params;
-      const { message } = req.body;
-      const result = await twilioService.playIVRMessage(callSid, message);
-      res.json(result);
-    } catch (error) {
-      console.error("Error playing IVR message:", error);
-      res.status(500).json({ error: "Failed to play IVR message" });
-    }
-  });
-
-  // =============================================================================
-  // TEST CALL ENDPOINT
-  // =============================================================================
-
-  // Test call endpoint - triggers real Twilio call
-  app.post("/api/test-call", async (req, res) => {
-    try {
-      const accountSid = process.env.TWILIO_ACCOUNT_SID;
-      const authToken = process.env.TWILIO_AUTH_TOKEN;
-      
-      if (!accountSid || !authToken) {
-        return res.status(500).json({ 
-          success: false, 
-          error: "Twilio credentials not configured" 
-        });
-      }
-
-      // Prepare the request to Twilio's API
-      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls.json`;
-      const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
-      
-      const callData = new URLSearchParams({
-        To: '+917045484791',
-        From: '+17177347577',
-        Url: 'https://call-center-crm-sumited.replit.app/twiml',
-        Method: 'POST'
-      });
-
-      const response = await fetch(twilioUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: callData
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        // Log the call in our system
-        try {
-          await storage.createCall({
-            campaignId: null,
-            buyerId: null,
-            callSid: result.sid,
-            fromNumber: '+17177347577',
-            toNumber: '+917045484791',
-            status: 'queued'
-          });
-        } catch (logError) {
-          console.error("Error logging test call:", logError);
-        }
-
-        res.json({ 
-          success: true, 
-          message: "Test call triggered successfully",
-          callSid: result.sid 
-        });
-      } else {
-        console.error("Twilio API error:", result);
-        res.status(400).json({ 
-          success: false, 
-          error: result.message || "Failed to trigger call" 
-        });
-      }
-    } catch (error) {
-      console.error("Error triggering test call:", error);
-      res.status(500).json({ 
-        success: false, 
-        error: "Internal server error" 
-      });
-    }
-  });
-
-  // =============================================================================
-  // TWIML ENDPOINTS
-  // =============================================================================
-
-  // Simple TwiML endpoint for test calls
-  app.get("/twiml", (req, res) => {
-    console.log("TwiML GET request received, query:", req.query);
-    res.type('text/xml');
-    res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Say voice="alice">Hello! This is a test call from your Call Center system. Test successful. Goodbye!</Say>
-    <Hangup/>
-</Response>`);
-  });
-
-  app.post("/twiml", (req, res) => {
-    console.log("TwiML POST request received");
-    console.log("Headers:", req.headers);
-    console.log("Body:", req.body);
-    
-    res.type('text/xml');
-    res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Say voice="alice">Hello! This is a test call from your Call Center system. Test successful. Goodbye!</Say>
-    <Hangup/>
-</Response>`);
-  });
-
-  // TwiML for outbound calls
-  app.post("/api/twiml/outbound", async (req, res) => {
-    try {
-      const { campaignId } = req.query;
-      
-      const twiml = new twilio.twiml.VoiceResponse();
-      twiml.say({ voice: 'alice' }, 'Hello! This is an outbound call from your campaign.');
-      
-      if (campaignId) {
-        // Get campaign IVR flow if exists
-        twiml.gather({
-          numDigits: 1,
-          action: '/api/ivr/response',
-          timeout: 10
-        }).say({ voice: 'alice' }, 'Press 1 to speak with a representative, or press 2 for more information.');
-      } else {
-        twiml.say({ voice: 'alice' }, 'Thank you for your time. Have a great day!');
-        twiml.hangup();
-      }
-      
-      res.type('text/xml').send(twiml.toString());
-    } catch (error) {
-      console.error("Error generating outbound TwiML:", error);
-      const twiml = new twilio.twiml.VoiceResponse();
-      twiml.say({ voice: 'alice' }, 'We are experiencing technical difficulties. Please try again later.');
-      twiml.hangup();
-      res.type('text/xml').send(twiml.toString());
-    }
-  });
-
-  // TwiML for inbound calls (webhook URL for your Twilio phone number)
-  app.post("/api/twiml/inbound", async (req, res) => {
-    try {
-      const { From, To, CallSid } = req.body;
-      
-      // Find campaign by phone number
-      const campaign = await storage.getCampaignByPhoneNumber(To);
-      
-      const twiml = new twilio.twiml.VoiceResponse();
-      
-      if (campaign) {
-        twiml.say({ voice: 'alice' }, `Welcome to ${campaign.name}. Please hold while we connect you.`);
-        
-        // Get buyers for this campaign and attempt ping/post
-        const buyers = await storage.getCampaignBuyers(campaign.id);
-        
-        if (buyers.length > 0) {
-          // Ping buyers first
-          const availableBuyers = await storage.pingBuyersForCall(campaign.id, {
-            callerId: From,
-            callerLocation: "Unknown",
-            callDuration: 0
-          });
-          
-          if (availableBuyers.length > 0) {
-            // Transfer to highest priority buyer
-            const primaryBuyer = availableBuyers[0];
-            twiml.dial(primaryBuyer.phoneNumber);
-          } else {
-            twiml.say({ voice: 'alice' }, 'All representatives are currently busy. Please try again later.');
-            twiml.hangup();
-          }
-        } else {
-          twiml.say({ voice: 'alice' }, 'No representatives are available. Please try again later.');
-          twiml.hangup();
-        }
-      } else {
-        twiml.say({ voice: 'alice' }, 'Thank you for calling. This number is not currently in service.');
-        twiml.hangup();
-      }
-      
-      res.type('text/xml').send(twiml.toString());
-    } catch (error) {
-      console.error("Error generating inbound TwiML:", error);
-      const twiml = new twilio.twiml.VoiceResponse();
-      twiml.say({ voice: 'alice' }, 'We are experiencing technical difficulties. Please try again later.');
-      twiml.hangup();
-      res.type('text/xml').send(twiml.toString());
-    }
-  });
-
-  // =============================================================================
-  // TWILIO WEBHOOK HANDLERS
-  // =============================================================================
-
-  // Recording status callback
-  app.post("/api/webhooks/recording-status", async (req, res) => {
-    try {
-      await twilioService.handleRecordingStatusCallback(req.body);
-      res.status(200).send('OK');
-    } catch (error) {
-      console.error("Error handling recording status callback:", error);
-      res.status(500).send('Error');
-    }
-  });
-
-  // Call status callback
-  app.post("/api/webhooks/call-status", async (req, res) => {
-    try {
-      await twilioService.handleCallStatusCallback(req.body);
-      res.status(200).send('OK');
-    } catch (error) {
-      console.error("Error handling call status callback:", error);
-      res.status(500).send('Error');
-    }
-  });
-
-  // =============================================================================
-  // INTEGRATIONS API ENDPOINTS
-  // =============================================================================
-
-  // URL Parameters endpoints
-  app.get("/api/integrations/url-parameters", async (req, res) => {
-    try {
-      const result = await storage.getUrlParameters();
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching URL parameters:", error);
-      res.status(500).json({ error: "Failed to fetch URL parameters" });
-    }
-  });
-
-  app.post("/api/integrations/url-parameters", async (req, res) => {
-    try {
-      const result = await storage.createUrlParameter(req.body);
-      res.status(201).json(result);
-    } catch (error) {
-      console.error("Error creating URL parameter:", error);
-      res.status(500).json({ error: "Failed to create URL parameter" });
-    }
-  });
-
-  // Tracking Pixels endpoints
-  app.get("/api/integrations/pixels", async (req, res) => {
-    try {
-      const result = await storage.getTrackingPixels();
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching tracking pixels:", error);
-      res.status(500).json({ error: "Failed to fetch tracking pixels" });
-    }
-  });
-
-  app.post("/api/integrations/pixels", async (req, res) => {
-    try {
-      const result = await storage.createTrackingPixel(req.body);
-      res.status(201).json(result);
-    } catch (error) {
-      console.error("Error creating tracking pixel:", error);
-      res.status(500).json({ error: "Failed to create tracking pixel" });
-    }
-  });
-
-  app.put("/api/integrations/pixels/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const result = await storage.updateTrackingPixel(id, req.body);
-      if (!result) {
-        return res.status(404).json({ error: "Tracking pixel not found" });
-      }
-      res.json(result);
-    } catch (error) {
-      console.error("Error updating tracking pixel:", error);
-      res.status(500).json({ error: "Failed to update tracking pixel" });
-    }
-  });
-
-  app.delete("/api/integrations/pixels/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const success = await storage.deleteTrackingPixel(id);
-      if (!success) {
-        return res.status(404).json({ error: "Tracking pixel not found" });
-      }
-      res.json({ message: "Tracking pixel deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting tracking pixel:", error);
-      res.status(500).json({ error: "Failed to delete tracking pixel" });
-    }
-  });
-
-  // Fire pixels for a specific event and campaign
-  app.post("/api/pixels/fire", async (req, res) => {
-    try {
-      const {
-        event,
-        campaignId,
-        macroData
-      }: {
-        event: 'call_start' | 'call_complete' | 'call_transfer';
-        campaignId: number;
-        macroData: PixelMacroData;
-      } = req.body;
-
-      if (!event || !campaignId || !macroData) {
-        return res.status(400).json({ 
-          error: "Missing required fields: event, campaignId, macroData" 
-        });
-      }
-
-      // Get all pixels that should fire for this event and campaign
-      const allPixels = await storage.getTrackingPixels();
-      const relevantPixels = allPixels.filter(pixel => 
-        pixel.fireOnEvent === event && 
-        pixel.assignedCampaigns?.includes(campaignId.toString()) &&
-        pixel.isActive
-      );
-
-      if (relevantPixels.length === 0) {
-        return res.json({ 
-          message: "No pixels found for this event and campaign",
-          firedPixels: []
-        });
-      }
-
-      // Fire each relevant pixel
-      const results = await Promise.allSettled(
-        relevantPixels.map(async (pixel) => {
-          try {
-            // Replace macros in pixel code
-            const processedCode = PixelService.replaceMacros(pixel.code, macroData);
-            
-            // Extract URL if needed based on pixel type
-            const finalCode = PixelService.extractUrlFromCode(processedCode, pixel.pixelType);
-            
-            // Fire the pixel
-            const result = await PixelService.firePixel(
-              pixel.pixelType as 'postback' | 'image' | 'javascript', 
-              finalCode
-            );
-
-            return {
-              pixelId: pixel.id,
-              pixelName: pixel.name,
-              pixelType: pixel.pixelType,
-              success: result.success,
-              response: result.response,
-              error: result.error,
-              processedCode: finalCode.substring(0, 200) // Truncate for logging
-            };
-          } catch (error) {
-            return {
-              pixelId: pixel.id,
-              pixelName: pixel.name,
-              pixelType: pixel.pixelType,
-              success: false,
-              error: error instanceof Error ? error.message : 'Unknown error'
-            };
-          }
-        })
-      );
-
-      const firedPixels = results.map(result => 
-        result.status === 'fulfilled' ? result.value : result.reason
-      );
-
-      const successCount = firedPixels.filter(p => p.success).length;
-      const totalCount = firedPixels.length;
-
-      res.json({
-        message: `Fired ${successCount}/${totalCount} pixels successfully`,
-        event,
-        campaignId,
-        firedPixels,
-        summary: {
-          total: totalCount,
-          successful: successCount,
-          failed: totalCount - successCount
-        }
-      });
-
-    } catch (error) {
-      console.error("Error firing pixels:", error);
-      res.status(500).json({ error: "Failed to fire pixels" });
-    }
-  });
-
-  // Fire a specific pixel by ID
-  app.post("/api/pixels/:id/fire", async (req, res) => {
-    try {
-      const pixelId = parseInt(req.params.id);
-      const { macroData }: { macroData: PixelMacroData } = req.body;
-
-      if (!macroData) {
-        return res.status(400).json({ error: "Missing macroData" });
-      }
-
-      // Get the specific pixel
-      const allPixels = await storage.getTrackingPixels();
-      const pixel = allPixels.find(p => p.id === pixelId);
-
-      if (!pixel) {
-        return res.status(404).json({ error: "Pixel not found" });
-      }
-
-      if (!pixel.isActive) {
-        return res.status(400).json({ error: "Pixel is inactive" });
-      }
-
-      try {
-        // Replace macros in pixel code
-        const processedCode = PixelService.replaceMacros(pixel.code, macroData);
-        
-        // Extract URL if needed based on pixel type
-        const finalCode = PixelService.extractUrlFromCode(processedCode, pixel.pixelType);
-        
-        // Fire the pixel
-        const result = await PixelService.firePixel(
-          pixel.pixelType as 'postback' | 'image' | 'javascript', 
-          finalCode
-        );
-
-        res.json({
-          message: "Pixel fired successfully",
-          pixelId: pixel.id,
-          pixelName: pixel.name,
-          pixelType: pixel.pixelType,
-          success: result.success,
-          response: result.response,
-          error: result.error,
-          processedCode: finalCode.substring(0, 200) // Truncate for security
-        });
-
-      } catch (error) {
-        res.status(500).json({
-          error: "Failed to fire pixel",
-          details: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
-
-    } catch (error) {
-      console.error("Error firing specific pixel:", error);
-      res.status(500).json({ error: "Failed to fire pixel" });
-    }
-  });
-
-  // Test pixel code with sample data
-  app.post("/api/pixels/test", async (req, res) => {
-    try {
-      const {
-        pixelType,
-        code,
-        sampleData
-      }: {
-        pixelType: 'postback' | 'image' | 'javascript';
-        code: string;
-        sampleData?: Partial<PixelMacroData>;
-      } = req.body;
-
-      if (!pixelType || !code) {
-        return res.status(400).json({ error: "Missing pixelType or code" });
-      }
-
-      // Use sample data or default test data
-      const testMacroData: PixelMacroData = {
-        call_id: 'test_call_123',
-        campaign_id: '1',
-        phone_number: '+1234567890',
-        timestamp: new Date().toISOString(),
-        caller_id: '+0987654321',
-        duration: '60',
-        status: 'completed',
-        buyer_id: '1',
-        agent_id: '1',
-        recording_url: 'https://example.com/recording.mp3',
-        ...sampleData
-      };
-
-      // Replace macros in pixel code
-      const processedCode = PixelService.replaceMacros(code, testMacroData);
-      
-      // Extract URL if needed based on pixel type
-      const finalCode = PixelService.extractUrlFromCode(processedCode, pixelType);
-
-      res.json({
-        message: "Pixel test completed",
-        originalCode: code,
-        processedCode: finalCode,
-        macroData: testMacroData,
-        pixelType,
-        note: "This is a test - no actual pixel was fired"
-      });
-
-    } catch (error) {
-      console.error("Error testing pixel:", error);
-      res.status(500).json({ error: "Failed to test pixel" });
-    }
-  });
-
-  // Webhook Configs endpoints
-  app.get("/api/webhook-configs", async (req, res) => {
-    try {
-      const result = await storage.getWebhookConfigs();
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching webhook configs:", error);
-      res.status(500).json({ error: "Failed to fetch webhook configs" });
-    }
-  });
-
-  app.post("/api/webhook-configs", async (req, res) => {
-    try {
-      const result = await storage.createWebhookConfig(req.body);
-      res.status(201).json(result);
-    } catch (error) {
-      console.error("Error creating webhook config:", error);
-      res.status(500).json({ error: "Failed to create webhook config" });
-    }
-  });
-
-  app.put("/api/webhook-configs/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      // Update webhook config - for now just return the updated data
-      res.json({ id, ...req.body });
-    } catch (error) {
-      console.error("Error updating webhook config:", error);
-      res.status(500).json({ error: "Failed to update webhook config" });
-    }
-  });
-
-  app.post("/api/webhook-configs/:id/test", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      // Simulate webhook test
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      res.json({ success: true, response_time: 150, status_code: 200 });
-    } catch (error) {
-      console.error("Error testing webhook:", error);
-      res.status(500).json({ error: "Failed to test webhook" });
-    }
-  });
-
-  // Legacy webhook endpoints for backward compatibility
-  app.get("/api/integrations/webhooks", async (req, res) => {
-    try {
-      const result = await storage.getWebhookConfigs();
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching webhook configs:", error);
-      res.status(500).json({ error: "Failed to fetch webhook configs" });
-    }
-  });
-
-  app.post("/api/integrations/webhooks", async (req, res) => {
-    try {
-      const result = await storage.createWebhookConfig(req.body);
-      res.status(201).json(result);
-    } catch (error) {
-      console.error("Error creating webhook config:", error);
-      res.status(500).json({ error: "Failed to create webhook config" });
-    }
-  });
-
-  // IVR Flows endpoints
-  app.get("/api/ivr-flows", async (req, res) => {
-    try {
-      // Return empty array for now - will be populated with real data
-      res.json([]);
-    } catch (error) {
-      console.error("Error fetching IVR flows:", error);
-      res.status(500).json({ error: "Failed to fetch IVR flows" });
-    }
-  });
-
-  app.post("/api/campaigns/:id/ivr", async (req, res) => {
-    try {
-      const campaignId = parseInt(req.params.id);
-      const { greeting, options } = req.body;
-      
-      // Create IVR flow for campaign
-      const ivrFlow = {
-        id: `FW${Date.now()}`,
-        campaignId,
-        greeting,
-        options,
-        isActive: true,
-        createdAt: new Date().toISOString()
-      };
-      
-      res.status(201).json(ivrFlow);
-    } catch (error) {
-      console.error("Error creating IVR flow:", error);
-      res.status(500).json({ error: "Failed to create IVR flow" });
-    }
-  });
-
-  // API Authentications endpoints
-  app.get("/api/integrations/authentications", async (req, res) => {
-    try {
-      const result = await storage.getApiAuthentications();
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching API authentications:", error);
-      res.status(500).json({ error: "Failed to fetch API authentications" });
-    }
-  });
-
-  app.post("/api/integrations/authentications", async (req, res) => {
-    try {
-      const result = await storage.createApiAuthentication(req.body);
-      res.status(201).json(result);
-    } catch (error) {
-      console.error("Error creating API authentication:", error);
-      res.status(500).json({ error: "Failed to create API authentication" });
-    }
-  });
-
-  // Platform Integrations endpoints
-  app.get("/api/integrations/platforms", async (req, res) => {
-    try {
-      const result = await storage.getPlatformIntegrations();
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching platform integrations:", error);
-      res.status(500).json({ error: "Failed to fetch platform integrations" });
-    }
-  });
-
-  app.post("/api/integrations/platforms", async (req, res) => {
-    try {
-      const result = await storage.createPlatformIntegration(req.body);
-      res.status(201).json(result);
-    } catch (error) {
-      console.error("Error creating platform integration:", error);
-      res.status(500).json({ error: "Failed to create platform integration" });
-    }
-  });
-
-  // =============================================================================
-  // PUBLISHERS API ENDPOINTS
-  // =============================================================================
-
-  // Publishers endpoints
-  app.get("/api/publishers", async (req, res) => {
-    try {
-      const result = await storage.getPublishers();
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching publishers:", error);
-      res.status(500).json({ error: "Failed to fetch publishers" });
-    }
-  });
-
-  app.get("/api/publishers/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const result = await storage.getPublisher(id);
-      if (!result) {
-        return res.status(404).json({ error: "Publisher not found" });
-      }
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching publisher:", error);
-      res.status(500).json({ error: "Failed to fetch publisher" });
-    }
-  });
-
-  app.post("/api/publishers", async (req, res) => {
-    try {
-      const result = await storage.createPublisher(req.body);
-      res.status(201).json(result);
-    } catch (error) {
-      console.error("Error creating publisher:", error);
-      res.status(500).json({ error: "Failed to create publisher" });
-    }
-  });
-
-  app.put("/api/publishers/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const result = await storage.updatePublisher(id, req.body);
-      if (!result) {
-        return res.status(404).json({ error: "Publisher not found" });
-      }
-      res.json(result);
-    } catch (error) {
-      console.error("Error updating publisher:", error);
-      res.status(500).json({ error: "Failed to update publisher" });
-    }
-  });
-
-  app.delete("/api/publishers/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const success = await storage.deletePublisher(id);
-      if (!success) {
-        return res.status(404).json({ error: "Publisher not found" });
-      }
-      res.json({ message: "Publisher deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting publisher:", error);
-      res.status(500).json({ error: "Failed to delete publisher" });
-    }
-  });
-
-  // Publisher-Campaign relationships
-  app.get("/api/publishers/:id/campaigns", async (req, res) => {
-    try {
-      const publisherId = parseInt(req.params.id);
-      const result = await storage.getPublisherCampaigns(publisherId);
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching publisher campaigns:", error);
-      res.status(500).json({ error: "Failed to fetch publisher campaigns" });
-    }
-  });
-
-  app.post("/api/publishers/:publisherId/campaigns/:campaignId", async (req, res) => {
-    try {
-      const publisherId = parseInt(req.params.publisherId);
-      const campaignId = parseInt(req.params.campaignId);
-      const { customPayout } = req.body;
-      const result = await storage.addPublisherToCampaign(publisherId, campaignId, customPayout);
-      res.status(201).json(result);
-    } catch (error) {
-      console.error("Error adding publisher to campaign:", error);
-      res.status(500).json({ error: "Failed to add publisher to campaign" });
-    }
-  });
-
-  app.delete("/api/publishers/:publisherId/campaigns/:campaignId", async (req, res) => {
-    try {
-      const publisherId = parseInt(req.params.publisherId);
-      const campaignId = parseInt(req.params.campaignId);
-      const success = await storage.removePublisherFromCampaign(publisherId, campaignId);
-      if (!success) {
-        return res.status(404).json({ error: "Publisher-campaign relationship not found" });
-      }
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error removing publisher from campaign:", error);
-      res.status(500).json({ error: "Failed to remove publisher from campaign" });
-    }
-  });
-
-  const httpServer = createServer(app);
-  return httpServer;
+import { 
+  type Campaign, 
+  type InsertCampaign, 
+  type Agent, 
+  type InsertAgent, 
+  type Call, 
+  type InsertCall, 
+  type User, 
+  type InsertUser,
+  type Buyer,
+  type InsertBuyer,
+  type CampaignBuyer,
+  type InsertCampaignBuyer,
+  type CallLog,
+  type InsertCallLog,
+} from '@shared/schema';
+
+export interface IStorage {
+  // Users
+  getUser(id: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+
+  // Campaigns
+  getCampaigns(): Promise<Campaign[]>;
+  getCampaign(id: number): Promise<Campaign | undefined>;
+  getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined>;
+  createCampaign(campaign: InsertCampaign): Promise<Campaign>;
+  updateCampaign(id: number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined>;
+  deleteCampaign(id: number): Promise<boolean>;
+
+  // Buyers
+  getBuyers(): Promise<Buyer[]>;
+  getBuyer(id: number): Promise<Buyer | undefined>;
+  createBuyer(buyer: InsertBuyer): Promise<Buyer>;
+  updateBuyer(id: number, buyer: Partial<InsertBuyer>): Promise<Buyer | undefined>;
+  deleteBuyer(id: number): Promise<boolean>;
+  
+  // Campaign-Buyer Relations
+  getCampaignBuyers(campaignId: number): Promise<Buyer[]>;
+  addBuyerToCampaign(campaignId: number, buyerId: number, priority?: number): Promise<CampaignBuyer>;
+  removeBuyerFromCampaign(campaignId: number, buyerId: number): Promise<boolean>;
+  
+  // Call Routing & Ping/Post
+  pingBuyersForCall(campaignId: number, callData: any): Promise<Buyer[]>;
+  postCallToBuyer(buyerId: number, callData: any): Promise<boolean>;
+
+  // Agents (backward compatibility)
+  getAgents(): Promise<Agent[]>;
+  getAgent(id: number): Promise<Agent | undefined>;
+  createAgent(agent: InsertAgent): Promise<Agent>;
+  updateAgent(id: number, agent: Partial<InsertAgent>): Promise<Agent | undefined>;
+
+  // Calls
+  getCalls(): Promise<Call[]>;
+  getCallsByCampaign(campaignId: number): Promise<Call[]>;
+  createCall(call: InsertCall): Promise<Call>;
+  
+  // Call Logs
+  getCallLogs(callId: number): Promise<CallLog[]>;
+  createCallLog(log: InsertCallLog): Promise<CallLog>;
+
+  // Stats
+  getStats(): Promise<{
+    activeCampaigns: number;
+    totalCalls: number;
+    successRate: string;
+    activeAgents: number;
+    activeBuyers: number;
+    avgResponseTime: number;
+  }>;
+
+  // Integrations
+  getUrlParameters(): Promise<any[]>;
+  createUrlParameter(data: any): Promise<any>;
+  getTrackingPixels(): Promise<any[]>;
+  createTrackingPixel(data: any): Promise<any>;
+  updateTrackingPixel(id: number, data: any): Promise<any>;
+  deleteTrackingPixel(id: number): Promise<boolean>;
+  getWebhookConfigs(): Promise<any[]>;
+  createWebhookConfig(data: any): Promise<any>;
+  getApiAuthentications(): Promise<any[]>;
+  createApiAuthentication(data: any): Promise<any>;
+  getPlatformIntegrations(): Promise<any[]>;
+  createPlatformIntegration(data: any): Promise<any>;
+
+  // Publishers
+  getPublishers(): Promise<any[]>;
+  getPublisher(id: number): Promise<any | undefined>;
+  createPublisher(publisher: any): Promise<any>;
+  updatePublisher(id: number, publisher: any): Promise<any | undefined>;
+  deletePublisher(id: number): Promise<boolean>;
+  
+  // Publisher-Campaign Relations
+  getPublisherCampaigns(publisherId: number): Promise<any[]>;
+  addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any>;
+  removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean>;
 }
+
+export class MemStorage implements IStorage {
+  private users: Map<string, User> = new Map();
+  private campaigns: Map<number, Campaign> = new Map();
+  private buyers: Map<number, Buyer> = new Map();
+  private campaignBuyers: Map<string, CampaignBuyer> = new Map();
+  private agents: Map<number, Agent> = new Map();
+  private calls: Map<number, Call> = new Map();
+  private callLogs: Map<number, CallLog> = new Map();
+  private publishers: Map<number, any> = new Map();
+  private publisherCampaigns: Map<string, any> = new Map();
+  private currentUserId: number = 1;
+  private currentCampaignId: number = 1;
+  private currentBuyerId: number = 1;
+  private currentAgentId: number = 1;
+  private currentCallId: number = 1;
+  private currentCallLogId: number = 1;
+  private currentPublisherId: number = 1;
+
+  constructor() {
+    this.initializeSampleData();
+  }
+
+  private initializeSampleData() {
+    // Sample campaigns
+    this.campaigns.set(1, {
+      id: 1,
+      userId: "demo-user-1",
+      name: "Home Insurance Lead Gen",
+      description: "Insurance leads for homeowners",
+      status: "active",
+      phoneNumber: "+17177347577",
+      routingType: "round_robin",
+      maxConcurrentCalls: 5,
+      callCap: 100,
+      geoTargeting: ["US"],
+      timeZoneRestriction: "EST",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    this.campaigns.set(2, {
+      id: 2,
+      userId: "demo-user-1",
+      name: "Auto Insurance Campaign",
+      description: "Auto insurance quote generation",
+      status: "active",
+      phoneNumber: null,
+      routingType: "weighted",
+      maxConcurrentCalls: 3,
+      callCap: 50,
+      geoTargeting: ["CA", "TX"],
+      timeZoneRestriction: "PST",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    // Sample buyers - using correct schema fields
+    this.buyers.set(1, {
+      id: 1,
+      userId: "demo-user-1",
+      name: "LeadGen Pro",
+      email: "contact@leadgenpro.com",
+      phoneNumber: "+12125551234",
+      status: "active",
+      endpoint: "https://api.leadgenpro.com/webhook",
+      priority: 1,
+      dailyCap: 50,
+      concurrencyLimit: 3,
+      acceptanceRate: "75.50",
+      avgResponseTime: 150,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    this.buyers.set(2, {
+      id: 2,
+      userId: "demo-user-1",
+      name: "Insurance Direct",
+      email: "leads@insurancedirect.com",
+      phoneNumber: "+13235556789",
+      status: "active",
+      endpoint: "https://webhook.insurancedirect.com/leads",
+      priority: 2,
+      dailyCap: 100,
+      concurrencyLimit: 5,
+      acceptanceRate: "82.30",
+      avgResponseTime: 200,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    // Sample agents
+    this.agents.set(1, {
+      id: 1,
+      name: "Sarah Johnson",
+      email: "sarah@company.com",
+      status: "active",
+      callsHandled: 45,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    this.agents.set(2, {
+      id: 2,
+      name: "Mike Chen",
+      email: "mike@company.com",
+      status: "active",
+      callsHandled: 32,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    this.currentCampaignId = 3;
+    this.currentBuyerId = 3;
+    this.currentAgentId = 3;
+  }
+
+  // Users
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    for (const user of Array.from(this.users.values())) {
+      if (user.email === username) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    for (const user of Array.from(this.users.values())) {
+      if (user.email === email) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const user: User = { 
+      id: insertUser.id,
+      email: insertUser.email ?? null,
+      password: insertUser.password ?? null,
+      firstName: insertUser.firstName ?? null,
+      lastName: insertUser.lastName ?? null,
+      profileImageUrl: insertUser.profileImageUrl ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.users.set(user.id, user);
+    return user;
+  }
+
+  // Campaigns
+  async getCampaigns(): Promise<Campaign[]> {
+    const campaigns: Campaign[] = [];
+    for (const campaign of this.campaigns.values()) {
+      campaigns.push(campaign);
+    }
+    return campaigns;
+  }
+
+  async getCampaign(id: number): Promise<Campaign | undefined> {
+    return this.campaigns.get(id);
+  }
+
+  async getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined> {
+    for (const campaign of this.campaigns.values()) {
+      if (campaign.phoneNumber === phoneNumber) {
+        return campaign;
+      }
+    }
+    return undefined;
+  }
+
+  async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
+    const id = this.currentCampaignId++;
+    const newCampaign: Campaign = {
+      id,
+      userId: campaign.userId,
+      name: campaign.name,
+      description: campaign.description ?? null,
+      status: campaign.status ?? "active",
+      phoneNumber: campaign.phoneNumber ?? null,
+      routingType: campaign.routingType ?? "round_robin",
+      maxConcurrentCalls: campaign.maxConcurrentCalls ?? 1,
+      callCap: campaign.callCap ?? 100,
+      geoTargeting: campaign.geoTargeting ?? null,
+      timeZoneRestriction: campaign.timeZoneRestriction ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.campaigns.set(id, newCampaign);
+    return newCampaign;
+  }
+
+  async updateCampaign(id: number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
+    const existing = this.campaigns.get(id);
+    if (!existing) return undefined;
+    
+    const updated: Campaign = {
+      ...existing,
+      ...campaign,
+      updatedAt: new Date()
+    };
+    this.campaigns.set(id, updated);
+    return updated;
+  }
+
+  async deleteCampaign(id: number): Promise<boolean> {
+    // Delete all related records first to avoid foreign key constraint violations
+    
+    // Delete call logs for calls related to this campaign
+    const callsToRemove: number[] = [];
+    for (const [callId, call] of this.calls.entries()) {
+      if (call.campaignId === id) {
+        callsToRemove.push(callId);
+      }
+    }
+    
+    // Remove call logs for these calls
+    for (const callId of callsToRemove) {
+      const logsToRemove: number[] = [];
+      for (const [logId, log] of this.callLogs.entries()) {
+        if (log.callId === callId) {
+          logsToRemove.push(logId);
+        }
+      }
+      logsToRemove.forEach(logId => this.callLogs.delete(logId));
+    }
+    
+    // Remove the calls
+    callsToRemove.forEach(callId => this.calls.delete(callId));
+    
+    // Remove campaign-buyer relationships
+    const campaignBuyersToRemove: string[] = [];
+    for (const [key, cb] of this.campaignBuyers.entries()) {
+      if (cb.campaignId === id) {
+        campaignBuyersToRemove.push(key);
+      }
+    }
+    campaignBuyersToRemove.forEach(key => this.campaignBuyers.delete(key));
+    
+    // Remove publisher-campaign relationships
+    const publisherCampaignsToRemove: string[] = [];
+    for (const [key, pc] of this.publisherCampaigns.entries()) {
+      if (pc.campaignId === id) {
+        publisherCampaignsToRemove.push(key);
+      }
+    }
+    publisherCampaignsToRemove.forEach(key => this.publisherCampaigns.delete(key));
+    
+    // Finally delete the campaign
+    return this.campaigns.delete(id);
+  }
+
+  // Agents
+  async getAgents(): Promise<Agent[]> {
+    const agents: Agent[] = [];
+    for (const agent of this.agents.values()) {
+      agents.push(agent);
+    }
+    return agents;
+  }
+
+  async getAgent(id: number): Promise<Agent | undefined> {
+    return this.agents.get(id);
+  }
+
+  async createAgent(agent: InsertAgent): Promise<Agent> {
+    const id = this.currentAgentId++;
+    const newAgent: Agent = {
+      id,
+      name: agent.name,
+      email: agent.email,
+      status: agent.status ?? "active",
+      callsHandled: agent.callsHandled ?? 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.agents.set(id, newAgent);
+    return newAgent;
+  }
+
+  async updateAgent(id: number, agent: Partial<InsertAgent>): Promise<Agent | undefined> {
+    const existing = this.agents.get(id);
+    if (!existing) return undefined;
+    
+    const updated: Agent = {
+      ...existing,
+      ...agent,
+      updatedAt: new Date()
+    };
+    this.agents.set(id, updated);
+    return updated;
+  }
+
+  async deleteAgent(id: number): Promise<boolean> {
+    return this.agents.delete(id);
+  }
+
+  // Calls
+  async getCalls(): Promise<Call[]> {
+    const calls: Call[] = [];
+    for (const call of this.calls.values()) {
+      calls.push(call);
+    }
+    return calls;
+  }
+
+  async getCallsByCampaign(campaignId: number): Promise<Call[]> {
+    const calls: Call[] = [];
+    for (const call of this.calls.values()) {
+      if (call.campaignId === campaignId) {
+        calls.push(call);
+      }
+    }
+    return calls;
+  }
+
+  async createCall(call: InsertCall): Promise<Call> {
+    const id = this.currentCallId++;
+    const newCall: Call = {
+      id,
+      campaignId: call.campaignId ?? null,
+      buyerId: call.buyerId ?? null,
+      callSid: call.callSid,
+      fromNumber: call.fromNumber,
+      toNumber: call.toNumber,
+      duration: call.duration ?? 0,
+      status: call.status,
+      callQuality: call.callQuality ?? null,
+      recordingUrl: call.recordingUrl ?? null,
+      recordingSid: call.recordingSid ?? null,
+      recordingStatus: call.recordingStatus ?? null,
+      recordingDuration: call.recordingDuration ?? null,
+      transcription: call.transcription ?? null,
+      transcriptionStatus: call.transcriptionStatus ?? null,
+      cost: call.cost ?? "0.0000",
+      revenue: call.revenue ?? "0.0000",
+      geoLocation: call.geoLocation ?? null,
+      userAgent: call.userAgent ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.calls.set(id, newCall);
+    return newCall;
+  }
+
+  // Buyers
+  async getBuyers(): Promise<Buyer[]> {
+    const buyers: Buyer[] = [];
+    for (const buyer of this.buyers.values()) {
+      buyers.push(buyer);
+    }
+    return buyers;
+  }
+
+  async getBuyer(id: number): Promise<Buyer | undefined> {
+    return this.buyers.get(id);
+  }
+
+  async createBuyer(buyer: InsertBuyer): Promise<Buyer> {
+    const id = this.currentBuyerId++;
+    const newBuyer: Buyer = {
+      id,
+      userId: buyer.userId,
+      name: buyer.name,
+      email: buyer.email,
+      phoneNumber: buyer.phoneNumber,
+      status: buyer.status ?? "active",
+      endpoint: buyer.endpoint ?? null,
+      priority: buyer.priority ?? 1,
+      dailyCap: buyer.dailyCap ?? 50,
+      concurrencyLimit: buyer.concurrencyLimit ?? 3,
+      acceptanceRate: buyer.acceptanceRate ?? "0.00",
+      avgResponseTime: buyer.avgResponseTime ?? 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.buyers.set(id, newBuyer);
+    return newBuyer;
+  }
+
+  async updateBuyer(id: number, buyer: Partial<InsertBuyer>): Promise<Buyer | undefined> {
+    const existing = this.buyers.get(id);
+    if (!existing) return undefined;
+    
+    const updated: Buyer = {
+      ...existing,
+      ...buyer,
+      updatedAt: new Date()
+    };
+    this.buyers.set(id, updated);
+    return updated;
+  }
+
+  async deleteBuyer(id: number): Promise<boolean> {
+    // First delete all campaign-buyer relationships
+    const keysToDelete = [];
+    for (const [key, relationship] of this.campaignBuyers.entries()) {
+      if (relationship.buyerId === id) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach(key => this.campaignBuyers.delete(key));
+    
+    // Then delete the buyer
+    return this.buyers.delete(id);
+  }
+
+  // Campaign-Buyer Relations
+  async getCampaignBuyers(campaignId: number): Promise<Buyer[]> {
+    const campaignBuyerEntries: CampaignBuyer[] = [];
+    for (const cb of this.campaignBuyers.values()) {
+      if (cb.campaignId === campaignId) {
+        campaignBuyerEntries.push(cb);
+      }
+    }
+    
+    const buyers: Buyer[] = [];
+    for (const cb of campaignBuyerEntries) {
+      const buyer = this.buyers.get(cb.buyerId);
+      if (buyer) {
+        buyers.push(buyer);
+      }
+    }
+    return buyers;
+  }
+
+  async addBuyerToCampaign(campaignId: number, buyerId: number, priority = 1): Promise<CampaignBuyer> {
+    const key = `${campaignId}-${buyerId}`;
+    const campaignBuyer: CampaignBuyer = {
+      id: this.campaignBuyers.size + 1,
+      campaignId,
+      buyerId,
+      isActive: true,
+      priority,
+      createdAt: new Date()
+    };
+    this.campaignBuyers.set(key, campaignBuyer);
+    return campaignBuyer;
+  }
+
+  async removeBuyerFromCampaign(campaignId: number, buyerId: number): Promise<boolean> {
+    const key = `${campaignId}-${buyerId}`;
+    return this.campaignBuyers.delete(key);
+  }
+
+  // Call Routing & Ping/Post
+  async pingBuyersForCall(campaignId: number, callData: any): Promise<Buyer[]> {
+    const campaignBuyers = await this.getCampaignBuyers(campaignId);
+    const activeBuyers: Buyer[] = [];
+    for (const buyer of campaignBuyers) {
+      if (buyer.status === 'active') {
+        activeBuyers.push(buyer);
+      }
+    }
+    return activeBuyers;
+  }
+
+  async postCallToBuyer(buyerId: number, callData: any): Promise<boolean> {
+    const buyer = await this.getBuyer(buyerId);
+    return buyer !== undefined && buyer.status === 'active';
+  }
+
+  // Call Logs
+  async getCallLogs(callId: number): Promise<CallLog[]> {
+    const logs: CallLog[] = [];
+    for (const log of this.callLogs.values()) {
+      if (log.callId === callId) {
+        logs.push(log);
+      }
+    }
+    return logs;
+  }
+
+  async createCallLog(log: InsertCallLog): Promise<CallLog> {
+    const id = this.currentCallLogId++;
+    const newLog: CallLog = {
+      id,
+      callId: log.callId,
+      buyerId: log.buyerId ?? null,
+      action: log.action,
+      response: log.response ?? null,
+      responseTime: log.responseTime ?? null,
+      timestamp: new Date()
+    };
+    this.callLogs.set(id, newLog);
+    return newLog;
+  }
+
+  // Stats
+  async getStats(): Promise<{
+    activeCampaigns: number;
+    totalCalls: number;
+    successRate: string;
+    activeAgents: number;
+    activeBuyers: number;
+    avgResponseTime: number;
+  }> {
+    let activeCampaigns = 0;
+    for (const campaign of this.campaigns.values()) {
+      if (campaign.status === 'active') {
+        activeCampaigns++;
+      }
+    }
+
+    const totalCalls = this.calls.size;
+    
+    let successfulCalls = 0;
+    for (const call of this.calls.values()) {
+      if (call.status === 'completed') {
+        successfulCalls++;
+      }
+    }
+    
+    const successRate = totalCalls > 0 ? `${Math.round((successfulCalls / totalCalls) * 100)}%` : "0%";
+    
+    let activeAgents = 0;
+    for (const agent of this.agents.values()) {
+      if (agent.status === 'active') {
+        activeAgents++;
+      }
+    }
+    
+    let activeBuyers = 0;
+    for (const buyer of this.buyers.values()) {
+      if (buyer.status === 'active') {
+        activeBuyers++;
+      }
+    }
+    
+    let totalResponseTime = 0;
+    for (const buyer of this.buyers.values()) {
+      totalResponseTime += buyer.avgResponseTime;
+    }
+    const avgResponseTime = this.buyers.size > 0 ? totalResponseTime / this.buyers.size : 0;
+
+    return {
+      activeCampaigns,
+      totalCalls,
+      successRate,
+      activeAgents,
+      activeBuyers,
+      avgResponseTime
+    };
+  }
+
+  // Integration methods - returning empty arrays for in-memory storage
+  async getUrlParameters(): Promise<any[]> {
+    return [];
+  }
+
+  async createUrlParameter(data: any): Promise<any> {
+    return { id: Date.now(), ...data };
+  }
+
+  async getTrackingPixels(): Promise<any[]> {
+    return [];
+  }
+
+  async createTrackingPixel(data: any): Promise<any> {
+    return { id: Date.now(), ...data };
+  }
+
+  async updateTrackingPixel(id: number, data: any): Promise<any> {
+    return { id, ...data };
+  }
+
+  async deleteTrackingPixel(id: number): Promise<boolean> {
+    return true;
+  }
+
+  async getWebhookConfigs(): Promise<any[]> {
+    return [];
+  }
+
+  async createWebhookConfig(data: any): Promise<any> {
+    return { id: Date.now(), ...data };
+  }
+
+  async getApiAuthentications(): Promise<any[]> {
+    return [];
+  }
+
+  async createApiAuthentication(data: any): Promise<any> {
+    return { id: Date.now(), ...data };
+  }
+
+  async getPlatformIntegrations(): Promise<any[]> {
+    return [];
+  }
+
+  async createPlatformIntegration(data: any): Promise<any> {
+    return { id: Date.now(), ...data };
+  }
+
+  // Publisher methods - full implementation for in-memory storage
+  async getPublishers(): Promise<any[]> {
+    return Array.from(this.publishers.values());
+  }
+
+  async getPublisher(id: number): Promise<any | undefined> {
+    return this.publishers.get(id);
+  }
+
+  async createPublisher(publisher: any): Promise<any> {
+    const id = this.currentPublisherId++;
+    const newPublisher = { 
+      id, 
+      ...publisher,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.publishers.set(id, newPublisher);
+    return newPublisher;
+  }
+
+  async updatePublisher(id: number, publisher: any): Promise<any | undefined> {
+    const existing = this.publishers.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { 
+      ...existing, 
+      ...publisher, 
+      id,
+      updatedAt: new Date()
+    };
+    this.publishers.set(id, updated);
+    return updated;
+  }
+
+  async deletePublisher(id: number): Promise<boolean> {
+    // First delete all publisher-campaign relationships
+    const keysToDelete = [];
+    for (const [key, relationship] of this.publisherCampaigns.entries()) {
+      if (relationship.publisherId === id) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach(key => this.publisherCampaigns.delete(key));
+    
+    // Then delete the publisher
+    return this.publishers.delete(id);
+  }
+
+  async getPublisherCampaigns(publisherId: number): Promise<any[]> {
+    const relationships = Array.from(this.publisherCampaigns.values())
+      .filter(rel => rel.publisherId === publisherId);
+    
+    const campaigns = [];
+    for (const rel of relationships) {
+      const campaign = this.campaigns.get(rel.campaignId);
+      if (campaign) {
+        campaigns.push(campaign);
+      }
+    }
+    return campaigns;
+  }
+
+  async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any> {
+    const key = `${publisherId}-${campaignId}`;
+    const relationship = {
+      id: Date.now(),
+      publisherId,
+      campaignId,
+      customPayout,
+      isActive: true,
+      createdAt: new Date()
+    };
+    this.publisherCampaigns.set(key, relationship);
+    return relationship;
+  }
+
+  async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
+    const key = `${publisherId}-${campaignId}`;
+    return this.publisherCampaigns.delete(key);
+  }
+}
+
+// Export SupabaseStorage as the main storage implementation  
+export { storage } from './supabase-storage';

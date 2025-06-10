@@ -7,17 +7,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Configure session middleware
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, // Set to true in production with HTTPS
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
+// Database session storage will be configured in routes.ts with Replit Auth
 
 app.use((req, res, next) => {
   const start = Date.now();
