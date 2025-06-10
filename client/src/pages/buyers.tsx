@@ -468,8 +468,13 @@ export default function Buyers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
-      // Invalidate all campaign-specific buyer queries
-      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"], type: "all" });
+      // Clear all campaign-related cache to ensure fresh data
+      queryClient.removeQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return (typeof key[0] === "string" && key[0].startsWith("/api/campaigns")) as boolean;
+        }
+      });
       toast({ title: "Success", description: "Buyer deleted successfully" });
     },
     onError: (error) => {
@@ -575,28 +580,30 @@ export default function Buyers() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the buyer and remove them from all campaigns. This action cannot be undone.
-              
-              {campaignAssignments.length > 0 && (
-                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-                  <div className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                    ⚠️ This buyer is assigned to {campaignAssignments.length} campaign(s):
+            <AlertDialogDescription asChild>
+              <div>
+                <p>This will permanently delete the buyer and remove them from all campaigns. This action cannot be undone.</p>
+                
+                {campaignAssignments.length > 0 && (
+                  <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                    <div className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                      ⚠️ This buyer is assigned to {campaignAssignments.length} campaign(s):
+                    </div>
+                    <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                      {campaignAssignments.map((assignment, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="font-medium">{assignment.campaignName}</span>
+                          {assignment.isActive && (
+                            <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs rounded-full">
+                              Active
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-                    {campaignAssignments.map((assignment, index) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <span className="font-medium">{assignment.campaignName}</span>
-                        {assignment.isActive && (
-                          <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs rounded-full">
-                            Active
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
