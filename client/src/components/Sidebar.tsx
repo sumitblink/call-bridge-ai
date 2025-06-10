@@ -12,6 +12,9 @@ const navigation = [
   { name: "Buyers", href: "/buyers", icon: DollarSign, current: false },
   { name: "Publishers", href: "/publishers", icon: UserCheck, current: false },
   { name: "Agents", href: "/agents", icon: Users, current: false },
+  { name: "Calls", href: "/calls", icon: PhoneCall, current: false },
+  { name: "Call Control", href: "/call-control", icon: PhoneForwarded, current: false },
+  { name: "IVR Setup", href: "/ivr-setup", icon: Mic, current: false },
   { name: "Integrations", href: "/integrations", icon: Zap, current: false },
   { name: "Settings", href: "/settings", icon: Settings, current: false },
 ];

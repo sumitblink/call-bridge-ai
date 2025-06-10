@@ -10,6 +10,8 @@ import Campaigns from "@/pages/campaigns";
 import Buyers from "@/pages/buyers";
 import Publishers from "@/pages/publishers";
 import Agents from "@/pages/agents";
+import Calls from "@/pages/calls";
+import CallControl from "@/pages/call-control";
 import IVRSetup from "@/pages/ivr-setup";
 import Integrations from "@/pages/integrations";
 import WebhookTest from "@/pages/webhook-test";
