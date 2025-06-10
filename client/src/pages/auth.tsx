@@ -79,6 +79,10 @@ export default function Auth() {
     signupMutation.mutate({ email, password, firstName, lastName });
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href = "/api/auth/google";
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -112,12 +116,6 @@ export default function Auth() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm font-medium text-blue-800 mb-1">Demo Credentials:</p>
-                  <p className="text-sm text-blue-700">Email: demo@callcenter.com</p>
-                  <p className="text-sm text-blue-700">Password: demo123</p>
-                </div>
-
                 <form onSubmit={handleEmailLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -169,6 +167,7 @@ export default function Auth() {
                   variant="outline"
                   className="w-full h-11 border-gray-200 hover:bg-gray-50"
                   disabled={isLoading}
+                  onClick={handleGoogleLogin}
                 >
                   <Chrome className="h-4 w-4 mr-2" />
                   Continue with Google
@@ -268,6 +267,7 @@ export default function Auth() {
                   variant="outline"
                   className="w-full h-11 border-gray-200 hover:bg-gray-50"
                   disabled={isLoading}
+                  onClick={handleGoogleLogin}
                 >
                   <Chrome className="h-4 w-4 mr-2" />
                   Sign up with Google

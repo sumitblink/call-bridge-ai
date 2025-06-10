@@ -117,15 +117,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.redirect('/dashboard');
   });
 
-  app.post('/api/logout', (req, res) => {
-    // Clear session
-    if (req.session) {
-      req.session.destroy(() => {
-        res.json({ success: true, message: "Logged out successfully" });
-      });
-    } else {
-      res.json({ success: true, message: "Already logged out" });
-    }
+  // Google OAuth routes
+  app.get('/api/auth/google', (req, res) => {
+    // For demo purposes, create a mock Google user
+    const mockGoogleUser = {
+      id: "google-user-" + Date.now(),
+      email: "user@gmail.com",
+      firstName: "Google",
+      lastName: "User",
+      profileImageUrl: "https://lh3.googleusercontent.com/a/default-user=s96-c"
+    };
+    
+    (req.session as any).user = mockGoogleUser;
+    res.redirect('/dashboard');
+  });
+
+  app.get('/api/auth/facebook', (req, res) => {
+    // For demo purposes, create a mock Facebook user
+    const mockFacebookUser = {
+      id: "facebook-user-" + Date.now(),
+      email: "user@facebook.com",
+      firstName: "Facebook",
+      lastName: "User",
+      profileImageUrl: "https://graph.facebook.com/me/picture?type=large"
+    };
+    
+    (req.session as any).user = mockFacebookUser;
+    res.redirect('/dashboard');
   });
 
   app.get('/api/logout', (req, res) => {
