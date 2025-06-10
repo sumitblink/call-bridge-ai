@@ -420,7 +420,7 @@ export default function Buyers() {
         const error = await response.json();
         throw new Error(error.message || "Failed to delete buyer");
       }
-      return response.json();
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });

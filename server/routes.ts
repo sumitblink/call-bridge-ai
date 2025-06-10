@@ -256,6 +256,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/buyers/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertBuyerSchema.partial().parse(req.body);
+      const buyer = await storage.updateBuyer(id, validatedData);
+      if (!buyer) {
+        return res.status(404).json({ error: "Buyer not found" });
+      }
+      res.json(buyer);
+    } catch (error) {
+      console.error("Error updating buyer:", error);
+      res.status(500).json({ error: "Failed to update buyer" });
+    }
+  });
+
+  app.delete('/api/buyers/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteBuyer(id);
+      if (!success) {
+        return res.status(404).json({ error: "Buyer not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting buyer:", error);
+      res.status(500).json({ error: "Failed to delete buyer" });
+    }
+  });
+
   // Agents (backward compatibility)
   app.get('/api/agents', async (req, res) => {
     try {

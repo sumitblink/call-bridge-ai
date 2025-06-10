@@ -578,7 +578,7 @@ export default function Campaigns() {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Failed to delete campaign");
-      return response.json();
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
