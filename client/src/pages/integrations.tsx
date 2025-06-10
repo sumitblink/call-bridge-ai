@@ -80,84 +80,72 @@ export default function IntegrationsPage() {
 
   const { toast } = useToast();
 
-  // Mock data - in production this would come from API
-  const urlParameters: URLParameter[] = [
-    {
-      id: "1",
-      name: "UTM Source Tracking",
-      parameter: "utm_source",
-      description: "Track traffic source for attribution",
-      value: "{utm_source}",
-      isActive: true
-    },
-    {
-      id: "2", 
-      name: "Campaign ID",
-      parameter: "campaign_id",
-      description: "Dynamic campaign identifier",
-      value: "{campaign.id}",
-      isActive: true
-    }
-  ];
+  // Fetch URL Parameters from API
+  const { data: urlParameters = [], isLoading: urlLoading } = useQuery<URLParameter[]>({
+    queryKey: ['/api/integrations/url-parameters'],
+    select: (data: any[]) => data.map((param: any) => ({
+      id: param.id.toString(),
+      name: param.name,
+      parameter: param.parameter,
+      description: param.description || "",
+      value: param.value,
+      isActive: param.isActive
+    }))
+  });
 
-  const pixels: Pixel[] = [
-    {
-      id: "1",
-      name: "Google Analytics",
-      type: "analytics",
-      code: `<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'GA_MEASUREMENT_ID');
-</script>`,
-      campaigns: ["Auto Insurance", "Home Insurance"],
-      isActive: true
-    }
-  ];
+  // Fetch Tracking Pixels from API
+  const { data: pixels = [], isLoading: pixelsLoading } = useQuery<Pixel[]>({
+    queryKey: ['/api/integrations/pixels'],
+    select: (data: any[]) => data.map((pixel: any) => ({
+      id: pixel.id.toString(),
+      name: pixel.name,
+      type: pixel.type,
+      code: pixel.code,
+      campaigns: Array.isArray(pixel.campaigns) ? pixel.campaigns : [],
+      isActive: pixel.isActive
+    }))
+  });
 
-  const webhooks: WebhookConfig[] = [
-    {
-      id: "1",
-      name: "Call Started Webhook",
-      url: "https://api.yourcrm.com/webhooks/call-started",
-      events: ["call.started", "call.answered"],
-      headers: { "Authorization": "Bearer token123", "Content-Type": "application/json" },
-      isActive: true,
-      retryCount: 3
-    }
-  ];
+  // Fetch Webhooks from API
+  const { data: webhooks = [], isLoading: webhooksLoading } = useQuery<WebhookConfig[]>({
+    queryKey: ['/api/webhook-configs'],
+    select: (data: any[]) => data.map((webhook: any) => ({
+      id: webhook.id.toString(),
+      name: webhook.name,
+      url: webhook.url,
+      events: Array.isArray(webhook.events) ? webhook.events : 
+               typeof webhook.events === 'string' ? JSON.parse(webhook.events) : [],
+      headers: typeof webhook.headers === 'string' ? JSON.parse(webhook.headers || '{}') : webhook.headers || {},
+      isActive: webhook.isActive,
+      retryCount: webhook.retryCount || 3
+    }))
+  });
 
-  const authentications: Authentication[] = [
-    {
-      id: "1",
-      name: "Twilio API",
-      type: "api_key",
-      apiKey: "AC***************",
-      secretKey: "***************",
-      isActive: true
-    }
-  ];
+  // Fetch API Authentications from API
+  const { data: authentications = [], isLoading: authLoading } = useQuery<Authentication[]>({
+    queryKey: ['/api/integrations/authentications'],
+    select: (data: any[]) => data.map((auth: any) => ({
+      id: auth.id.toString(),
+      name: auth.name,
+      type: auth.type,
+      apiKey: auth.apiKey || "***************",
+      secretKey: auth.secretKey ? "***************" : undefined,
+      isActive: auth.isActive
+    }))
+  });
 
-  const platforms: Platform[] = [
-    {
-      id: "1",
-      name: "Salesforce",
-      type: "crm",
-      status: "connected",
-      config: { instanceUrl: "https://yourcompany.salesforce.com" },
-      lastSync: "2024-01-15T10:30:00Z"
-    },
-    {
-      id: "2",
-      name: "HubSpot",
-      type: "crm", 
-      status: "disconnected",
-      config: {},
-    }
-  ];
+  // Fetch Platform Integrations from API
+  const { data: platforms = [], isLoading: platformsLoading } = useQuery<Platform[]>({
+    queryKey: ['/api/integrations/platforms'],
+    select: (data: any[]) => data.map((platform: any) => ({
+      id: platform.id.toString(),
+      name: platform.name,
+      type: platform.type,
+      status: platform.status,
+      config: typeof platform.config === 'string' ? JSON.parse(platform.config || '{}') : platform.config || {},
+      lastSync: platform.lastSync
+    }))
+  });
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
