@@ -340,7 +340,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get dashboard stats
   app.get("/api/stats", async (req, res) => {
     try {
-      const stats = await storage.getStats();
+      const sessionUser = (req.session as any)?.user;
+      if (!sessionUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const stats = userStorage.getUserStats(sessionUser.id);
       res.json(stats);
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -362,7 +367,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all calls
   app.get("/api/calls", async (req, res) => {
     try {
-      const calls = await storage.getCalls();
+      const sessionUser = (req.session as any)?.user;
+      if (!sessionUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const calls = userStorage.getUserCalls(sessionUser.id);
       res.json(calls);
     } catch (error) {
       console.error("Error fetching calls:", error);
@@ -375,7 +385,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all buyers
   app.get("/api/buyers", async (req, res) => {
     try {
-      const buyers = await storage.getBuyers();
+      const sessionUser = (req.session as any)?.user;
+      if (!sessionUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const buyers = userStorage.getUserBuyers(sessionUser.id);
       res.json(buyers);
     } catch (error) {
       console.error("Error fetching buyers:", error);
