@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
@@ -77,8 +78,14 @@ export default function IntegrationsPage() {
   const [activeTab, setActiveTab] = useState("url-parameters");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>("all");
 
   const { toast } = useToast();
+
+  // Fetch campaigns for dropdown
+  const { data: campaigns = [] } = useQuery<any[]>({
+    queryKey: ['/api/campaigns'],
+  });
 
   // Fetch URL Parameters from API
   const { data: urlParameters = [], isLoading: urlLoading } = useQuery<URLParameter[]>({
@@ -150,6 +157,29 @@ export default function IntegrationsPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({ title: "Copied to clipboard" });
+  };
+
+  // Filter pixels based on selected campaign
+  const filteredPixels = selectedCampaignId === "all" 
+    ? pixels 
+    : pixels.filter(pixel => 
+        pixel.campaigns.includes(selectedCampaignId) || 
+        pixel.campaigns.length === 0
+      );
+
+  // Generate campaign-specific pixel code
+  const generateCampaignPixelCode = (pixel: Pixel, campaignId: string) => {
+    if (campaignId === "all") return pixel.code;
+    
+    const campaign = campaigns.find((c) => c.id.toString() === campaignId);
+    if (!campaign) return pixel.code;
+
+    return pixel.code
+      .replace(/\{campaign\.id\}/g, campaign.id.toString())
+      .replace(/\{campaign\.name\}/g, campaign.name)
+      .replace(/\{campaign\.phone_number\}/g, campaign.phoneNumber || "")
+      .replace(/G-XXXXXXXXXX/g, `G-${campaign.id}${Date.now().toString().slice(-6)}`)
+      .replace(/XXXXXXXXXXXXXXX/g, `${campaign.id}${Date.now().toString().slice(-9)}`);
   };
 
   const generateTrackingURL = (baseUrl: string, parameters: URLParameter[]) => {
@@ -271,14 +301,32 @@ export default function IntegrationsPage() {
                 <h2 className="text-xl font-semibold">Tracking Pixels</h2>
                 <p className="text-gray-600">Manage conversion tracking and analytics pixels</p>
               </div>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Pixel
-              </Button>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="campaign-select">Filter by Campaign:</Label>
+                  <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Select campaign" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Campaigns</SelectItem>
+                      {campaigns.map((campaign: any) => (
+                        <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                          {campaign.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Pixel
+                </Button>
+              </div>
             </div>
 
             <div className="grid gap-4">
-              {pixels.map((pixel) => (
+              {filteredPixels.map((pixel) => (
                 <Card key={pixel.id}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-4">
@@ -300,14 +348,27 @@ export default function IntegrationsPage() {
                     </div>
                     
                     <div className="bg-gray-50 p-3 rounded text-sm font-mono mb-3 max-h-32 overflow-y-auto">
-                      {pixel.code}
+                      {selectedCampaignId !== "all" 
+                        ? generateCampaignPixelCode(pixel, selectedCampaignId)
+                        : pixel.code}
                     </div>
                     
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-gray-600">
-                        Campaigns: {pixel.campaigns.join(", ")}
+                        {selectedCampaignId !== "all" 
+                          ? `Campaign-specific code for: ${campaigns.find((c: any) => c.id.toString() === selectedCampaignId)?.name || "Unknown"}`
+                          : `Campaigns: ${pixel.campaigns.join(", ") || "All campaigns"}`
+                        }
                       </div>
-                      <Button size="sm" variant="outline" onClick={() => copyToClipboard(pixel.code)}>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => copyToClipboard(
+                          selectedCampaignId !== "all" 
+                            ? generateCampaignPixelCode(pixel, selectedCampaignId)
+                            : pixel.code
+                        )}
+                      >
                         <Copy className="h-3 w-3 mr-2" />
                         Copy Code
                       </Button>
