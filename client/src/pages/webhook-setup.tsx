@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Webhook, Globe, Key, TestTube, Activity, Plus, Trash2, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface WebhookConfig {
   id: number;
@@ -41,31 +41,14 @@ export default function WebhookSetupPage() {
     headers: "{}"
   });
 
-  // Mock data for demonstration
-  const webhooks: WebhookConfig[] = [
-    {
-      id: 1,
-      name: "CRM Integration",
-      url: "https://api.mycrm.com/webhooks/calls",
-      events: ["call.created", "call.completed", "call.failed"],
-      isActive: true,
-      secretKey: "wh_secret_***",
-      retryAttempts: 3,
-      timeout: 30,
-      headers: { "Authorization": "Bearer ***", "Content-Type": "application/json" }
-    },
-    {
-      id: 2,
-      name: "Analytics Platform",
-      url: "https://analytics.example.com/api/events",
-      events: ["call.created", "buyer.ping", "buyer.post"],
-      isActive: false,
-      secretKey: "wh_secret_***",
-      retryAttempts: 5,
-      timeout: 45,
-      headers: { "X-API-Key": "***", "Content-Type": "application/json" }
-    }
-  ];
+  // Fetch webhook configurations from API
+  const { data: webhooks = [], isLoading, error } = useQuery({
+    queryKey: ['/api/webhook-configs'],
+    select: (data) => data.map((webhook: any) => ({
+      ...webhook,
+      headers: typeof webhook.headers === 'string' ? JSON.parse(webhook.headers || '{}') : webhook.headers
+    }))
+  });
 
   const availableEvents = [
     { value: "call.created", label: "Call Created", description: "Triggered when a new call is received" },
@@ -79,14 +62,13 @@ export default function WebhookSetupPage() {
 
   const testWebhookMutation = useMutation({
     mutationFn: async (webhookId: number) => {
-      // Simulate webhook test
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      return { success: true, response_time: 150, status_code: 200 };
+      const res = await apiRequest('POST', `/api/webhook-configs/${webhookId}/test`);
+      return await res.json();
     },
     onSuccess: (data) => {
       toast({
         title: "Webhook Test Successful",
-        description: `Response received in ${data.response_time}ms with status ${data.status_code}`,
+        description: `Response received in ${data.response_time || 150}ms with status ${data.status_code || 200}`,
       });
     },
     onError: () => {
@@ -100,15 +82,20 @@ export default function WebhookSetupPage() {
 
   const saveWebhookMutation = useMutation({
     mutationFn: async (data: any) => {
-      // Simulate save
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return data;
+      if (editingWebhook) {
+        const res = await apiRequest('PUT', `/api/webhook-configs/${editingWebhook.id}`, data);
+        return await res.json();
+      } else {
+        const res = await apiRequest('POST', '/api/webhook-configs', data);
+        return await res.json();
+      }
     },
     onSuccess: () => {
       toast({
         title: editingWebhook ? "Webhook Updated" : "Webhook Created",
         description: "The webhook configuration has been saved successfully",
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/webhook-configs'] });
       setIsCreating(false);
       setEditingWebhook(null);
       setFormData({

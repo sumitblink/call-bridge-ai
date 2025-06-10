@@ -70,44 +70,28 @@ export default function IVRSetupPage() {
     queryKey: ["/api/campaigns"],
   });
 
-  // Mock IVR flows data - in production this would come from API
-  const ivrFlows: IVRFlow[] = [
-    {
-      id: "FW123abc456",
-      campaignId: 1,
-      campaignName: "Insurance Leads",
-      greeting: "Thank you for calling. Press 1 for auto insurance, 2 for home insurance, or 0 for an agent.",
-      options: [
-        { digit: "1", action: "transfer", destination: "+12125551111", description: "Auto Insurance Department" },
-        { digit: "2", action: "transfer", destination: "+12125552222", description: "Home Insurance Department" },
-        { digit: "0", action: "operator", destination: "main_operator", description: "Live Agent" }
-      ],
-      isActive: true,
-      createdAt: "2024-01-15T10:30:00Z"
-    },
-    {
-      id: "FW789xyz123",
-      campaignId: 2,
-      campaignName: "Auto Leads",
-      greeting: "Welcome to Auto Quote Central. Press 1 for new quotes, 2 for existing customers, or 3 to leave a message.",
-      options: [
-        { digit: "1", action: "queue", destination: "sales_queue", description: "New Customer Queue" },
-        { digit: "2", action: "queue", destination: "support_queue", description: "Customer Support" },
-        { digit: "3", action: "voicemail", destination: "vm_box_1", description: "Leave Message" }
-      ],
-      isActive: true,
-      createdAt: "2024-01-12T14:20:00Z"
-    }
-  ];
+  // Fetch IVR flows from API
+  const { data: ivrFlows = [], isLoading: ivrLoading, error: ivrError } = useQuery<IVRFlow[]>({
+    queryKey: ['/api/ivr-flows'],
+    select: (data) => data.map((flow: any) => ({
+      ...flow,
+      options: typeof flow.options === 'string' ? JSON.parse(flow.options || '[]') : flow.options || [],
+      campaignName: campaigns.find(c => c.id === flow.campaignId)?.name || `Campaign ${flow.campaignId}`
+    }))
+  });
 
   const createIVRMutation = useMutation({
     mutationFn: async (data: { campaignId: number; greeting: string; options: IVROption[] }) =>
-      apiRequest(`/api/campaigns/${data.campaignId}/ivr`, "POST", { 
-        greeting: data.greeting, 
-        options: data.options 
+      apiRequest(`/api/campaigns/${data.campaignId}/ivr`, {
+        method: 'POST',
+        body: JSON.stringify({ 
+          greeting: data.greeting, 
+          options: data.options 
+        })
       }),
     onSuccess: () => {
       toast({ title: "IVR flow created successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/ivr-flows'] });
       resetForm();
       setIsCreating(false);
     },
