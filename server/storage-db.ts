@@ -69,7 +69,12 @@ export class DatabaseStorage implements IStorage {
 
   // Campaign operations
   async getCampaigns(): Promise<Campaign[]> {
-    return await db.select().from(campaigns);
+    try {
+      return await db.select().from(campaigns);
+    } catch (error) {
+      console.error('Error fetching campaigns from database:', error);
+      throw error;
+    }
   }
 
   async getCampaign(id: number): Promise<Campaign | undefined> {
@@ -85,7 +90,10 @@ export class DatabaseStorage implements IStorage {
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
     const [newCampaign] = await db
       .insert(campaigns)
-      .values(campaign)
+      .values({
+        ...campaign,
+        userId: campaign.userId || 'demo-user'
+      })
       .returning();
     return newCampaign;
   }

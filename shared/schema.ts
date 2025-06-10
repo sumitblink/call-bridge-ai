@@ -27,7 +27,6 @@ export const users = pgTable("users", {
 
 export const campaigns = pgTable("campaigns", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
   name: varchar("name", { length: 256 }).notNull(),
   description: text("description"),
   status: varchar("status", { length: 50 }).default("active").notNull(),
