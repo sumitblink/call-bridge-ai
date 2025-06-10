@@ -712,7 +712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: result.success,
         processedCode,
         testData,
-        result: result.response || result.error,
+        result: result.response || { error: result.error },
         timestamp: new Date().toISOString()
       });
     } catch (error) {
@@ -776,7 +776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pixelName: pixel.name,
         pixelType: pixel.pixelType,
         event: mappedEvent,
-        result: result.response || result.error,
+        result: result.response || { error: result.error },
         timestamp: new Date().toISOString()
       });
     } catch (error) {
