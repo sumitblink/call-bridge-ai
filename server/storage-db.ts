@@ -183,6 +183,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addBuyerToCampaign(campaignId: number, buyerId: number, priority = 1): Promise<CampaignBuyer> {
+    // Check if the relationship already exists
+    const existing = await db
+      .select()
+      .from(campaignBuyers)
+      .where(
+        and(
+          eq(campaignBuyers.campaignId, campaignId),
+          eq(campaignBuyers.buyerId, buyerId)
+        )
+      );
+
+    if (existing.length > 0) {
+      // Update existing relationship
+      const [updated] = await db
+        .update(campaignBuyers)
+        .set({
+          priority,
+          isActive: true,
+        })
+        .where(
+          and(
+            eq(campaignBuyers.campaignId, campaignId),
+            eq(campaignBuyers.buyerId, buyerId)
+          )
+        )
+        .returning();
+      return updated;
+    }
+
+    // Create new relationship
     const [relation] = await db
       .insert(campaignBuyers)
       .values({

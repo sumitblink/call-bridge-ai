@@ -302,10 +302,6 @@ function CampaignForm({
   });
 
   const onSubmit = async (data: CampaignFormData) => {
-    console.log("Form submitted with data:", data);
-    console.log("Form errors:", form.formState.errors);
-    console.log("Is form valid:", form.formState.isValid);
-    
     if (campaign) {
       updateMutation.mutate(data as InsertCampaign);
     } else {
@@ -365,10 +361,7 @@ function CampaignForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4"
-            onClick={(e) => {
-              console.log("Form clicked");
-            }}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -555,15 +548,7 @@ function CampaignForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button 
-            type="submit" 
-            disabled={isPending}
-            onClick={(e) => {
-              console.log("Button clicked!");
-              console.log("Form state:", form.formState);
-              console.log("Form values:", form.getValues());
-            }}
-          >
+          <Button type="submit" disabled={isPending}>
             {isPending ? "Saving..." : campaign ? "Update Campaign" : "Create Campaign"}
           </Button>
         </div>
