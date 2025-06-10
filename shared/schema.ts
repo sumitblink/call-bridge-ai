@@ -110,7 +110,7 @@ export const trackingPixels = pgTable("tracking_pixels", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
   pixelType: varchar("pixel_type", { length: 50 }).notNull(), // 'postback', 'image', 'javascript'
-  fireOnEvent: varchar("fire_on_event", { length: 50 }).notNull(), // 'call_start', 'call_complete', 'call_transfer'
+  fireOnEvent: varchar("fire_on_event", { length: 50 }).notNull(), // 'incoming', 'connected', 'completed', 'converted', 'error', 'payout', 'recording', 'finalized'
   code: text("code").notNull(), // contains macros like {call_id}, {phone_number}, {timestamp}
   assignedCampaigns: text("assigned_campaigns").array(), // array of campaign IDs
   isActive: boolean("is_active").default(true).notNull(),

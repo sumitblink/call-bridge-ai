@@ -66,7 +66,7 @@ export default function IntegrationsPage() {
   const [pixelForm, setPixelForm] = useState({
     name: "",
     pixelType: "postback" as 'postback' | 'image' | 'javascript',
-    fireOnEvent: "call_complete" as 'call_start' | 'call_complete' | 'call_transfer',
+    fireOnEvent: "completed" as 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized',
     code: "",
     assignedCampaigns: [] as string[],
     isActive: true
@@ -235,7 +235,7 @@ export default function IntegrationsPage() {
     setPixelForm({
       name: "",
       pixelType: "postback",
-      fireOnEvent: "call_complete",
+      fireOnEvent: "completed",
       code: "",
       assignedCampaigns: [],
       isActive: true
@@ -415,12 +415,26 @@ ${customUrl}`;
     }
   };
 
+  // Map old event types to new ones for backward compatibility
+  const mapEventType = (oldEvent: string): 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized' => {
+    switch (oldEvent) {
+      case 'call_start':
+        return 'incoming';
+      case 'call_complete':
+        return 'completed';
+      case 'call_transfer':
+        return 'connected';
+      default:
+        return oldEvent as 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized';
+    }
+  };
+
   const handleEditPixel = (pixel: Pixel) => {
     setEditingItem(pixel);
     setPixelForm({
       name: pixel.name,
       pixelType: pixel.pixelType,
-      fireOnEvent: pixel.fireOnEvent,
+      fireOnEvent: mapEventType(pixel.fireOnEvent),
       code: pixel.code,
       assignedCampaigns: pixel.assignedCampaigns || [],
       isActive: pixel.isActive
@@ -470,12 +484,22 @@ gtag('event', 'conversion', {
 
   const getEventBadgeColor = (event: string) => {
     switch (event) {
-      case 'call_start':
+      case 'incoming':
         return 'bg-blue-100 text-blue-800';
-      case 'call_complete':
+      case 'connected':
         return 'bg-green-100 text-green-800';
-      case 'call_transfer':
-        return 'bg-orange-100 text-orange-800';
+      case 'completed':
+        return 'bg-emerald-100 text-emerald-800';
+      case 'converted':
+        return 'bg-purple-100 text-purple-800';
+      case 'error':
+        return 'bg-red-100 text-red-800';
+      case 'payout':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'recording':
+        return 'bg-indigo-100 text-indigo-800';
+      case 'finalized':
+        return 'bg-slate-100 text-slate-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -572,15 +596,20 @@ gtag('event', 'conversion', {
                         <Label htmlFor="fire-on-event">Fire On Event *</Label>
                         <Select 
                           value={pixelForm.fireOnEvent} 
-                          onValueChange={(value) => setPixelForm({...pixelForm, fireOnEvent: value as 'call_start' | 'call_complete' | 'call_transfer'})}
+                          onValueChange={(value) => setPixelForm({...pixelForm, fireOnEvent: value as 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized'})}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select when to fire pixel" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="call_start">Call Start</SelectItem>
-                            <SelectItem value="call_complete">Call Complete</SelectItem>
-                            <SelectItem value="call_transfer">Call Transfer</SelectItem>
+                            <SelectItem value="incoming">Incoming</SelectItem>
+                            <SelectItem value="connected">Connected (Answered)</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="converted">Converted</SelectItem>
+                            <SelectItem value="error">Error</SelectItem>
+                            <SelectItem value="payout">Payout</SelectItem>
+                            <SelectItem value="recording">Recording</SelectItem>
+                            <SelectItem value="finalized">Finalized</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
