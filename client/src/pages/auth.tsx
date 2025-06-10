@@ -7,10 +7,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Phone, Mail, Lock, User, Github, Chrome } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const loginMutation = useMutation({
+    mutationFn: async (data: { email: string; password: string }) => {
+      const response = await apiRequest("POST", "/api/login", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Login Successful",
+        description: "Welcome to CallCenter Pro!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Please check your credentials and try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleReplitLogin = () => {
     setIsLoading(true);
@@ -19,17 +43,11 @@ export default function Auth() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    // For now, redirect to Replit Auth since we're using that system
-    toast({
-      title: "Redirecting to Login",
-      description: "Please use the Replit login option below for secure authentication.",
-    });
-    
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    const formData = new FormData(e.target as HTMLFormElement);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    loginMutation.mutate({ email, password });
   };
 
   return (
@@ -72,6 +90,7 @@ export default function Auth() {
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         id="email"
+                        name="email"
                         type="email"
                         placeholder="Enter your email"
                         className="pl-10 h-11"
@@ -85,6 +104,7 @@ export default function Auth() {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         id="password"
+                        name="password"
                         type="password"
                         placeholder="Enter your password"
                         className="pl-10 h-11"

@@ -11,7 +11,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      // For development, return a mock user
+      // Check for session or auth token - for now return 401 to show auth page
+      const isAuthenticated = req.headers.authorization || req.session?.user;
+      
+      if (!isAuthenticated) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Return mock user if authenticated
       const mockUser = {
         id: "dev-user-123",
         email: "demo@callcenter.com",
@@ -28,9 +35,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/login', (req, res) => {
+    // Simple login - set a session flag
+    if (!req.session) {
+      req.session = {};
+    }
+    req.session.user = { id: "dev-user-123" };
+    res.json({ success: true, message: "Logged in successfully" });
+  });
+
   app.get('/api/login', (req, res) => {
     // Redirect to dashboard for development
     res.redirect('/dashboard');
+  });
+
+  app.post('/api/logout', (req, res) => {
+    // Clear session
+    if (req.session) {
+      req.session.destroy(() => {
+        res.json({ success: true, message: "Logged out successfully" });
+      });
+    } else {
+      res.json({ success: true, message: "Already logged out" });
+    }
   });
 
   app.get('/api/logout', (req, res) => {
