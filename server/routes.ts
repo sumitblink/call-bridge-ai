@@ -908,7 +908,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const callData = new URLSearchParams({
         To: '+917045484791',
         From: '+17177347577',
-        Url: 'https://call-center-crm-sumited.replit.app/twiml'
+        Url: 'https://call-center-crm-sumited.replit.app/twiml',
+        Method: 'POST'
       });
 
       const response = await fetch(twilioUrl, {
@@ -964,21 +965,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Simple TwiML endpoint for test calls
   app.get("/twiml", (req, res) => {
+    console.log("TwiML GET request received");
     const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Thank you for testing. This call will now end.');
-    twiml.pause({ length: 1 });
-    twiml.say({ voice: 'alice' }, 'Goodbye!');
+    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Goodbye!');
     twiml.hangup();
-    res.type('text/xml').send(twiml.toString());
+    
+    const twimlString = twiml.toString();
+    console.log("Generated TwiML:", twimlString);
+    
+    res.type('text/xml').send(twimlString);
   });
 
   app.post("/twiml", (req, res) => {
+    console.log("TwiML POST request received, body:", req.body);
     const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Thank you for testing. This call will now end.');
-    twiml.pause({ length: 1 });
-    twiml.say({ voice: 'alice' }, 'Goodbye!');
+    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Goodbye!');
     twiml.hangup();
-    res.type('text/xml').send(twiml.toString());
+    
+    const twimlString = twiml.toString();
+    console.log("Generated TwiML:", twimlString);
+    
+    res.type('text/xml').send(twimlString);
   });
 
   // TwiML for outbound calls
