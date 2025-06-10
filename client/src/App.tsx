@@ -15,6 +15,7 @@ import IVRSetup from "@/pages/ivr-setup";
 import Integrations from "@/pages/integrations";
 import WebhookTest from "@/pages/webhook-test";
 import WebhookSetup from "@/pages/webhook-setup";
+import TwilioTest from "@/pages/twilio-test";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/integrations" component={Integrations} />
       <Route path="/webhook-test" component={WebhookTest} />
       <Route path="/webhook-setup" component={WebhookSetup} />
+      <Route path="/twilio-test" component={TwilioTest} />
       <Route component={NotFound} />
     </Switch>
   );
