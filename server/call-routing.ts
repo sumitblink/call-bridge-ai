@@ -51,7 +51,7 @@ export class CallRouter {
             buyer,
             metrics,
             priority: buyer.priority || 1,
-            campaignPriority: buyer.campaignPriority || 1
+            campaignPriority: buyer.priority || 1
           });
         } else {
           unavailableBuyers.push(buyer);

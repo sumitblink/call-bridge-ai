@@ -179,6 +179,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Call routing stats and testing endpoints
+  app.get("/api/campaigns/:id/routing-stats", requireAuth, async (req: any, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const stats = await CallRouter.getRoutingStats(campaignId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching routing stats:", error);
+      res.status(500).json({ error: "Failed to fetch routing stats" });
+    }
+  });
+
+  app.post("/api/campaigns/:id/test-routing", requireAuth, async (req: any, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const testResults = await CallRouter.testRouting(campaignId);
+      res.json({ campaignId, testResults });
+    } catch (error) {
+      console.error("Error testing routing:", error);
+      res.status(500).json({ error: "Failed to test routing" });
+    }
+  });
+
   // Campaigns
   app.get('/api/campaigns', requireAuth, async (req: any, res) => {
     try {
@@ -408,11 +431,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[Webhook] Found campaign: ${campaign.name} (ID: ${campaign.id})`);
       
-      // Get available buyers for this campaign
-      const buyers = await storage.getCampaignBuyers(campaign.id);
+      // Use priority-based routing to select the best buyer
+      const routingResult = await CallRouter.selectBuyer(campaign.id, fromNumber);
       
-      if (buyers.length === 0) {
-        console.log(`[Webhook] No buyers available for campaign ${campaign.id}`);
+      if (!routingResult.selectedBuyer) {
+        console.log(`[Webhook] No buyers available: ${routingResult.reason}`);
         return res.type('text/xml').send(`
           <Response>
             <Say>All representatives are currently busy. Please try again later.</Say>
@@ -421,8 +444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `);
       }
 
-      // Select buyer based on routing algorithm (round robin for now)
-      const selectedBuyer = buyers[0]; // Simplified selection
+      const selectedBuyer = routingResult.selectedBuyer;
       
       console.log(`[Webhook] Routing call to buyer: ${selectedBuyer.name} (${selectedBuyer.phoneNumber})`);
       

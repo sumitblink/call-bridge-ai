@@ -23,7 +23,7 @@ import {
   type InsertAgent,
 } from '@shared/schema';
 import { db } from './db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import type { IStorage } from './storage';
 
 export class DatabaseStorage implements IStorage {
@@ -157,7 +157,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Campaign-Buyer relations
-  async getCampaignBuyers(campaignId: number): Promise<(Buyer & { campaignPriority: number })[]> {
+  async getCampaignBuyers(campaignId: number): Promise<Buyer[]> {
     const result = await db
       .select({
         id: buyers.id,
@@ -174,7 +174,6 @@ export class DatabaseStorage implements IStorage {
         avgResponseTime: buyers.avgResponseTime,
         createdAt: buyers.createdAt,
         updatedAt: buyers.updatedAt,
-        campaignPriority: campaignBuyers.priority,
       })
       .from(buyers)
       .innerJoin(campaignBuyers, eq(campaignBuyers.buyerId, buyers.id))
