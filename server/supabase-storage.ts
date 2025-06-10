@@ -325,6 +325,20 @@ export class SupabaseStorage implements IStorage {
     return result;
   }
 
+  async updateTrackingPixel(id: number, data: any): Promise<any> {
+    const [result] = await db.update(trackingPixels)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(trackingPixels.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteTrackingPixel(id: number): Promise<boolean> {
+    const result = await db.delete(trackingPixels)
+      .where(eq(trackingPixels.id, id));
+    return result.rowCount > 0;
+  }
+
   async getWebhookConfigs(): Promise<any[]> {
     return await db.select().from(webhookConfigs);
   }

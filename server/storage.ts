@@ -75,6 +75,8 @@ export interface IStorage {
   createUrlParameter(data: any): Promise<any>;
   getTrackingPixels(): Promise<any[]>;
   createTrackingPixel(data: any): Promise<any>;
+  updateTrackingPixel(id: number, data: any): Promise<any>;
+  deleteTrackingPixel(id: number): Promise<boolean>;
   getWebhookConfigs(): Promise<any[]>;
   createWebhookConfig(data: any): Promise<any>;
   getApiAuthentications(): Promise<any[]>;
@@ -83,15 +85,15 @@ export interface IStorage {
   createPlatformIntegration(data: any): Promise<any>;
 
   // Publishers
-  getPublishers(): Promise<Publisher[]>;
-  getPublisher(id: number): Promise<Publisher | undefined>;
-  createPublisher(publisher: InsertPublisher): Promise<Publisher>;
-  updatePublisher(id: number, publisher: Partial<InsertPublisher>): Promise<Publisher | undefined>;
+  getPublishers(): Promise<any[]>;
+  getPublisher(id: number): Promise<any | undefined>;
+  createPublisher(publisher: any): Promise<any>;
+  updatePublisher(id: number, publisher: any): Promise<any | undefined>;
   deletePublisher(id: number): Promise<boolean>;
   
   // Publisher-Campaign Relations
-  getPublisherCampaigns(publisherId: number): Promise<Campaign[]>;
-  addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<PublisherCampaign>;
+  getPublisherCampaigns(publisherId: number): Promise<any[]>;
+  addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any>;
   removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean>;
 }
 
@@ -609,6 +611,14 @@ export class MemStorage implements IStorage {
 
   async createTrackingPixel(data: any): Promise<any> {
     return { id: Date.now(), ...data };
+  }
+
+  async updateTrackingPixel(id: number, data: any): Promise<any> {
+    return { id, ...data };
+  }
+
+  async deleteTrackingPixel(id: number): Promise<boolean> {
+    return true;
   }
 
   async getWebhookConfigs(): Promise<any[]> {
