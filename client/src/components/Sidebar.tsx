@@ -1,10 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut } from "lucide-react";
+import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut, HelpCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Documentation } from "@/components/ui/documentation";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3, current: true },
@@ -104,6 +105,21 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Help & Documentation */}
+      <div className="px-4 py-2 border-t border-gray-200">
+        <Documentation 
+          trigger={
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+            >
+              <HelpCircle className="w-5 h-5 mr-3" />
+              Help & Documentation
+            </Button>
+          }
+        />
+      </div>
 
       {/* User Profile */}
       <div className="px-4 py-4 border-t border-gray-200">
