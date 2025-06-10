@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users } from "lucide-react";
+import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users, Phone } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -593,6 +593,37 @@ export default function Campaigns() {
       toast({
         title: "Error",
         description: "Failed to delete campaign",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const testCallMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/test-call', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to trigger call');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Call triggered successfully",
+        description: `Test call initiated with SID: ${data.callSid}`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error triggering call",
+        description: error.message,
         variant: "destructive",
       });
     },

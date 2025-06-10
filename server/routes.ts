@@ -6,6 +6,7 @@ import { twilioService } from "./twilio-service";
 import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
 import { z } from "zod";
 import twilio from "twilio";
+import fetch from "node-fetch";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -884,8 +885,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // =============================================================================
+  // TEST CALL ENDPOINT
+  // =============================================================================
+
+  // Test call endpoint - triggers real Twilio call
+  app.post("/api/test-call", async (req, res) => {
+    try {
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      
+      if (!accountSid || !authToken) {
+        return res.status(500).json({ 
+          success: false, 
+          error: "Twilio credentials not configured" 
+        });
+      }
+
+      // Prepare the request to Twilio's API
+      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls.json`;
+      const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+      
+      const callData = new URLSearchParams({
+        To: '+917045484791',
+        From: '+17177347577',
+        Url: 'https://call-center-crm-sumited.replit.app/twiml'
+      });
+
+      const response = await fetch(twilioUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: callData
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Log the call in our system
+        try {
+          await storage.createCall({
+            campaignId: null,
+            buyerId: null,
+            callSid: result.sid,
+            fromNumber: '+17177347577',
+            toNumber: '+917045484791',
+            status: 'queued'
+          });
+        } catch (logError) {
+          console.error("Error logging test call:", logError);
+        }
+
+        res.json({ 
+          success: true, 
+          message: "Test call triggered successfully",
+          callSid: result.sid 
+        });
+      } else {
+        console.error("Twilio API error:", result);
+        res.status(400).json({ 
+          success: false, 
+          error: result.message || "Failed to trigger call" 
+        });
+      }
+    } catch (error) {
+      console.error("Error triggering test call:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Internal server error" 
+      });
+    }
+  });
+
+  // =============================================================================
   // TWIML ENDPOINTS
   // =============================================================================
+
+  // Simple TwiML endpoint for test calls
+  app.get("/twiml", (req, res) => {
+    const twiml = new twilio.twiml.VoiceResponse();
+    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Goodbye!');
+    twiml.hangup();
+    res.type('text/xml').send(twiml.toString());
+  });
+
+  app.post("/twiml", (req, res) => {
+    const twiml = new twilio.twiml.VoiceResponse();
+    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Goodbye!');
+    twiml.hangup();
+    res.type('text/xml').send(twiml.toString());
+  });
 
   // TwiML for outbound calls
   app.post("/api/twiml/outbound", async (req, res) => {
