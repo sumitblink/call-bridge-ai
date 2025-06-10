@@ -71,10 +71,15 @@ export default function Header() {
   const pageInfo = getPageInfo(location);
 
   const handleNewCampaign = () => {
-    toast({
-      title: "New Campaign",
-      description: "Campaign creation form would be opened here.",
-    });
+    // Check if the global function exists (set by campaigns page)
+    if (typeof (window as any).openNewCampaignDialog === 'function') {
+      (window as any).openNewCampaignDialog();
+    } else {
+      toast({
+        title: "New Campaign",
+        description: "Navigate to campaigns page to create a new campaign.",
+      });
+    }
   };
 
   const handleNotifications = () => {
