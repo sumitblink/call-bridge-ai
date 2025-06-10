@@ -11,11 +11,6 @@ const getPageInfo = (pathname: string) => {
         title: "Dashboard",
         description: "Manage your call center campaigns and track performance"
       };
-    case "/call-flow":
-      return {
-        title: "Call Flow Demo",
-        description: "Simulate and test call routing scenarios"
-      };
     case "/campaigns":
       return {
         title: "Campaigns",
@@ -56,11 +51,7 @@ const getPageInfo = (pathname: string) => {
         title: "Integrations",
         description: "Manage platform integrations and connections"
       };
-    case "/webhook-test":
-      return {
-        title: "Webhook Setup",
-        description: "Configure and test webhook endpoints"
-      };
+
     default:
       return {
         title: "CallCenter",

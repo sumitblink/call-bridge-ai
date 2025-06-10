@@ -4,7 +4,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
-import CallFlow from "@/pages/call-flow";
 import Campaigns from "@/pages/campaigns";
 import Buyers from "@/pages/buyers";
 import Publishers from "@/pages/publishers";
@@ -14,7 +13,6 @@ import CallControl from "@/pages/call-control";
 import IVRSetup from "@/pages/ivr-setup";
 import Integrations from "@/pages/integrations";
 import WebhookTest from "@/pages/webhook-test";
-import WebhookSetup from "@/pages/webhook-setup";
 import TwilioTest from "@/pages/twilio-test";
 import NotFound from "@/pages/not-found";
 
@@ -23,7 +21,6 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/call-flow" component={CallFlow} />
       <Route path="/campaigns" component={Campaigns} />
       <Route path="/buyers" component={Buyers} />
       <Route path="/publishers" component={Publishers} />
@@ -33,7 +30,6 @@ function Router() {
       <Route path="/ivr-setup" component={IVRSetup} />
       <Route path="/integrations" component={Integrations} />
       <Route path="/webhook-test" component={WebhookTest} />
-      <Route path="/webhook-setup" component={WebhookSetup} />
       <Route path="/twilio-test" component={TwilioTest} />
       <Route component={NotFound} />
     </Switch>
