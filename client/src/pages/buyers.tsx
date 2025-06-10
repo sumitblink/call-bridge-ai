@@ -446,6 +446,7 @@ export default function Buyers() {
   const [editingBuyer, setEditingBuyer] = useState<Buyer | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [buyerToDelete, setBuyerToDelete] = useState<number | null>(null);
+  const [campaignAssignments, setCampaignAssignments] = useState<any[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -466,6 +467,9 @@ export default function Buyers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      // Invalidate all campaign-specific buyer queries
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"], type: "all" });
       toast({ title: "Success", description: "Buyer deleted successfully" });
     },
     onError: (error) => {
@@ -483,32 +487,23 @@ export default function Buyers() {
   };
 
   const handleDelete = async (id: number) => {
-    // Check if buyer is assigned to campaigns
+    setBuyerToDelete(id);
+    
+    // Fetch campaign assignments for this buyer
     try {
       const response = await fetch(`/api/buyers/${id}/campaigns`);
-      const assignments = await response.json();
-      
-      const activeCampaigns = assignments.filter((a: any) => a.isActive);
-      
-      if (activeCampaigns.length > 0) {
-        const campaignNames = activeCampaigns.map((a: any) => a.campaignName).join(', ');
-        const confirmed = window.confirm(
-          `Warning: This buyer is assigned to ${activeCampaigns.length} active campaign(s): ${campaignNames}\n\n` +
-          `Deleting this buyer will remove them from all campaigns. Are you sure you want to continue?`
-        );
-        if (!confirmed) return;
+      if (response.ok) {
+        const assignments = await response.json();
+        setCampaignAssignments(assignments);
       }
-      
-      setBuyerToDelete(id);
-      setDeleteDialogOpen(true);
     } catch (error) {
-      console.error("Error checking campaign assignments:", error);
-      setBuyerToDelete(id);
-      setDeleteDialogOpen(true);
+      setCampaignAssignments([]);
     }
+    
+    setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (buyerToDelete) {
       deleteBuyerMutation.mutate(buyerToDelete);
       setDeleteDialogOpen(false);
@@ -582,6 +577,26 @@ export default function Buyers() {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete the buyer and remove them from all campaigns. This action cannot be undone.
+              
+              {campaignAssignments.length > 0 && (
+                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                  <div className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                    ⚠️ This buyer is assigned to {campaignAssignments.length} campaign(s):
+                  </div>
+                  <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                    {campaignAssignments.map((assignment, index) => (
+                      <li key={index} className="flex items-center gap-2">
+                        <span className="font-medium">{assignment.campaignName}</span>
+                        {assignment.isActive && (
+                          <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs rounded-full">
+                            Active
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
