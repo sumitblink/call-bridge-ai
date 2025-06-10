@@ -965,27 +965,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Simple TwiML endpoint for test calls
   app.get("/twiml", (req, res) => {
-    console.log("TwiML GET request received");
-    const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Goodbye!');
-    twiml.hangup();
-    
-    const twimlString = twiml.toString();
-    console.log("Generated TwiML:", twimlString);
-    
-    res.type('text/xml').send(twimlString);
+    console.log("TwiML GET request received, query:", req.query);
+    res.type('text/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="alice">Hello! This is a test call from your Call Center system. Test successful. Goodbye!</Say>
+    <Hangup/>
+</Response>`);
   });
 
   app.post("/twiml", (req, res) => {
-    console.log("TwiML POST request received, body:", req.body);
-    const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say({ voice: 'alice' }, 'Hello! This is a test call from your Call Center CRM system. The test was successful. Goodbye!');
-    twiml.hangup();
+    console.log("TwiML POST request received");
+    console.log("Headers:", req.headers);
+    console.log("Body:", req.body);
     
-    const twimlString = twiml.toString();
-    console.log("Generated TwiML:", twimlString);
-    
-    res.type('text/xml').send(twimlString);
+    res.type('text/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="alice">Hello! This is a test call from your Call Center system. Test successful. Goodbye!</Say>
+    <Hangup/>
+</Response>`);
   });
 
   // TwiML for outbound calls
