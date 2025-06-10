@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -57,7 +58,7 @@ function BuyerCount({ campaignId }: { campaignId: number }) {
 function CampaignCard({ campaign, onEdit, onDelete }: { 
   campaign: Campaign; 
   onEdit: (campaign: Campaign) => void;
-  onDelete: (id: number) => void;
+  onDelete: (campaign: Campaign) => void;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -170,7 +171,7 @@ function CampaignCard({ campaign, onEdit, onDelete }: {
           <Button 
             size="sm" 
             variant="outline" 
-            onClick={() => onDelete(campaign.id)}
+            onClick={() => onDelete(campaign)}
             className="text-red-600 hover:text-red-700"
           >
             <Trash2 className="w-4 h-4 mr-1" />
@@ -548,6 +549,8 @@ function CampaignForm({
 export default function Campaigns() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | undefined>();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -586,10 +589,22 @@ export default function Campaigns() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this campaign?")) {
-      deleteMutation.mutate(id);
+  const handleDelete = (campaign: Campaign) => {
+    setCampaignToDelete(campaign);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (campaignToDelete) {
+      deleteMutation.mutate(campaignToDelete.id);
+      setDeleteDialogOpen(false);
+      setCampaignToDelete(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setCampaignToDelete(null);
   };
 
   const handleFormSuccess = () => {
@@ -701,6 +716,28 @@ export default function Campaigns() {
         </div>
       )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{campaignToDelete?.name}"? This action cannot be undone and will remove all associated data including calls, buyers, and tracking settings.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete Campaign"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }
