@@ -861,19 +861,7 @@ Content-Type: application/json
                       </Button>
                     </div>
                     
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
-                      <h4 className="font-medium text-gray-900 mb-2">Demo Accounts</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="p-3 bg-white rounded border">
-                          <strong className="text-sm">Account 1:</strong><br />
-                          <code className="text-xs">sumit@example.com / demo123</code>
-                        </div>
-                        <div className="p-3 bg-white rounded border">
-                          <strong className="text-sm">Account 2:</strong><br />
-                          <code className="text-xs">kiran@example.com / kiran123</code>
-                        </div>
-                      </div>
-                    </div>
+                    
                   </CardContent>
                 </Card>
               </section>
