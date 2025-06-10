@@ -112,6 +112,13 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getUserByEmail(email),
+      () => this.memStorage.getUserByEmail(email)
+    );
+  }
+
   async createUser(user: InsertUser): Promise<User> {
     return this.executeOperation(
       () => this.supabaseStorage.createUser(user),
