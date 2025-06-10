@@ -62,6 +62,20 @@ export default function Publishers() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Function to handle opening dialog from header button
+  const openNewPublisherDialog = () => {
+    setEditingPublisher(null);
+    setIsCreateOpen(true);
+  };
+
+  // Make the function available globally for header button
+  useEffect(() => {
+    (window as any).openNewPublisherDialog = openNewPublisherDialog;
+    return () => {
+      delete (window as any).openNewPublisherDialog;
+    };
+  }, []);
+
   // Fetch publishers
   const { data: publishers = [], isLoading } = useQuery<Publisher[]>({
     queryKey: ["/api/publishers"],
@@ -194,24 +208,18 @@ export default function Publishers() {
   return (
     <Layout>
       <div className="space-y-6 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Publishers</h1>
-            <p className="text-muted-foreground">Manage traffic sources and affiliate partners</p>
-          </div>
-          <Dialog open={isCreateOpen || !!editingPublisher} onOpenChange={(open) => {
+        <div>
+          <h1 className="text-3xl font-bold">Publishers</h1>
+          <p className="text-muted-foreground">Manage traffic sources and affiliate partners</p>
+        </div>
+        
+        <Dialog open={isCreateOpen || !!editingPublisher} onOpenChange={(open) => {
           setIsCreateOpen(open);
           if (!open) {
             setEditingPublisher(null);
             form.reset();
           }
         }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Publisher
-            </Button>
-          </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -404,9 +412,8 @@ export default function Publishers() {
             </Form>
           </DialogContent>
         </Dialog>
-        </div>
 
-      <div className="grid gap-6">
+        <div className="grid gap-6">
         {publishers.length === 0 ? (
           <Card>
             <CardContent className="flex items-center justify-center h-32">
@@ -506,7 +513,7 @@ export default function Publishers() {
             </Card>
           ))
         )}
-      </div>
+        </div>
       </div>
     </Layout>
   );
