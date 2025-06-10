@@ -682,7 +682,39 @@ export default function Campaigns() {
 
   return (
     <Layout>
-      <div className="p-6">
+      <div className="p-6 space-y-6">
+        {/* Header with Test Call Button */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
+            <p className="text-muted-foreground">Manage your call center campaigns</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={() => testCallMutation.mutate()}
+              disabled={testCallMutation.isPending}
+              variant="outline"
+              className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+            >
+              {testCallMutation.isPending ? (
+                <>
+                  <Phone className="h-4 w-4 mr-2 animate-spin" />
+                  Calling...
+                </>
+              ) : (
+                <>
+                  <Phone className="h-4 w-4 mr-2" />
+                  Test Call
+                </>
+              )}
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Campaign
+            </Button>
+          </div>
+        </div>
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
             <DialogHeader className="flex-shrink-0">
