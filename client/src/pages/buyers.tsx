@@ -429,6 +429,12 @@ function BuyerForm({
               <Button 
                 type="submit" 
                 disabled={createBuyerMutation.isPending || updateBuyerMutation.isPending}
+                onClick={(e) => {
+                  console.log("Button clicked!");
+                  console.log("Form valid:", form.formState.isValid);
+                  console.log("Form errors:", form.formState.errors);
+                  console.log("Form values:", form.getValues());
+                }}
               >
                 {buyer ? "Update Buyer" : "Create Buyer"}
               </Button>
