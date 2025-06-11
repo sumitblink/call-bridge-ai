@@ -1,0 +1,384 @@
+// Dynamic Number Insertion (DNI) Service
+// Provides JavaScript SDK for websites to dynamically insert tracking phone numbers
+
+import { storage } from './storage';
+import type { Campaign, PhoneNumber } from '@shared/schema';
+
+export interface DNIRequest {
+  campaignId?: number;
+  campaignName?: string;
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  content?: string;
+  term?: string;
+  gclid?: string;
+  fbclid?: string;
+  referrer?: string;
+  userAgent?: string;
+  ipAddress?: string;
+  sessionId?: string;
+  customFields?: Record<string, string>;
+}
+
+export interface DNIResponse {
+  phoneNumber: string;
+  formattedNumber: string;
+  campaignId: number;
+  campaignName: string;
+  trackingId: string;
+  success: boolean;
+  error?: string;
+}
+
+export class DNIService {
+  /**
+   * Get a tracking phone number for a campaign based on request parameters
+   */
+  static async getTrackingNumber(request: DNIRequest): Promise<DNIResponse> {
+    try {
+      let campaign: Campaign | undefined;
+
+      // Find campaign by ID or name
+      if (request.campaignId) {
+        campaign = await storage.getCampaign(request.campaignId);
+      } else if (request.campaignName) {
+        const campaigns = await storage.getCampaigns();
+        campaign = campaigns.find(c => c.name.toLowerCase() === (request.campaignName || '').toLowerCase());
+      }
+
+      if (!campaign) {
+        return {
+          phoneNumber: '',
+          formattedNumber: '',
+          campaignId: 0,
+          campaignName: '',
+          trackingId: '',
+          success: false,
+          error: 'Campaign not found'
+        };
+      }
+
+      // Get campaign phone numbers - use the correct method from storage interface
+      const phoneNumbers = await storage.getPhoneNumbers();
+      const campaignPhones = phoneNumbers.filter((p: any) => p.campaignId === campaign!.id && p.status === 'active');
+
+      if (campaignPhones.length === 0) {
+        return {
+          phoneNumber: '',
+          formattedNumber: '',
+          campaignId: campaign.id,
+          campaignName: campaign.name,
+          trackingId: '',
+          success: false,
+          error: 'No active phone numbers available for this campaign'
+        };
+      }
+
+      // Select phone number (for now, use round-robin or first available)
+      // In production, you might implement more sophisticated logic based on source, geo, etc.
+      const selectedPhone = campaignPhones[0];
+
+      // Generate tracking ID for attribution
+      const trackingId = this.generateTrackingId(campaign.id, request);
+
+      // Store tracking session for attribution
+      await this.storeTrackingSession(trackingId, campaign.id, selectedPhone.id, request);
+
+      return {
+        phoneNumber: selectedPhone.phoneNumber,
+        formattedNumber: this.formatPhoneNumber(selectedPhone.phoneNumber),
+        campaignId: campaign.id,
+        campaignName: campaign.name,
+        trackingId,
+        success: true
+      };
+
+    } catch (error) {
+      console.error('DNI Service Error:', error);
+      return {
+        phoneNumber: '',
+        formattedNumber: '',
+        campaignId: 0,
+        campaignName: '',
+        trackingId: '',
+        success: false,
+        error: 'Internal server error'
+      };
+    }
+  }
+
+  /**
+   * Generate unique tracking ID for attribution
+   */
+  private static generateTrackingId(campaignId: number, request: DNIRequest): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    return `dni_${campaignId}_${timestamp}_${random}`;
+  }
+
+  /**
+   * Store tracking session for attribution analysis
+   */
+  private static async storeTrackingSession(
+    trackingId: string,
+    campaignId: number,
+    phoneNumberId: number,
+    request: DNIRequest
+  ): Promise<void> {
+    try {
+      const sessionData = {
+        trackingId,
+        campaignId,
+        phoneNumberId,
+        source: request.source || 'direct',
+        medium: request.medium || 'organic',
+        campaign: request.campaign || '',
+        content: request.content || '',
+        term: request.term || '',
+        gclid: request.gclid || '',
+        fbclid: request.fbclid || '',
+        referrer: request.referrer || '',
+        userAgent: request.userAgent || '',
+        ipAddress: request.ipAddress || '',
+        sessionId: request.sessionId || '',
+        customFields: JSON.stringify(request.customFields || {}),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      // Store in URL parameters table for now
+      // In production, you might want a dedicated tracking_sessions table
+      await storage.createUrlParameter(sessionData);
+    } catch (error) {
+      console.error('Error storing tracking session:', error);
+    }
+  }
+
+  /**
+   * Format phone number for display
+   */
+  private static formatPhoneNumber(phoneNumber: string): string {
+    // Remove any non-digits
+    const digits = phoneNumber.replace(/\D/g, '');
+    
+    // Handle US/Canada numbers
+    if (digits.length === 11 && digits.startsWith('1')) {
+      const number = digits.substring(1);
+      return `(${number.substring(0, 3)}) ${number.substring(3, 6)}-${number.substring(6)}`;
+    } else if (digits.length === 10) {
+      return `(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}`;
+    }
+    
+    // Return original if not standard format
+    return phoneNumber;
+  }
+
+  /**
+   * Generate JavaScript SDK code for website integration
+   */
+  static generateJavaScriptSDK(domain: string): string {
+    return `
+/* Ringba-Style Dynamic Number Insertion (DNI) SDK */
+(function(window, document) {
+  'use strict';
+
+  var DNI = {
+    config: {
+      endpoint: 'https://${domain}/api/dni/track',
+      timeout: 5000,
+      debug: false
+    },
+
+    // Initialize DNI system
+    init: function(options) {
+      options = options || {};
+      this.config = Object.assign(this.config, options);
+      
+      if (this.config.debug) {
+        console.log('[DNI] Initializing with config:', this.config);
+      }
+
+      // Auto-replace phone numbers on page load
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', this.replacePhoneNumbers.bind(this));
+      } else {
+        this.replacePhoneNumbers();
+      }
+    },
+
+    // Replace phone numbers with tracking numbers
+    replacePhoneNumbers: function() {
+      var elements = document.querySelectorAll('[data-dni-campaign], .dni-phone, .tracking-phone');
+      
+      for (var i = 0; i < elements.length; i++) {
+        this.processElement(elements[i]);
+      }
+    },
+
+    // Process individual element for phone number replacement
+    processElement: function(element) {
+      var campaignId = element.getAttribute('data-dni-campaign-id');
+      var campaignName = element.getAttribute('data-dni-campaign') || element.getAttribute('data-campaign');
+      
+      if (!campaignId && !campaignName) {
+        if (this.config.debug) {
+          console.warn('[DNI] No campaign specified for element:', element);
+        }
+        return;
+      }
+
+      var trackingData = this.collectTrackingData();
+      trackingData.campaignId = campaignId ? parseInt(campaignId) : undefined;
+      trackingData.campaignName = campaignName;
+
+      this.requestTrackingNumber(trackingData, function(response) {
+        if (response.success) {
+          element.textContent = response.formattedNumber;
+          element.setAttribute('href', 'tel:' + response.phoneNumber);
+          element.setAttribute('data-tracking-id', response.trackingId);
+          
+          if (this.config.debug) {
+            console.log('[DNI] Replaced phone number:', response);
+          }
+        } else {
+          if (this.config.debug) {
+            console.error('[DNI] Failed to get tracking number:', response.error);
+          }
+        }
+      }.bind(this));
+    },
+
+    // Collect tracking data from URL and page
+    collectTrackingData: function() {
+      var urlParams = new URLSearchParams(window.location.search);
+      var data = {
+        source: urlParams.get('utm_source') || this.getReferrerSource(),
+        medium: urlParams.get('utm_medium') || 'organic',
+        campaign: urlParams.get('utm_campaign') || '',
+        content: urlParams.get('utm_content') || '',
+        term: urlParams.get('utm_term') || '',
+        gclid: urlParams.get('gclid') || '',
+        fbclid: urlParams.get('fbclid') || '',
+        referrer: document.referrer,
+        userAgent: navigator.userAgent,
+        sessionId: this.getSessionId()
+      };
+
+      // Collect custom fields
+      var customFields = {};
+      var metaTags = document.querySelectorAll('meta[name^="dni-"]');
+      for (var i = 0; i < metaTags.length; i++) {
+        var name = metaTags[i].getAttribute('name').replace('dni-', '');
+        customFields[name] = metaTags[i].getAttribute('content');
+      }
+      data.customFields = customFields;
+
+      return data;
+    },
+
+    // Get referrer source
+    getReferrerSource: function() {
+      var referrer = document.referrer;
+      if (!referrer) return 'direct';
+      
+      var hostname = new URL(referrer).hostname.toLowerCase();
+      
+      if (hostname.includes('google')) return 'google';
+      if (hostname.includes('facebook') || hostname.includes('fb.com')) return 'facebook';
+      if (hostname.includes('twitter')) return 'twitter';
+      if (hostname.includes('linkedin')) return 'linkedin';
+      if (hostname.includes('youtube')) return 'youtube';
+      if (hostname.includes('bing')) return 'bing';
+      
+      return 'referral';
+    },
+
+    // Get or create session ID
+    getSessionId: function() {
+      var sessionId = localStorage.getItem('dni_session_id');
+      if (!sessionId) {
+        sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+        localStorage.setItem('dni_session_id', sessionId);
+      }
+      return sessionId;
+    },
+
+    // Request tracking number from server
+    requestTrackingNumber: function(data, callback) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', this.config.endpoint, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.timeout = this.config.timeout;
+
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              var response = JSON.parse(xhr.responseText);
+              callback(response);
+            } catch (e) {
+              callback({ success: false, error: 'Invalid response format' });
+            }
+          } else {
+            callback({ success: false, error: 'Request failed with status ' + xhr.status });
+          }
+        }
+      };
+
+      xhr.onerror = function() {
+        callback({ success: false, error: 'Network error' });
+      };
+
+      xhr.ontimeout = function() {
+        callback({ success: false, error: 'Request timeout' });
+      };
+
+      xhr.send(JSON.stringify(data));
+    },
+
+    // Manual phone number replacement
+    replace: function(campaignId, campaignName, callback) {
+      var trackingData = this.collectTrackingData();
+      trackingData.campaignId = campaignId;
+      trackingData.campaignName = campaignName;
+      
+      this.requestTrackingNumber(trackingData, callback);
+    }
+  };
+
+  // Expose DNI globally
+  window.DNI = DNI;
+
+  // Auto-initialize if config is present
+  if (window.DNI_CONFIG) {
+    DNI.init(window.DNI_CONFIG);
+  }
+
+})(window, document);`;
+  }
+
+  /**
+   * Generate simple HTML snippet for website integration
+   */
+  static generateHTMLSnippet(campaignId: number, campaignName: string, domain: string): string {
+    return `<!-- Dynamic Number Insertion -->
+<script>
+  window.DNI_CONFIG = {
+    endpoint: 'https://${domain}/api/dni/track',
+    debug: false
+  };
+</script>
+<script src="https://${domain}/dni.js"></script>
+
+<!-- Phone number with automatic replacement -->
+<a href="tel:+1234567890" data-dni-campaign-id="${campaignId}" class="dni-phone">
+  (123) 456-7890
+</a>
+
+<!-- Alternative using campaign name -->
+<span data-dni-campaign="${campaignName}" class="tracking-phone">
+  Call Now: (123) 456-7890
+</span>`;
+  }
+}

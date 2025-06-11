@@ -5,6 +5,7 @@ import { insertCampaignSchema, insertBuyerSchema, insertAgentSchema } from "@sha
 import { twilioService } from "./twilio-service";
 import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
 import { CallRouter } from "./call-routing";
+import { DNIService, type DNIRequest } from "./dni-service";
 import { z } from "zod";
 import twilio from "twilio";
 import fetch from "node-fetch";
@@ -1452,6 +1453,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error removing publisher from campaign:', error);
       res.status(500).json({ error: 'Failed to remove publisher from campaign' });
+    }
+  });
+
+  // Dynamic Number Insertion (DNI) API Endpoints
+  app.post('/api/dni/track', async (req, res) => {
+    try {
+      const requestData: DNIRequest = {
+        campaignId: req.body.campaignId,
+        campaignName: req.body.campaignName,
+        source: req.body.source,
+        medium: req.body.medium,
+        campaign: req.body.campaign,
+        content: req.body.content,
+        term: req.body.term,
+        gclid: req.body.gclid,
+        fbclid: req.body.fbclid,
+        referrer: req.body.referrer,
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip || req.connection.remoteAddress,
+        sessionId: req.body.sessionId,
+        customFields: req.body.customFields
+      };
+
+      const response = await DNIService.getTrackingNumber(requestData);
+      res.json(response);
+    } catch (error) {
+      console.error('DNI tracking error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        phoneNumber: '',
+        formattedNumber: '',
+        campaignId: 0,
+        campaignName: '',
+        trackingId: ''
+      });
+    }
+  });
+
+  // Serve DNI JavaScript SDK
+  app.get('/dni.js', (req, res) => {
+    const domain = req.hostname;
+    const jsCode = DNIService.generateJavaScriptSDK(domain);
+    
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.send(jsCode);
+  });
+
+  // Generate HTML snippet for integration
+  app.get('/api/dni/snippet/:campaignId', requireAuth, async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ error: 'Campaign not found' });
+      }
+
+      const domain = req.hostname;
+      const snippet = DNIService.generateHTMLSnippet(campaignId, campaign.name, domain);
+      
+      res.json({
+        campaignId,
+        campaignName: campaign.name,
+        htmlSnippet: snippet,
+        jsLibraryUrl: `https://${domain}/dni.js`,
+        apiEndpoint: `https://${domain}/api/dni/track`
+      });
+    } catch (error) {
+      console.error('Error generating DNI snippet:', error);
+      res.status(500).json({ error: 'Failed to generate DNI snippet' });
     }
   });
 

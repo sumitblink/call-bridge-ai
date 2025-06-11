@@ -18,6 +18,7 @@ import Integrations from "@/pages/integrations";
 import WebhookTest from "@/pages/webhook-test";
 import TwilioTest from "@/pages/twilio-test";
 import PhoneNumbers from "@/pages/phone-numbers";
+import DNI from "@/pages/dni";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -52,6 +53,7 @@ function Router() {
           <Route path="/calls" component={Calls} />
           <Route path="/call-control" component={CallControl} />
           <Route path="/phone-numbers" component={PhoneNumbers} />
+          <Route path="/dni" component={DNI} />
           <Route path="/ivr-setup" component={IVRSetup} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />
