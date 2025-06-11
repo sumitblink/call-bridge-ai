@@ -273,6 +273,9 @@ export const insertAgentSchema = createInsertSchema(agents).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Agent name is required"),
+  email: z.string().email("Valid email is required").min(1, "Email is required"),
 });
 
 export type User = typeof users.$inferSelect;
