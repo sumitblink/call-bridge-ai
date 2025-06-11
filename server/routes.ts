@@ -1037,6 +1037,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Phone Numbers Management API
+  app.get('/api/phone-numbers', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const numbers = await storage.getPhoneNumbers(userId);
+      res.json(numbers);
+    } catch (error) {
+      console.error('Error fetching phone numbers:', error);
+      res.status(500).json({ error: 'Failed to fetch phone numbers' });
+    }
+  });
+
+  app.post('/api/phone-numbers/search', isAuthenticated, async (req, res) => {
+    try {
+      const { country = 'US', numberType = 'local', areaCode, contains, limit = 20 } = req.body;
+      
+      const { twilioPhoneService } = await import('./twilio-phone-service');
+      const availableNumbers = await twilioPhoneService.searchAvailableNumbers({
+        country,
+        numberType,
+        areaCode,
+        contains,
+        limit
+      });
+
+      res.json({
+        success: true,
+        numbers: availableNumbers,
+        searchParams: { country, numberType, areaCode, contains, limit }
+      });
+    } catch (error) {
+      console.error('Error searching phone numbers:', error);
+      res.status(500).json({ 
+        error: 'Failed to search phone numbers',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/phone-numbers/purchase', isAuthenticated, async (req, res) => {
+    try {
+      const { phoneNumber, friendlyName, campaignId } = req.body;
+      const userId = req.user?.claims?.sub;
+
+      if (!phoneNumber) {
+        return res.status(400).json({ error: 'Phone number is required' });
+      }
+
+      // Set up voice URL for the webhook
+      const voiceUrl = `https://${req.hostname}/api/webhooks/voice`;
+      const statusCallback = `https://${req.hostname}/api/webhooks/call-status`;
+
+      const { twilioPhoneService } = await import('./twilio-phone-service');
+      
+      // Purchase the number from Twilio
+      const twilioResult = await twilioPhoneService.purchasePhoneNumber({
+        phoneNumber,
+        voiceUrl,
+        statusCallback,
+        friendlyName: friendlyName || `Number ${phoneNumber}`
+      });
+
+      // Save to database
+      const newNumber = await storage.createPhoneNumber({
+        userId,
+        phoneNumber: twilioResult.phoneNumber,
+        friendlyName: twilioResult.friendlyName,
+        phoneNumberSid: twilioResult.phoneNumberSid,
+        accountSid: twilioResult.accountSid,
+        country: req.body.country || 'US',
+        numberType: req.body.numberType || 'local',
+        capabilities: JSON.stringify(twilioResult.capabilities),
+        voiceUrl: twilioResult.voiceUrl,
+        voiceMethod: twilioResult.voiceMethod,
+        statusCallback: twilioResult.statusCallback,
+        campaignId: campaignId || null,
+        isActive: true,
+        monthlyFee: '1.0000'
+      });
+
+      res.json({
+        success: true,
+        phoneNumber: newNumber,
+        twilioData: twilioResult
+      });
+    } catch (error) {
+      console.error('Error purchasing phone number:', error);
+      res.status(500).json({ 
+        error: 'Failed to purchase phone number',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/phone-numbers/:id/assign-campaign', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { campaignId } = req.body;
+
+      if (!campaignId) {
+        return res.status(400).json({ error: 'Campaign ID is required' });
+      }
+
+      const updatedNumber = await storage.assignPhoneNumberToCampaign(parseInt(id), campaignId);
+      
+      if (!updatedNumber) {
+        return res.status(404).json({ error: 'Phone number not found' });
+      }
+
+      res.json({
+        success: true,
+        phoneNumber: updatedNumber
+      });
+    } catch (error) {
+      console.error('Error assigning phone number to campaign:', error);
+      res.status(500).json({ error: 'Failed to assign phone number to campaign' });
+    }
+  });
+
+  app.post('/api/phone-numbers/:id/unassign-campaign', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const updatedNumber = await storage.unassignPhoneNumberFromCampaign(parseInt(id));
+      
+      if (!updatedNumber) {
+        return res.status(404).json({ error: 'Phone number not found' });
+      }
+
+      res.json({
+        success: true,
+        phoneNumber: updatedNumber
+      });
+    } catch (error) {
+      console.error('Error unassigning phone number from campaign:', error);
+      res.status(500).json({ error: 'Failed to unassign phone number from campaign' });
+    }
+  });
+
+  app.delete('/api/phone-numbers/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Get the phone number to release from Twilio
+      const phoneNumber = await storage.getPhoneNumber(parseInt(id));
+      if (!phoneNumber) {
+        return res.status(404).json({ error: 'Phone number not found' });
+      }
+
+      // Release from Twilio
+      try {
+        const { twilioPhoneService } = await import('./twilio-phone-service');
+        await twilioPhoneService.releasePhoneNumber(phoneNumber.phoneNumberSid);
+      } catch (twilioError) {
+        console.warn('Failed to release number from Twilio:', twilioError);
+        // Continue with database deletion even if Twilio fails
+      }
+
+      // Delete from database
+      const deleted = await storage.deletePhoneNumber(parseInt(id));
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'Phone number not found' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting phone number:', error);
+      res.status(500).json({ error: 'Failed to delete phone number' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
