@@ -1089,10 +1089,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Map number types to Twilio API endpoints
-      const typeMapping = {
+      const typeMapping: Record<string, string> = {
         'local': 'Local',
         'toll-free': 'TollFree',
-        'mobile': 'Mobile'
+        'mobile': 'Local' // Mobile numbers are typically searched as Local in the US
       };
 
       const twilioType = typeMapping[numberType] || 'Local';
