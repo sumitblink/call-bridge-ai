@@ -34,6 +34,7 @@ export default function AgentsPage() {
     email: "",
     status: "active"
   });
+  const [showValidation, setShowValidation] = useState(false);
 
   const { toast } = useToast();
 
@@ -53,6 +54,7 @@ export default function AgentsPage() {
       toast({ title: "Agent created successfully" });
       setIsCreating(false);
       setFormData({ name: "", email: "", status: "active" });
+      setShowValidation(false);
     },
     onError: (error) => {
       console.error("Failed to create agent:", error);
@@ -70,6 +72,7 @@ export default function AgentsPage() {
       toast({ title: "Agent updated successfully" });
       setEditingAgent(null);
       setFormData({ name: "", email: "", status: "active" });
+      setShowValidation(false);
       setIsCreating(false); // Close the dialog
     }
   });
@@ -89,6 +92,8 @@ export default function AgentsPage() {
   });
 
   const handleSubmit = () => {
+    setShowValidation(true);
+    
     // Validate required fields
     if (!formData.name.trim()) {
       toast({ title: "Agent name is required", variant: "destructive" });
@@ -117,6 +122,7 @@ export default function AgentsPage() {
       email: agent.email,
       status: agent.status
     });
+    setShowValidation(false);
     setIsCreating(true);
   };
 
@@ -156,7 +162,14 @@ export default function AgentsPage() {
             <h1 className="text-3xl font-bold">Agent Management & Performance</h1>
             <p className="text-gray-600 mt-1">Monitor agent performance and manage call routing targets</p>
           </div>
-          <Dialog open={isCreating} onOpenChange={setIsCreating}>
+          <Dialog open={isCreating} onOpenChange={(open) => {
+            setIsCreating(open);
+            if (!open) {
+              setShowValidation(false);
+              setEditingAgent(null);
+              setFormData({ name: "", email: "", status: "active" });
+            }
+          }}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
@@ -178,9 +191,9 @@ export default function AgentsPage() {
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="John Doe"
-                    className={!formData.name.trim() ? "border-red-300 focus:border-red-500" : ""}
+                    className={showValidation && !formData.name.trim() ? "border-red-300 focus:border-red-500" : ""}
                   />
-                  {!formData.name.trim() && (
+                  {showValidation && !formData.name.trim() && (
                     <p className="text-sm text-red-600 mt-1">Agent name is required</p>
                   )}
                 </div>
@@ -192,12 +205,12 @@ export default function AgentsPage() {
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="john@example.com"
-                    className={(!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) ? "border-red-300 focus:border-red-500" : ""}
+                    className={showValidation && (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) ? "border-red-300 focus:border-red-500" : ""}
                   />
-                  {!formData.email.trim() && (
+                  {showValidation && !formData.email.trim() && (
                     <p className="text-sm text-red-600 mt-1">Email is required</p>
                   )}
-                  {formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && (
+                  {showValidation && formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && (
                     <p className="text-sm text-red-600 mt-1">Please enter a valid email address</p>
                   )}
                 </div>
