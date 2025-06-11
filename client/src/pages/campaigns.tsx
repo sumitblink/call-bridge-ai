@@ -296,8 +296,6 @@ function CampaignForm({
 
   // Handle buyer assignment after campaign creation/update
   const assignBuyers = async (campaignId: number) => {
-    if (selectedBuyers.length === 0) return;
-
     // Get current campaign buyers
     const currentBuyers = campaignBuyers?.map(b => b.id) || [];
     
@@ -305,11 +303,16 @@ function CampaignForm({
     const buyersToAdd = selectedBuyers.filter(id => !currentBuyers.includes(id));
     const buyersToRemove = currentBuyers.filter(id => !selectedBuyers.includes(id));
 
+    console.log("Buyers to add:", buyersToAdd);
+    console.log("Buyers to remove:", buyersToRemove);
+
     // Add buyers
     for (const buyerId of buyersToAdd) {
       try {
+        console.log(`Adding buyer ${buyerId} to campaign ${campaignId}`);
         const response = await apiRequest(`/api/campaigns/${campaignId}/buyers`, "POST", { buyerId, priority: 1 });
-        await response.json();
+        const result = await response.json();
+        console.log("Add buyer result:", result);
       } catch (error) {
         console.error("Failed to add buyer:", error);
       }
@@ -318,8 +321,10 @@ function CampaignForm({
     // Remove buyers  
     for (const buyerId of buyersToRemove) {
       try {
+        console.log(`Removing buyer ${buyerId} from campaign ${campaignId}`);
         const response = await apiRequest(`/api/campaigns/${campaignId}/buyers/${buyerId}`, "DELETE");
-        await response.json();
+        const result = await response.json();
+        console.log("Remove buyer result:", result);
       } catch (error) {
         console.error("Failed to remove buyer:", error);
       }
