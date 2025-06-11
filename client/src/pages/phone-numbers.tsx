@@ -57,6 +57,7 @@ export default function PhoneNumbersPage() {
   const [searchResults, setSearchResults] = useState<TwilioNumber[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedCampaigns, setSelectedCampaigns] = useState<Record<string, string>>({});
+  const [purchasingNumbers, setPurchasingNumbers] = useState<Set<string>>(new Set());
 
   // Fetch phone numbers
   const { data: phoneNumbers = [], isLoading } = useQuery({
@@ -168,12 +169,24 @@ export default function PhoneNumbersPage() {
   };
 
   const handlePurchase = (number: TwilioNumber, campaignId?: number) => {
+    // Add this number to purchasing state
+    setPurchasingNumbers(prev => new Set(prev).add(number.phoneNumber));
+    
     purchaseMutation.mutate({
       phoneNumber: number.phoneNumber,
       friendlyName: number.friendlyName,
       country: searchParams.country,
       numberType: searchParams.numberType,
       campaignId,
+    }, {
+      onSettled: () => {
+        // Remove from purchasing state when done (success or error)
+        setPurchasingNumbers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(number.phoneNumber);
+          return newSet;
+        });
+      }
     });
   };
 
@@ -441,10 +454,10 @@ export default function PhoneNumbersPage() {
                                   const campaignId = selectedCampaign === "none" || !selectedCampaign ? undefined : parseInt(selectedCampaign);
                                   handlePurchase(number, campaignId);
                                 }}
-                                disabled={purchaseMutation.isPending}
+                                disabled={purchasingNumbers.has(number.phoneNumber)}
                                 className="w-48"
                               >
-                                {purchaseMutation.isPending ? "Purchasing..." : "Purchase Number"}
+                                {purchasingNumbers.has(number.phoneNumber) ? "Purchasing..." : "Purchase Number"}
                               </Button>
                             </div>
                           </div>
