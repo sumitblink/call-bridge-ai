@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Copy, Code, Globe, Phone, TrendingUp, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Layout from "@/components/Layout";
 
 interface Campaign {
   id: number;
@@ -164,36 +165,37 @@ export default function DNI() {
   const activeCampaigns = campaigns?.filter(c => c.status === 'active') || [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Globe className="h-6 w-6" />
-        <h1 className="text-3xl font-bold">Dynamic Number Insertion</h1>
-        <Badge variant="secondary">DNI</Badge>
-      </div>
+    <Layout>
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Globe className="h-6 w-6" />
+          <h1 className="text-3xl font-bold">Dynamic Number Insertion</h1>
+          <Badge variant="secondary">DNI</Badge>
+        </div>
 
-      <p className="text-muted-foreground">
-        Generate JavaScript code snippets to dynamically display tracking phone numbers on your websites. 
-        Enable advanced attribution tracking for performance marketing campaigns.
-      </p>
+        <p className="text-muted-foreground">
+          Generate JavaScript code snippets to dynamically display tracking phone numbers on your websites. 
+          Enable advanced attribution tracking for performance marketing campaigns.
+        </p>
 
-      <Tabs defaultValue="setup" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="setup">Setup & Generate</TabsTrigger>
-          <TabsTrigger value="test">Test Tracking</TabsTrigger>
-          <TabsTrigger value="examples">Integration Examples</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="setup" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="setup">Setup & Generate</TabsTrigger>
+            <TabsTrigger value="test">Test Tracking</TabsTrigger>
+            <TabsTrigger value="examples">Integration Examples</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="setup" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Code className="h-5 w-5" />
-                Generate DNI Code
-              </CardTitle>
-              <CardDescription>
-                Select a campaign and generate the JavaScript integration code for your website
-              </CardDescription>
-            </CardHeader>
+          <TabsContent value="setup" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Code className="h-5 w-5" />
+                  Generate DNI Code
+                </CardTitle>
+                <CardDescription>
+                  Select a campaign and generate the JavaScript integration code for your website
+                </CardDescription>
+              </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="campaign-select">Campaign</Label>
@@ -522,6 +524,7 @@ https://example.com/?utm_source=google
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </Layout>
   );
 }
