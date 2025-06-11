@@ -19,15 +19,16 @@ interface PhoneNumber {
   friendlyName: string;
   country: string;
   numberType: string;
+  status: string;
   campaignId?: number;
-  isActive: boolean;
-  monthlyFee: string;
+  monthlyFee: number;
   purchaseDate: string;
 }
 
 interface Campaign {
   id: number;
   name: string;
+  status: string;
 }
 
 interface TwilioNumber {
@@ -61,7 +62,7 @@ export default function PhoneNumbersPage() {
     queryKey: ['/api/phone-numbers'],
   });
 
-  // Fetch campaigns for assignment
+  // Fetch campaigns
   const { data: campaigns = [] } = useQuery({
     queryKey: ['/api/campaigns'],
   });
@@ -124,7 +125,14 @@ export default function PhoneNumbersPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/phone-numbers'] });
       toast({
         title: "Assignment Updated",
-        description: "Phone number assigned to campaign",
+        description: "Phone number campaign assignment updated",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Assignment Failed",
+        description: error instanceof Error ? error.message : "Failed to assign campaign",
+        variant: "destructive",
       });
     },
   });
@@ -140,6 +148,13 @@ export default function PhoneNumbersPage() {
       toast({
         title: "Number Released",
         description: "Phone number released successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Release Failed",
+        description: error instanceof Error ? error.message : "Failed to release number",
+        variant: "destructive",
       });
     },
   });
@@ -170,18 +185,11 @@ export default function PhoneNumbersPage() {
   if (isLoading) {
     return (
       <Layout>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Phone Numbers</h1>
-              <p className="text-muted-foreground">Manage your Twilio phone numbers</p>
-            </div>
-            <Skeleton className="h-10 w-32" />
-          </div>
-          <div className="grid gap-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-32 w-full" />
-            ))}
+        <div className="container mx-auto p-6">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
           </div>
         </div>
       </Layout>
@@ -190,98 +198,215 @@ export default function PhoneNumbersPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Phone Numbers</h1>
-            <p className="text-muted-foreground">Manage your Twilio phone numbers</p>
-          </div>
-          <Dialog open={searchDialog} onOpenChange={setSearchDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Buy Number
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Purchase Phone Number</DialogTitle>
-              <DialogDescription>
-                Search for available phone numbers and purchase them for your campaigns.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6">
-              {/* Search Form */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
-                  <Select value={searchParams.country} onValueChange={(value) => 
-                    setSearchParams(prev => ({ ...prev, country: value }))
-                  }>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="US">United States</SelectItem>
-                      <SelectItem value="CA">Canada</SelectItem>
-                      <SelectItem value="GB">United Kingdom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="numberType">Number Type</Label>
-                  <Select value={searchParams.numberType} onValueChange={(value) => 
-                    setSearchParams(prev => ({ ...prev, numberType: value }))
-                  }>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="local">Local</SelectItem>
-                      <SelectItem value="toll-free">Toll-Free</SelectItem>
-                      <SelectItem value="mobile">Mobile</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="areaCode">Area Code (optional)</Label>
-                  <Input
-                    id="areaCode"
-                    placeholder="e.g., 415"
-                    value={searchParams.areaCode}
-                    onChange={(e) => setSearchParams(prev => ({ ...prev, areaCode: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contains">Contains (optional)</Label>
-                  <Input
-                    id="contains"
-                    placeholder="e.g., 1234"
-                    value={searchParams.contains}
-                    onChange={(e) => setSearchParams(prev => ({ ...prev, contains: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <Button onClick={handleSearch} disabled={isSearching} className="w-full">
-                <Search className="h-4 w-4 mr-2" />
-                {isSearching ? "Searching..." : "Search Available Numbers"}
-              </Button>
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Phone Numbers</h1>
+        </div>
 
-              {/* Search Results */}
-              {searchResults.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Available Numbers ({searchResults.length})</h3>
-                  <div className="max-h-96 overflow-y-auto space-y-2">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="owned" className="flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              Owned Numbers ({phoneNumbers.length})
+            </TabsTrigger>
+            <TabsTrigger value="search" className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Buy Numbers
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Owned Numbers Tab */}
+          <TabsContent value="owned" className="space-y-4">
+            {phoneNumbers.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <Phone className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Phone Numbers</h3>
+                  <p className="text-muted-foreground mb-4">
+                    You haven't purchased any phone numbers yet.
+                  </p>
+                  <Button onClick={() => setActiveTab("search")}>
+                    Buy Your First Number
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {phoneNumbers.map((number: PhoneNumber) => (
+                  <Card key={number.id}>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            {number.friendlyName}
+                            <Badge variant={number.status === 'active' ? 'default' : 'secondary'}>
+                              {number.status}
+                            </Badge>
+                          </CardTitle>
+                          <CardDescription>{number.phoneNumber}</CardDescription>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-muted-foreground">
+                            {number.numberType} • {number.country}
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <Label className="text-sm font-medium">Campaign Assignment</Label>
+                          <div className="mt-1">
+                            <Select
+                              value={number.campaignId?.toString() || "unassigned"}
+                              onValueChange={(campaignId) => {
+                                if (campaignId && campaignId !== "unassigned") {
+                                  assignMutation.mutate({
+                                    phoneNumberId: number.id,
+                                    campaignId: parseInt(campaignId),
+                                  });
+                                }
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={getCampaignName(number.campaignId)} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="unassigned">Unassigned</SelectItem>
+                                {campaigns.map((campaign: Campaign) => (
+                                  <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                                    {campaign.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Monthly Fee</Label>
+                          <div className="mt-1 text-lg font-semibold">${number.monthlyFee}</div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm text-muted-foreground">
+                          Purchased: {new Date(number.purchaseDate).toLocaleDateString()}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Settings className="h-4 w-4 mr-2" />
+                            Configure
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteMutation.mutate(number.id)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Release
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Search Numbers Tab */}
+          <TabsContent value="search" className="space-y-6">
+            {/* Search Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Search Available Numbers</CardTitle>
+                <CardDescription>
+                  Find and purchase phone numbers for your campaigns
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Select value={searchParams.country} onValueChange={(value) => 
+                      setSearchParams(prev => ({ ...prev, country: value }))
+                    }>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="US">United States</SelectItem>
+                        <SelectItem value="CA">Canada</SelectItem>
+                        <SelectItem value="GB">United Kingdom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="numberType">Number Type</Label>
+                    <Select value={searchParams.numberType} onValueChange={(value) => 
+                      setSearchParams(prev => ({ ...prev, numberType: value }))
+                    }>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="local">Local</SelectItem>
+                        <SelectItem value="toll-free">Toll-Free</SelectItem>
+                        <SelectItem value="mobile">Mobile</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="areaCode">Area Code (optional)</Label>
+                    <Input
+                      id="areaCode"
+                      placeholder="e.g., 415"
+                      value={searchParams.areaCode}
+                      onChange={(e) => setSearchParams(prev => ({ ...prev, areaCode: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contains">Contains (optional)</Label>
+                    <Input
+                      id="contains"
+                      placeholder="e.g., 555"
+                      value={searchParams.contains}
+                      onChange={(e) => setSearchParams(prev => ({ ...prev, contains: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleSearch} 
+                  disabled={isSearching}
+                  className="w-full"
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  {isSearching ? 'Searching...' : 'Search Available Numbers'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Search Results */}
+            {searchResults.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Available Numbers ({searchResults.length})</CardTitle>
+                  <CardDescription>
+                    Click "Purchase" to buy a number and optionally assign it to a campaign
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
                     {searchResults.map((number) => (
-                      <Card key={number.phoneNumber} className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <div className="font-mono text-lg">{number.phoneNumber}</div>
+                      <div key={number.phoneNumber} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="font-semibold text-lg">{number.friendlyName}</div>
                             <div className="text-sm text-muted-foreground">
-                              {number.region} • {number.isoCountry}
+                              {number.phoneNumber} • {number.region}
                             </div>
-                            <div className="flex gap-1">
-                              {number.capabilities.voice && <Badge variant="secondary">Voice</Badge>}
+                            <div className="flex gap-1 mt-2">
+                              {number.capabilities.voice && <Badge variant="outline">Voice</Badge>}
                               {number.capabilities.SMS && <Badge variant="secondary">SMS</Badge>}
                               {number.capabilities.MMS && <Badge variant="secondary">MMS</Badge>}
                             </div>
@@ -311,122 +436,16 @@ export default function PhoneNumbersPage() {
                                 </Button>
                               </div>
                             )}
-                            <Button
-                              onClick={() => handlePurchase(number)}
-                              disabled={purchaseMutation.isPending}
-                              className="w-full"
-                            >
-                              Buy Number ($1.00/month)
-                            </Button>
                           </div>
                         </div>
-                      </Card>
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Owned Numbers */}
-      {phoneNumbers.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Phone className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Phone Numbers</h3>
-            <p className="text-muted-foreground mb-4">
-              You haven't purchased any phone numbers yet. Buy your first number to start receiving calls.
-            </p>
-            <Dialog open={searchDialog} onOpenChange={setSearchDialog}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Buy Your First Number
-                </Button>
-              </DialogTrigger>
-            </Dialog>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {phoneNumbers.map((number: PhoneNumber) => (
-            <Card key={number.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="font-mono text-xl">{number.phoneNumber}</CardTitle>
-                    <CardDescription>{number.friendlyName}</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={number.isActive ? "default" : "secondary"}>
-                      {number.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                    <Badge variant="outline">{number.numberType}</Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <Label className="text-sm font-medium">Campaign Assignment</Label>
-                    <div className="mt-1">
-                      <Select
-                        value={number.campaignId?.toString() || "unassigned"}
-                        onValueChange={(campaignId) => {
-                          if (campaignId && campaignId !== "unassigned") {
-                            assignMutation.mutate({
-                              phoneNumberId: number.id,
-                              campaignId: parseInt(campaignId),
-                            });
-                          }
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={getCampaignName(number.campaignId)} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="unassigned">Unassigned</SelectItem>
-                          {campaigns.map((campaign: Campaign) => (
-                            <SelectItem key={campaign.id} value={campaign.id.toString()}>
-                              {campaign.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Monthly Fee</Label>
-                    <div className="mt-1 text-lg font-semibold">${number.monthlyFee}</div>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-muted-foreground">
-                    Purchased: {new Date(number.purchaseDate).toLocaleDateString()}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Configure
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteMutation.mutate(number.id)}
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Release
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
