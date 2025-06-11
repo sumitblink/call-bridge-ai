@@ -719,8 +719,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Starting recording for call ${callSid}`);
       
+      // Find the call record to get the actual ID
+      const calls = await storage.getCalls();
+      const call = calls.find(c => c.callSid === callSid);
+      
+      if (!call) {
+        return res.status(404).json({ error: "Call not found" });
+      }
+      
       await storage.createCallLog({
-        callId: parseInt(callSid.replace('CA', '')),
+        callId: call.id,
         action: 'start_recording',
         response: 'Recording started',
         responseTime: 180
@@ -745,8 +753,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Stopping recording ${recordingSid} for call ${callSid}`);
       
+      // Find the call record to get the actual ID
+      const calls = await storage.getCalls();
+      const call = calls.find(c => c.callSid === callSid);
+      
+      if (!call) {
+        return res.status(404).json({ error: "Call not found" });
+      }
+      
       await storage.createCallLog({
-        callId: parseInt(callSid.replace('CA', '')),
+        callId: call.id,
         action: 'stop_recording',
         response: `Recording ${recordingSid} stopped`,
         responseTime: 160
