@@ -1317,16 +1317,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/publishers', requireAuth, async (req, res) => {
     try {
-      const { insertPublisherSchema } = await import('@shared/schema');
-      const validatedData = insertPublisherSchema.parse(req.body);
-      
       const user = req.user as any;
-      const publisherData = {
-        ...validatedData,
+      const { insertPublisherSchema } = await import('@shared/schema');
+      
+      // Add userId to the request body before validation
+      const dataWithUserId = {
+        ...req.body,
         userId: user.id
       };
       
-      const newPublisher = await storage.createPublisher(publisherData);
+      const validatedData = insertPublisherSchema.parse(dataWithUserId);
+      
+      const newPublisher = await storage.createPublisher(validatedData);
       res.status(201).json(newPublisher);
     } catch (error) {
       console.error('Error creating publisher:', error);
