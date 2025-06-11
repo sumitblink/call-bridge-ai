@@ -1049,7 +1049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/phone-numbers/search', isAuthenticated, async (req, res) => {
+  app.post('/api/phone-numbers/search', requireAuth, async (req, res) => {
     try {
       const { country = 'US', numberType = 'local', areaCode, contains, limit = 20 } = req.body;
       
@@ -1076,10 +1076,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/phone-numbers/purchase', isAuthenticated, async (req, res) => {
+  app.post('/api/phone-numbers/purchase', requireAuth, async (req, res) => {
     try {
       const { phoneNumber, friendlyName, campaignId } = req.body;
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
 
       if (!phoneNumber) {
         return res.status(400).json({ error: 'Phone number is required' });
@@ -1131,7 +1131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/phone-numbers/:id/assign-campaign', isAuthenticated, async (req, res) => {
+  app.post('/api/phone-numbers/:id/assign-campaign', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const { campaignId } = req.body;
@@ -1156,7 +1156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/phone-numbers/:id/unassign-campaign', isAuthenticated, async (req, res) => {
+  app.post('/api/phone-numbers/:id/unassign-campaign', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -1176,7 +1176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/phone-numbers/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/phone-numbers/:id', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       
