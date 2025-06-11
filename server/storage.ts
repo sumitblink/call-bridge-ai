@@ -97,6 +97,16 @@ export interface IStorage {
   getPublisherCampaigns(publisherId: number): Promise<any[]>;
   addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any>;
   removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean>;
+
+  // Phone Numbers
+  getPhoneNumbers(userId?: number): Promise<any[]>;
+  getPhoneNumber(id: number): Promise<any | undefined>;
+  createPhoneNumber(phoneNumber: any): Promise<any>;
+  updatePhoneNumber(id: number, phoneNumber: any): Promise<any | undefined>;
+  deletePhoneNumber(id: number): Promise<boolean>;
+  getPhoneNumberByNumber(phoneNumber: string): Promise<any | undefined>;
+  assignPhoneNumberToCampaign(phoneNumberId: number, campaignId: number): Promise<any | undefined>;
+  unassignPhoneNumberFromCampaign(phoneNumberId: number): Promise<any | undefined>;
 }
 
 export class MemStorage implements IStorage {

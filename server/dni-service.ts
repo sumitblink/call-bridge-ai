@@ -1,7 +1,9 @@
 // Dynamic Number Insertion (DNI) Service
 // Provides JavaScript SDK for websites to dynamically insert tracking phone numbers
 
-import { storage } from './storage';
+import { db } from './db';
+import { campaigns, phoneNumbers } from '@shared/schema';
+import { eq, and } from 'drizzle-orm';
 import type { Campaign, PhoneNumber } from '@shared/schema';
 
 export interface DNIRequest {
@@ -59,9 +61,17 @@ export class DNIService {
         };
       }
 
-      // Get campaign phone numbers - use the correct method from storage interface
-      const phoneNumbers = await storage.getPhoneNumbers();
-      const campaignPhones = phoneNumbers.filter((p: any) => p.campaignId === campaign!.id && p.status === 'active');
+      // Get campaign phone numbers directly from database
+      const { db } = await import('./db');
+      const { phoneNumbers } = await import('@shared/schema');
+      const { eq, and } = await import('drizzle-orm');
+      
+      const campaignPhones = await db.select().from(phoneNumbers).where(
+        and(
+          eq(phoneNumbers.campaignId, campaign!.id),
+          eq(phoneNumbers.status, 'active')
+        )
+      );
 
       if (campaignPhones.length === 0) {
         return {
