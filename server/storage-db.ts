@@ -6,6 +6,7 @@ import {
   calls,
   callLogs,
   agents,
+  trackingPixels,
   type User, 
   type InsertUser,
   type UpsertUser,
@@ -377,19 +378,60 @@ export class DatabaseStorage implements IStorage {
 
   // Tracking Pixels
   async getTrackingPixels(): Promise<any[]> {
-    return [];
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          id,
+          name,
+          pixel_type as "pixelType",
+          fire_on_event as "fireOnEvent", 
+          code,
+          assigned_campaigns as "assignedCampaigns",
+          is_active as "isActive",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM tracking_pixels 
+        ORDER BY created_at DESC
+      `);
+      return result.rows;
+    } catch (error) {
+      console.error("Error fetching tracking pixels:", error);
+      return [];
+    }
   }
 
   async createTrackingPixel(data: any): Promise<any> {
-    return data;
+    try {
+      const [pixel] = await db.insert(trackingPixels).values(data).returning();
+      return pixel;
+    } catch (error) {
+      console.error("Error creating tracking pixel:", error);
+      throw error;
+    }
   }
 
   async updateTrackingPixel(id: number, data: any): Promise<any> {
-    return data;
+    try {
+      const [pixel] = await db
+        .update(trackingPixels)
+        .set(data)
+        .where(eq(trackingPixels.id, id))
+        .returning();
+      return pixel;
+    } catch (error) {
+      console.error("Error updating tracking pixel:", error);
+      throw error;
+    }
   }
 
   async deleteTrackingPixel(id: number): Promise<boolean> {
-    return true;
+    try {
+      const result = await db.delete(trackingPixels).where(eq(trackingPixels.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error("Error deleting tracking pixel:", error);
+      return false;
+    }
   }
 
   // Webhook Configs
