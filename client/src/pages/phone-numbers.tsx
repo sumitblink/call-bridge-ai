@@ -69,12 +69,9 @@ export default function PhoneNumbersPage() {
   // Search available numbers
   const searchMutation = useMutation({
     mutationFn: async (params: any) => {
-      return await apiRequest('/api/phone-numbers/search', {
-        method: 'POST',
-        body: JSON.stringify(params),
-      });
+      return await apiRequest('/api/phone-numbers/search', 'POST', params);
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if (data.success) {
         setSearchResults(data.numbers || []);
         toast({
@@ -95,10 +92,7 @@ export default function PhoneNumbersPage() {
   // Purchase number mutation
   const purchaseMutation = useMutation({
     mutationFn: async (params: any) => {
-      return await apiRequest('/api/phone-numbers/purchase', {
-        method: 'POST',
-        body: JSON.stringify(params),
-      });
+      return await apiRequest('/api/phone-numbers/purchase', 'POST', params);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/phone-numbers'] });
@@ -121,10 +115,7 @@ export default function PhoneNumbersPage() {
   // Assign to campaign mutation
   const assignMutation = useMutation({
     mutationFn: async ({ phoneNumberId, campaignId }: { phoneNumberId: number; campaignId: number }) => {
-      return await apiRequest(`/api/phone-numbers/${phoneNumberId}/assign-campaign`, {
-        method: 'POST',
-        body: JSON.stringify({ campaignId }),
-      });
+      return await apiRequest(`/api/phone-numbers/${phoneNumberId}/assign-campaign`, 'POST', { campaignId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/phone-numbers'] });
@@ -138,9 +129,7 @@ export default function PhoneNumbersPage() {
   // Delete number mutation
   const deleteMutation = useMutation({
     mutationFn: async (phoneNumberId: number) => {
-      return await apiRequest(`/api/phone-numbers/${phoneNumberId}`, {
-        method: 'DELETE',
-      });
+      return await apiRequest(`/api/phone-numbers/${phoneNumberId}`, 'DELETE');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/phone-numbers'] });
