@@ -428,6 +428,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/agents/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertAgentSchema.partial().parse(req.body);
+      const agent = await storage.updateAgent(id, validatedData);
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+      res.json(agent);
+    } catch (error) {
+      console.error("Error updating agent:", error);
+      res.status(500).json({ error: "Failed to update agent" });
+    }
+  });
+
+  app.delete('/api/agents/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteAgent(id);
+      if (!success) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting agent:", error);
+      res.status(500).json({ error: "Failed to delete agent" });
+    }
+  });
+
   // Calls
   app.get('/api/calls', async (req, res) => {
     try {
