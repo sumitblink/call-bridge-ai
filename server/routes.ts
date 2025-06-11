@@ -655,8 +655,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Muting call ${callSid}`);
       
+      // Find the call record to get the actual ID
+      const calls = await storage.getCalls();
+      const call = calls.find(c => c.callSid === callSid);
+      
+      if (!call) {
+        return res.status(404).json({ error: "Call not found" });
+      }
+      
       await storage.createCallLog({
-        callId: parseInt(callSid.replace('CA', '')),
+        callId: call.id,
         action: 'mute',
         response: 'Call muted',
         responseTime: 100
@@ -679,8 +687,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Unmuting call ${callSid}`);
       
+      // Find the call record to get the actual ID
+      const calls = await storage.getCalls();
+      const call = calls.find(c => c.callSid === callSid);
+      
+      if (!call) {
+        return res.status(404).json({ error: "Call not found" });
+      }
+      
       await storage.createCallLog({
-        callId: parseInt(callSid.replace('CA', '')),
+        callId: call.id,
         action: 'unmute',
         response: 'Call unmuted',
         responseTime: 110
