@@ -577,8 +577,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For now, we'll simulate the transfer and log the action
       await storage.createCallLog({
         callId: call.id,
-        event: 'transfer',
-        message: `Call transferred to ${targetNumber}`,
         action: 'transfer',
         response: `Call transferred to ${targetNumber}`,
         responseTime: 200
@@ -601,8 +599,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Placing call ${callSid} on hold`);
       
+      // Find the call record to get the actual ID
+      const calls = await storage.getCalls();
+      const call = calls.find(c => c.callSid === callSid);
+      
+      if (!call) {
+        return res.status(404).json({ error: "Call not found" });
+      }
+      
       await storage.createCallLog({
-        callId: parseInt(callSid.replace('CA', '')),
+        callId: call.id,
         action: 'hold',
         response: 'Call placed on hold',
         responseTime: 150
