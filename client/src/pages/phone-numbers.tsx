@@ -56,6 +56,7 @@ export default function PhoneNumbersPage() {
   });
   const [searchResults, setSearchResults] = useState<TwilioNumber[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedCampaigns, setSelectedCampaigns] = useState<Record<string, string>>({});
 
   // Fetch phone numbers
   const { data: phoneNumbers = [], isLoading } = useQuery({
@@ -412,12 +413,18 @@ export default function PhoneNumbersPage() {
                             </div>
                           </div>
                           <div className="space-y-2">
-                            {campaigns.length > 0 ? (
-                              <Select onValueChange={(campaignId) => 
-                                handlePurchase(number, campaignId === "none" ? undefined : parseInt(campaignId))
-                              }>
+                            <div className="flex flex-col gap-2">
+                              <Select 
+                                value={selectedCampaigns[number.phoneNumber] || ""}
+                                onValueChange={(campaignId) => {
+                                  setSelectedCampaigns(prev => ({
+                                    ...prev,
+                                    [number.phoneNumber]: campaignId
+                                  }));
+                                }}
+                              >
                                 <SelectTrigger className="w-48">
-                                  <SelectValue placeholder="Assign to campaign" />
+                                  <SelectValue placeholder="Select campaign (optional)" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">No campaign</SelectItem>
@@ -428,14 +435,18 @@ export default function PhoneNumbersPage() {
                                   ))}
                                 </SelectContent>
                               </Select>
-                            ) : (
-                              <div className="text-center p-4 text-muted-foreground">
-                                <p>You must create a campaign to use this number</p>
-                                <Button variant="link" size="sm" asChild>
-                                  <a href="/campaigns">Create Campaign</a>
-                                </Button>
-                              </div>
-                            )}
+                              <Button
+                                onClick={() => {
+                                  const selectedCampaign = selectedCampaigns[number.phoneNumber];
+                                  const campaignId = selectedCampaign === "none" || !selectedCampaign ? undefined : parseInt(selectedCampaign);
+                                  handlePurchase(number, campaignId);
+                                }}
+                                disabled={purchaseMutation.isPending}
+                                className="w-48"
+                              >
+                                {purchaseMutation.isPending ? "Purchasing..." : "Purchase Number"}
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
