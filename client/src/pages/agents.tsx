@@ -89,6 +89,20 @@ export default function AgentsPage() {
   });
 
   const handleSubmit = () => {
+    // Validate required fields
+    if (!formData.name.trim()) {
+      toast({ title: "Agent name is required", variant: "destructive" });
+      return;
+    }
+    if (!formData.email.trim()) {
+      toast({ title: "Email is required", variant: "destructive" });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      toast({ title: "Please enter a valid email address", variant: "destructive" });
+      return;
+    }
+
     if (editingAgent) {
       updateMutation.mutate({ id: editingAgent.id, ...formData });
     } else {
@@ -158,23 +172,34 @@ export default function AgentsPage() {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Agent Name</Label>
+                  <Label htmlFor="name">Agent Name <span className="text-red-500">*</span></Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="John Doe"
+                    className={!formData.name.trim() ? "border-red-300 focus:border-red-500" : ""}
                   />
+                  {!formData.name.trim() && (
+                    <p className="text-sm text-red-600 mt-1">Agent name is required</p>
+                  )}
                 </div>
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="john@example.com"
+                    className={(!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) ? "border-red-300 focus:border-red-500" : ""}
                   />
+                  {!formData.email.trim() && (
+                    <p className="text-sm text-red-600 mt-1">Email is required</p>
+                  )}
+                  {formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && (
+                    <p className="text-sm text-red-600 mt-1">Please enter a valid email address</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="status">Status</Label>
