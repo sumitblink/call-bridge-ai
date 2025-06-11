@@ -28,7 +28,10 @@ export default function Sidebar() {
   const queryClient = useQueryClient();
 
   const logoutMutation = useMutation({
-    mutationFn: () => apiRequest('POST', '/api/logout', {}),
+    mutationFn: async () => {
+      const response = await apiRequest('/api/logout', 'POST', {});
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       toast({
