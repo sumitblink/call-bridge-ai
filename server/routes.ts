@@ -1288,6 +1288,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Publisher routes
+  app.get('/api/publishers', requireAuth, async (req, res) => {
+    try {
+      const publishers = await storage.getPublishers();
+      res.json(publishers);
+    } catch (error) {
+      console.error('Error fetching publishers:', error);
+      res.status(500).json({ error: 'Failed to fetch publishers' });
+    }
+  });
+
+  app.get('/api/publishers/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const publisher = await storage.getPublisher(parseInt(id));
+      
+      if (!publisher) {
+        return res.status(404).json({ error: 'Publisher not found' });
+      }
+      
+      res.json(publisher);
+    } catch (error) {
+      console.error('Error fetching publisher:', error);
+      res.status(500).json({ error: 'Failed to fetch publisher' });
+    }
+  });
+
+  app.post('/api/publishers', requireAuth, async (req, res) => {
+    try {
+      const { insertPublisherSchema } = await import('@shared/schema');
+      const validatedData = insertPublisherSchema.parse(req.body);
+      
+      const user = req.user as any;
+      const publisherData = {
+        ...validatedData,
+        userId: user.id
+      };
+      
+      const newPublisher = await storage.createPublisher(publisherData);
+      res.status(201).json(newPublisher);
+    } catch (error) {
+      console.error('Error creating publisher:', error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid publisher data', details: error.message });
+      }
+      res.status(500).json({ error: 'Failed to create publisher' });
+    }
+  });
+
+  app.put('/api/publishers/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { insertPublisherSchema } = await import('@shared/schema');
+      const validatedData = insertPublisherSchema.partial().parse(req.body);
+      
+      const updatedPublisher = await storage.updatePublisher(parseInt(id), validatedData);
+      
+      if (!updatedPublisher) {
+        return res.status(404).json({ error: 'Publisher not found' });
+      }
+      
+      res.json(updatedPublisher);
+    } catch (error) {
+      console.error('Error updating publisher:', error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid publisher data', details: error.message });
+      }
+      res.status(500).json({ error: 'Failed to update publisher' });
+    }
+  });
+
+  app.delete('/api/publishers/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deletePublisher(parseInt(id));
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'Publisher not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting publisher:', error);
+      res.status(500).json({ error: 'Failed to delete publisher' });
+    }
+  });
+
+  app.get('/api/publishers/:id/campaigns', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const campaigns = await storage.getPublisherCampaigns(parseInt(id));
+      res.json(campaigns);
+    } catch (error) {
+      console.error('Error fetching publisher campaigns:', error);
+      res.status(500).json({ error: 'Failed to fetch publisher campaigns' });
+    }
+  });
+
+  app.post('/api/publishers/:publisherId/campaigns/:campaignId', requireAuth, async (req, res) => {
+    try {
+      const { publisherId, campaignId } = req.params;
+      const { customPayout } = req.body;
+      
+      const assignment = await storage.addPublisherToCampaign(
+        parseInt(publisherId), 
+        parseInt(campaignId), 
+        customPayout
+      );
+      
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error('Error assigning publisher to campaign:', error);
+      res.status(500).json({ error: 'Failed to assign publisher to campaign' });
+    }
+  });
+
+  app.delete('/api/publishers/:publisherId/campaigns/:campaignId', requireAuth, async (req, res) => {
+    try {
+      const { publisherId, campaignId } = req.params;
+      
+      const removed = await storage.removePublisherFromCampaign(
+        parseInt(publisherId), 
+        parseInt(campaignId)
+      );
+      
+      if (!removed) {
+        return res.status(404).json({ error: 'Publisher campaign assignment not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error removing publisher from campaign:', error);
+      res.status(500).json({ error: 'Failed to remove publisher from campaign' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
