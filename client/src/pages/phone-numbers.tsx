@@ -5,12 +5,12 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Plus, Search, Trash2, Settings } from "lucide-react";
+import { Phone, Search, Trash2, Settings } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PhoneNumber {
@@ -45,7 +45,7 @@ interface TwilioNumber {
 export default function PhoneNumbersPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [searchDialog, setSearchDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("owned");
   const [searchParams, setSearchParams] = useState({
     country: 'US',
     numberType: 'local',
@@ -98,7 +98,7 @@ export default function PhoneNumbersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/phone-numbers'] });
-      setSearchDialog(false);
+      setActiveTab("owned");
       setSearchResults([]);
       toast({
         title: "Number Purchased",
