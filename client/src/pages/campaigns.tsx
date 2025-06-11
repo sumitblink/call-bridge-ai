@@ -234,17 +234,7 @@ function CampaignForm({
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertCampaign) => {
-      const response = await fetch("/api/campaigns", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
-        throw new Error(errorData.details || errorData.error || "Failed to create campaign");
-      }
-      
+      const response = await apiRequest("/api/campaigns", "POST", data);
       return response.json();
     },
     onSuccess: async (result) => {
@@ -272,12 +262,7 @@ function CampaignForm({
 
   const updateMutation = useMutation({
     mutationFn: async (data: InsertCampaign) => {
-      const response = await fetch(`/api/campaigns/${campaign!.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error("Failed to update campaign");
+      const response = await apiRequest(`/api/campaigns/${campaign!.id}`, "PATCH", data);
       return response.json();
     },
     onSuccess: async (result) => {
@@ -323,11 +308,8 @@ function CampaignForm({
     // Add buyers
     for (const buyerId of buyersToAdd) {
       try {
-        await fetch(`/api/campaigns/${campaignId}/buyers`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ buyerId, priority: 1 }),
-        });
+        const response = await apiRequest(`/api/campaigns/${campaignId}/buyers`, "POST", { buyerId, priority: 1 });
+        await response.json();
       } catch (error) {
         console.error("Failed to add buyer:", error);
       }
@@ -336,9 +318,8 @@ function CampaignForm({
     // Remove buyers  
     for (const buyerId of buyersToRemove) {
       try {
-        await fetch(`/api/campaigns/${campaignId}/buyers/${buyerId}`, {
-          method: "DELETE",
-        });
+        const response = await apiRequest(`/api/campaigns/${campaignId}/buyers/${buyerId}`, "DELETE");
+        await response.json();
       } catch (error) {
         console.error("Failed to remove buyer:", error);
       }
