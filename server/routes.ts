@@ -553,6 +553,210 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Call Control API
+  app.post('/api/calls/:callSid/transfer', async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const { targetNumber } = req.body;
+
+      if (!targetNumber) {
+        return res.status(400).json({ error: "Target number is required" });
+      }
+
+      console.log(`Transferring call ${callSid} to ${targetNumber}`);
+      
+      // In a real implementation, you would use Twilio's API to transfer the call
+      // For now, we'll simulate the transfer and log the action
+      await storage.createCallLog({
+        callId: parseInt(callSid.replace('CA', '')),
+        action: 'transfer',
+        response: `Call transferred to ${targetNumber}`,
+        responseTime: Date.now()
+      });
+
+      res.json({ 
+        success: true, 
+        message: `Call ${callSid} transfer initiated to ${targetNumber}`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error transferring call:", error);
+      res.status(500).json({ error: "Failed to transfer call" });
+    }
+  });
+
+  app.post('/api/calls/:callSid/hold', async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      
+      console.log(`Placing call ${callSid} on hold`);
+      
+      await storage.createCallLog({
+        callId: parseInt(callSid.replace('CA', '')),
+        action: 'hold',
+        response: 'Call placed on hold',
+        responseTime: Date.now()
+      });
+
+      res.json({ 
+        success: true, 
+        message: `Call ${callSid} placed on hold`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error holding call:", error);
+      res.status(500).json({ error: "Failed to hold call" });
+    }
+  });
+
+  app.post('/api/calls/:callSid/resume', async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      
+      console.log(`Resuming call ${callSid}`);
+      
+      await storage.createCallLog({
+        callId: parseInt(callSid.replace('CA', '')),
+        action: 'resume',
+        response: 'Call resumed',
+        responseTime: Date.now()
+      });
+
+      res.json({ 
+        success: true, 
+        message: `Call ${callSid} resumed`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error resuming call:", error);
+      res.status(500).json({ error: "Failed to resume call" });
+    }
+  });
+
+  app.post('/api/calls/:callSid/mute', async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      
+      console.log(`Muting call ${callSid}`);
+      
+      await storage.createCallLog({
+        callId: parseInt(callSid.replace('CA', '')),
+        action: 'mute',
+        response: 'Call muted',
+        responseTime: Date.now()
+      });
+
+      res.json({ 
+        success: true, 
+        message: `Call ${callSid} muted`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error muting call:", error);
+      res.status(500).json({ error: "Failed to mute call" });
+    }
+  });
+
+  app.post('/api/calls/:callSid/unmute', async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      
+      console.log(`Unmuting call ${callSid}`);
+      
+      await storage.createCallLog({
+        callId: parseInt(callSid.replace('CA', '')),
+        action: 'unmute',
+        response: 'Call unmuted',
+        responseTime: Date.now()
+      });
+
+      res.json({ 
+        success: true, 
+        message: `Call ${callSid} unmuted`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error unmuting call:", error);
+      res.status(500).json({ error: "Failed to unmute call" });
+    }
+  });
+
+  app.post('/api/calls/:callSid/recording/start', async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      
+      console.log(`Starting recording for call ${callSid}`);
+      
+      await storage.createCallLog({
+        callId: parseInt(callSid.replace('CA', '')),
+        action: 'start_recording',
+        response: 'Recording started',
+        responseTime: Date.now()
+      });
+
+      res.json({ 
+        success: true, 
+        message: `Recording started for call ${callSid}`,
+        recordingSid: `RE${Date.now()}`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      res.status(500).json({ error: "Failed to start recording" });
+    }
+  });
+
+  app.post('/api/calls/:callSid/recording/stop', async (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const { recordingSid } = req.body;
+      
+      console.log(`Stopping recording ${recordingSid} for call ${callSid}`);
+      
+      await storage.createCallLog({
+        callId: parseInt(callSid.replace('CA', '')),
+        action: 'stop_recording',
+        response: `Recording ${recordingSid} stopped`,
+        responseTime: Date.now()
+      });
+
+      res.json({ 
+        success: true, 
+        message: `Recording stopped for call ${callSid}`,
+        recordingSid,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error stopping recording:", error);
+      res.status(500).json({ error: "Failed to stop recording" });
+    }
+  });
+
+  app.post('/api/conference/create', async (req, res) => {
+    try {
+      const { participants } = req.body;
+
+      if (!participants || participants.length < 2) {
+        return res.status(400).json({ error: "At least 2 participants required for conference" });
+      }
+
+      console.log(`Creating conference with participants:`, participants);
+      
+      const conferenceSid = `CF${Date.now()}`;
+      
+      res.json({ 
+        success: true, 
+        message: `Conference created with ${participants.length} participants`,
+        conferenceSid,
+        participants,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error creating conference:", error);
+      res.status(500).json({ error: "Failed to create conference" });
+    }
+  });
+
   // Tracking Pixels API
   app.get('/api/integrations/pixels', async (req, res) => {
     try {
