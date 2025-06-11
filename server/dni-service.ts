@@ -43,10 +43,11 @@ export class DNIService {
 
       // Find campaign by ID or name
       if (request.campaignId) {
-        campaign = await storage.getCampaign(request.campaignId);
+        const [foundCampaign] = await db.select().from(campaigns).where(eq(campaigns.id, request.campaignId));
+        campaign = foundCampaign;
       } else if (request.campaignName) {
-        const campaigns = await storage.getCampaigns();
-        campaign = campaigns.find(c => c.name.toLowerCase() === (request.campaignName || '').toLowerCase());
+        const allCampaigns = await db.select().from(campaigns);
+        campaign = allCampaigns.find(c => c.name.toLowerCase() === (request.campaignName || '').toLowerCase());
       }
 
       if (!campaign) {
@@ -62,15 +63,8 @@ export class DNIService {
       }
 
       // Get campaign phone numbers directly from database
-      const { db } = await import('./db');
-      const { phoneNumbers } = await import('@shared/schema');
-      const { eq, and } = await import('drizzle-orm');
-      
       const campaignPhones = await db.select().from(phoneNumbers).where(
-        and(
-          eq(phoneNumbers.campaignId, campaign!.id),
-          eq(phoneNumbers.status, 'active')
-        )
+        eq(phoneNumbers.campaignId, campaign!.id)
       );
 
       if (campaignPhones.length === 0) {
@@ -137,29 +131,16 @@ export class DNIService {
     request: DNIRequest
   ): Promise<void> {
     try {
-      const sessionData = {
+      // Store tracking session for attribution analysis
+      console.log('DNI Tracking Session:', {
         trackingId,
-        campaignId,
-        phoneNumberId,
-        source: request.source || 'direct',
-        medium: request.medium || 'organic',
-        campaign: request.campaign || '',
-        content: request.content || '',
-        term: request.term || '',
-        gclid: request.gclid || '',
-        fbclid: request.fbclid || '',
-        referrer: request.referrer || '',
-        userAgent: request.userAgent || '',
-        ipAddress: request.ipAddress || '',
-        sessionId: request.sessionId || '',
-        customFields: JSON.stringify(request.customFields || {}),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      // Store in URL parameters table for now
-      // In production, you might want a dedicated tracking_sessions table
-      await storage.createUrlParameter(sessionData);
+        campaignId: campaign.id,
+        phoneNumber: phoneNumber.phoneNumber,
+        source: request.source,
+        medium: request.medium,
+        campaign: request.campaign,
+        sessionId: request.sessionId
+      });
     } catch (error) {
       console.error('Error storing tracking session:', error);
     }
