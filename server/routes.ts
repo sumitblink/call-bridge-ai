@@ -1037,6 +1037,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test Twilio connection endpoint
+  app.get('/api/test-twilio', requireAuth, async (req, res) => {
+    try {
+      const { twilioPhoneService } = await import('./twilio-phone-service');
+      const testNumbers = await twilioPhoneService.searchAvailableNumbers({
+        country: 'US',
+        numberType: 'local',
+        limit: 3
+      });
+      res.json({
+        success: true,
+        message: 'Twilio connection working',
+        sampleNumbers: testNumbers.length,
+        numbers: testNumbers
+      });
+    } catch (error) {
+      console.error('Twilio test error:', error);
+      res.status(500).json({ 
+        error: 'Twilio test failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Phone Numbers Management API
   app.get('/api/phone-numbers', requireAuth, async (req, res) => {
     try {
@@ -1053,18 +1077,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { country = 'US', numberType = 'local', areaCode, contains, limit = 20 } = req.body;
       
-      const { twilioPhoneService } = await import('./twilio-phone-service');
-      const availableNumbers = await twilioPhoneService.searchAvailableNumbers({
-        country,
-        numberType,
-        areaCode,
-        contains,
-        limit
+      // Direct Twilio API call to avoid import issues
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      
+      if (!accountSid || !authToken) {
+        return res.status(500).json({
+          error: 'Twilio credentials not configured',
+          details: 'Please set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN environment variables'
+        });
+      }
+
+      // Map number types to Twilio API endpoints
+      const typeMapping = {
+        'local': 'Local',
+        'toll-free': 'TollFree',
+        'mobile': 'Mobile'
+      };
+
+      const twilioType = typeMapping[numberType] || 'Local';
+      const searchParams = new URLSearchParams({
+        VoiceEnabled: 'true',
+        PageSize: Math.min(limit, 50).toString()
       });
+
+      if (areaCode) {
+        searchParams.append('AreaCode', areaCode);
+      }
+      if (contains) {
+        searchParams.append('Contains', contains);
+      }
+
+      const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/AvailablePhoneNumbers/${country.toUpperCase()}/${twilioType}.json?${searchParams}`;
+      const authHeader = 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Twilio API error:', response.status, errorText);
+        return res.status(500).json({
+          error: 'Failed to search phone numbers',
+          details: `Twilio API returned ${response.status}: ${errorText}`
+        });
+      }
+
+      const data = await response.json();
+      const numbers = data.available_phone_numbers?.map((num: any) => ({
+        phoneNumber: num.phone_number,
+        friendlyName: num.friendly_name || num.phone_number,
+        region: num.region || country,
+        isoCountry: num.iso_country || country,
+        capabilities: {
+          voice: num.capabilities?.voice || false,
+          SMS: num.capabilities?.sms || false,
+          MMS: num.capabilities?.mms || false
+        }
+      })) || [];
 
       res.json({
         success: true,
-        numbers: availableNumbers,
+        numbers,
         searchParams: { country, numberType, areaCode, contains, limit }
       });
     } catch (error) {
