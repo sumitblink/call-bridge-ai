@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -175,31 +176,34 @@ export default function PhoneNumbersPage() {
 
   if (isLoading) {
     return (
+      <Layout>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Phone Numbers</h1>
+              <p className="text-muted-foreground">Manage your Twilio phone numbers</p>
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <div className="grid gap-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Phone Numbers</h1>
             <p className="text-muted-foreground">Manage your Twilio phone numbers</p>
           </div>
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="grid gap-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32 w-full" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Phone Numbers</h1>
-          <p className="text-muted-foreground">Manage your Twilio phone numbers</p>
-        </div>
-        <Dialog open={searchDialog} onOpenChange={setSearchDialog}>
+          <Dialog open={searchDialog} onOpenChange={setSearchDialog}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -427,6 +431,7 @@ export default function PhoneNumbersPage() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </Layout>
   );
 }
