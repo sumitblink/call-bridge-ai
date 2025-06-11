@@ -77,7 +77,7 @@ export default function Publishers() {
     mutationFn: async (data: PublisherFormData) => {
       const response = await apiRequest("/api/publishers", "POST", {
         ...data,
-        payoutAmount: parseFloat(data.payoutAmount),
+        payoutAmount: data.payoutAmount, // Keep as string for schema validation
         minCallDuration: parseInt(data.minCallDuration),
         allowedTargets: data.allowedTargets ? data.allowedTargets.split(",").map(t => t.trim()) : [],
       });
@@ -98,7 +98,7 @@ export default function Publishers() {
     mutationFn: async ({ id, data }: { id: number; data: PublisherFormData }) => {
       const response = await apiRequest(`/api/publishers/${id}`, "PUT", {
         ...data,
-        payoutAmount: parseFloat(data.payoutAmount),
+        payoutAmount: data.payoutAmount, // Keep as string for schema validation
         minCallDuration: parseInt(data.minCallDuration),
         allowedTargets: data.allowedTargets ? data.allowedTargets.split(",").map(t => t.trim()) : [],
       });
