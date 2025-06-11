@@ -289,13 +289,13 @@ export default function PhoneNumbersPage() {
                           <div className="space-y-2">
                             {campaigns.length > 0 ? (
                               <Select onValueChange={(campaignId) => 
-                                handlePurchase(number, campaignId ? parseInt(campaignId) : undefined)
+                                handlePurchase(number, campaignId === "none" ? undefined : parseInt(campaignId))
                               }>
                                 <SelectTrigger className="w-48">
                                   <SelectValue placeholder="Assign to campaign" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">No campaign</SelectItem>
+                                  <SelectItem value="none">No campaign</SelectItem>
                                   {campaigns.map((campaign: Campaign) => (
                                     <SelectItem key={campaign.id} value={campaign.id.toString()}>
                                       {campaign.name}
@@ -373,9 +373,9 @@ export default function PhoneNumbersPage() {
                     <Label className="text-sm font-medium">Campaign Assignment</Label>
                     <div className="mt-1">
                       <Select
-                        value={number.campaignId?.toString() || ""}
+                        value={number.campaignId?.toString() || "unassigned"}
                         onValueChange={(campaignId) => {
-                          if (campaignId) {
+                          if (campaignId && campaignId !== "unassigned") {
                             assignMutation.mutate({
                               phoneNumberId: number.id,
                               campaignId: parseInt(campaignId),
@@ -387,7 +387,7 @@ export default function PhoneNumbersPage() {
                           <SelectValue placeholder={getCampaignName(number.campaignId)} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Unassigned</SelectItem>
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
                           {campaigns.map((campaign: Campaign) => (
                             <SelectItem key={campaign.id} value={campaign.id.toString()}>
                               {campaign.name}
