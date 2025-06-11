@@ -225,7 +225,7 @@ function BuyerForm({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Buyer Name</FormLabel>
+                    <FormLabel>Buyer Name <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Enter buyer name" />
                     </FormControl>
@@ -239,7 +239,7 @@ function BuyerForm({
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Status <span className="text-red-500">*</span></FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || "active"}>
                       <FormControl>
                         <SelectTrigger>
@@ -286,7 +286,7 @@ function BuyerForm({
                 name="phoneNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
+                    <FormLabel>Phone Number <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="+1234567890"
@@ -323,7 +323,7 @@ function BuyerForm({
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Priority (1-10)</FormLabel>
+                    <FormLabel>Priority (1-10) <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
@@ -347,7 +347,7 @@ function BuyerForm({
                 name="dailyCap"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Daily Cap</FormLabel>
+                    <FormLabel>Daily Cap <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
@@ -372,7 +372,7 @@ function BuyerForm({
                 name="concurrencyLimit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Concurrency Limit</FormLabel>
+                    <FormLabel>Concurrency Limit <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
