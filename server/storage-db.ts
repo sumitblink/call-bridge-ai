@@ -402,10 +402,10 @@ export class DatabaseStorage implements IStorage {
 
   async createTrackingPixel(data: any): Promise<any> {
     try {
-      // Ensure assignedCampaigns is properly formatted as an array
+      // Ensure assignedCampaigns is properly formatted as an array of strings
       const campaigns = Array.isArray(data.assignedCampaigns) 
-        ? data.assignedCampaigns 
-        : data.assignedCampaigns ? [data.assignedCampaigns] : [];
+        ? data.assignedCampaigns.map(String)
+        : data.assignedCampaigns ? [String(data.assignedCampaigns)] : [];
       
       const [result] = await db
         .insert(trackingPixels)
@@ -435,8 +435,8 @@ export class DatabaseStorage implements IStorage {
       if (data.code !== undefined) updateData.code = data.code;
       if (data.assignedCampaigns !== undefined) {
         const campaigns = Array.isArray(data.assignedCampaigns) 
-          ? data.assignedCampaigns 
-          : data.assignedCampaigns ? [data.assignedCampaigns] : [];
+          ? data.assignedCampaigns.map(String)
+          : data.assignedCampaigns ? [String(data.assignedCampaigns)] : [];
         updateData.assignedCampaigns = campaigns;
       }
       if (data.isActive !== undefined) updateData.isActive = data.isActive;
