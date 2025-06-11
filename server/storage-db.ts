@@ -402,12 +402,23 @@ export class DatabaseStorage implements IStorage {
 
   async createTrackingPixel(data: any): Promise<any> {
     try {
-      const result = await db.execute(sql`
-        INSERT INTO tracking_pixels (name, pixel_type, fire_on_event, code, assigned_campaigns, is_active, created_at, updated_at)
-        VALUES (${data.name}, ${data.pixelType}, ${data.fireOnEvent}, ${data.code}, ${data.assignedCampaigns || []}, ${data.isActive !== undefined ? data.isActive : true}, NOW(), NOW())
-        RETURNING id, name, pixel_type as "pixelType", fire_on_event as "fireOnEvent", code, assigned_campaigns as "assignedCampaigns", is_active as "isActive", created_at as "createdAt", updated_at as "updatedAt"
-      `);
-      return result.rows[0];
+      // Ensure assignedCampaigns is properly formatted as an array
+      const campaigns = Array.isArray(data.assignedCampaigns) 
+        ? data.assignedCampaigns 
+        : data.assignedCampaigns ? [data.assignedCampaigns] : [];
+      
+      const [result] = await db
+        .insert(trackingPixels)
+        .values({
+          name: data.name,
+          pixelType: data.pixelType,
+          fireOnEvent: data.fireOnEvent,
+          code: data.code,
+          assignedCampaigns: campaigns,
+          isActive: data.isActive !== undefined ? data.isActive : true,
+        })
+        .returning();
+      return result;
     } catch (error) {
       console.error("Error creating tracking pixel:", error);
       throw error;
@@ -416,22 +427,26 @@ export class DatabaseStorage implements IStorage {
 
   async updateTrackingPixel(id: number, data: any): Promise<any> {
     try {
-      const setParts = [];
-      if (data.name !== undefined) setParts.push(`name = ${sql.raw("'" + data.name.replace("'", "''") + "'")}`);
-      if (data.pixelType !== undefined) setParts.push(`pixel_type = ${sql.raw("'" + data.pixelType + "'")}`);
-      if (data.fireOnEvent !== undefined) setParts.push(`fire_on_event = ${sql.raw("'" + data.fireOnEvent + "'")}`);
-      if (data.code !== undefined) setParts.push(`code = ${sql.raw("'" + data.code.replace("'", "''") + "'")}`);
-      if (data.assignedCampaigns !== undefined) setParts.push(`assigned_campaigns = ${sql.raw("'" + JSON.stringify(data.assignedCampaigns).replace("'", "''") + "'")}`);
-      if (data.isActive !== undefined) setParts.push(`is_active = ${data.isActive}`);
-      setParts.push(`updated_at = NOW()`);
+      // Prepare update data with proper array formatting
+      const updateData: any = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.pixelType !== undefined) updateData.pixelType = data.pixelType;
+      if (data.fireOnEvent !== undefined) updateData.fireOnEvent = data.fireOnEvent;
+      if (data.code !== undefined) updateData.code = data.code;
+      if (data.assignedCampaigns !== undefined) {
+        const campaigns = Array.isArray(data.assignedCampaigns) 
+          ? data.assignedCampaigns 
+          : data.assignedCampaigns ? [data.assignedCampaigns] : [];
+        updateData.assignedCampaigns = campaigns;
+      }
+      if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
-      const result = await db.execute(sql`
-        UPDATE tracking_pixels 
-        SET ${sql.raw(setParts.join(', '))}
-        WHERE id = ${id}
-        RETURNING id, name, pixel_type as "pixelType", fire_on_event as "fireOnEvent", code, assigned_campaigns as "assignedCampaigns", is_active as "isActive", created_at as "createdAt", updated_at as "updatedAt"
-      `);
-      return result.rows[0];
+      const [result] = await db
+        .update(trackingPixels)
+        .set(updateData)
+        .where(eq(trackingPixels.id, id))
+        .returning();
+      return result;
     } catch (error) {
       console.error("Error updating tracking pixel:", error);
       throw error;
@@ -440,7 +455,9 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTrackingPixel(id: number): Promise<boolean> {
     try {
-      const result = await db.execute(sql`DELETE FROM tracking_pixels WHERE id = ${id}`);
+      const result = await db
+        .delete(trackingPixels)
+        .where(eq(trackingPixels.id, id));
       return result.rowCount > 0;
     } catch (error) {
       console.error("Error deleting tracking pixel:", error);
