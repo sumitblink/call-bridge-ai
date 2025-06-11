@@ -577,6 +577,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For now, we'll simulate the transfer and log the action
       await storage.createCallLog({
         callId: call.id,
+        event: 'transfer',
+        message: `Call transferred to ${targetNumber}`,
         action: 'transfer',
         response: `Call transferred to ${targetNumber}`,
         responseTime: 200
