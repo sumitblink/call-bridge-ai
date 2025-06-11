@@ -18,7 +18,7 @@ export default function Auth() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
-      const response = await apiRequest("POST", "/api/login", data);
+      const response = await apiRequest("/api/login", "POST", data);
       return response.json();
     },
     onSuccess: () => {
@@ -39,7 +39,7 @@ export default function Auth() {
 
   const signupMutation = useMutation({
     mutationFn: async (data: { email: string; password: string; firstName: string; lastName: string }) => {
-      const response = await apiRequest("POST", "/api/signup", data);
+      const response = await apiRequest("/api/signup", "POST", data);
       return response.json();
     },
     onSuccess: () => {
