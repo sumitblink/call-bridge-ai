@@ -5,7 +5,7 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -202,6 +202,9 @@ export default function PhoneNumbersPage() {
           <DialogContent className="max-w-4xl">
             <DialogHeader>
               <DialogTitle>Purchase Phone Number</DialogTitle>
+              <DialogDescription>
+                Search for available phone numbers and purchase them for your campaigns.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
               {/* Search Form */}
