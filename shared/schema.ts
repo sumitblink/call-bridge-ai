@@ -300,6 +300,7 @@ export type InsertPhoneNumber = z.infer<typeof insertPhoneNumberSchema>;
 // Publishers (Traffic Sources) table
 export const publishers = pgTable('publishers', {
   id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
   name: text('name').notNull(),
   email: text('email').notNull(),
   phone: text('phone'),
