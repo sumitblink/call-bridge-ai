@@ -524,6 +524,66 @@ export class DatabaseStorage implements IStorage {
   async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
     return true;
   }
+
+  // Phone Numbers Management
+  async getPhoneNumbers(userId?: number): Promise<PhoneNumber[]> {
+    if (userId) {
+      return await db.select().from(phoneNumbers).where(eq(phoneNumbers.userId, userId));
+    }
+    return await db.select().from(phoneNumbers);
+  }
+
+  async getPhoneNumber(id: number): Promise<PhoneNumber | undefined> {
+    const [number] = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, id));
+    return number;
+  }
+
+  async createPhoneNumber(phoneNumber: InsertPhoneNumber): Promise<PhoneNumber> {
+    const [newNumber] = await db
+      .insert(phoneNumbers)
+      .values(phoneNumber)
+      .returning();
+    return newNumber;
+  }
+
+  async updatePhoneNumber(id: number, phoneNumber: Partial<InsertPhoneNumber>): Promise<PhoneNumber | undefined> {
+    const [updatedNumber] = await db
+      .update(phoneNumbers)
+      .set(phoneNumber)
+      .where(eq(phoneNumbers.id, id))
+      .returning();
+    return updatedNumber;
+  }
+
+  async deletePhoneNumber(id: number): Promise<boolean> {
+    const result = await db
+      .delete(phoneNumbers)
+      .where(eq(phoneNumbers.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getPhoneNumberByNumber(phoneNumber: string): Promise<PhoneNumber | undefined> {
+    const [number] = await db.select().from(phoneNumbers).where(eq(phoneNumbers.phoneNumber, phoneNumber));
+    return number;
+  }
+
+  async assignPhoneNumberToCampaign(phoneNumberId: number, campaignId: number): Promise<PhoneNumber | undefined> {
+    const [updatedNumber] = await db
+      .update(phoneNumbers)
+      .set({ campaignId })
+      .where(eq(phoneNumbers.id, phoneNumberId))
+      .returning();
+    return updatedNumber;
+  }
+
+  async unassignPhoneNumberFromCampaign(phoneNumberId: number): Promise<PhoneNumber | undefined> {
+    const [updatedNumber] = await db
+      .update(phoneNumbers)
+      .set({ campaignId: null })
+      .where(eq(phoneNumbers.id, phoneNumberId))
+      .returning();
+    return updatedNumber;
+  }
 }
 
 export const storage = new DatabaseStorage();

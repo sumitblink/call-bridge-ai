@@ -199,6 +199,27 @@ export const platformIntegrations = pgTable("platform_integrations", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const phoneNumbers = pgTable("phone_numbers", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  phoneNumber: varchar("phone_number", { length: 20 }).notNull().unique(),
+  friendlyName: varchar("friendly_name", { length: 64 }),
+  phoneNumberSid: varchar("phone_number_sid", { length: 100 }).notNull(),
+  accountSid: varchar("account_sid", { length: 100 }).notNull(),
+  country: varchar("country", { length: 10 }).default("US").notNull(),
+  numberType: varchar("number_type", { length: 20 }).notNull(), // local, toll-free, mobile
+  capabilities: text("capabilities"), // JSON object with voice, sms, mms capabilities
+  voiceUrl: varchar("voice_url", { length: 512 }),
+  voiceMethod: varchar("voice_method", { length: 10 }).default("POST"),
+  statusCallback: varchar("status_callback", { length: 512 }),
+  campaignId: integer("campaign_id").references(() => campaigns.id),
+  isActive: boolean("is_active").default(true).notNull(),
+  monthlyFee: decimal("monthly_fee", { precision: 10, scale: 4 }).default("1.0000"),
+  purchaseDate: timestamp("purchase_date").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
@@ -267,6 +288,14 @@ export type InsertCallLog = z.infer<typeof insertCallLogSchema>;
 
 export type Agent = typeof agents.$inferSelect;
 export type InsertAgent = z.infer<typeof insertAgentSchema>;
+
+export const insertPhoneNumberSchema = createInsertSchema(phoneNumbers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type PhoneNumber = typeof phoneNumbers.$inferSelect;
+export type InsertPhoneNumber = z.infer<typeof insertPhoneNumberSchema>;
 
 // Publishers (Traffic Sources) table
 export const publishers = pgTable('publishers', {
