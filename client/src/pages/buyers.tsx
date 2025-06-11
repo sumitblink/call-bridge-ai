@@ -239,7 +239,7 @@ function BuyerForm({
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || "active"}>
                       <FormControl>
                         <SelectTrigger>
@@ -323,7 +323,7 @@ function BuyerForm({
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Priority (1-10) <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>Priority (1-10)</FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
@@ -347,7 +347,7 @@ function BuyerForm({
                 name="dailyCap"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Daily Cap <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>Daily Cap</FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
@@ -372,7 +372,7 @@ function BuyerForm({
                 name="concurrencyLimit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Concurrency Limit <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>Concurrency Limit</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 

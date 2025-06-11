@@ -243,11 +243,11 @@ export const insertBuyerSchema = createInsertSchema(buyers).omit({
 }).extend({
   userId: z.number().optional(), // Made optional for client-side validation
   name: z.string().min(1, "Buyer name is required"),
-  status: z.string().min(1, "Status is required"),
   phoneNumber: z.string().min(1, "Phone number is required"),
-  priority: z.number().min(1, "Priority must be at least 1"),
-  dailyCap: z.number().min(1, "Daily cap must be at least 1"),
-  concurrencyLimit: z.number().min(1, "Concurrency limit must be at least 1"),
+  status: z.string().optional(),
+  priority: z.number().optional(),
+  dailyCap: z.number().optional(),
+  concurrencyLimit: z.number().optional(),
   email: z.string().email("Invalid email format").optional().or(z.literal("")),
   endpoint: z.string().url("Invalid endpoint URL").optional().or(z.literal("")),
 });
