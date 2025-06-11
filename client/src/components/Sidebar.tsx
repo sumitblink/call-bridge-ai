@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut, HelpCircle } from "lucide-react";
+import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut, HelpCircle, Globe } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -16,6 +16,7 @@ const navigation = [
   { name: "Calls", href: "/calls", icon: PhoneCall, current: false },
   { name: "Call Control", href: "/call-control", icon: PhoneForwarded, current: false },
   { name: "Phone Numbers", href: "/phone-numbers", icon: Phone, current: false },
+  { name: "Website Tracking", href: "/dni", icon: Globe, current: false },
   { name: "IVR Setup", href: "/ivr-setup", icon: Mic, current: false },
   { name: "Integrations", href: "/integrations", icon: Zap, current: false },
   { name: "Settings", href: "/settings", icon: Settings, current: false },

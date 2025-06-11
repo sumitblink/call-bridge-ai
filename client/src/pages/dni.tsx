@@ -49,7 +49,19 @@ export default function DNI() {
   // Generate snippet mutation
   const generateSnippetMutation = useMutation({
     mutationFn: async (campaignId: number) => {
-      return apiRequest(`/api/dni/snippet/${campaignId}`);
+      const response = await fetch(`/api/dni/snippet/${campaignId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate snippet');
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
       setGeneratedSnippet(data);
@@ -70,10 +82,19 @@ export default function DNI() {
   // Test DNI tracking
   const testTrackingMutation = useMutation({
     mutationFn: async (params: any) => {
-      return apiRequest("/api/dni/track", {
+      const response = await fetch("/api/dni/track", {
         method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(params),
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to test tracking');
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
       toast({
