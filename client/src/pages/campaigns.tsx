@@ -296,13 +296,17 @@ function CampaignForm({
 
   // Handle buyer assignment after campaign creation/update
   const assignBuyers = async (campaignId: number) => {
-    // Get current campaign buyers
-    const currentBuyers = campaignBuyers?.map(b => b.id) || [];
+    // Get fresh campaign buyers data
+    const freshBuyersResponse = await fetch(`/api/campaigns/${campaignId}/buyers`);
+    const freshCampaignBuyers = await freshBuyersResponse.json();
+    const currentBuyers = freshCampaignBuyers?.map((b: any) => b.id) || [];
     
     // Add new buyers
     const buyersToAdd = selectedBuyers.filter(id => !currentBuyers.includes(id));
     const buyersToRemove = currentBuyers.filter(id => !selectedBuyers.includes(id));
 
+    console.log("Selected buyers:", selectedBuyers);
+    console.log("Current buyers:", currentBuyers);
     console.log("Buyers to add:", buyersToAdd);
     console.log("Buyers to remove:", buyersToRemove);
 
