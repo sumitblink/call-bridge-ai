@@ -633,11 +633,6 @@ export default function Campaigns() {
     },
   });
 
-  const handleEdit = (campaign: Campaign) => {
-    setEditingCampaign(campaign);
-    setIsDialogOpen(true);
-  };
-
   const handleDelete = (campaign: Campaign) => {
     setCampaignToDelete(campaign);
     setDeleteDialogOpen(true);
@@ -658,12 +653,10 @@ export default function Campaigns() {
 
   const handleFormSuccess = () => {
     setIsDialogOpen(false);
-    setEditingCampaign(undefined);
   };
 
   const handleFormCancel = () => {
     setIsDialogOpen(false);
-    setEditingCampaign(undefined);
   };
 
 
@@ -722,19 +715,13 @@ export default function Campaigns() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
             <DialogHeader className="flex-shrink-0">
-              <DialogTitle>
-                {editingCampaign ? "Edit Campaign" : "Create New Campaign"}
-              </DialogTitle>
+              <DialogTitle>Create New Campaign</DialogTitle>
               <DialogDescription>
-                {editingCampaign 
-                  ? "Update the campaign details below." 
-                  : "Fill in the details to create a new campaign."
-                }
+                Fill in the details to create a new campaign.
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto pr-2">
               <CampaignForm
-                campaign={editingCampaign}
                 onSuccess={handleFormSuccess}
                 onCancel={handleFormCancel}
               />
