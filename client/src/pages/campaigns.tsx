@@ -149,7 +149,7 @@ function CampaignForm({
     mutationFn: async (data: CampaignFormData) => {
       const campaignData: InsertCampaign = {
         name: data.name,
-        country: data.country,
+        geoTargeting: [data.country], // Map country to geoTargeting array
         status: 'active',
         routingType: 'priority_based',
         maxConcurrentCalls: 10,
