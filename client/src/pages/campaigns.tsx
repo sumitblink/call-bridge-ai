@@ -150,10 +150,11 @@ function CampaignForm({
       const campaignData: InsertCampaign = {
         name: data.name,
         geoTargeting: [data.country], // Map country to geoTargeting array
-        status: 'active',
+        status: 'draft',
         routingType: 'priority_based',
         maxConcurrentCalls: 10,
         callCap: 100,
+        userId: 1, // Default user ID for now
       };
       
       const response = await apiRequest("/api/campaigns", "POST", campaignData);
