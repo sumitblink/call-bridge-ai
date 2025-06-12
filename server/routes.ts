@@ -333,6 +333,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Campaign-Publisher relationships
+  app.get('/api/campaigns/:id/publishers', async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const publishers = await storage.getCampaignPublishers(campaignId);
+      res.json(publishers);
+    } catch (error) {
+      console.error("Error fetching campaign publishers:", error);
+      res.status(500).json({ error: "Failed to fetch campaign publishers" });
+    }
+  });
+
+  app.post('/api/campaigns/:id/publishers', async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const { publisherId, customPayout } = req.body;
+      
+      const assignment = await storage.addPublisherToCampaign(
+        publisherId,
+        campaignId,
+        customPayout
+      );
+      
+      res.status(200).json(assignment);
+    } catch (error) {
+      console.error("Error adding publisher to campaign:", error);
+      res.status(500).json({ error: "Failed to add publisher to campaign" });
+    }
+  });
+
+  app.delete('/api/campaigns/:campaignId/publishers/:publisherId', async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const publisherId = parseInt(req.params.publisherId);
+      const success = await storage.removePublisherFromCampaign(publisherId, campaignId);
+      if (!success) {
+        return res.status(404).json({ error: "Campaign-publisher relationship not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing publisher from campaign:", error);
+      res.status(500).json({ error: "Failed to remove publisher from campaign" });
+    }
+  });
+
   // Buyers
   app.get('/api/buyers', requireAuth, async (req: any, res) => {
     try {

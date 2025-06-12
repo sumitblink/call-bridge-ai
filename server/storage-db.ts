@@ -567,6 +567,33 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
+  async getCampaignPublishers(campaignId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: publishers.id,
+        userId: publishers.userId,
+        name: publishers.name,
+        email: publishers.email,
+        phone: publishers.phone,
+        status: publishers.status,
+        payoutType: publishers.payoutType,
+        payoutAmount: publishers.payoutAmount,
+        minCallDuration: publishers.minCallDuration,
+        allowedTargets: publishers.allowedTargets,
+        trackingSettings: publishers.trackingSettings,
+        totalCalls: publishers.totalCalls,
+        totalPayout: publishers.totalPayout,
+        createdAt: publishers.createdAt,
+        updatedAt: publishers.updatedAt,
+        customPayout: publisherCampaigns.customPayout,
+        isActive: publisherCampaigns.isActive,
+      })
+      .from(publishers)
+      .innerJoin(publisherCampaigns, eq(publishers.id, publisherCampaigns.publisherId))
+      .where(eq(publisherCampaigns.campaignId, campaignId));
+    return result;
+  }
+
   // Phone Numbers Management
   async getPhoneNumbers(userId?: number): Promise<PhoneNumber[]> {
     if (userId) {
