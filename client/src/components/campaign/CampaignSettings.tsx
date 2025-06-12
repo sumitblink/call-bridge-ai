@@ -34,14 +34,28 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignFormSchema),
     defaultValues: {
-      name: campaign.name || "",
-      description: campaign.description || "",
-      phoneNumber: campaign.phoneNumber || "",
-      callCap: campaign.callCap || 100,
-      routingType: campaign.routingType || "round_robin",
-      status: campaign.status || "draft",
+      name: campaign?.name || "",
+      description: campaign?.description || "",
+      phoneNumber: campaign?.phoneNumber || "",
+      callCap: campaign?.callCap || 100,
+      routingType: campaign?.routingType || "round_robin",
+      status: campaign?.status || "draft",
     },
   });
+
+  // Reset form when campaign data changes
+  React.useEffect(() => {
+    if (campaign) {
+      form.reset({
+        name: campaign.name || "",
+        description: campaign.description || "",
+        phoneNumber: campaign.phoneNumber || "",
+        callCap: campaign.callCap || 100,
+        routingType: campaign.routingType || "round_robin",
+        status: campaign.status || "draft",
+      });
+    }
+  }, [campaign, form]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: CampaignFormData) => {
