@@ -22,7 +22,7 @@ export default function CampaignDetail() {
   const [activeTab, setActiveTab] = useState("settings");
 
   const { data: campaign, isLoading } = useQuery({
-    queryKey: ["/api/campaigns", campaignId],
+    queryKey: [`/api/campaigns/${campaignId}`],
     enabled: !!campaignId,
   });
 
