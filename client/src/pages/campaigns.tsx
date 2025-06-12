@@ -13,199 +13,114 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertCampaignSchema, type Campaign, type InsertCampaign, type Buyer } from "@shared/schema";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Skeleton } from "@/components/ui/skeleton";
+import type { Campaign, InsertCampaign, Buyer } from "@shared/schema";
 import { DatabaseStatus } from "@/components/DatabaseStatus";
 
-const campaignFormSchema = insertCampaignSchema.extend({
-  name: insertCampaignSchema.shape.name.min(1, "Name is required"),
-  description: insertCampaignSchema.shape.description.optional(),
-}).omit({
-  userId: true, // Remove userId from client-side validation since it's added server-side
+// Schema for campaign form with just name and country
+const campaignFormSchema = z.object({
+  name: z.string().min(1, "Campaign name is required"),
+  country: z.string().min(1, "Country is required"),
 });
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
 
 function BuyerCount({ campaignId }: { campaignId: number }) {
-  const { data: campaignBuyers, isLoading, error } = useQuery<Buyer[]>({
-    queryKey: ["campaigns", campaignId, "buyers"],
-    queryFn: async () => {
-      const response = await fetch(`/api/campaigns/${campaignId}/buyers`);
-      if (!response.ok) throw new Error('Failed to fetch buyers');
-      return response.json();
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+  const { data: buyers } = useQuery({
+    queryKey: ["/api/campaigns", campaignId, "buyers"],
+    retry: false,
   });
 
-  if (isLoading) return <span className="text-gray-400">Loading...</span>;
-  if (error) return <span className="text-red-400">Error loading buyers</span>;
+  if (!buyers || !Array.isArray(buyers)) return <span>-</span>;
   
-  const count = campaignBuyers?.length || 0;
-  const buyerNames = campaignBuyers?.map((buyer: any) => buyer.name).join(", ") || "None";
-  
-  return (
-    <div className="text-sm">
-      <span className={count > 0 ? "text-green-600 font-medium" : "text-gray-500"}>
-        {count} {count === 1 ? "buyer" : "buyers"}
-      </span>
-      {count > 0 && (
-        <div className="text-xs text-gray-500 mt-1">
-          {buyerNames}
-        </div>
-      )}
-    </div>
-  );
+  return <span>{buyers.length}</span>;
 }
 
 function CampaignCard({ campaign, onDelete }: { 
   campaign: Campaign; 
   onDelete: (campaign: Campaign) => void;
 }) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const updateStatusMutation = useMutation({
-    mutationFn: async (status: string) => {
-      const response = await fetch(`/api/campaigns/${campaign.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (!response.ok) throw new Error("Failed to update status");
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
-      toast({
-        title: "Success",
-        description: "Campaign status updated successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update campaign status",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active": return "bg-green-100 text-green-800";
-      case "paused": return "bg-yellow-100 text-yellow-800";
-      case "completed": return "bg-blue-100 text-blue-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const canToggleStatus = (status: string) => {
-    return status === "active" || status === "paused" || status === "draft";
-  };
-
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <Link href={`/campaigns/${campaign.id}`}>
-                  <CardTitle className="text-lg hover:text-blue-600 cursor-pointer transition-colors">
-                    {campaign.name}
-                  </CardTitle>
-                </Link>
-                <CardDescription className="mt-1">
-                  {campaign.description || "No description provided"}
-                </CardDescription>
-              </div>
-              <Badge className={getStatusColor(campaign.status)}>
-                {campaign.status}
+            <div className="flex items-center gap-3 mb-3">
+              <Badge 
+                variant={campaign.status === 'active' ? 'default' : 'secondary'}
+                className={campaign.status === 'active' ? 'bg-green-100 text-green-800' : ''}
+              >
+                {campaign.status === 'active' ? 'Active' : 'Paused'}
               </Badge>
+              <Link href={`/campaigns/${campaign.id}`}>
+                <Button variant="link" className="p-0 h-auto text-lg font-semibold text-blue-600 hover:text-blue-800">
+                  {campaign.name}
+                </Button>
+              </Link>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
               <div>
-                <span className="text-muted-foreground block">Phone Number</span>
-                <div className="font-medium">{campaign.phoneNumber || "Not set"}</div>
+                <p className="text-gray-500 mb-1">Phone Number</p>
+                <p className="font-mono font-medium">{campaign.phoneNumber || 'Not assigned'}</p>
               </div>
-              <div>
-                <span className="text-muted-foreground block">Recording</span>
-                <div className="font-medium text-green-600">Yes</div>
+              
+              <div className="text-center">
+                <p className="text-gray-500 mb-1">Today</p>
+                <p className="font-bold text-lg">0</p>
               </div>
-              <div>
-                <span className="text-muted-foreground block">Today</span>
-                <div className="font-medium">0</div>
+              
+              <div className="text-center">
+                <p className="text-gray-500 mb-1">Month</p>
+                <p className="font-bold text-lg">0</p>
               </div>
-              <div>
-                <span className="text-muted-foreground block">Month</span>
-                <div className="font-medium">0</div>
+              
+              <div className="text-center">
+                <p className="text-gray-500 mb-1">Total</p>
+                <p className="font-bold text-lg">0</p>
               </div>
-              <div>
-                <span className="text-muted-foreground block">Total</span>
-                <div className="font-medium">0</div>
+              
+              <div className="text-center">
+                <p className="text-gray-500 mb-1">Buyers</p>
+                <div className="flex items-center justify-center gap-1">
+                  <Users className="h-4 w-4 text-gray-400" />
+                  <BuyerCount campaignId={campaign.id} />
+                </div>
               </div>
-              <div>
-                <span className="text-muted-foreground block">Buyers</span>
-                <div className="mt-1"><BuyerCount campaignId={campaign.id} /></div>
+            </div>
+            
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-1 text-sm text-gray-500">
+                <BarChart3 className="h-4 w-4" />
+                Recording: Yes
               </div>
             </div>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {canToggleStatus(campaign.status) && (
+          
+          <div className="flex items-center gap-2 ml-4">
             <Button
+              variant="ghost"
               size="sm"
-              variant={campaign.status === "active" ? "outline" : "default"}
-              onClick={() => 
-                updateStatusMutation.mutate(
-                  campaign.status === "active" ? "paused" : "active"
-                )
-              }
-              disabled={updateStatusMutation.isPending}
+              onClick={() => {/* Toggle status logic */}}
             >
-              {campaign.status === "active" ? (
-                <>
-                  <Pause className="w-4 h-4 mr-1" />
-                  Pause
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 mr-1" />
-                  Start
-                </>
-              )}
+              {campaign.status === 'active' ? 
+                <Pause className="h-4 w-4" /> : 
+                <Play className="h-4 w-4" />
+              }
             </Button>
-          )}
-
-          <Button size="sm" variant="outline" title="Phone Settings">
-            <Phone className="w-4 h-4" />
-          </Button>
-
-          <Button size="sm" variant="outline" title="Analytics">
-            <BarChart3 className="w-4 h-4" />
-          </Button>
-
-          <Button size="sm" variant="outline" title="Buyers">
-            <Users className="w-4 h-4" />
-          </Button>
-
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={() => onDelete(campaign)}
-            className="text-red-600 hover:text-red-700"
-            title="Delete Campaign"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(campaign)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -214,68 +129,48 @@ function CampaignCard({ campaign, onDelete }: {
 
 function CampaignForm({ 
   campaign, 
-  onSuccess, 
-  onCancel 
+  onSuccess 
 }: { 
   campaign?: Campaign; 
-  onSuccess: () => void;
-  onCancel: () => void;
+  onSuccess?: () => void; 
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedBuyers, setSelectedBuyers] = useState<number[]>([]);
-
-  // Fetch buyers for selection
-  const { data: availableBuyers } = useQuery<Buyer[]>({
-    queryKey: ["/api/buyers"],
-  });
-
-  // Fetch current campaign buyers if editing
-  const { data: campaignBuyers } = useQuery<Buyer[]>({
-    queryKey: ["/api/campaigns", campaign?.id, "buyers"],
-    enabled: !!campaign?.id,
-  });
 
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignFormSchema),
     defaultValues: {
       name: campaign?.name || "",
-      description: campaign?.description || "",
-      phoneNumber: campaign?.phoneNumber || "",
-      routingType: campaign?.routingType || "round_robin",
-      maxConcurrentCalls: campaign?.maxConcurrentCalls || 5,
-      callCap: campaign?.callCap || 100,
-      status: campaign?.status || "draft",
+      country: "US", // Default to US
     },
   });
 
-  // Initialize selected buyers when campaign buyers are loaded
-  useEffect(() => {
-    if (campaignBuyers) {
-      setSelectedBuyers(campaignBuyers.map(buyer => buyer.id));
-    }
-  }, [campaignBuyers]);
-
   const createMutation = useMutation({
-    mutationFn: async (data: InsertCampaign) => {
-      const response = await apiRequest("/api/campaigns", "POST", data);
+    mutationFn: async (data: CampaignFormData) => {
+      const campaignData: InsertCampaign = {
+        name: data.name,
+        country: data.country,
+        status: 'active',
+        routingType: 'priority_based',
+        maxConcurrentCalls: 10,
+        callCap: 100,
+      };
+      
+      const response = await apiRequest("/api/campaigns", "POST", campaignData);
+      if (!response.ok) {
+        throw new Error(`Failed to create campaign: ${response.statusText}`);
+      }
       return response.json();
     },
-    onSuccess: async (result) => {
-      // Assign buyers after campaign creation
-      if (selectedBuyers.length > 0) {
-        await assignBuyers(result.id);
-      }
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
         title: "Success",
         description: "Campaign created successfully",
       });
-      onSuccess();
+      onSuccess?.();
     },
     onError: (error: Error) => {
-      console.error("Create mutation error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create campaign",
@@ -284,94 +179,11 @@ function CampaignForm({
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (data: InsertCampaign) => {
-      const response = await apiRequest(`/api/campaigns/${campaign!.id}`, "PATCH", data);
-      return response.json();
-    },
-    onSuccess: async (result) => {
-      // Update buyer assignments after campaign update
-      await assignBuyers(campaign!.id);
-      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["campaigns"] }); // Invalidate all campaign buyer queries
-      toast({
-        title: "Success",
-        description: "Campaign updated successfully",
-      });
-      onSuccess();
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update campaign",
-        variant: "destructive",
-      });
-    },
-  });
-
   const onSubmit = async (data: CampaignFormData) => {
-    if (campaign) {
-      updateMutation.mutate(data as InsertCampaign);
-    } else {
-      createMutation.mutate(data as InsertCampaign);
-    }
+    createMutation.mutate(data);
   };
 
-  // Handle buyer assignment after campaign creation/update
-  const assignBuyers = async (campaignId: number) => {
-    // Get fresh campaign buyers data
-    const freshBuyersResponse = await fetch(`/api/campaigns/${campaignId}/buyers`);
-    const freshCampaignBuyers = await freshBuyersResponse.json();
-    const currentBuyers = freshCampaignBuyers?.map((b: any) => b.id) || [];
-    
-    // Add new buyers
-    const buyersToAdd = selectedBuyers.filter(id => !currentBuyers.includes(id));
-    const buyersToRemove = currentBuyers.filter(id => !selectedBuyers.includes(id));
-
-    console.log("Selected buyers:", selectedBuyers);
-    console.log("Current buyers:", currentBuyers);
-    console.log("Buyers to add:", buyersToAdd);
-    console.log("Buyers to remove:", buyersToRemove);
-
-    // Add buyers
-    for (const buyerId of buyersToAdd) {
-      try {
-        console.log(`Adding buyer ${buyerId} to campaign ${campaignId}`);
-        const response = await apiRequest(`/api/campaigns/${campaignId}/buyers`, "POST", { buyerId, priority: 1 });
-        const result = await response.json();
-        console.log("Add buyer result:", result);
-      } catch (error) {
-        console.error("Failed to add buyer:", error);
-      }
-    }
-
-    // Remove buyers  
-    for (const buyerId of buyersToRemove) {
-      try {
-        console.log(`Removing buyer ${buyerId} from campaign ${campaignId}`);
-        const response = await apiRequest(`/api/campaigns/${campaignId}/buyers/${buyerId}`, "DELETE");
-        const result = await response.json();
-        console.log("Remove buyer result:", result);
-      } catch (error) {
-        console.error("Failed to remove buyer:", error);
-      }
-    }
-
-    queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
-    queryClient.invalidateQueries({ queryKey: ["campaigns"] }); // Invalidate all campaign buyer queries
-  };
-
-  const toggleBuyer = (buyerId: number) => {
-    setSelectedBuyers(prev => 
-      prev.includes(buyerId) 
-        ? prev.filter(id => id !== buyerId)
-        : [...prev, buyerId]
-    );
-  };
-
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const isPending = createMutation.isPending;
 
   return (
     <Form {...form}>
@@ -392,165 +204,27 @@ function CampaignForm({
 
         <FormField
           control={form.control}
-          name="description"
+          name="country"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Enter campaign description (optional)" 
-                  {...field} 
-                  value={field.value ?? ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="phoneNumber"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Campaign Phone Number</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="+1-555-123-4567" 
-                  {...field} 
-                  value={field.value ?? ""}
-                />
-              </FormControl>
-              <FormMessage />
-              <p className="text-sm text-gray-500">
-                This is the number customers will call to reach this campaign
-              </p>
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="routingType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Routing Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select routing type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="round_robin">Round Robin</SelectItem>
-                    <SelectItem value="priority_based">Priority Based</SelectItem>
-                    <SelectItem value="weighted">Weighted</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="maxConcurrentCalls"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Max Concurrent Calls</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    min="1" 
-                    max="100"
-                    {...field} 
-                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="callCap"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Daily Call Cap</FormLabel>
-              <FormControl>
-                <Input 
-                  type="number" 
-                  min="1" 
-                  placeholder="100"
-                  {...field} 
-                  onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                />
-              </FormControl>
-              <FormMessage />
-              <p className="text-sm text-gray-500">
-                Maximum number of calls this campaign can handle per day
-              </p>
-            </FormItem>
-          )}
-        />
-
-        {/* Buyer Selection Section */}
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Assign Buyers</label>
-            <p className="text-sm text-gray-500">Select buyers to receive calls from this campaign</p>
-          </div>
-          
-          {availableBuyers && availableBuyers.length > 0 ? (
-            <div className="grid gap-2">
-              {availableBuyers.map((buyer) => (
-                <div key={buyer.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                  <input
-                    type="checkbox"
-                    id={`buyer-${buyer.id}`}
-                    checked={selectedBuyers.includes(buyer.id)}
-                    onChange={() => toggleBuyer(buyer.id)}
-                    className="rounded"
-                  />
-                  <div className="flex-1">
-                    <label htmlFor={`buyer-${buyer.id}`} className="text-sm font-medium cursor-pointer">
-                      {buyer.name}
-                    </label>
-                    <p className="text-xs text-gray-500">{buyer.email}</p>
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    {buyer.acceptanceRate} acceptance
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-gray-500 p-4 border rounded-lg text-center">
-              No buyers available. Create buyers first to assign them to campaigns.
-            </div>
-          )}
-        </div>
-
-        <FormField
-          control={form.control}
-          name="status"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status</FormLabel>
+              <FormLabel>Country</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="paused">Paused</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="US">United States</SelectItem>
+                  <SelectItem value="CA">Canada</SelectItem>
+                  <SelectItem value="GB">United Kingdom</SelectItem>
+                  <SelectItem value="AU">Australia</SelectItem>
+                  <SelectItem value="FR">France</SelectItem>
+                  <SelectItem value="DE">Germany</SelectItem>
+                  <SelectItem value="IT">Italy</SelectItem>
+                  <SelectItem value="ES">Spain</SelectItem>
+                  <SelectItem value="NL">Netherlands</SelectItem>
+                  <SelectItem value="JP">Japan</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -559,11 +233,8 @@ function CampaignForm({
         />
 
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending ? "Saving..." : campaign ? "Update Campaign" : "Create Campaign"}
+            {isPending ? "Creating..." : "Create Campaign"}
           </Button>
         </div>
       </form>
@@ -590,44 +261,31 @@ export default function Campaigns() {
     localStorage.setItem('campaignViewMode', mode);
   };
 
-  // Function to handle opening dialog from header button
-  const openNewCampaignDialog = () => {
-    setIsDialogOpen(true);
-  };
-
-  // Make the function available globally for header button
-  React.useEffect(() => {
-    (window as any).openNewCampaignDialog = openNewCampaignDialog;
-    return () => {
-      delete (window as any).openNewCampaignDialog;
-    };
-  }, []);
-
-  const { data: campaigns, isLoading, error } = useQuery<Campaign[]>({
+  const { data: campaigns, isLoading, error } = useQuery({
     queryKey: ["/api/campaigns"],
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/campaigns/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete campaign");
-      return { success: true };
+      const response = await apiRequest(`/api/campaigns/${id}`, "DELETE");
+      if (!response.ok) {
+        throw new Error(`Failed to delete campaign: ${response.statusText}`);
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["campaigns"] }); // Invalidate all campaign buyer queries
       toast({
         title: "Success",
         description: "Campaign deleted successfully",
       });
+      setDeleteDialogOpen(false);
+      setCampaignToDelete(null);
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to delete campaign",
+        description: error.message || "Failed to delete campaign",
         variant: "destructive",
       });
     },
@@ -635,30 +293,22 @@ export default function Campaigns() {
 
   const testCallMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/test-call', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
+      const response = await apiRequest("/api/test-call", "POST");
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to trigger call');
+        throw new Error(`Failed to initiate test call: ${response.statusText}`);
       }
-      
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
-        title: "Call triggered successfully",
-        description: `Test call initiated with SID: ${data.callSid}`,
+        title: "Test Call Initiated",
+        description: "A test call has been started to verify the system is working.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error triggering call",
-        description: error.message,
+        title: "Test Call Failed",
+        description: error.message || "Failed to initiate test call",
         variant: "destructive",
       });
     },
@@ -669,36 +319,9 @@ export default function Campaigns() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (campaignToDelete) {
-      deleteMutation.mutate(campaignToDelete.id);
-      setDeleteDialogOpen(false);
-      setCampaignToDelete(null);
-    }
-  };
-
-  const cancelDelete = () => {
-    setDeleteDialogOpen(false);
-    setCampaignToDelete(null);
-  };
-
-  const handleFormSuccess = () => {
-    setIsDialogOpen(false);
-  };
-
-  const handleFormCancel = () => {
-    setIsDialogOpen(false);
-  };
-
-
-
   if (error) {
     return (
-      <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
-          <p className="text-muted-foreground">Manage your call center campaigns</p>
-        </div>
+      <div className="p-6">
         <DatabaseStatus 
           isConnected={false} 
           error={error instanceof Error ? error.message : "Connection failed"}
@@ -711,7 +334,7 @@ export default function Campaigns() {
   return (
     <Layout>
       <div className="p-6 space-y-6">
-        {/* Header with Test Call Button */}
+        {/* Header with View Toggle and Test Call Button */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
@@ -762,32 +385,25 @@ export default function Campaigns() {
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
-            <DialogHeader className="flex-shrink-0">
+          <DialogContent className="max-w-md">
+            <DialogHeader>
               <DialogTitle>Create New Campaign</DialogTitle>
               <DialogDescription>
-                Fill in the details to create a new campaign.
+                Create a new campaign to start tracking calls and managing buyers.
               </DialogDescription>
             </DialogHeader>
-            <div className="flex-1 overflow-y-auto pr-2">
-              <CampaignForm
-                onSuccess={handleFormSuccess}
-                onCancel={handleFormCancel}
-              />
-            </div>
+            <CampaignForm onSuccess={() => setIsDialogOpen(false)} />
           </DialogContent>
         </Dialog>
 
+        {/* Campaigns Display */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
               <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-4 w-full" />
-                </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                   <div className="space-y-2">
+                    <Skeleton className="h-4 w-1/4" />
                     <Skeleton className="h-4 w-1/2" />
                     <Skeleton className="h-4 w-1/3" />
                     <Skeleton className="h-8 w-full" />
@@ -906,17 +522,16 @@ export default function Campaigns() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{campaignToDelete?.name}"? This action cannot be undone and will remove all associated data including calls, buyers, and tracking settings.
+                Are you sure you want to delete "{campaignToDelete?.name}"? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={cancelDelete}>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={confirmDelete}
-                className="bg-red-600 hover:bg-red-700"
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => campaignToDelete && deleteMutation.mutate(campaignToDelete.id)}
                 disabled={deleteMutation.isPending}
               >
-                {deleteMutation.isPending ? "Deleting..." : "Delete Campaign"}
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
