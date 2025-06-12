@@ -32,7 +32,7 @@ type CampaignFormData = z.infer<typeof campaignFormSchema>;
 
 function BuyerCount({ campaignId }: { campaignId: number }) {
   const { data: buyers } = useQuery({
-    queryKey: ["/api/campaigns", campaignId, "buyers"],
+    queryKey: [`/api/campaigns/${campaignId}/buyers`],
     retry: false,
   });
 
