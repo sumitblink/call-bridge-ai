@@ -272,7 +272,8 @@ export default function Campaigns() {
       if (!response.ok) {
         throw new Error(`Failed to delete campaign: ${response.statusText}`);
       }
-      return response.json();
+      // For DELETE requests with 204 status, there's no JSON content to parse
+      return response.status === 204 ? null : response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
