@@ -31,6 +31,8 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  console.log("CampaignSettings - campaign data:", campaign);
+
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignFormSchema),
     defaultValues: {
@@ -45,15 +47,18 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
 
   // Reset form when campaign data changes
   React.useEffect(() => {
+    console.log("CampaignSettings - useEffect triggered with campaign:", campaign);
     if (campaign) {
-      form.reset({
+      const formData = {
         name: campaign.name || "",
         description: campaign.description || "",
         phoneNumber: campaign.phoneNumber || "",
         callCap: campaign.callCap || 100,
         routingType: campaign.routingType || "round_robin",
         status: campaign.status || "draft",
-      });
+      };
+      console.log("CampaignSettings - resetting form with data:", formData);
+      form.reset(formData);
     }
   }, [campaign, form]);
 

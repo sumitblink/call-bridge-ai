@@ -122,7 +122,7 @@ export default function CampaignDetail() {
           </TabsList>
 
           <TabsContent value="settings">
-            <CampaignSettings campaign={campaign} />
+            <CampaignSettings campaignId={campaign.id} campaign={campaign} />
           </TabsContent>
 
           <TabsContent value="buyers">
