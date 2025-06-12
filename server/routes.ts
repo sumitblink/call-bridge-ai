@@ -215,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/campaigns/:id', async (req, res) => {
+  app.get('/api/campaigns/:id', requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const campaign = await storage.getCampaign(id);
