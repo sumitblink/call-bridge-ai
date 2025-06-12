@@ -129,21 +129,29 @@ function CampaignCard({ campaign, onDelete }: {
               </Badge>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-4">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Phone Number:</span>
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4 text-sm">
+              <div>
+                <span className="text-muted-foreground block">Phone Number</span>
                 <div className="font-medium">{campaign.phoneNumber || "Not set"}</div>
               </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">Call Cap:</span>
-                <div className="font-medium">{campaign.callCap} calls/day</div>
+              <div>
+                <span className="text-muted-foreground block">Recording</span>
+                <div className="font-medium text-green-600">Yes</div>
               </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">Routing:</span>
-                <div className="font-medium">{campaign.routingType.replace('_', ' ')}</div>
+              <div>
+                <span className="text-muted-foreground block">Today</span>
+                <div className="font-medium">0</div>
               </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">Assigned Buyers:</span>
+              <div>
+                <span className="text-muted-foreground block">Month</span>
+                <div className="font-medium">0</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground block">Total</span>
+                <div className="font-medium">0</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground block">Buyers</span>
                 <div className="mt-1"><BuyerCount campaignId={campaign.id} /></div>
               </div>
             </div>
@@ -176,15 +184,26 @@ function CampaignCard({ campaign, onDelete }: {
             </Button>
           )}
 
+          <Button size="sm" variant="outline" title="Phone Settings">
+            <Phone className="w-4 h-4" />
+          </Button>
+
+          <Button size="sm" variant="outline" title="Analytics">
+            <BarChart3 className="w-4 h-4" />
+          </Button>
+
+          <Button size="sm" variant="outline" title="Buyers">
+            <Users className="w-4 h-4" />
+          </Button>
 
           <Button 
             size="sm" 
             variant="outline" 
             onClick={() => onDelete(campaign)}
             className="text-red-600 hover:text-red-700"
+            title="Delete Campaign"
           >
-            <Trash2 className="w-4 h-4 mr-1" />
-            Delete
+            <Trash2 className="w-4 h-4" />
           </Button>
         </div>
       </CardContent>
