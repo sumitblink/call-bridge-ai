@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users, Phone } from "lucide-react";
+import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users, Phone, Grid3X3, List } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -572,11 +573,22 @@ function CampaignForm({
 
 export default function Campaigns() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('campaignViewMode') as 'cards' | 'table') || 'cards';
+    }
+    return 'cards';
+  });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Save view mode preference to localStorage
+  const handleViewModeChange = (mode: 'cards' | 'table') => {
+    setViewMode(mode);
+    localStorage.setItem('campaignViewMode', mode);
+  };
 
   // Function to handle opening dialog from header button
   const openNewCampaignDialog = () => {
@@ -706,6 +718,24 @@ export default function Campaigns() {
             <p className="text-muted-foreground">Manage your call center campaigns</p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="flex items-center border rounded-lg">
+              <Button
+                variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => handleViewModeChange('cards')}
+                className="rounded-r-none"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => handleViewModeChange('table')}
+                className="rounded-l-none"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
             <Button 
               onClick={() => testCallMutation.mutate()}
               disabled={testCallMutation.isPending}
@@ -780,6 +810,82 @@ export default function Campaigns() {
                   Create First Campaign
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        ) : viewMode === 'table' ? (
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Campaign Name</TableHead>
+                    <TableHead>Phone Number</TableHead>
+                    <TableHead>Recording</TableHead>
+                    <TableHead className="text-center">Today</TableHead>
+                    <TableHead className="text-center">Month</TableHead>
+                    <TableHead className="text-center">Total</TableHead>
+                    <TableHead className="text-center">Buyers</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {campaigns && Array.isArray(campaigns) && campaigns.map((campaign: Campaign) => (
+                    <TableRow key={campaign.id} className="hover:bg-muted/50">
+                      <TableCell>
+                        <Badge 
+                          variant={campaign.status === 'active' ? 'default' : 'secondary'}
+                          className={campaign.status === 'active' ? 'bg-green-100 text-green-800' : ''}
+                        >
+                          {campaign.status === 'active' ? 'Active' : 'Paused'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Link href={`/campaigns/${campaign.id}`}>
+                          <Button variant="link" className="p-0 h-auto font-medium text-left">
+                            {campaign.name}
+                          </Button>
+                        </Link>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {campaign.phoneNumber || 'Not assigned'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          Yes
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center font-medium">0</TableCell>
+                      <TableCell className="text-center font-medium">0</TableCell>
+                      <TableCell className="text-center font-medium">0</TableCell>
+                      <TableCell className="text-center">
+                        <BuyerCount campaignId={campaign.id} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {/* Toggle status logic */}}
+                          >
+                            {campaign.status === 'active' ? 
+                              <Pause className="h-4 w-4" /> : 
+                              <Play className="h-4 w-4" />
+                            }
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(campaign)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         ) : (
