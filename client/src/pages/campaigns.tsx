@@ -61,9 +61,8 @@ function BuyerCount({ campaignId }: { campaignId: number }) {
   );
 }
 
-function CampaignCard({ campaign, onEdit, onDelete }: { 
+function CampaignCard({ campaign, onDelete }: { 
   campaign: Campaign; 
-  onEdit: (campaign: Campaign) => void;
   onDelete: (campaign: Campaign) => void;
 }) {
   const { toast } = useToast();
@@ -176,10 +175,7 @@ function CampaignCard({ campaign, onEdit, onDelete }: {
               )}
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={() => onEdit(campaign)}>
-            <Edit className="w-4 h-4 mr-1" />
-            Edit
-          </Button>
+
 
           <Button 
             size="sm" 
@@ -557,7 +553,7 @@ function CampaignForm({
 
 export default function Campaigns() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCampaign, setEditingCampaign] = useState<Campaign | undefined>();
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
   const { toast } = useToast();
@@ -565,7 +561,6 @@ export default function Campaigns() {
 
   // Function to handle opening dialog from header button
   const openNewCampaignDialog = () => {
-    setEditingCampaign(undefined);
     setIsDialogOpen(true);
   };
 
@@ -787,7 +782,6 @@ export default function Campaigns() {
               <CampaignCard
                 key={campaign.id}
                 campaign={campaign}
-                onEdit={handleEdit}
                 onDelete={handleDelete}
               />
             ))}
