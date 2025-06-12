@@ -788,6 +788,24 @@ export class MemStorage implements IStorage {
     return campaigns;
   }
 
+  async getCampaignPublishers(campaignId: number): Promise<any[]> {
+    const relationships = Array.from(this.publisherCampaigns.values())
+      .filter(rel => rel.campaignId === campaignId);
+    
+    const publishers = [];
+    for (const rel of relationships) {
+      const publisher = this.publishers.get(rel.publisherId);
+      if (publisher) {
+        publishers.push({
+          ...publisher,
+          customPayout: rel.customPayout,
+          isActive: rel.isActive,
+        });
+      }
+    }
+    return publishers;
+  }
+
   async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any> {
     const key = `${publisherId}-${campaignId}`;
     const relationship = {
