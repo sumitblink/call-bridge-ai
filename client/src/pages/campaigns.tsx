@@ -111,40 +111,43 @@ function CampaignCard({ campaign, onEdit, onDelete }: {
 
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <Link href={`/campaigns/${campaign.id}`}>
-              <CardTitle className="text-lg hover:text-blue-600 cursor-pointer transition-colors">
-                {campaign.name}
-              </CardTitle>
-            </Link>
-            <CardDescription className="mt-1">
-              {campaign.description || "No description provided"}
-            </CardDescription>
-          </div>
-          <Badge className={getStatusColor(campaign.status)}>
-            {campaign.status}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-sm">
-            <span className="text-muted-foreground">Phone Number:</span>
-            <div className="font-medium">{campaign.phoneNumber || "Not set"}</div>
-          </div>
-          <div className="text-sm">
-            <span className="text-muted-foreground">Call Cap:</span>
-            <div className="font-medium">{campaign.callCap} calls/day</div>
-          </div>
-          <div className="text-sm">
-            <span className="text-muted-foreground">Routing:</span>
-            <div className="font-medium">{campaign.routingType.replace('_', ' ')}</div>
-          </div>
-          <div className="text-sm">
-            <span className="text-muted-foreground">Assigned Buyers:</span>
-            <div className="mt-1"><BuyerCount campaignId={campaign.id} /></div>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <Link href={`/campaigns/${campaign.id}`}>
+                  <CardTitle className="text-lg hover:text-blue-600 cursor-pointer transition-colors">
+                    {campaign.name}
+                  </CardTitle>
+                </Link>
+                <CardDescription className="mt-1">
+                  {campaign.description || "No description provided"}
+                </CardDescription>
+              </div>
+              <Badge className={getStatusColor(campaign.status)}>
+                {campaign.status}
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-4">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Phone Number:</span>
+                <div className="font-medium">{campaign.phoneNumber || "Not set"}</div>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Call Cap:</span>
+                <div className="font-medium">{campaign.callCap} calls/day</div>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Routing:</span>
+                <div className="font-medium">{campaign.routingType.replace('_', ' ')}</div>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Assigned Buyers:</span>
+                <div className="mt-1"><BuyerCount campaignId={campaign.id} /></div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -779,7 +782,7 @@ export default function Campaigns() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-4">
             {campaigns && Array.isArray(campaigns) && campaigns.map((campaign: Campaign) => (
               <CampaignCard
                 key={campaign.id}
