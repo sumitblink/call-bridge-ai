@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Trash2, Settings, Phone, DollarSign } from "lucide-react";
+import { Plus, Trash2, Settings, Phone, DollarSign, Users } from "lucide-react";
 
 interface CampaignBuyersProps {
   campaignId: number;

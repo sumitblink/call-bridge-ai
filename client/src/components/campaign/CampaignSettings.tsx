@@ -1,357 +1,210 @@
-import { useState } from "react";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { insertCampaignSchema, type Campaign, type InsertCampaign } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Copy, Save, RefreshCw } from "lucide-react";
+import { z } from "zod";
+
+const campaignFormSchema = insertCampaignSchema.extend({
+  name: insertCampaignSchema.shape.name.min(1, "Name is required"),
+  description: insertCampaignSchema.shape.description.optional(),
+}).omit({
+  userId: true,
+});
+
+type CampaignFormData = z.infer<typeof campaignFormSchema>;
 
 interface CampaignSettingsProps {
-  campaign: any;
+  campaignId: number;
+  campaign: Campaign;
 }
 
-export default function CampaignSettings({ campaign }: CampaignSettingsProps) {
-  const [settings, setSettings] = useState({
-    name: campaign.name || "",
-    description: campaign.description || "",
-    status: campaign.status || "active",
-    trackingId: campaign.trackingId || "",
-    numberFormat: campaign.numberFormat || "(nnn) nnn-nnnn",
-    duplicateCallHandling: campaign.duplicateCallHandling || "connect",
-    routePreviouslyConnected: campaign.routePreviouslyConnected || "normally",
-    handleAnonymousAsDuplicate: campaign.handleAnonymousAsDuplicate || false,
-    payoutOncePerCaller: campaign.payoutOncePerCaller || false,
-    recordCalls: campaign.recordCalls || true,
-    trimSilence: campaign.trimSilence || true,
-    targetDialAttempts: campaign.targetDialAttempts || 3,
-    stirShakenAttestation: campaign.stirShakenAttestation || "disabled",
-    filterRepeatCallers: campaign.filterRepeatCallers || 2,
-    filterAnonymousAsSpam: campaign.filterAnonymousAsSpam || false,
-  });
-
+export default function CampaignSettings({ campaignId, campaign }: CampaignSettingsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const form = useForm<CampaignFormData>({
+    resolver: zodResolver(campaignFormSchema),
+    defaultValues: {
+      name: campaign.name || "",
+      description: campaign.description || "",
+      phoneNumber: campaign.phoneNumber || "",
+      callCap: campaign.callCap || 100,
+      routingType: campaign.routingType || "round_robin",
+      status: campaign.status || "draft",
+    },
+  });
+
   const updateMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await apiRequest(`/api/campaigns/${campaign.id}`, "PATCH", data);
+    mutationFn: async (data: CampaignFormData) => {
+      const response = await apiRequest(`/api/campaigns/${campaignId}`, "PATCH", data);
+      return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}`] });
       toast({
-        title: "Campaign Updated",
-        description: "Campaign settings have been saved successfully.",
+        title: "Success",
+        description: "Campaign settings updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/campaigns", campaign.id.toString()] });
     },
-    onError: (error: any) => {
+    onError: () => {
       toast({
-        title: "Update Failed",
-        description: error.message || "Failed to update campaign settings.",
+        title: "Error",
+        description: "Failed to update campaign settings",
         variant: "destructive",
       });
     },
   });
 
-  const handleSave = () => {
-    updateMutation.mutate(settings);
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied",
-      description: "Campaign ID copied to clipboard.",
-    });
-  };
-
-  const generateTrackingId = () => {
-    const newTrackingId = `track_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-    setSettings(prev => ({ ...prev, trackingId: newTrackingId }));
+  const onSubmit = (data: CampaignFormData) => {
+    updateMutation.mutate(data);
   };
 
   return (
     <div className="space-y-6">
-      {/* General Information */}
       <Card>
         <CardHeader>
-          <CardTitle>General Information</CardTitle>
+          <CardTitle>General Settings</CardTitle>
+          <CardDescription>
+            Configure basic campaign information and routing preferences
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="campaignId">Campaign ID</Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  id="campaignId"
-                  value={campaign.id}
-                  readOnly
-                  className="bg-gray-50 dark:bg-gray-800"
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Campaign Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter campaign name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => copyToClipboard(campaign.id.toString())}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="campaignName">Campaign Name</Label>
-              <Input
-                id="campaignName"
-                value={settings.name}
-                onChange={(e) => setSettings(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter campaign name"
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="paused">Paused</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="+1234567890" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="callCap"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Daily Call Cap</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="100" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="routingType"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Routing Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select routing type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="round_robin">Round Robin</SelectItem>
+                          <SelectItem value="priority">Priority Based</SelectItem>
+                          <SelectItem value="weighted">Weighted Distribution</SelectItem>
+                          <SelectItem value="least_busy">Least Busy</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter campaign description" 
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="trackingId">Tracking ID</Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  id="trackingId"
-                  value={settings.trackingId}
-                  onChange={(e) => setSettings(prev => ({ ...prev, trackingId: e.target.value }))}
-                  placeholder="Optional tracking ID"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={generateTrackingId}
-                >
-                  <RefreshCw className="h-4 w-4" />
+              <div className="flex justify-end">
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="numberFormat">Number Format</Label>
-              <Select
-                value={settings.numberFormat}
-                onValueChange={(value) => setSettings(prev => ({ ...prev, numberFormat: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="(nnn) nnn-nnnn">(555) 123-4567</SelectItem>
-                  <SelectItem value="nnn-nnn-nnnn">555-123-4567</SelectItem>
-                  <SelectItem value="nnn.nnn.nnnn">555.123.4567</SelectItem>
-                  <SelectItem value="nnnnnnnnnn">5551234567</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={settings.description}
-              onChange={(e) => setSettings(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Campaign description (optional)"
-            />
-          </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
-
-      {/* Call Routing Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Call Routing Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Report Duplicate Calls On</Label>
-              <Select
-                value={settings.duplicateCallHandling}
-                onValueChange={(value) => setSettings(prev => ({ ...prev, duplicateCallHandling: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="connect">Connect</SelectItem>
-                  <SelectItem value="attempt">Attempt</SelectItem>
-                  <SelectItem value="never">Never</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Route Previously Connected Calls</Label>
-              <div className="flex space-x-2">
-                <Button
-                  variant={settings.routePreviouslyConnected === "normally" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSettings(prev => ({ ...prev, routePreviouslyConnected: "normally" }))}
-                >
-                  Normally
-                </Button>
-                <Button
-                  variant={settings.routePreviouslyConnected === "toOriginal" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSettings(prev => ({ ...prev, routePreviouslyConnected: "toOriginal" }))}
-                >
-                  To Original
-                </Button>
-                <Button
-                  variant={settings.routePreviouslyConnected === "toDifferent" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSettings(prev => ({ ...prev, routePreviouslyConnected: "toDifferent" }))}
-                >
-                  To Different
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Handle Anonymous Calls as Duplicate</Label>
-                <p className="text-sm text-gray-500">Treat anonymous calls as potential duplicates</p>
-              </div>
-              <Switch
-                checked={settings.handleAnonymousAsDuplicate}
-                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, handleAnonymousAsDuplicate: checked }))}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Payout Once Per Caller</Label>
-                <p className="text-sm text-gray-500">Only pay out once per unique caller</p>
-              </div>
-              <Switch
-                checked={settings.payoutOncePerCaller}
-                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, payoutOncePerCaller: checked }))}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Record Calls</Label>
-                <p className="text-sm text-gray-500">Enable call recording for this campaign</p>
-              </div>
-              <Switch
-                checked={settings.recordCalls}
-                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, recordCalls: checked }))}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Trim Silence</Label>
-                <p className="text-sm text-gray-500">Remove silent portions from recordings</p>
-              </div>
-              <Switch
-                checked={settings.trimSilence}
-                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, trimSilence: checked }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="targetDialAttempts">Target Dial Attempts</Label>
-              <Input
-                id="targetDialAttempts"
-                type="number"
-                min="1"
-                max="10"
-                value={settings.targetDialAttempts}
-                onChange={(e) => setSettings(prev => ({ ...prev, targetDialAttempts: parseInt(e.target.value) || 3 }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Require STIR/SHAKEN Attestation</Label>
-              <div className="flex space-x-2">
-                <Button
-                  variant={settings.stirShakenAttestation === "disabled" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSettings(prev => ({ ...prev, stirShakenAttestation: "disabled" }))}
-                >
-                  Account Setting (Disabled)
-                </Button>
-                <Button
-                  variant={settings.stirShakenAttestation === "enabled" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSettings(prev => ({ ...prev, stirShakenAttestation: "enabled" }))}
-                >
-                  Enabled
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Spam Filter */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Spam Filter</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="filterRepeatCallers">Filter Repeat Callers</Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  id="filterRepeatCallers"
-                  type="number"
-                  min="0"
-                  max="60"
-                  value={settings.filterRepeatCallers}
-                  onChange={(e) => setSettings(prev => ({ ...prev, filterRepeatCallers: parseInt(e.target.value) || 0 }))}
-                  className="w-20"
-                />
-                <span className="text-sm text-gray-500">seconds</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Filter Anonymous Calls As Spam</Label>
-                <p className="text-sm text-gray-500">Block anonymous/private numbers</p>
-              </div>
-              <Switch
-                checked={settings.filterAnonymousAsSpam}
-                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, filterAnonymousAsSpam: checked }))}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={updateMutation.isPending}>
-          {updateMutation.isPending ? (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
-            </>
-          )}
-        </Button>
-      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users, Phone } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -113,7 +114,11 @@ function CampaignCard({ campaign, onEdit, onDelete }: {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-lg">{campaign.name}</CardTitle>
+            <Link href={`/campaigns/${campaign.id}`}>
+              <CardTitle className="text-lg hover:text-blue-600 cursor-pointer transition-colors">
+                {campaign.name}
+              </CardTitle>
+            </Link>
             <CardDescription className="mt-1">
               {campaign.description || "No description provided"}
             </CardDescription>
