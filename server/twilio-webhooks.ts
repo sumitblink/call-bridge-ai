@@ -86,7 +86,7 @@ export async function handleIncomingCall(req: Request, res: Response) {
       callId: 0, // Will be updated with actual call ID
       buyerId: selectedBuyer.id,
       action: 'route',
-      details: `Routed to ${selectedBuyer.name} (Priority: ${selectedBuyer.priority})`,
+      response: `Routed to ${selectedBuyer.name} (Priority: ${selectedBuyer.priority})`,
     });
 
     // Return TwiML to forward call to buyer
@@ -171,7 +171,7 @@ export async function handleCallStatus(req: Request, res: Response) {
       callId: call.id,
       buyerId: call.buyerId,
       action: 'status_update',
-      details: `Status changed to ${statusData.CallStatus}${statusData.Duration ? `, Duration: ${statusData.Duration}s` : ''}`,
+      response: `Status changed to ${statusData.CallStatus}${statusData.Duration ? `, Duration: ${statusData.Duration}s` : ''}`,
     });
 
     console.log('[Webhook] Call updated:', call.id, updates);

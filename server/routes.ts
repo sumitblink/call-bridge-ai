@@ -1241,8 +1241,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Set up voice URL for the webhook
-      const voiceUrl = `https://${req.hostname}/api/webhooks/voice`;
-      const statusCallback = `https://${req.hostname}/api/webhooks/call-status`;
+      const voiceUrl = `https://${req.hostname}/api/webhooks/twilio/voice`;
+      const statusCallback = `https://${req.hostname}/api/webhooks/twilio/status`;
 
       const { twilioPhoneService } = await import('./twilio-phone-service');
       

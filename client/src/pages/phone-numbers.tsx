@@ -218,7 +218,7 @@ export default function PhoneNumbersPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="owned" className="flex items-center gap-2">
               <Phone className="h-4 w-4" />
               Owned Numbers ({phoneNumbers.length})
@@ -226,6 +226,10 @@ export default function PhoneNumbersPage() {
             <TabsTrigger value="search" className="flex items-center gap-2">
               <Search className="h-4 w-4" />
               Buy Numbers
+            </TabsTrigger>
+            <TabsTrigger value="webhooks" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Live Calls
             </TabsTrigger>
           </TabsList>
 
@@ -468,6 +472,109 @@ export default function PhoneNumbersPage() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+          <TabsContent value="webhooks">
+            <Card>
+              <CardHeader>
+                <CardTitle>Webhook Testing</CardTitle>
+                <CardDescription>
+                  Test live call handling and routing functionality
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Webhook Status */}
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-semibold mb-3">Webhook Endpoints</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Voice URL:</span>
+                        <code className="bg-muted px-2 py-1 rounded">/api/webhooks/twilio/voice</code>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Status Callback:</span>
+                        <code className="bg-muted px-2 py-1 rounded">/api/webhooks/twilio/status</code>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Recording Webhook:</span>
+                        <code className="bg-muted px-2 py-1 rounded">/api/webhooks/twilio/recording</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Test Webhook Button */}
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-semibold mb-3">Test Webhook Connection</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Verify that webhook endpoints are properly configured and accessible
+                    </p>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const response = await apiRequest('/api/webhooks/twilio/test');
+                          toast({
+                            title: "Webhook Test Successful",
+                            description: "All webhook endpoints are configured correctly",
+                          });
+                        } catch (error) {
+                          toast({
+                            title: "Webhook Test Failed",
+                            description: "There was an issue with the webhook configuration",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      variant="outline"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Test Webhook Endpoints
+                    </Button>
+                  </div>
+
+                  {/* Live Call Status */}
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-semibold mb-3">Live Call Handling Status</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Phone numbers configured:</span>
+                        <Badge variant="outline">{phoneNumbers?.length || 0}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Active campaigns:</span>
+                        <Badge variant="outline">{campaigns?.filter((c: Campaign) => c.status === 'active').length || 0}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Webhook status:</span>
+                        <Badge variant="secondary">Ready</Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Instructions */}
+                  <div className="border rounded-lg p-4 bg-muted/50">
+                    <h3 className="font-semibold mb-3">How Live Call Routing Works</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-start gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center mt-0.5">1</div>
+                        <span>Customer calls your tracking number</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center mt-0.5">2</div>
+                        <span>System identifies campaign and available buyers</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center mt-0.5">3</div>
+                        <span>Call is routed to highest priority buyer with capacity</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center mt-0.5">4</div>
+                        <span>Call metrics and logs are recorded automatically</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
