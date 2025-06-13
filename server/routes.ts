@@ -6,6 +6,7 @@ import { twilioService } from "./twilio-service";
 import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
 import { CallRouter } from "./call-routing";
 import { DNIService, type DNIRequest } from "./dni-service";
+import { handleIncomingCall, handleCallStatus, handleRecordingStatus } from "./twilio-webhooks";
 import { z } from "zod";
 import twilio from "twilio";
 import fetch from "node-fetch";
@@ -1572,6 +1573,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error generating DNI snippet:', error);
       res.status(500).json({ error: 'Failed to generate DNI snippet' });
     }
+  });
+
+  // Twilio Webhook Endpoints for Live Call Handling
+  // These endpoints handle incoming calls and route them to buyers
+  app.post('/api/webhooks/twilio/voice', handleIncomingCall);
+  app.post('/api/webhooks/twilio/status', handleCallStatus);
+  app.post('/api/webhooks/twilio/recording', handleRecordingStatus);
+
+  // Test webhook endpoint for development
+  app.get('/api/webhooks/twilio/test', (req, res) => {
+    res.json({
+      success: true,
+      message: 'Twilio webhook endpoints are configured',
+      endpoints: {
+        voice: '/api/webhooks/twilio/voice',
+        status: '/api/webhooks/twilio/status',
+        recording: '/api/webhooks/twilio/recording'
+      }
+    });
   });
 
   const httpServer = createServer(app);
