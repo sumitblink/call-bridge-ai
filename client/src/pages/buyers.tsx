@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -137,6 +137,38 @@ function BuyerForm({
       avgResponseTime: buyer?.avgResponseTime || 0,
     },
   });
+
+  // Reset form when buyer data changes (for editing)
+  useEffect(() => {
+    if (buyer && open) {
+      form.reset({
+        name: buyer.name || "",
+        email: buyer.email || "",
+        phoneNumber: buyer.phoneNumber || "",
+        endpoint: buyer.endpoint || "",
+        status: buyer.status || "active",
+        priority: buyer.priority || 1,
+        dailyCap: buyer.dailyCap || 50,
+        concurrencyLimit: buyer.concurrencyLimit || 3,
+        acceptanceRate: buyer.acceptanceRate || "0.00",
+        avgResponseTime: buyer.avgResponseTime || 0,
+      });
+    } else if (!buyer && open) {
+      // Reset to empty form for new buyer
+      form.reset({
+        name: "",
+        email: "",
+        phoneNumber: "",
+        endpoint: "",
+        status: "active",
+        priority: 1,
+        dailyCap: 50,
+        concurrencyLimit: 3,
+        acceptanceRate: "0.00",
+        avgResponseTime: 0,
+      });
+    }
+  }, [buyer, open, form]);
 
   const createBuyerMutation = useMutation({
     mutationFn: async (data: InsertBuyer) => {
