@@ -180,7 +180,7 @@ export class SupabaseStorage implements IStorage {
         phoneNumber: buyers.phoneNumber,
         endpoint: buyers.endpoint,
         status: buyers.status,
-        priority: buyers.priority,
+        priority: campaignBuyers.priority, // Use campaign-specific priority instead of buyer's global priority
         dailyCap: buyers.dailyCap,
         concurrencyLimit: buyers.concurrencyLimit,
         acceptanceRate: buyers.acceptanceRate,
