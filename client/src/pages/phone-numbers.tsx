@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Search, Trash2, Settings } from "lucide-react";
+import { Phone, Search, Trash2, Settings, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import CallFlowSimulator from "@/components/CallFlowSimulator";
 
@@ -162,6 +162,28 @@ export default function PhoneNumbersPage() {
     },
   });
 
+  // Import existing Twilio numbers mutation
+  const importMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('/api/phone-numbers/import', 'POST');
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/phone-numbers'] });
+      toast({
+        title: "Import Complete",
+        description: data.message || `Imported ${data.imported || 0} numbers successfully`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Import Failed",
+        description: error instanceof Error ? error.message : "Failed to import numbers from Twilio",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSearch = () => {
     setIsSearching(true);
     searchMutation.mutate(searchParams, {
@@ -216,6 +238,14 @@ export default function PhoneNumbersPage() {
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Phone Numbers</h1>
+          <Button 
+            onClick={() => importMutation.mutate()}
+            disabled={importMutation.isPending}
+            variant="outline"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {importMutation.isPending ? 'Importing...' : 'Import from Twilio'}
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

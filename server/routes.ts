@@ -1149,6 +1149,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import existing Twilio numbers
+  app.post('/api/phone-numbers/import', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      
+      if (!accountSid || !authToken) {
+        return res.status(500).json({
+          error: 'Twilio credentials not configured',
+          details: 'Please set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN environment variables'
+        });
+      }
+
+      // Fetch existing numbers from Twilio
+      const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/IncomingPhoneNumbers.json`;
+      const authHeader = 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Twilio API error: ${response.status} ${error}`);
+      }
+
+      const data = await response.json() as any;
+      const twilioNumbers = data.incoming_phone_numbers || [];
+      
+      const importedNumbers = [];
+      const skippedNumbers = [];
+
+      for (const twilioNumber of twilioNumbers) {
+        // Check if number already exists
+        const existingNumber = await storage.getPhoneNumberByNumber(twilioNumber.phone_number);
+        if (existingNumber) {
+          skippedNumbers.push(twilioNumber.phone_number);
+          continue;
+        }
+
+        // Import the number
+        const newNumber = await storage.createPhoneNumber({
+          userId,
+          phoneNumber: twilioNumber.phone_number,
+          friendlyName: twilioNumber.friendly_name || `Imported ${twilioNumber.phone_number}`,
+          phoneNumberSid: twilioNumber.sid,
+          accountSid: twilioNumber.account_sid,
+          country: 'US', // Default to US, can be enhanced later
+          numberType: 'local', // Default type
+          capabilities: JSON.stringify(twilioNumber.capabilities || {}),
+          voiceUrl: twilioNumber.voice_url,
+          voiceMethod: twilioNumber.voice_method,
+          statusCallback: twilioNumber.status_callback,
+          campaignId: null,
+          isActive: true,
+          monthlyFee: '1.0000' // Default fee
+        });
+
+        importedNumbers.push(newNumber);
+      }
+
+      res.json({
+        success: true,
+        imported: importedNumbers.length,
+        skipped: skippedNumbers.length,
+        importedNumbers,
+        skippedNumbers,
+        message: `Imported ${importedNumbers.length} numbers, skipped ${skippedNumbers.length} existing numbers`
+      });
+    } catch (error) {
+      console.error('Error importing phone numbers:', error);
+      res.status(500).json({ 
+        error: 'Failed to import phone numbers',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   app.post('/api/phone-numbers/search', requireAuth, async (req, res) => {
     try {
       const { country = 'US', numberType = 'local', areaCode, contains, limit = 20 } = req.body;
