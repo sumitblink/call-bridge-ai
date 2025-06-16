@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Search, Trash2, Settings } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import CallFlowSimulator from "@/components/CallFlowSimulator";
 
 interface PhoneNumber {
   id: number;
@@ -572,6 +573,9 @@ export default function PhoneNumbersPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Call Flow Simulator */}
+                  <CallFlowSimulator />
                 </div>
               </CardContent>
             </Card>

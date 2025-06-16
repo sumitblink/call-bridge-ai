@@ -1594,6 +1594,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Call routing test endpoint
+  app.post('/api/call-routing/test', async (req, res) => {
+    try {
+      const { campaignId, callerNumber } = req.body;
+
+      if (!campaignId) {
+        return res.status(400).json({ error: 'Campaign ID is required' });
+      }
+
+      // Import CallRouter for testing
+      const { CallRouter } = await import('./call-routing');
+      
+      // Test the routing logic
+      const routingResult = await CallRouter.selectBuyer(campaignId, callerNumber);
+      
+      res.json(routingResult);
+    } catch (error) {
+      console.error('Call routing test error:', error);
+      res.status(500).json({
+        selectedBuyer: null,
+        reason: 'Error testing call routing: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        alternativeBuyers: []
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
