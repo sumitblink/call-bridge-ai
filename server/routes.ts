@@ -1672,6 +1672,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Campaign-specific test call endpoint
+  app.post('/api/campaigns/test-call', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      
+      const { campaignId, callerNumber } = req.body;
+      
+      if (!campaignId) {
+        return res.status(400).json({ error: 'Campaign ID is required' });
+      }
+
+      console.log(`[Campaign Test Call] Testing routing for campaign ${campaignId} from ${callerNumber}`);
+      
+      // Import CallRouter for actual routing logic
+      const { CallRouter } = await import('./call-routing');
+      
+      // Use the actual call routing logic
+      const routingResult = await CallRouter.selectBuyer(campaignId, callerNumber || '+15551234567');
+      
+      // Generate a test call SID
+      const callSid = 'CA' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      if (routingResult.selectedBuyer) {
+        // Create a call record with the selected buyer
+        const testCall = await storage.createCall({
+          status: 'completed',
+          fromNumber: callerNumber || '+15551234567',
+          toNumber: routingResult.selectedBuyer.phoneNumber || '+15559876543',
+          campaignId: campaignId,
+          buyerId: routingResult.selectedBuyer.id,
+          callSid: callSid,
+          duration: 30,
+          cost: '0.0150',
+          revenue: '0.0000'
+        });
+
+        // Create a call log for the routing decision
+        await storage.createCallLog({
+          callId: testCall.id,
+          buyerId: routingResult.selectedBuyer.id,
+          action: 'route',
+          response: `Test call routed to ${routingResult.selectedBuyer.name}`,
+        });
+
+        console.log(`[Campaign Test Call] Routed to buyer: ${routingResult.selectedBuyer.name}`);
+      } else {
+        // Create a call record showing no buyer available
+        const testCall = await storage.createCall({
+          status: 'failed',
+          fromNumber: callerNumber || '+15551234567',
+          toNumber: '+15559876543',
+          campaignId: campaignId,
+          callSid: callSid,
+          duration: 0,
+          cost: '0.0000',
+          revenue: '0.0000'
+        });
+
+        console.log(`[Campaign Test Call] No buyer available: ${routingResult.reason}`);
+      }
+      
+      res.json({
+        success: true,
+        campaignId: campaignId,
+        callSid: callSid,
+        ...routingResult
+      });
+    } catch (error) {
+      console.error('Campaign test call error:', error);
+      res.setHeader('Content-Type', 'application/json');
+      res.status(500).json({
+        success: false,
+        error: 'Failed to test campaign call routing',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

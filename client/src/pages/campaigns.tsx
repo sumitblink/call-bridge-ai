@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users, Phone, Grid3X3, List } from "lucide-react";
+import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users, Phone, Grid3X3, List, PhoneCall } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +29,51 @@ const campaignFormSchema = z.object({
 });
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
+
+function TestCallButton({ campaignId }: { campaignId: number }) {
+  const { toast } = useToast();
+  
+  const testCallMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('/api/campaigns/test-call', 'POST', {
+        campaignId,
+        callerNumber: '+15551234567' // Simulated caller number
+      });
+      return response;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Test Call Initiated",
+        description: data.selectedBuyer 
+          ? `Call routed to ${data.selectedBuyer.name} (${data.selectedBuyer.phoneNumber})`
+          : data.reason || "Call routing completed",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Test Call Failed",
+        description: error.message || "Failed to initiate test call",
+        variant: "destructive",
+      });
+    },
+  });
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => testCallMutation.mutate()}
+      disabled={testCallMutation.isPending}
+      title="Test call routing for this campaign"
+    >
+      {testCallMutation.isPending ? (
+        <PhoneCall className="h-4 w-4 animate-pulse" />
+      ) : (
+        <PhoneCall className="h-4 w-4" />
+      )}
+    </Button>
+  );
+}
 
 function BuyerCount({ campaignId }: { campaignId: number }) {
   const { data: buyers } = useQuery({
@@ -103,6 +148,7 @@ function CampaignCard({ campaign, onDelete }: {
           </div>
           
           <div className="flex items-center gap-2 ml-4">
+            <TestCallButton campaignId={campaign.id} />
             <Button
               variant="ghost"
               size="sm"
