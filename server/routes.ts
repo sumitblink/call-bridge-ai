@@ -1620,6 +1620,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple test call endpoint for dashboard
+  app.post('/api/test-call', async (req, res) => {
+    try {
+      // Generate a test call SID for demonstration
+      const callSid = 'CA' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      // Log the test call
+      console.log('[Test Call] Simulated test call initiated:', callSid);
+      
+      // Create a test call record
+      const testCall = await storage.createCall({
+        status: 'completed',
+        fromNumber: '+15551234567',
+        toNumber: '+15559876543',
+        campaignId: null,
+        callSid: callSid,
+        duration: 30,
+        startTime: new Date(),
+        endTime: new Date(),
+        cost: '0.0150',
+        revenue: '0.0000'
+      });
+
+      res.json({
+        success: true,
+        message: 'Test call simulated successfully',
+        callSid: callSid,
+        callId: testCall.id
+      });
+    } catch (error) {
+      console.error('Test call error:', error);
+      res.status(500).json({
+        error: 'Failed to simulate test call',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
