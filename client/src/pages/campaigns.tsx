@@ -65,6 +65,7 @@ function TestCallButton({ campaignId }: { campaignId: number }) {
       onClick={() => testCallMutation.mutate()}
       disabled={testCallMutation.isPending}
       title="Test call routing for this campaign"
+      className="text-green-600 hover:text-green-700 hover:bg-green-50"
     >
       {testCallMutation.isPending ? (
         <PhoneCall className="h-4 w-4 animate-pulse" />
@@ -527,6 +528,7 @@ export default function Campaigns() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <TestCallButton campaignId={campaign.id} />
                           <Button
                             variant="ghost"
                             size="sm"
