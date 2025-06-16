@@ -36,11 +36,28 @@ export default function Dashboard() {
       });
       
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to trigger call');
+        let errorMessage = 'Failed to trigger call';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
       
-      return response.json();
+      const text = await response.text();
+      if (!text) {
+        throw new Error('Empty response from server');
+      }
+      
+      try {
+        return JSON.parse(text);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        console.error('Response text:', text);
+        throw new Error('Invalid response format from server');
+      }
     },
     onSuccess: (data) => {
       toast({

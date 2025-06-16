@@ -1623,6 +1623,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Simple test call endpoint for dashboard
   app.post('/api/test-call', async (req, res) => {
     try {
+      // Set proper content type
+      res.setHeader('Content-Type', 'application/json');
+      
       // Generate a test call SID for demonstration
       const callSid = 'CA' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       
@@ -1637,21 +1640,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         campaignId: null,
         callSid: callSid,
         duration: 30,
-        startTime: new Date(),
-        endTime: new Date(),
         cost: '0.0150',
         revenue: '0.0000'
       });
 
-      res.json({
+      const response = {
         success: true,
         message: 'Test call simulated successfully',
         callSid: callSid,
         callId: testCall.id
-      });
+      };
+
+      res.status(200).json(response);
     } catch (error) {
       console.error('Test call error:', error);
+      res.setHeader('Content-Type', 'application/json');
       res.status(500).json({
+        success: false,
         error: 'Failed to simulate test call',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
