@@ -1626,17 +1626,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set proper content type
       res.setHeader('Content-Type', 'application/json');
       
+      const { buyerNumber } = req.body;
+      const targetNumber = buyerNumber || '+15559876543';
+      
       // Generate a test call SID for demonstration
       const callSid = 'CA' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       
       // Log the test call
-      console.log('[Test Call] Simulated test call initiated:', callSid);
+      console.log(`[Test Call] Simulated test call initiated to ${targetNumber}:`, callSid);
       
       // Create a test call record
       const testCall = await storage.createCall({
         status: 'completed',
         fromNumber: '+15551234567',
-        toNumber: '+15559876543',
+        toNumber: targetNumber,
         campaignId: null,
         callSid: callSid,
         duration: 30,
@@ -1646,9 +1649,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const response = {
         success: true,
-        message: 'Test call simulated successfully',
+        message: `Test call simulated successfully to ${targetNumber}`,
         callSid: callSid,
-        callId: testCall.id
+        callId: testCall.id,
+        targetNumber: targetNumber
       };
 
       res.status(200).json(response);

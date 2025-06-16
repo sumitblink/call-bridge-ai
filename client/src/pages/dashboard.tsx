@@ -4,8 +4,11 @@ import StatsGrid from "@/components/StatsGrid";
 import CampaignList from "@/components/CampaignList";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Phone, PlayCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import type { Campaign } from "@shared/schema";
 
 interface DashboardStats {
@@ -17,6 +20,7 @@ interface DashboardStats {
 
 export default function Dashboard() {
   const { toast } = useToast();
+  const [testPhoneNumber, setTestPhoneNumber] = useState("+1234567890");
   
   const { data: campaigns, isLoading: campaignLoading } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"],
@@ -33,6 +37,9 @@ export default function Dashboard() {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          buyerNumber: testPhoneNumber
+        }),
       });
       
       if (!response.ok) {
@@ -89,24 +96,38 @@ export default function Dashboard() {
               System Testing
             </CardTitle>
             <CardDescription>
-              Test your Twilio integration with a live call to +917045484791
+              Test your call routing system by simulating a call to a buyer number
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="testPhoneNumber">Buyer Phone Number</Label>
+              <Input
+                id="testPhoneNumber"
+                type="tel"
+                placeholder="+1234567890"
+                value={testPhoneNumber}
+                onChange={(e) => setTestPhoneNumber(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Enter the phone number to simulate calling a buyer
+              </p>
+            </div>
             <Button 
               onClick={handleTestCall}
-              disabled={testCallMutation.isPending}
-              className="bg-green-600 hover:bg-green-700"
+              disabled={testCallMutation.isPending || !testPhoneNumber.trim()}
+              className="bg-green-600 hover:bg-green-700 w-full"
             >
               {testCallMutation.isPending ? (
                 <>
                   <PlayCircle className="h-4 w-4 mr-2 animate-spin" />
-                  Calling...
+                  Calling {testPhoneNumber}...
                 </>
               ) : (
                 <>
                   <Phone className="h-4 w-4 mr-2" />
-                  Test Call
+                  Test Call to {testPhoneNumber}
                 </>
               )}
             </Button>
