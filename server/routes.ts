@@ -1626,8 +1626,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set proper content type
       res.setHeader('Content-Type', 'application/json');
       
-      const { buyerNumber } = req.body;
-      const targetNumber = buyerNumber || '+15559876543';
+      console.log('[Test Call] Full request body:', req.body);
+      console.log('[Test Call] Request headers:', req.headers['content-type']);
+      
+      const buyerNumber = req.body?.buyerNumber;
+      console.log('[Test Call] Extracted buyer number:', buyerNumber);
+      
+      const targetNumber = buyerNumber && buyerNumber.trim() ? buyerNumber.trim() : '+15559876543';
       
       // Generate a test call SID for demonstration
       const callSid = 'CA' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
