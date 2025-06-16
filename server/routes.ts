@@ -1683,23 +1683,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Campaign ID is required' });
       }
 
-      console.log(`[Campaign Test Call] Testing routing for campaign ${campaignId} from ${callerNumber}`);
+      // Get campaign details to find the campaign phone number
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ error: 'Campaign not found' });
+      }
+
+      const campaignPhoneNumber = campaign.phoneNumber || '+15551234567';
+      const incomingCallerNumber = callerNumber || '+19876543210';
+
+      console.log(`[Campaign Test Call] Simulating incoming call from ${incomingCallerNumber} to campaign number ${campaignPhoneNumber}`);
       
       // Import CallRouter for actual routing logic
       const { CallRouter } = await import('./call-routing');
       
       // Use the actual call routing logic
-      const routingResult = await CallRouter.selectBuyer(campaignId, callerNumber || '+15551234567');
+      const routingResult = await CallRouter.selectBuyer(campaignId, incomingCallerNumber);
       
       // Generate a test call SID
       const callSid = 'CA' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       
       if (routingResult.selectedBuyer) {
-        // Create a call record with the selected buyer
+        // Create a call record showing incoming call routed to buyer
         const testCall = await storage.createCall({
           status: 'completed',
-          fromNumber: callerNumber || '+15551234567',
-          toNumber: routingResult.selectedBuyer.phoneNumber || '+15559876543',
+          fromNumber: incomingCallerNumber,
+          toNumber: campaignPhoneNumber,
           campaignId: campaignId,
           buyerId: routingResult.selectedBuyer.id,
           callSid: callSid,
@@ -1716,13 +1725,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           response: `Test call routed to ${routingResult.selectedBuyer.name}`,
         });
 
-        console.log(`[Campaign Test Call] Routed to buyer: ${routingResult.selectedBuyer.name}`);
+        console.log(`[Campaign Test Call] Incoming call routed to buyer: ${routingResult.selectedBuyer.name}`);
       } else {
-        // Create a call record showing no buyer available
+        // Create a call record showing no buyer available for incoming call
         const testCall = await storage.createCall({
           status: 'failed',
-          fromNumber: callerNumber || '+15551234567',
-          toNumber: '+15559876543',
+          fromNumber: incomingCallerNumber,
+          toNumber: campaignPhoneNumber,
           campaignId: campaignId,
           callSid: callSid,
           duration: 0,
@@ -1730,7 +1739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           revenue: '0.0000'
         });
 
-        console.log(`[Campaign Test Call] No buyer available: ${routingResult.reason}`);
+        console.log(`[Campaign Test Call] No buyer available for incoming call: ${routingResult.reason}`);
       }
       
       res.json({

@@ -37,16 +37,16 @@ function TestCallButton({ campaignId }: { campaignId: number }) {
     mutationFn: async () => {
       const response = await apiRequest('/api/campaigns/test-call', 'POST', {
         campaignId,
-        callerNumber: '+15551234567' // Simulated caller number
+        callerNumber: '+19876543210' // Simulated caller number
       });
       return response;
     },
     onSuccess: (data: any) => {
       toast({
-        title: "Test Call Initiated",
+        title: "Test Call Routing",
         description: data.selectedBuyer 
-          ? `Call routed to ${data.selectedBuyer.name} (${data.selectedBuyer.phoneNumber})`
-          : data.reason || "Call routing completed",
+          ? `Incoming call routed to buyer: ${data.selectedBuyer.name}`
+          : data.reason || "No buyers available for routing",
       });
     },
     onError: (error: any) => {
