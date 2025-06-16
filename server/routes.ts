@@ -1231,40 +1231,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Helper function to format phone numbers
-  function formatPhoneNumber(number: string): string {
-    if (!number) return '';
-    const cleaned = number.replace(/\D/g, '');
-    if (cleaned.length === 11 && cleaned.startsWith('1')) {
-      return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
-    }
-    return number;
-  }
-
   app.post('/api/phone-numbers/purchase', requireAuth, async (req, res) => {
     try {
-      const { phoneNumber, friendlyName, campaignId, country, numberType, areaCode } = req.body;
+      const { phoneNumber, friendlyName, campaignId } = req.body;
       const userId = req.user?.id;
 
-      // If phoneNumber is provided, purchase that specific number
-      // Otherwise, search for available numbers and purchase the first one
-      let targetPhoneNumber = phoneNumber;
-      
-      if (!targetPhoneNumber) {
-        // Search for available numbers
-        const { twilioPhoneService } = await import('./twilio-phone-service');
-        const searchResults = await twilioPhoneService.searchAvailableNumbers({
-          country: country || 'US',
-          numberType: numberType || 'local',
-          areaCode: areaCode || undefined,
-          limit: 1
-        });
-
-        if (!searchResults.length) {
-          return res.status(400).json({ error: 'No available numbers found with specified criteria' });
-        }
-
-        targetPhoneNumber = searchResults[0].phoneNumber;
+      if (!phoneNumber) {
+        return res.status(400).json({ error: 'Phone number is required' });
       }
 
       // Set up voice URL for the webhook
@@ -1275,10 +1248,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Purchase the number from Twilio
       const twilioResult = await twilioPhoneService.purchasePhoneNumber({
-        phoneNumber: targetPhoneNumber,
+        phoneNumber,
         voiceUrl,
         statusCallback,
-        friendlyName: friendlyName || `Number ${targetPhoneNumber}`
+        friendlyName: friendlyName || `Number ${phoneNumber}`
       });
 
       // Save to database
@@ -1286,25 +1259,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         phoneNumber: twilioResult.phoneNumber,
         friendlyName: twilioResult.friendlyName,
-        formattedNumber: formatPhoneNumber(twilioResult.phoneNumber),
         phoneNumberSid: twilioResult.phoneNumberSid,
         accountSid: twilioResult.accountSid,
         country: req.body.country || 'US',
         numberType: req.body.numberType || 'local',
-        carrier: 'Twilio',
-        status: 'available',
-        capabilities: twilioResult.capabilities,
+        capabilities: JSON.stringify(twilioResult.capabilities),
         voiceUrl: twilioResult.voiceUrl,
         voiceMethod: twilioResult.voiceMethod,
         statusCallback: twilioResult.statusCallback,
         campaignId: campaignId || null,
-        publisherId: null,
-        numberPool: 'Default',
-        isAllocated: false,
-        isRouted: false,
-        monthlyFee: '1.0000',
-        usageCost: '0.0000',
-        totalCallsReceived: 0
+        isActive: true,
+        monthlyFee: '1.0000'
       });
 
       res.json({

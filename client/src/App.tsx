@@ -18,7 +18,7 @@ import IVRSetup from "@/pages/ivr-setup";
 import Integrations from "@/pages/integrations";
 import WebhookTest from "@/pages/webhook-test";
 import TwilioTest from "@/pages/twilio-test";
-import PhoneNumbers from "@/pages/phone-numbers-enhanced";
+import PhoneNumbers from "@/pages/phone-numbers";
 import DNI from "@/pages/dni";
 import Testing from "@/pages/testing";
 import CallFlowDemo from "@/pages/call-flow-demo";

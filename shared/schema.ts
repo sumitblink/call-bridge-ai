@@ -235,40 +235,19 @@ export const platformIntegrations = pgTable("platform_integrations", {
 export const phoneNumbers = pgTable("phone_numbers", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  
-  // Number Details
   phoneNumber: varchar("phone_number", { length: 20 }).notNull().unique(),
   friendlyName: varchar("friendly_name", { length: 64 }),
-  formattedNumber: varchar("formatted_number", { length: 30 }), // Display format like (555) 123-4567
-  
-  // Carrier & Location
+  phoneNumberSid: varchar("phone_number_sid", { length: 100 }).notNull(),
+  accountSid: varchar("account_sid", { length: 100 }).notNull(),
   country: varchar("country", { length: 10 }).default("US").notNull(),
-  region: varchar("region", { length: 50 }), // State/Province
-  city: varchar("city", { length: 100 }),
   numberType: varchar("number_type", { length: 20 }).notNull(), // local, toll-free, mobile
-  carrier: varchar("carrier", { length: 100 }), // Twilio, etc.
-  
-  // Assignment & Routing
-  status: varchar("status", { length: 20 }).default("available").notNull(), // available, allocated, suspended
-  campaignId: integer("campaign_id").references(() => campaigns.id),
-  publisherId: integer("publisher_id").references(() => publishers.id),
-  numberPool: varchar("number_pool", { length: 100 }), // Grouping category
-  isAllocated: boolean("is_allocated").default(false).notNull(),
-  isRouted: boolean("is_routed").default(false).notNull(),
-  
-  // Twilio Integration
-  phoneNumberSid: varchar("phone_number_sid", { length: 100 }),
-  accountSid: varchar("account_sid", { length: 100 }),
-  capabilities: json("capabilities"), // {voice: true, sms: true, mms: false}
+  capabilities: text("capabilities"), // JSON object with voice, sms, mms capabilities
   voiceUrl: varchar("voice_url", { length: 512 }),
   voiceMethod: varchar("voice_method", { length: 10 }).default("POST"),
   statusCallback: varchar("status_callback", { length: 512 }),
-  
-  // Billing & Usage
+  campaignId: integer("campaign_id").references(() => campaigns.id),
+  isActive: boolean("is_active").default(true).notNull(),
   monthlyFee: decimal("monthly_fee", { precision: 10, scale: 4 }).default("1.0000"),
-  usageCost: decimal("usage_cost", { precision: 10, scale: 4 }).default("0.0000"),
-  totalCallsReceived: integer("total_calls_received").default(0),
-  lastUsed: timestamp("last_used"),
   purchaseDate: timestamp("purchase_date").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
