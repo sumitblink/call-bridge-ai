@@ -44,6 +44,16 @@ export class CallRouter {
         const buyer = buyers[i];
         const metrics = buyerMetrics[i];
         
+        console.log(`[Router] Checking buyer ${buyer.name} (ID: ${buyer.id}):`, {
+          status: buyer.status,
+          phoneNumber: buyer.phoneNumber,
+          priority: buyer.priority,
+          dailyCap: buyer.dailyCap,
+          concurrencyLimit: buyer.concurrencyLimit,
+          callsToday: metrics.callsToday,
+          activeCalls: metrics.activeCalls
+        });
+        
         const availability = this.checkBuyerAvailability(buyer, metrics);
         
         if (availability.available) {
@@ -53,9 +63,10 @@ export class CallRouter {
             priority: buyer.priority || 1,
             campaignPriority: buyer.priority || 1
           });
+          console.log(`[Router] Buyer ${buyer.name} is AVAILABLE`);
         } else {
           unavailableBuyers.push(buyer);
-          console.log(`[Router] Buyer ${buyer.name} unavailable: ${availability.reason}`);
+          console.log(`[Router] Buyer ${buyer.name} is UNAVAILABLE: ${availability.reason}`);
         }
       }
 

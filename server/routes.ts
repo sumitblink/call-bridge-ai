@@ -1694,11 +1694,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[Campaign Test Call] Simulating incoming call from ${incomingCallerNumber} to campaign number ${campaignPhoneNumber}`);
       
+      // Check if campaign has buyers assigned
+      const campaignBuyers = await storage.getCampaignBuyers(campaignId);
+      console.log(`[Campaign Test Call] Found ${campaignBuyers.length} buyers for campaign ${campaignId}:`, 
+        campaignBuyers.map(b => `${b.name} (ID: ${b.id}, Status: ${b.status}, Priority: ${b.priority})`));
+      
       // Import CallRouter for actual routing logic
       const { CallRouter } = await import('./call-routing');
       
       // Use the actual call routing logic
       const routingResult = await CallRouter.selectBuyer(campaignId, incomingCallerNumber);
+      
+      console.log(`[Campaign Test Call] Routing result:`, {
+        selectedBuyer: routingResult.selectedBuyer ? `${routingResult.selectedBuyer.name} (ID: ${routingResult.selectedBuyer.id})` : 'None',
+        reason: routingResult.reason,
+        alternativeBuyers: routingResult.alternativeBuyers.length
+      });
       
       // Generate a test call SID
       const callSid = 'CA' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
