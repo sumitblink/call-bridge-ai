@@ -189,7 +189,16 @@ function BuyerForm({
       return result;
     },
     onSuccess: () => {
+      // Invalidate all buyer-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
+      // Invalidate campaign buyer queries to update buyer info in campaigns
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0] as string;
+          return key?.includes('/buyers') || key?.includes('/campaigns');
+        }
+      });
       toast({ title: "Success", description: "Buyer created successfully" });
       onOpenChange(false);
       form.reset();
@@ -217,7 +226,16 @@ function BuyerForm({
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all buyer-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
+      // Invalidate campaign buyer queries to update buyer info in campaigns
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0] as string;
+          return key?.includes('/buyers') || key?.includes('/campaigns');
+        }
+      });
       toast({ title: "Success", description: "Buyer updated successfully" });
       onOpenChange(false);
     },

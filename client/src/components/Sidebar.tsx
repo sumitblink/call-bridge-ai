@@ -17,6 +17,7 @@ const navigation = [
   { name: "Call Control", href: "/call-control", icon: PhoneForwarded, current: false },
   { name: "Phone Numbers", href: "/phone-numbers", icon: Phone, current: false },
   { name: "Website Tracking", href: "/dni", icon: Globe, current: false },
+  { name: "Call Flow Demo", href: "/call-flow-demo", icon: PhoneCall, current: false },
   { name: "Testing", href: "/testing", icon: TestTube, current: false },
   { name: "IVR Setup", href: "/ivr-setup", icon: Mic, current: false },
   { name: "Integrations", href: "/integrations", icon: Zap, current: false },
