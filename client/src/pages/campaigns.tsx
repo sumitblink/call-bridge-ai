@@ -42,11 +42,13 @@ function TestCallButton({ campaignId }: { campaignId: number }) {
       return response;
     },
     onSuccess: (data: any) => {
+      console.log('Test call response:', data);
       toast({
         title: "Test Call Routing",
         description: data.selectedBuyer 
-          ? `Incoming call routed to buyer: ${data.selectedBuyer.name}`
+          ? `Call routed to: ${data.selectedBuyer.name} (Priority: ${data.selectedBuyer.priority})`
           : data.reason || "No buyers available for routing",
+        variant: data.selectedBuyer ? "default" : "destructive",
       });
     },
     onError: (error: any) => {
