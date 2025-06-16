@@ -29,15 +29,48 @@ export const users = pgTable("users", {
 export const campaigns = pgTable("campaigns", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
+  
+  // General Info
   name: varchar("name", { length: 256 }).notNull(),
   description: text("description"),
   status: varchar("status", { length: 50 }).default("active").notNull(),
+  category: varchar("category", { length: 100 }), // Insurance, Solar, Education, etc.
+  
+  // Phone & Routing
   phoneNumber: varchar("phone_number", { length: 20 }),
-  routingType: varchar("routing_type", { length: 50 }).default("round_robin").notNull(), // round_robin, priority, geo, time_based
+  routingType: varchar("routing_type", { length: 50 }).default("priority").notNull(), // priority, round_robin, geo, time_based, weighted
   maxConcurrentCalls: integer("max_concurrent_calls").default(5).notNull(),
   callCap: integer("call_cap").default(100).notNull(), // daily call cap
-  geoTargeting: text("geo_targeting").array(), // array of allowed states/countries
+  
+  // Geographic & Time Settings
+  geoTargeting: text("geo_targeting").array(), // allowed states/countries
   timeZoneRestriction: varchar("timezone_restriction", { length: 100 }),
+  operatingHours: json("operating_hours"), // {start: "09:00", end: "17:00", timezone: "EST", days: ["mon", "tue"]}
+  
+  // Spam & Quality Control
+  spamFilterEnabled: boolean("spam_filter_enabled").default(true),
+  duplicateCallWindow: integer("duplicate_call_window").default(24), // hours
+  minCallDuration: integer("min_call_duration").default(30), // seconds
+  maxCallDuration: integer("max_call_duration").default(1800), // seconds
+  blockAnonymousCalls: boolean("block_anonymous_calls").default(false),
+  allowInternational: boolean("allow_international").default(false),
+  
+  // Payout & Revenue
+  defaultPayout: decimal("default_payout", { precision: 10, scale: 2 }).default("0.00"),
+  payoutModel: varchar("payout_model", { length: 50 }).default("per_call"), // per_call, per_minute, per_conversion
+  revenueModel: varchar("revenue_model", { length: 50 }).default("per_call"),
+  
+  // Tracking & Analytics
+  enableCallRecording: boolean("enable_call_recording").default(true),
+  enableCallTranscription: boolean("enable_call_transcription").default(false),
+  enableRealTimeBidding: boolean("enable_real_time_bidding").default(false),
+  conversionTracking: boolean("conversion_tracking").default(false),
+  
+  // Advanced Settings
+  customHeaders: json("custom_headers"), // for webhook requests
+  integrationSettings: json("integration_settings"), // platform-specific configs
+  urlParameters: json("url_parameters"), // tracking parameters
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

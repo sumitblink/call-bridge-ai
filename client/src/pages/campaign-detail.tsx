@@ -94,7 +94,7 @@ export default function CampaignDetail() {
 
         {/* Campaign Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
@@ -102,10 +102,6 @@ export default function CampaignDetail() {
             <TabsTrigger value="buyers" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Buyers</span>
-            </TabsTrigger>
-            <TabsTrigger value="numbers" className="flex items-center space-x-2">
-              <Phone className="h-4 w-4" />
-              <span className="hidden sm:inline">Numbers</span>
             </TabsTrigger>
             <TabsTrigger value="tracking" className="flex items-center space-x-2">
               <Globe className="h-4 w-4" />
@@ -129,9 +125,7 @@ export default function CampaignDetail() {
             <CampaignBuyers campaignId={campaign.id} />
           </TabsContent>
 
-          <TabsContent value="numbers">
-            <CampaignNumbers campaignId={campaign.id} />
-          </TabsContent>
+
 
           <TabsContent value="tracking">
             <CampaignTracking campaignId={campaign.id} campaign={campaign} />
