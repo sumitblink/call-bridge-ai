@@ -39,7 +39,7 @@ function TestCallButton({ campaignId }: { campaignId: number }) {
         campaignId,
         callerNumber: '+19876543210' // Simulated caller number
       });
-      return response;
+      return await response.json();
     },
     onSuccess: (data: any) => {
       console.log('Test call response:', data);

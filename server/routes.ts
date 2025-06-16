@@ -1753,12 +1753,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Campaign Test Call] No buyer available for incoming call: ${routingResult.reason}`);
       }
       
-      res.json({
+      const response = {
         success: true,
         campaignId: campaignId,
         callSid: callSid,
-        ...routingResult
-      });
+        selectedBuyer: routingResult.selectedBuyer,
+        reason: routingResult.reason,
+        alternativeBuyers: routingResult.alternativeBuyers
+      };
+      
+      console.log('[Campaign Test Call] API Response:', JSON.stringify(response, null, 2));
+      res.json(response);
     } catch (error) {
       console.error('Campaign test call error:', error);
       res.setHeader('Content-Type', 'application/json');
