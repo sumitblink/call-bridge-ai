@@ -701,10 +701,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const twiml = `
         <Response>
           <Say>Connecting your call, please hold.</Say>
-          <Dial timeout="30" callerId="${fromNumber}">
-            <Number statusCallback="https://${req.hostname}/api/webhooks/call-status">${selectedBuyer.phoneNumber}</Number>
+          <Dial timeout="30" callerId="${fromNumber}" action="https://${req.hostname}/api/webhooks/dial-status" method="POST">
+            <Number>${selectedBuyer.phoneNumber}</Number>
           </Dial>
-          <Say>The call could not be connected. Goodbye.</Say>
+          <Say>The call has ended. Thank you for calling.</Say>
+          <Hangup/>
         </Response>
       `;
       
@@ -727,20 +728,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[Webhook] Call status update: ${CallSid} - ${CallStatus}`);
       
-      // Log call status update
-      await storage.createCallLog({
-        callSid: CallSid,
-        status: CallStatus,
-        duration: CallDuration ? parseInt(CallDuration) : null,
-        timestamp: new Date(),
-        details: JSON.stringify(req.body)
-      });
+      // Find the call by CallSid and update its status
+      const calls = await storage.getCalls();
+      const call = calls.find(c => c.callSid === CallSid);
+      
+      if (call) {
+        await storage.updateCall(call.id, {
+          status: CallStatus.toLowerCase(),
+          duration: CallDuration ? parseInt(CallDuration) : undefined
+        });
+        console.log(`[Webhook] Updated call ${call.id} status to ${CallStatus}`);
+      }
       
       res.status(200).send('OK');
       
     } catch (error) {
       console.error('[Webhook] Error processing call status:', error);
       res.status(500).send('Error');
+    }
+  });
+
+  app.post('/api/webhooks/dial-status', async (req, res) => {
+    try {
+      const { CallSid, DialCallStatus, DialCallDuration } = req.body;
+      
+      console.log(`[Webhook] Dial status update: ${CallSid} - ${DialCallStatus}`);
+      
+      // Find the call by CallSid and update its status
+      const calls = await storage.getCalls();
+      const call = calls.find(c => c.callSid === CallSid);
+      
+      if (call) {
+        let finalStatus = DialCallStatus?.toLowerCase() || 'completed';
+        if (finalStatus === 'no-answer') finalStatus = 'no_answer';
+        
+        await storage.updateCall(call.id, {
+          status: finalStatus,
+          duration: DialCallDuration ? parseInt(DialCallDuration) : undefined
+        });
+        console.log(`[Webhook] Updated call ${call.id} dial status to ${finalStatus}`);
+      }
+      
+      // Always return empty TwiML to end the call cleanly
+      res.type('text/xml').send('<Response></Response>');
+      
+    } catch (error) {
+      console.error('[Webhook] Error processing dial status:', error);
+      res.type('text/xml').send('<Response></Response>');
     }
   });
 
