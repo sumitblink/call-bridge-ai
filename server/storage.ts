@@ -57,6 +57,7 @@ export interface IStorage {
   getCalls(): Promise<Call[]>;
   getCallsByCampaign(campaignId: number): Promise<Call[]>;
   createCall(call: InsertCall): Promise<Call>;
+  updateCall(id: number, updates: Partial<InsertCall>): Promise<Call | undefined>;
   
   // Call Logs
   getCallLogs(callId: number): Promise<CallLog[]>;
@@ -474,6 +475,19 @@ export class MemStorage implements IStorage {
     };
     this.calls.set(id, newCall);
     return newCall;
+  }
+
+  async updateCall(id: number, updates: Partial<InsertCall>): Promise<Call | undefined> {
+    const existing = this.calls.get(id);
+    if (!existing) return undefined;
+    
+    const updated: Call = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.calls.set(id, updated);
+    return updated;
   }
 
   // Buyers

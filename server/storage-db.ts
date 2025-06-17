@@ -340,6 +340,15 @@ export class DatabaseStorage implements IStorage {
     return newCall;
   }
 
+  async updateCall(id: number, updates: Partial<InsertCall>): Promise<Call | undefined> {
+    const [updatedCall] = await db
+      .update(calls)
+      .set(updates)
+      .where(eq(calls.id, id))
+      .returning();
+    return updatedCall;
+  }
+
   // Call logs
   async getCallLogs(callId: number): Promise<CallLog[]> {
     return await db.select().from(callLogs).where(eq(callLogs.callId, callId));

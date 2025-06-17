@@ -187,6 +187,9 @@ export async function handleCallStatus(req: Request, res: Response) {
       updates.recordingDuration = parseInt(statusData.RecordingDuration, 10);
     }
 
+    // Actually update the call record in storage
+    const updatedCall = await storage.updateCall(call.id, updates);
+    
     // Log the status change
     await storage.createCallLog({
       callId: call.id,

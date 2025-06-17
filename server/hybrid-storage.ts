@@ -307,6 +307,13 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async updateCall(id: number, updates: Partial<InsertCall>): Promise<Call | undefined> {
+    return this.executeOperation(
+      () => this.supabaseStorage.updateCall(id, updates),
+      () => this.memStorage.updateCall(id, updates)
+    );
+  }
+
   // Call Logs
   async getCallLogs(callId: number): Promise<CallLog[]> {
     return this.executeOperation(
