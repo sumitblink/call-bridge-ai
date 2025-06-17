@@ -17,7 +17,7 @@ export default function Dashboard() {
   });
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/stats"],
+    queryKey: ["/api/stats/historical"],
   });
 
   return (

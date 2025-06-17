@@ -181,6 +181,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard stats with historical comparison
+  app.get('/api/stats/historical', async (req, res) => {
+    try {
+      const now = new Date();
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+      // Get current stats
+      const currentStats = await storage.getStats();
+      
+      // Get all calls for historical analysis
+      const allCalls = await storage.getCalls();
+      
+      // Calculate weekly comparison
+      const currentWeekCalls = allCalls.filter(call => 
+        new Date(call.createdAt) >= oneWeekAgo
+      );
+      
+      const previousWeekCalls = allCalls.filter(call => {
+        const callDate = new Date(call.createdAt);
+        return callDate >= twoWeeksAgo && callDate < oneWeekAgo;
+      });
+      
+      // Calculate monthly comparison
+      const currentMonthCalls = allCalls.filter(call => 
+        new Date(call.createdAt) >= oneMonthAgo
+      );
+      
+      const previousMonthCalls = allCalls.filter(call => {
+        const callDate = new Date(call.createdAt);
+        return callDate >= twoMonthsAgo && callDate < oneMonthAgo;
+      });
+
+      // Helper functions
+      const calculateChange = (current: number, previous: number) => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return Math.round(((current - previous) / previous) * 100 * 10) / 10; // Round to 1 decimal
+      };
+
+      const getSuccessRate = (calls: any[]) => {
+        if (calls.length === 0) return 0;
+        const successful = calls.filter(call => call.status === 'completed').length;
+        return Math.round((successful / calls.length) * 100 * 10) / 10;
+      };
+
+      const formatChange = (change: number) => {
+        const sign = change > 0 ? '+' : '';
+        return `${sign}${change}%`;
+      };
+
+      const getChangeColor = (change: number) => {
+        if (change > 0) return 'text-green-600';
+        if (change < 0) return 'text-red-600';
+        return 'text-gray-600';
+      };
+
+      // Calculate changes
+      const callsWeeklyChange = calculateChange(currentWeekCalls.length, previousWeekCalls.length);
+      const callsMonthlyChange = calculateChange(currentMonthCalls.length, previousMonthCalls.length);
+      
+      const currentWeekSuccessRate = getSuccessRate(currentWeekCalls);
+      const previousWeekSuccessRate = getSuccessRate(previousWeekCalls);
+      const successRateWeeklyChange = calculateChange(currentWeekSuccessRate, previousWeekSuccessRate);
+      
+      const currentMonthSuccessRate = getSuccessRate(currentMonthCalls);
+      const previousMonthSuccessRate = getSuccessRate(previousMonthCalls);
+      const successRateMonthlyChange = calculateChange(currentMonthSuccessRate, previousMonthSuccessRate);
+
+      // Get campaigns for comparison
+      const campaigns = await storage.getCampaigns();
+      const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
+
+      const enrichedStats = {
+        ...currentStats,
+        changes: {
+          activeCampaigns: {
+            value: activeCampaigns,
+            change: formatChange(0), // Would need historical campaign data
+            changeText: "no historical data",
+            changeColor: "text-gray-600"
+          },
+          totalCalls: {
+            value: currentStats.totalCalls,
+            weeklyChange: formatChange(callsWeeklyChange),
+            monthlyChange: formatChange(callsMonthlyChange),
+            weeklyChangeText: "from last week",
+            monthlyChangeText: "from last month",
+            weeklyChangeColor: getChangeColor(callsWeeklyChange),
+            monthlyChangeColor: getChangeColor(callsMonthlyChange)
+          },
+          successRate: {
+            value: currentStats.successRate,
+            weeklyChange: formatChange(successRateWeeklyChange),
+            monthlyChange: formatChange(successRateMonthlyChange),
+            weeklyChangeText: "from last week", 
+            monthlyChangeText: "from last month",
+            weeklyChangeColor: getChangeColor(successRateWeeklyChange),
+            monthlyChangeColor: getChangeColor(successRateMonthlyChange)
+          }
+        },
+        periods: {
+          currentWeek: {
+            calls: currentWeekCalls.length,
+            successRate: currentWeekSuccessRate
+          },
+          previousWeek: {
+            calls: previousWeekCalls.length,
+            successRate: previousWeekSuccessRate
+          },
+          currentMonth: {
+            calls: currentMonthCalls.length,
+            successRate: currentMonthSuccessRate
+          },
+          previousMonth: {
+            calls: previousMonthCalls.length,
+            successRate: previousMonthSuccessRate
+          }
+        }
+      };
+
+      res.json(enrichedStats);
+    } catch (error) {
+      console.error("Error fetching historical stats:", error);
+      res.status(500).json({ error: "Failed to fetch historical stats" });
+    }
+  });
+
   // Call routing stats and testing endpoints
   app.get("/api/campaigns/:id/routing-stats", requireAuth, async (req: any, res) => {
     try {

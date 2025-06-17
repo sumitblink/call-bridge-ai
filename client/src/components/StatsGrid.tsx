@@ -7,6 +7,32 @@ interface Stats {
   totalCalls: number;
   successRate: string;
   activeAgents: number;
+  changes?: {
+    activeCampaigns: {
+      value: number;
+      change: string;
+      changeText: string;
+      changeColor: string;
+    };
+    totalCalls: {
+      value: number;
+      weeklyChange: string;
+      monthlyChange: string;
+      weeklyChangeText: string;
+      monthlyChangeText: string;
+      weeklyChangeColor: string;
+      monthlyChangeColor: string;
+    };
+    successRate: {
+      value: string;
+      weeklyChange: string;
+      monthlyChange: string;
+      weeklyChangeText: string;
+      monthlyChangeText: string;
+      weeklyChangeColor: string;
+      monthlyChangeColor: string;
+    };
+  };
 }
 
 interface StatsGridProps {
@@ -14,42 +40,42 @@ interface StatsGridProps {
   isLoading: boolean;
 }
 
-const statItems = [
+const getStatItems = (stats?: Stats) => [
   {
     name: "Active Campaigns",
     key: "activeCampaigns" as keyof Stats,
     icon: BellRing,
     color: "text-green-600 bg-green-100",
-    change: "+2.5%",
-    changeText: "from last month",
-    changeColor: "text-green-600",
+    change: stats?.changes?.activeCampaigns?.change || "+0%",
+    changeText: stats?.changes?.activeCampaigns?.changeText || "no data",
+    changeColor: stats?.changes?.activeCampaigns?.changeColor || "text-gray-600",
   },
   {
     name: "Total Calls",
     key: "totalCalls" as keyof Stats,
     icon: Phone,
     color: "text-blue-600 bg-blue-100",
-    change: "+12.3%",
-    changeText: "from last week",
-    changeColor: "text-green-600",
+    change: stats?.changes?.totalCalls?.monthlyChange || "+0%",
+    changeText: stats?.changes?.totalCalls?.monthlyChangeText || "from last month",
+    changeColor: stats?.changes?.totalCalls?.monthlyChangeColor || "text-gray-600",
   },
   {
     name: "Success Rate",
     key: "successRate" as keyof Stats,
     icon: TrendingUp,
     color: "text-yellow-600 bg-yellow-100",
-    change: "-1.2%",
-    changeText: "from last week",
-    changeColor: "text-red-600",
+    change: stats?.changes?.successRate?.weeklyChange || "+0%",
+    changeText: stats?.changes?.successRate?.weeklyChangeText || "from last week",
+    changeColor: stats?.changes?.successRate?.weeklyChangeColor || "text-gray-600",
   },
   {
     name: "Active Agents",
     key: "activeAgents" as keyof Stats,
     icon: Users,
     color: "text-purple-600 bg-purple-100",
-    change: "+3 agents",
-    changeText: "this week",
-    changeColor: "text-green-600",
+    change: "+0",
+    changeText: "no tracking",
+    changeColor: "text-gray-600",
   },
 ];
 
