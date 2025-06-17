@@ -518,9 +518,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced Twilio Webhook Endpoints for Multi-Number Support
   app.post('/api/webhooks/voice', async (req, res) => {
     try {
+      console.log('[Webhook OLD] === INCOMING CALL ON OLD ENDPOINT ===');
+      console.log('[Webhook OLD] Request body:', JSON.stringify(req.body, null, 2));
+      
       const { To: toNumber, From: fromNumber, CallSid } = req.body;
       
-      console.log(`[Webhook] Incoming call from ${fromNumber} to ${toNumber}, CallSid: ${CallSid}`);
+      console.log(`[Webhook OLD] Incoming call from ${fromNumber} to ${toNumber}, CallSid: ${CallSid}`);
       
       // Find campaign by phone number
       const campaign = await storage.getCampaignByPhoneNumber(toNumber);
