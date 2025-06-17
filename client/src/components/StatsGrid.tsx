@@ -80,6 +80,8 @@ const getStatItems = (stats?: Stats) => [
 ];
 
 export default function StatsGrid({ stats, isLoading }: StatsGridProps) {
+  const statItems = getStatItems(stats);
+  
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
