@@ -50,6 +50,22 @@ interface Campaign {
   updatedAt: string;
 }
 
+interface Buyer {
+  id: number;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  status: string;
+  priority: number;
+  dailyCap: number;
+  concurrencyLimit: number;
+  acceptanceRate: string;
+  avgResponseTime: number | null;
+  endpoint: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function CallsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
@@ -63,6 +79,10 @@ export default function CallsPage() {
 
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"],
+  });
+
+  const { data: buyers = [], isLoading: isLoadingBuyers } = useQuery<Buyer[]>({
+    queryKey: ["/api/buyers"],
   });
 
   const filteredCalls = calls.filter(call => {
@@ -197,7 +217,7 @@ export default function CallsPage() {
     }
   };
 
-  if (isLoadingCalls || isLoadingCampaigns) {
+  if (isLoadingCalls || isLoadingCampaigns || isLoadingBuyers) {
     return (
       <Layout>
         <div className="container mx-auto p-6">
@@ -343,6 +363,7 @@ export default function CallsPage() {
                     <TableHead>From</TableHead>
                     <TableHead>To</TableHead>
                     <TableHead>Campaign</TableHead>
+                    <TableHead>Buyer/Agent</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Duration</TableHead>
                     <TableHead>Recording</TableHead>
@@ -353,7 +374,7 @@ export default function CallsPage() {
                 <TableBody>
                   {filteredCalls.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8">
+                      <TableCell colSpan={10} className="text-center py-8">
                         <div className="text-gray-500">
                           <Phone className="h-12 w-12 mx-auto mb-4 opacity-50" />
                           <p>No calls found matching your filters</p>
@@ -363,6 +384,7 @@ export default function CallsPage() {
                   ) : (
                     filteredCalls.map((call) => {
                       const campaign = campaigns.find((c) => c.id === call.campaignId);
+                      const buyer = buyers.find((b) => b.id === call.buyerId);
                       return (
                         <TableRow key={call.id} className="hover:bg-gray-50">
                           <TableCell className="text-sm">
@@ -374,6 +396,18 @@ export default function CallsPage() {
                             <div className="flex flex-col">
                               <span className="font-medium text-sm">{campaign?.name || 'Unknown'}</span>
                               <span className="text-xs text-gray-500">ID: {call.campaignId}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              {buyer ? (
+                                <>
+                                  <span className="font-medium text-sm">{buyer.name}</span>
+                                  <span className="text-xs text-gray-500">{buyer.phoneNumber}</span>
+                                </>
+                              ) : (
+                                <span className="text-sm text-gray-400">No buyer assigned</span>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>
