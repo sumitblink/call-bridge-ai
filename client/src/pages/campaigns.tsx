@@ -445,7 +445,6 @@ export default function Campaigns() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <TestCallButton campaignId={campaign.id} />
                           <Button
                             variant="ghost"
                             size="sm"

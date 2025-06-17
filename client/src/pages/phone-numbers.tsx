@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Search, Trash2, Settings, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import CallFlowSimulator from "@/components/CallFlowSimulator";
+
 
 interface PhoneNumber {
   id: number;
@@ -604,8 +604,13 @@ export default function PhoneNumbersPage() {
                     </div>
                   </div>
 
-                  {/* Call Flow Simulator */}
-                  <CallFlowSimulator />
+                  {/* Production call management interface */}
+                  <div className="space-y-4">
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Phone className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Call metrics and logs are recorded automatically when calls are routed through your purchased numbers.</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

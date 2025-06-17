@@ -20,8 +20,7 @@ import WebhookTest from "@/pages/webhook-test";
 import TwilioTest from "@/pages/twilio-test";
 import PhoneNumbers from "@/pages/phone-numbers";
 import DNI from "@/pages/dni";
-import Testing from "@/pages/testing";
-import CallFlowDemo from "@/pages/call-flow-demo";
+
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
@@ -63,8 +62,7 @@ function Router() {
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />
           <Route path="/twilio-test" component={TwilioTest} />
-          <Route path="/testing" component={Testing} />
-          <Route path="/call-flow-demo" component={CallFlowDemo} />
+
           <Route path="/settings" component={Settings} />
         </>
       )}
