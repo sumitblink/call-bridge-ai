@@ -1,14 +1,7 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import StatsGrid from "@/components/StatsGrid";
 import CampaignList from "@/components/CampaignList";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Phone, PlayCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
 import type { Campaign } from "@shared/schema";
 
 interface DashboardStats {
@@ -19,8 +12,6 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
-  const { toast } = useToast();
-  const [testPhoneNumber, setTestPhoneNumber] = useState("+1234567890");
   
   const { data: campaigns, isLoading: campaignLoading } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"],
