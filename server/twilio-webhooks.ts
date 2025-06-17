@@ -31,9 +31,12 @@ export async function handleIncomingCall(req: Request, res: Response) {
   try {
     const callData: TwilioCallRequest = req.body;
     console.log('[Webhook] Incoming call:', callData);
+    console.log('[Webhook] Looking for campaign with phone number:', callData.To);
 
     // Find campaign by phone number
     const campaign = await storage.getCampaignByPhoneNumber(callData.To);
+    console.log('[Webhook] Campaign lookup result:', campaign);
+    
     if (!campaign) {
       console.error('[Webhook] No campaign found for number:', callData.To);
       
@@ -47,10 +50,12 @@ export async function handleIncomingCall(req: Request, res: Response) {
       return;
     }
 
-    console.log('[Webhook] Found campaign:', campaign.name);
+    console.log('[Webhook] Found campaign:', campaign.name, 'ID:', campaign.id);
 
     // Use call router to select best buyer
+    console.log('[Webhook] Starting buyer selection for campaign ID:', campaign.id);
     const routingResult = await CallRouter.selectBuyer(campaign.id, callData.From);
+    console.log('[Webhook] Routing result:', routingResult);
     
     if (!routingResult.selectedBuyer) {
       console.log('[Webhook] No available buyers:', routingResult.reason);
@@ -66,7 +71,7 @@ export async function handleIncomingCall(req: Request, res: Response) {
     }
 
     const selectedBuyer = routingResult.selectedBuyer;
-    console.log('[Webhook] Selected buyer:', selectedBuyer.name);
+    console.log('[Webhook] Selected buyer:', selectedBuyer.name, 'Phone:', selectedBuyer.phoneNumber);
 
     // Create call record
     await storage.createCall({
