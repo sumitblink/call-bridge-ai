@@ -95,7 +95,7 @@ export default function Sidebar() {
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="h-8 w-8 p-0"
         >
-          {isCollapsed ? <Menu className="h-4 w-4" /> : <X className="h-4 w-4" />}
+          {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
         </Button>
       </div>
 
@@ -119,7 +119,7 @@ export default function Sidebar() {
               `}
               title={isCollapsed ? item.name : ''}
             >
-              <Icon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'}`} />
+              <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} ${isCollapsed ? '' : 'mr-3'}`} />
               {!isCollapsed && item.name}
               
               {/* Tooltip for collapsed state */}
@@ -142,7 +142,7 @@ export default function Sidebar() {
               className={`w-full ${isCollapsed ? 'justify-center' : 'justify-start'} text-gray-600 hover:text-gray-900 hover:bg-gray-50 relative group`}
               title={isCollapsed ? "Help & Documentation" : ""}
             >
-              <HelpCircle className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'}`} />
+              <HelpCircle className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} ${isCollapsed ? '' : 'mr-3'}`} />
               {!isCollapsed && "Help & Documentation"}
               
               {/* Tooltip for collapsed state */}
@@ -177,7 +177,7 @@ export default function Sidebar() {
                 className="h-8 w-8 text-gray-400 hover:text-gray-600"
                 disabled={logoutMutation.isPending}
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-5 w-5" />
               </Button>
             </>
           ) : (
@@ -193,7 +193,7 @@ export default function Sidebar() {
                 disabled={logoutMutation.isPending}
                 title="Logout"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-5 w-5" />
                 
                 {/* Tooltip for collapsed state */}
                 <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
