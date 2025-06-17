@@ -74,7 +74,8 @@ export async function handleIncomingCall(req: Request, res: Response) {
     console.log('[Webhook] Selected buyer:', selectedBuyer.name, 'Phone:', selectedBuyer.phoneNumber);
 
     // Create call record
-    await storage.createCall({
+    console.log('[Webhook] Creating call record...');
+    const callRecord = await storage.createCall({
       campaignId: campaign.id,
       buyerId: selectedBuyer.id,
       callSid: callData.CallSid,
@@ -85,14 +86,17 @@ export async function handleIncomingCall(req: Request, res: Response) {
       cost: '0.0000',
       revenue: '0.0000',
     });
+    console.log('[Webhook] Call record created:', callRecord.id);
 
     // Log routing decision
+    console.log('[Webhook] Creating call log...');
     await storage.createCallLog({
-      callId: 0, // Will be updated with actual call ID
+      callId: callRecord.id,
       buyerId: selectedBuyer.id,
       action: 'route',
       response: `Routed to ${selectedBuyer.name} (Priority: ${selectedBuyer.priority})`,
     });
+    console.log('[Webhook] Call log created');
 
     // Return TwiML to forward call to buyer
     const buyerNumber = selectedBuyer.phoneNumber;
@@ -109,10 +113,11 @@ export async function handleIncomingCall(req: Request, res: Response) {
     }
 
     // Generate TwiML to forward the call
+    console.log('[Webhook] Generating TwiML to forward call to:', buyerNumber);
     const statusCallbackUrl = `${req.protocol}://${req.get('host')}/api/webhooks/twilio/status`;
+    console.log('[Webhook] Status callback URL:', statusCallbackUrl);
     
-    res.set('Content-Type', 'text/xml');
-    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+    const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
       <Response>
         <Say voice="alice">Please hold while we connect you.</Say>
         <Dial timeout="30" record="record-from-answer" 
@@ -120,7 +125,12 @@ export async function handleIncomingCall(req: Request, res: Response) {
               action="${statusCallbackUrl}">
           <Number>${buyerNumber}</Number>
         </Dial>
-      </Response>`);
+      </Response>`;
+    
+    console.log('[Webhook] Generated TwiML:', twimlResponse);
+    res.set('Content-Type', 'text/xml');
+    res.send(twimlResponse);
+    console.log('[Webhook] TwiML response sent successfully');
 
   } catch (error) {
     console.error('[Webhook] Error handling incoming call:', error);
