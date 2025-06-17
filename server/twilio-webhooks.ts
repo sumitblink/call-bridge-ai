@@ -29,8 +29,13 @@ export interface TwilioCallStatusRequest extends TwilioCallRequest {
  */
 export async function handleIncomingCall(req: Request, res: Response) {
   try {
+    console.log('[Webhook] === INCOMING CALL RECEIVED ===');
+    console.log('[Webhook] Request method:', req.method);
+    console.log('[Webhook] Request URL:', req.url);
+    console.log('[Webhook] Request headers:', JSON.stringify(req.headers, null, 2));
+    
     const callData: TwilioCallRequest = req.body;
-    console.log('[Webhook] Incoming call:', callData);
+    console.log('[Webhook] *** CALL DATA ***:', JSON.stringify(callData, null, 2));
     console.log('[Webhook] Looking for campaign with phone number:', callData.To);
 
     // Find campaign by phone number
