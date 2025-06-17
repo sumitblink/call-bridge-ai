@@ -30,53 +30,7 @@ const campaignFormSchema = z.object({
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
 
-function TestCallButton({ campaignId }: { campaignId: number }) {
-  const { toast } = useToast();
-  
-  const testCallMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('/api/campaigns/test-call', 'POST', {
-        campaignId,
-        callerNumber: '+19876543210' // Simulated caller number
-      });
-      return await response.json();
-    },
-    onSuccess: (data: any) => {
-      console.log('Test call response:', data);
-      toast({
-        title: "Test Call Routing",
-        description: data.selectedBuyer 
-          ? `Call routed to: ${data.selectedBuyer.name} (Priority: ${data.selectedBuyer.priority})`
-          : data.reason || "No buyers available for routing",
-        variant: data.selectedBuyer ? "default" : "destructive",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Test Call Failed",
-        description: error.message || "Failed to initiate test call",
-        variant: "destructive",
-      });
-    },
-  });
 
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => testCallMutation.mutate()}
-      disabled={testCallMutation.isPending}
-      title="Test call routing for this campaign"
-      className="text-green-600 hover:text-green-700 hover:bg-green-50"
-    >
-      {testCallMutation.isPending ? (
-        <PhoneCall className="h-4 w-4 animate-pulse" />
-      ) : (
-        <PhoneCall className="h-4 w-4" />
-      )}
-    </Button>
-  );
-}
 
 function BuyerCount({ campaignId }: { campaignId: number }) {
   const { data: buyers } = useQuery({
@@ -151,7 +105,6 @@ function CampaignCard({ campaign, onDelete }: {
           </div>
           
           <div className="flex items-center gap-2 ml-4">
-            <TestCallButton campaignId={campaign.id} />
             <Button
               variant="ghost"
               size="sm"
@@ -342,28 +295,7 @@ export default function Campaigns() {
     },
   });
 
-  const testCallMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("/api/test-call", "POST");
-      if (!response.ok) {
-        throw new Error(`Failed to initiate test call: ${response.statusText}`);
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Test Call Initiated",
-        description: "A test call has been started to verify the system is working.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Test Call Failed",
-        description: error.message || "Failed to initiate test call",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   const handleDelete = (campaign: Campaign) => {
     setCampaignToDelete(campaign);
@@ -410,24 +342,7 @@ export default function Campaigns() {
                 <List className="h-4 w-4" />
               </Button>
             </div>
-            <Button 
-              onClick={() => testCallMutation.mutate()}
-              disabled={testCallMutation.isPending}
-              variant="outline"
-              className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-            >
-              {testCallMutation.isPending ? (
-                <>
-                  <Phone className="h-4 w-4 mr-2 animate-spin" />
-                  Calling...
-                </>
-              ) : (
-                <>
-                  <Phone className="h-4 w-4 mr-2" />
-                  Test Call
-                </>
-              )}
-            </Button>
+
             <Button onClick={() => setIsDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Campaign
