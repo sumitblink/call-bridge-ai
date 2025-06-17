@@ -98,9 +98,8 @@ export default function Sidebar() {
           {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
         </Button>
       </div>
-
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-2">
+      <nav className="flex-1 px-4 py-6 space-y-2 ml-[0px] mr-[0px] pl-[11px] pr-[11px]">
         {navigation.map((item) => {
           const isActive = location === item.href || (item.href === "/dashboard" && location === "/");
           const Icon = item.icon;
@@ -132,7 +131,6 @@ export default function Sidebar() {
           );
         })}
       </nav>
-
       {/* Help & Documentation */}
       <div className="px-4 py-2 border-t border-gray-200">
         <Documentation 
@@ -155,7 +153,6 @@ export default function Sidebar() {
           }
         />
       </div>
-
       {/* User Profile */}
       <div className="px-4 py-4 border-t border-gray-200">
         <div className={`flex items-center ${isCollapsed ? 'flex-col space-y-2' : 'justify-between'}`}>
