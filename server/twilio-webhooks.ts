@@ -126,10 +126,11 @@ export async function handleIncomingCall(req: Request, res: Response) {
       <Response>
         <Say voice="alice">Please hold while we connect you.</Say>
         <Dial timeout="30" record="record-from-answer" 
-              recordingStatusCallback="${statusCallbackUrl}"
-              action="${statusCallbackUrl}">
+              recordingStatusCallback="${statusCallbackUrl}">
           <Number>${buyerNumber}</Number>
         </Dial>
+        <Say voice="alice">The call has ended. Thank you for calling.</Say>
+        <Hangup/>
       </Response>`;
     
     console.log('[Webhook] Generated TwiML:', twimlResponse);
