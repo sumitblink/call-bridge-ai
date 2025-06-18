@@ -33,8 +33,8 @@ class HybridStorageFixed implements IStorage {
   private async initializeDatabase() {
     try {
       if (this.useDatabase) {
-        await this.databaseStorage.populateDatabase();
-        console.log('PostgreSQL database initialized with sample data');
+        // Database storage doesn't need populate method, it connects directly
+        console.log('PostgreSQL database initialized');
       }
     } catch (error) {
       console.error('Error initializing database:', error);

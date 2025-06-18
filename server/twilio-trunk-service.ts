@@ -1,4 +1,6 @@
-import { storage } from './storage-hybrid-fixed';
+import { DatabaseStorage } from './storage-db';
+
+const dbStorage = new DatabaseStorage();
 
 // For now, we'll simulate trunk functionality since Twilio SIP trunking requires enterprise setup
 // In production, you would import and configure the Twilio client here
@@ -57,8 +59,7 @@ export class TwilioTrunkService {
    */
   static async createTrunk(campaignId: number, config: Partial<TrunkConfiguration>): Promise<TrunkConfiguration> {
     // First verify campaign exists
-    const campaigns = await storage.getCampaigns();
-    const campaign = campaigns.find(c => c.id === campaignId);
+    const campaign = await dbStorage.getCampaign(campaignId);
     if (!campaign) {
       throw new Error(`Campaign with ID ${campaignId} not found`);
     }
@@ -317,7 +318,7 @@ export class TwilioTrunkService {
     }
 
     // Get campaign and route call
-    const campaign = await storage.getCampaign(assignment.campaignId);
+    const campaign = await dbStorage.getCampaign(assignment.campaignId);
     if (!campaign) {
       const twiml = `<?xml version="1.0" encoding="UTF-8"?>
         <Response>
@@ -337,7 +338,7 @@ export class TwilioTrunkService {
       campaignId: assignment.campaignId
     };
 
-    await storage.createCall(callData);
+    await dbStorage.createCall(callData);
 
     // Generate TwiML for call routing
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
