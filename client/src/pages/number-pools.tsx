@@ -11,7 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Plus, Settings, BarChart3, RefreshCw, AlertCircle, CheckCircle } from "lucide-react";
+import { Phone, Plus, Settings, BarChart3, RefreshCw, AlertCircle, CheckCircle, ShoppingCart, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CardFooter } from "@/components/ui/card";
 
 interface Campaign {
   id: number;

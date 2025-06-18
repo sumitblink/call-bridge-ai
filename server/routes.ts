@@ -7,6 +7,7 @@ import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixe
 import { CallRouter } from "./call-routing";
 import { DNIService, type DNIRequest } from "./dni-service";
 import { TwilioTrunkService } from "./twilio-trunk-service";
+import { NumberProvisioningService } from "./number-provisioning";
 import { handleIncomingCall, handleCallStatus, handleRecordingStatus } from "./twilio-webhooks";
 import { z } from "zod";
 import twilio from "twilio";
@@ -2364,6 +2365,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error creating trunk:', error);
       res.status(500).json({ 
         error: 'Failed to create SIP trunk',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Number Provisioning API Routes
+  app.post('/api/campaigns/:id/provision-numbers', requireAuth, async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const { quantity = 10, areaCode, numberType = 'local' } = req.body;
+
+      const config = {
+        campaignId,
+        quantity: Math.min(quantity, 100), // Cap at 100 numbers
+        areaCode,
+        numberType,
+        capabilities: {
+          voice: true,
+          sms: true
+        }
+      };
+
+      const result = await NumberProvisioningService.provisionNumbers(config);
+
+      if (result.success) {
+        res.json({
+          success: true,
+          numbers: result.numbers,
+          totalCost: result.totalCost,
+          message: `Successfully provisioned ${result.numbers.length} phone numbers`
+        });
+      } else {
+        res.status(400).json({
+          error: 'Failed to provision numbers',
+          details: result.error,
+          failedNumbers: result.failedNumbers
+        });
+      }
+    } catch (error) {
+      console.error('Error provisioning numbers:', error);
+      res.status(500).json({ 
+        error: 'Failed to provision phone numbers',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/campaigns/:id/numbers', requireAuth, async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const numbers = await storage.getCampaignPhoneNumbers(campaignId);
+      const stats = await NumberProvisioningService.getCampaignNumberStats(campaignId);
+
+      res.json({
+        numbers,
+        stats,
+        success: true
+      });
+    } catch (error) {
+      console.error('Error getting campaign numbers:', error);
+      res.status(500).json({ 
+        error: 'Failed to get campaign numbers',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/numbers/search', requireAuth, async (req, res) => {
+    try {
+      const { quantity = 10, areaCode, numberType = 'local' } = req.query;
+
+      const config = {
+        quantity: Math.min(parseInt(quantity as string), 100),
+        areaCode: areaCode as string,
+        numberType: numberType as 'local' | 'toll-free',
+        capabilities: {
+          voice: true,
+          sms: true
+        }
+      };
+
+      const availableNumbers = await NumberProvisioningService.searchAvailableNumbers(config);
+      const pricing = await NumberProvisioningService.getPricingInfo(config.numberType, config.areaCode);
+
+      res.json({
+        availableNumbers: availableNumbers.slice(0, config.quantity),
+        pricing,
+        success: true
+      });
+    } catch (error) {
+      console.error('Error searching numbers:', error);
+      res.status(500).json({ 
+        error: 'Failed to search available numbers',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.delete('/api/numbers/:sid/release', requireAuth, async (req, res) => {
+    try {
+      const { sid } = req.params;
+      const result = await NumberProvisioningService.releaseNumbers([sid]);
+
+      if (result.success) {
+        res.json({
+          success: true,
+          message: 'Number released successfully'
+        });
+      } else {
+        res.status(400).json({
+          error: 'Failed to release number',
+          details: result.failed
+        });
+      }
+    } catch (error) {
+      console.error('Error releasing number:', error);
+      res.status(500).json({ 
+        error: 'Failed to release phone number',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
