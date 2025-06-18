@@ -118,7 +118,8 @@ export default function IntegrationsPage() {
         assignedCampaigns: data.assignedCampaigns,
         isActive: data.isActive
       };
-      return apiRequest('POST', '/api/integrations/pixels', payload);
+      const response = await apiRequest('/api/integrations/pixels', 'POST', payload);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
@@ -149,7 +150,8 @@ export default function IntegrationsPage() {
         assignedCampaigns: data.assignedCampaigns,
         isActive: data.isActive
       };
-      return apiRequest('PUT', `/api/integrations/pixels/${id}`, payload);
+      const response = await apiRequest(`/api/integrations/pixels/${id}`, 'PUT', payload);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
@@ -173,7 +175,8 @@ export default function IntegrationsPage() {
   // Delete pixel mutation
   const deletePixelMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/integrations/pixels/${id}`);
+      const response = await apiRequest(`/api/integrations/pixels/${id}`, 'DELETE');
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
@@ -194,7 +197,7 @@ export default function IntegrationsPage() {
   // Test pixel mutation
   const testPixelMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('POST', '/api/pixels/test', {
+      const response = await apiRequest('/api/pixels/test', 'POST', {
         pixelType: data.pixelType,
         code: data.code,
         sampleData: {
@@ -204,27 +207,18 @@ export default function IntegrationsPage() {
           timestamp: new Date().toISOString()
         }
       });
+      return response.json();
     },
-    onSuccess: async (response) => {
-      try {
-        const data = await response.json();
-        setTestResult(data);
-        toast({
-          title: "Test Complete",
-          description: "Pixel code tested with sample data"
-        });
-      } catch (error) {
-        console.error("Error parsing test response:", error);
-        toast({
-          title: "Test Error",
-          description: "Failed to parse test results",
-          variant: "destructive"
-        });
-      }
+    onSuccess: (data) => {
+      setTestResult(data);
+      toast({
+        title: "Test Complete",
+        description: "Pixel code tested with sample data"
+      });
     },
     onError: (error: any) => {
       toast({
-        title: "Test Failed",
+        title: "Test Error",
         description: error.message || "Failed to test pixel",
         variant: "destructive"
       });
