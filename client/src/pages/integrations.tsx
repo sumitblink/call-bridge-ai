@@ -428,17 +428,17 @@ export default function IntegrationsPage() {
                       <div>
                         <Label htmlFor="assigned-campaigns">Assigned Campaigns</Label>
                         <Select 
-                          value={pixelForm.assignedCampaigns[0] || ""} 
+                          value={pixelForm.assignedCampaigns[0] || "all"} 
                           onValueChange={(value) => setPixelForm(prev => ({ 
                             ...prev, 
-                            assignedCampaigns: value ? [value] : [] 
+                            assignedCampaigns: value === "all" ? [] : [value] 
                           }))}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select campaigns" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">All Campaigns</SelectItem>
+                            <SelectItem value="all">All Campaigns</SelectItem>
                             {campaigns.map((campaign) => (
                               <SelectItem key={campaign.id} value={campaign.id.toString()}>
                                 {campaign.name}
