@@ -216,12 +216,38 @@ export default function IntegrationsPage() {
     }
   });
 
+  const generatePixelCode = (pixelType: string, campaignId?: string) => {
+    const baseUrl = window.location.origin;
+    const campaign = campaignId && campaignId !== "all" ? campaigns.find(c => c.id.toString() === campaignId) : null;
+    const campaignName = campaign ? campaign.name.toLowerCase().replace(/\s+/g, '-') : 'default';
+    
+    switch (pixelType) {
+      case 'postback':
+        return `${baseUrl}/api/pixels/track?campaign_id={campaign_id}&call_id={call_id}&phone_number={phone_number}&timestamp={timestamp}&status={status}&duration={duration}&buyer_id={buyer_id}`;
+      
+      case 'image':
+        return `<img src="${baseUrl}/api/pixels/track.gif?campaign_id={campaign_id}&call_id={call_id}&phone_number={phone_number}&timestamp={timestamp}&status={status}" width="1" height="1" style="display:none;" />`;
+      
+      case 'javascript':
+        return `<script>
+(function() {
+  var img = new Image();
+  img.src = '${baseUrl}/api/pixels/track.gif?campaign_id={campaign_id}&call_id={call_id}&phone_number={phone_number}&timestamp={timestamp}&status={status}&duration={duration}&buyer_id={buyer_id}&agent_id={agent_id}';
+})();
+</script>`;
+      
+      default:
+        return '';
+    }
+  };
+
   const resetPixelForm = () => {
+    const defaultCode = generatePixelCode("postback", "all");
     setPixelForm({
       name: "",
       pixelType: "postback",
       fireOnEvent: "completed",
-      code: "",
+      code: defaultCode,
       assignedCampaigns: [],
       isActive: true
     });
@@ -376,10 +402,15 @@ export default function IntegrationsPage() {
                           <Label htmlFor="pixel-type">Type</Label>
                           <Select 
                             value={pixelForm.pixelType} 
-                            onValueChange={(value) => setPixelForm(prev => ({ 
-                              ...prev, 
-                              pixelType: value as 'postback' | 'image' | 'javascript' 
-                            }))}
+                            onValueChange={(value) => {
+                              const newPixelType = value as 'postback' | 'image' | 'javascript';
+                              const generatedCode = generatePixelCode(newPixelType, pixelForm.assignedCampaigns[0]);
+                              setPixelForm(prev => ({ 
+                                ...prev, 
+                                pixelType: newPixelType,
+                                code: generatedCode
+                              }));
+                            }}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -412,16 +443,28 @@ export default function IntegrationsPage() {
                       </div>
 
                       <div>
-                        <Label htmlFor="pixel-code">Pixel Code</Label>
+                        <div className="flex items-center justify-between mb-2">
+                          <Label htmlFor="pixel-code">Auto-Generated Pixel Code</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const generatedCode = generatePixelCode(pixelForm.pixelType, pixelForm.assignedCampaigns[0]);
+                              setPixelForm(prev => ({ ...prev, code: generatedCode }));
+                            }}
+                          >
+                            Regenerate Code
+                          </Button>
+                        </div>
                         <Textarea
                           id="pixel-code"
-                          placeholder="Enter your tracking pixel code with macros like {call_id}, {phone_number}, etc."
                           value={pixelForm.code}
-                          onChange={(e) => setPixelForm(prev => ({ ...prev, code: e.target.value }))}
-                          className="min-h-[100px] font-mono text-sm"
+                          readOnly
+                          className="min-h-[100px] font-mono text-sm bg-gray-50"
                         />
                         <p className="text-sm text-gray-500 mt-1">
-                          Available macros: {'{call_id}'}, {'{phone_number}'}, {'{campaign_id}'}, {'{timestamp}'}, {'{duration}'}
+                          Code is automatically generated based on pixel type and campaign. Available macros: {'{call_id}'}, {'{phone_number}'}, {'{campaign_id}'}, {'{timestamp}'}, {'{duration}'}, {'{status}'}, {'{buyer_id}'}, {'{agent_id}'}
                         </p>
                       </div>
 
@@ -429,10 +472,15 @@ export default function IntegrationsPage() {
                         <Label htmlFor="assigned-campaigns">Assigned Campaigns</Label>
                         <Select 
                           value={pixelForm.assignedCampaigns[0] || "all"} 
-                          onValueChange={(value) => setPixelForm(prev => ({ 
-                            ...prev, 
-                            assignedCampaigns: value === "all" ? [] : [value] 
-                          }))}
+                          onValueChange={(value) => {
+                            const campaigns = value === "all" ? [] : [value];
+                            const generatedCode = generatePixelCode(pixelForm.pixelType, value);
+                            setPixelForm(prev => ({ 
+                              ...prev, 
+                              assignedCampaigns: campaigns,
+                              code: generatedCode
+                            }));
+                          }}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select campaigns" />
