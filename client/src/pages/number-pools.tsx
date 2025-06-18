@@ -63,6 +63,7 @@ export default function NumberPoolsPage() {
   const [selectedCampaign, setSelectedCampaign] = useState<number | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showStatsDialog, setShowStatsDialog] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [poolForm, setPoolForm] = useState<NumberPoolForm>({
     campaignId: 0,
     trunkConfig: {
@@ -185,6 +186,11 @@ export default function NumberPoolsPage() {
 
   const handleProvisionNumbers = () => {
     if (!selectedCampaign) return;
+    setShowConfirmDialog(true);
+  };
+
+  const confirmProvisionNumbers = () => {
+    if (!selectedCampaign) return;
 
     provisionNumbersMutation.mutate({
       campaignId: selectedCampaign,
@@ -192,6 +198,7 @@ export default function NumberPoolsPage() {
       areaCode: poolForm.numberProvisioning.areaCode,
       numberType: 'local'
     });
+    setShowConfirmDialog(false);
   };
 
   const formatPhoneNumber = (phoneNumber: string) => {
@@ -612,6 +619,50 @@ POST /api/campaigns/${selectedCampaign}/assign-tracking-number
           </CardContent>
         </Card>
       )}
+
+      {/* Confirmation Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Number Purchase</DialogTitle>
+            <DialogDescription>
+              You are about to purchase {poolForm.numberProvisioning.count} phone numbers from Twilio.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
+                <div>
+                  <h4 className="font-medium text-yellow-800">Cost Information</h4>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    Estimated cost: ${(poolForm.numberProvisioning.count * 1.15).toFixed(2)} 
+                    ({poolForm.numberProvisioning.count} numbers × $1.15/month)
+                  </p>
+                  <p className="text-sm text-yellow-700">
+                    {poolForm.numberProvisioning.areaCode ? `Area code: ${poolForm.numberProvisioning.areaCode}` : 'Random area codes'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={confirmProvisionNumbers} disabled={provisionNumbersMutation.isPending}>
+                {provisionNumbersMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Purchasing...
+                  </>
+                ) : (
+                  'Confirm Purchase'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

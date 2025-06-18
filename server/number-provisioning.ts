@@ -142,6 +142,7 @@ export class NumberProvisioningService {
             friendlyName: purchasedNumber.friendlyName || '',
             campaignId: config.campaignId,
             userId: campaign.userId,
+            accountSid: purchasedNumber.accountSid,
             isActive: true,
             capabilities: JSON.stringify({
               voice: purchasedNumber.capabilities.voice,
