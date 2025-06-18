@@ -1474,6 +1474,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!response.ok) {
         const error = await response.text();
+        
+        // Check if it's an authentication error
+        if (response.status === 401) {
+          return res.status(401).json({
+            error: 'Twilio authentication failed',
+            details: 'Please verify your TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in your Twilio Console. This error often occurs with trial accounts or expired credentials.',
+            code: 'TWILIO_AUTH_ERROR',
+            suggestion: 'You can manually add phone numbers using the "Add Number" feature instead.'
+          });
+        }
+        
         throw new Error(`Twilio API error: ${response.status} ${error}`);
       }
 
