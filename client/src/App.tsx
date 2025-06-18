@@ -45,7 +45,10 @@ function Router() {
     <Switch>
       <Route path="/documentation" component={Documentation} />
       {!isAuthenticated ? (
-        <Route path="/" component={Auth} />
+        <>
+          <Route path="/" component={Auth} />
+          <Route component={Auth} />
+        </>
       ) : (
         <>
           <Route path="/" component={Dashboard} />
@@ -64,11 +67,10 @@ function Router() {
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />
           <Route path="/twilio-test" component={TwilioTest} />
-
           <Route path="/settings" component={Settings} />
+          <Route component={NotFound} />
         </>
       )}
-      <Route component={NotFound} />
     </Switch>
   );
 }
