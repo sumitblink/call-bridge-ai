@@ -450,6 +450,7 @@ export const publishers = pgTable('publishers', {
   minCallDuration: integer('min_call_duration').default(0), // seconds
   allowedTargets: text('allowed_targets').array(), // campaign IDs they can send traffic to
   trackingSettings: text('tracking_settings'), // custom tracking parameters as JSON string
+  customParameters: text('custom_parameters'), // custom JSON parameters for publisher integration
   totalCalls: integer('total_calls').default(0),
   totalPayout: decimal('total_payout', { precision: 10, scale: 2 }).default('0.00'),
   createdAt: timestamp('created_at').defaultNow(),

@@ -27,6 +27,7 @@ const publisherSchema = z.object({
   minCallDuration: z.string().default("0"),
   allowedTargets: z.string().optional(),
   trackingSettings: z.string().optional(),
+  customParameters: z.string().optional(),
 });
 
 type PublisherFormData = z.infer<typeof publisherSchema>;
@@ -42,6 +43,7 @@ interface Publisher {
   minCallDuration: number;
   allowedTargets?: string[];
   trackingSettings?: string;
+  customParameters?: string;
   totalCalls: number;
   totalPayout: string;
   createdAt: string;
@@ -80,6 +82,7 @@ export default function Publishers() {
         payoutAmount: data.payoutAmount, // Keep as string for schema validation
         minCallDuration: parseInt(data.minCallDuration),
         allowedTargets: data.allowedTargets ? data.allowedTargets.split(",").map(t => t.trim()) : [],
+        customParameters: data.customParameters || null,
       });
       return response.json();
     },
@@ -98,6 +101,7 @@ export default function Publishers() {
     mutationFn: async ({ id, data }: { id: number; data: PublisherFormData }) => {
       const response = await apiRequest(`/api/publishers/${id}`, "PUT", {
         ...data,
+        customParameters: data.customParameters || null,
         payoutAmount: data.payoutAmount, // Keep as string for schema validation
         minCallDuration: parseInt(data.minCallDuration),
         allowedTargets: data.allowedTargets ? data.allowedTargets.split(",").map(t => t.trim()) : [],
@@ -382,11 +386,35 @@ export default function Publishers() {
                     name="trackingSettings"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Custom Parameters (JSON)</FormLabel>
+                        <FormLabel>Tracking Parameters</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder='{"utm_source": "example", "custom_param": "value"}'
-                            className="min-h-[80px]"
+                            placeholder='{"pixel_id": "123", "conversion_tracking": true}'
+                            className="min-h-[60px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="border rounded-lg p-4 space-y-4">
+                  <h3 className="font-semibold flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Custom Parameters (JSON)
+                  </h3>
+                  <FormField
+                    control={form.control}
+                    name="customParameters"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Publisher-Specific Parameters</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder='{"publisher_id": "PUB123", "source_type": "affiliate", "custom_field1": "value1", "custom_field2": "value2"}'
+                            className="min-h-[100px]"
                             {...field} 
                           />
                         </FormControl>
