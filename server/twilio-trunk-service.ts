@@ -1,4 +1,4 @@
-import { storage } from './hybrid-storage';
+import { storage } from './storage-hybrid-fixed';
 
 // For now, we'll simulate trunk functionality since Twilio SIP trunking requires enterprise setup
 // In production, you would import and configure the Twilio client here
@@ -58,12 +58,9 @@ export class TwilioTrunkService {
   static async createTrunk(campaignId: number, config: Partial<TrunkConfiguration>): Promise<TrunkConfiguration> {
     // First verify campaign exists
     const campaigns = await storage.getCampaigns();
-    console.log('Available campaigns:', campaigns.map(c => ({ id: c.id, name: c.name })));
-    console.log('Looking for campaign ID:', campaignId, 'Type:', typeof campaignId);
-    
     const campaign = campaigns.find(c => c.id === campaignId);
     if (!campaign) {
-      throw new Error(`Campaign with ID ${campaignId} not found. Available IDs: ${campaigns.map(c => c.id).join(', ')}`);
+      throw new Error(`Campaign with ID ${campaignId} not found`);
     }
 
     const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
