@@ -6,6 +6,9 @@ import {
   calls,
   callLogs,
   agents,
+  agentCampaigns,
+  agentStatusLogs,
+  agentCalls,
   trackingPixels,
   phoneNumbers,
   publishers,
@@ -29,7 +32,7 @@ import {
   type InsertAgent,
 } from '@shared/schema';
 import { db } from './db';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import type { IStorage } from './storage';
 
 export class DatabaseStorage implements IStorage {
@@ -461,11 +464,6 @@ export class DatabaseStorage implements IStorage {
       .from(agents)
       .where(eq(agents.isOnline, true))
       .orderBy(agents.priority, agents.name);
-  }
-
-  async deleteAgent(id: number): Promise<boolean> {
-    const result = await db.delete(agents).where(eq(agents.id, id));
-    return result.rowCount > 0;
   }
 
   // Call operations

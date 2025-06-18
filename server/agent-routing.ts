@@ -258,7 +258,7 @@ export class AgentRouter {
     }));
 
     const totalAgents = agentsList.length;
-    const onlineAgents = agentsList.filter(a => a.agent.isOnline).length;
+    const onlineAgents = agentsList.filter(a => a.status !== 'offline').length;
     const availableAgents = agentsList.filter(a => a.isAvailable).length;
     const busyAgents = agentsList.filter(a => a.status === 'busy').length;
     const activeCalls = agentsList.reduce((sum, a) => sum + a.currentCalls, 0);
