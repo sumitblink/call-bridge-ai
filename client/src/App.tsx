@@ -58,6 +58,7 @@ function Router() {
           <Route path="/calls" component={Calls} />
           <Route path="/call-control" component={CallControl} />
           <Route path="/phone-numbers" component={PhoneNumbers} />
+          <Route path="/number-pools" component={NumberPools} />
           <Route path="/dni" component={DNI} />
           <Route path="/ivr-setup" component={IVRSetup} />
           <Route path="/integrations" component={Integrations} />

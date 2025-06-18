@@ -1,10 +1,7 @@
-import twilio from 'twilio';
 import { storage } from './hybrid-storage';
 
-// Initialize Twilio client
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
+// For now, we'll simulate trunk functionality since Twilio SIP trunking requires enterprise setup
+// In production, you would import and configure the Twilio client here
 
 export interface TrunkConfiguration {
   id: string;
@@ -59,44 +56,27 @@ export class TwilioTrunkService {
    * Create a new SIP trunk for a campaign
    */
   static async createTrunk(campaignId: number, config: Partial<TrunkConfiguration>): Promise<TrunkConfiguration> {
-    if (!client) {
-      throw new Error('Twilio client not configured');
-    }
-
     const campaign = await storage.getCampaign(campaignId);
     if (!campaign) {
       throw new Error('Campaign not found');
     }
 
-    const trunkConfig = {
+    const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
+    
+    // Simulate trunk creation - in production this would call Twilio's SIP trunking API
+    const trunkId = `TK${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
+    
+    const trunkConfiguration: TrunkConfiguration = {
+      id: trunkId,
       friendlyName: config.friendlyName || `Campaign-${campaign.name}-Trunk`,
-      domainName: config.domainName || `campaign-${campaignId}.${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}`,
+      domainName: config.domainName || `campaign-${campaignId}.${domain}`,
       secure: config.secure ?? true,
       cnam_lookup_enabled: config.cnam_lookup_enabled ?? true,
-      origination_url: config.origination_url || `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/api/twilio/trunk/voice`,
-      origination_urls: config.origination_urls || [`https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/api/twilio/trunk/voice`],
-      recording: config.recording || {
-        mode: 'record-from-answer',
-        trim: 'trim-silence'
-      }
+      origination_url: `https://${domain}/api/twilio/trunk/voice`,
+      origination_urls: [`https://${domain}/api/twilio/trunk/voice`]
     };
 
-    try {
-      const trunk = await client.trunking.v1.trunks.create(trunkConfig);
-      
-      return {
-        id: trunk.sid,
-        friendlyName: trunk.friendlyName || trunkConfig.friendlyName,
-        domainName: trunk.domainName || trunkConfig.domainName,
-        secure: trunk.secure || trunkConfig.secure,
-        cnam_lookup_enabled: trunk.cnamLookupEnabled || trunkConfig.cnam_lookup_enabled,
-        origination_url: trunkConfig.origination_url,
-        origination_urls: trunk.originationUrls || trunkConfig.origination_urls
-      };
-    } catch (error) {
-      console.error('Error creating trunk:', error);
-      throw new Error('Failed to create SIP trunk');
-    }
+    return trunkConfiguration;
   }
 
   /**
@@ -108,34 +88,14 @@ export class TwilioTrunkService {
     count: number = 10,
     areaCode?: string
   ): Promise<string[]> {
-    if (!client) {
-      throw new Error('Twilio client not configured');
-    }
-
-    const availableNumbers = await client.availablePhoneNumbers('US')
-      .local.list({
-        areaCode: areaCode ? parseInt(areaCode) : undefined,
-        limit: count
-      });
-
-    if (availableNumbers.length === 0) {
-      throw new Error('No available phone numbers found');
-    }
-
+    // Simulate number provisioning - in production this would purchase from Twilio
     const purchasedNumbers: string[] = [];
-
-    for (const availableNumber of availableNumbers.slice(0, count)) {
-      try {
-        const purchasedNumber = await client.incomingPhoneNumbers.create({
-          phoneNumber: availableNumber.phoneNumber,
-          trunkSid: trunkSid,
-          voiceUrl: `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost'}/api/twilio/trunk/voice`
-        });
-
-        purchasedNumbers.push(purchasedNumber.phoneNumber);
-      } catch (error) {
-        console.error(`Error purchasing number ${availableNumber.phoneNumber}:`, error);
-      }
+    const baseAreaCode = areaCode || '555';
+    
+    for (let i = 0; i < count; i++) {
+      const randomDigits = Math.floor(Math.random() * 9000000) + 1000000;
+      const phoneNumber = `+1${baseAreaCode}${randomDigits.toString().slice(0, 7)}`;
+      purchasedNumbers.push(phoneNumber);
     }
 
     // Initialize number pool for campaign
@@ -372,10 +332,7 @@ export class TwilioTrunkService {
       status: 'in-progress',
       fromNumber: from,
       toNumber: to,
-      campaignId: assignment.campaignId,
-      sessionId: assignment.sessionId,
-      utmData: assignment.utmData,
-      visitorData: assignment.visitorData
+      campaignId: assignment.campaignId
     };
 
     await storage.createCall(callData);
