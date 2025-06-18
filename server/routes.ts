@@ -6,6 +6,7 @@ import { twilioService } from "./twilio-service";
 import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
 import { CallRouter } from "./call-routing";
 import { DNIService, type DNIRequest } from "./dni-service";
+import { TwilioTrunkService } from "./twilio-trunk-service";
 import { handleIncomingCall, handleCallStatus, handleRecordingStatus } from "./twilio-webhooks";
 import { z } from "zod";
 import twilio from "twilio";
@@ -2338,6 +2339,395 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: 'Failed to remove agent from campaign',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
+    }
+  });
+
+  // Twilio Trunk Management API Routes
+  app.post('/api/campaigns/:id/trunk/create', requireAuth, async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const { friendlyName, domainName, secure, cnamLookupEnabled } = req.body;
+
+      const trunkConfig = await TwilioTrunkService.createTrunk(campaignId, {
+        friendlyName,
+        domainName,
+        secure,
+        cnam_lookup_enabled: cnamLookupEnabled
+      });
+
+      res.json({
+        success: true,
+        trunk: trunkConfig,
+        message: 'SIP trunk created successfully'
+      });
+    } catch (error) {
+      console.error('Error creating trunk:', error);
+      res.status(500).json({ 
+        error: 'Failed to create SIP trunk',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/campaigns/:id/trunk/provision-numbers', requireAuth, async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const { trunkSid, count = 10, areaCode } = req.body;
+
+      if (!trunkSid) {
+        return res.status(400).json({ error: 'Trunk SID is required' });
+      }
+
+      const phoneNumbers = await TwilioTrunkService.provisionNumbers(
+        trunkSid,
+        campaignId,
+        count,
+        areaCode
+      );
+
+      res.json({
+        success: true,
+        phoneNumbers,
+        count: phoneNumbers.length,
+        message: `Successfully provisioned ${phoneNumbers.length} phone numbers`
+      });
+    } catch (error) {
+      console.error('Error provisioning numbers:', error);
+      res.status(500).json({ 
+        error: 'Failed to provision phone numbers',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/campaigns/:id/assign-tracking-number', async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const { sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, ipAddress, userAgent, referrer } = req.body;
+
+      if (!sessionId) {
+        return res.status(400).json({ error: 'Session ID is required' });
+      }
+
+      const utmData = {
+        utm_source: utmSource,
+        utm_medium: utmMedium,
+        utm_campaign: utmCampaign,
+        utm_content: utmContent,
+        utm_term: utmTerm
+      };
+
+      const visitorData = {
+        ipAddress: ipAddress || req.ip,
+        userAgent: userAgent || req.get('User-Agent') || '',
+        referrer
+      };
+
+      const assignment = await TwilioTrunkService.assignNumberFromPool(
+        campaignId,
+        sessionId,
+        utmData,
+        visitorData
+      );
+
+      if (!assignment) {
+        return res.status(503).json({ 
+          error: 'No available phone numbers in pool',
+          message: 'All numbers are currently assigned. Please try again later.'
+        });
+      }
+
+      res.json({
+        success: true,
+        assignment: {
+          phoneNumber: assignment.phoneNumber,
+          formattedNumber: assignment.phoneNumber.replace(/^\+1/, '').replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3'),
+          sessionId: assignment.sessionId,
+          campaignId: assignment.campaignId,
+          assignedAt: assignment.assignedAt,
+          expiresAt: assignment.expiresAt
+        },
+        trackingData: {
+          utm: assignment.utmData,
+          visitor: assignment.visitorData
+        }
+      });
+    } catch (error) {
+      console.error('Error assigning tracking number:', error);
+      res.status(500).json({ 
+        error: 'Failed to assign tracking number',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/campaigns/:id/pool-stats', requireAuth, async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const stats = TwilioTrunkService.getPoolStats(campaignId);
+
+      if (!stats) {
+        return res.status(404).json({ error: 'No number pool found for this campaign' });
+      }
+
+      res.json({
+        success: true,
+        stats: {
+          totalNumbers: stats.totalNumbers,
+          availableNumbers: stats.availableNumbers,
+          assignedNumbers: stats.assignedNumbers,
+          utilizationRate: Math.round((stats.assignedNumbers / stats.totalNumbers) * 100),
+          activeAssignments: stats.activeAssignments.map(assignment => ({
+            sessionId: assignment.sessionId,
+            phoneNumber: assignment.phoneNumber,
+            assignedAt: assignment.assignedAt,
+            expiresAt: assignment.expiresAt,
+            utmData: assignment.utmData
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error getting pool stats:', error);
+      res.status(500).json({ 
+        error: 'Failed to get pool statistics',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/campaigns/:id/release-number', async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const { sessionId } = req.body;
+
+      if (!sessionId) {
+        return res.status(400).json({ error: 'Session ID is required' });
+      }
+
+      const released = await TwilioTrunkService.releaseNumber(campaignId, sessionId);
+
+      if (!released) {
+        return res.status(404).json({ error: 'Assignment not found or already released' });
+      }
+
+      res.json({
+        success: true,
+        message: 'Phone number released back to pool'
+      });
+    } catch (error) {
+      console.error('Error releasing number:', error);
+      res.status(500).json({ 
+        error: 'Failed to release phone number',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Twilio Trunk Webhook for incoming calls
+  app.post('/api/twilio/trunk/voice', async (req, res) => {
+    try {
+      const { CallSid, From, To, CallerName } = req.body;
+
+      console.log('Trunk call received:', { CallSid, From, To, CallerName });
+
+      const { twiml, assignment } = await TwilioTrunkService.handleTrunkCall(
+        CallSid,
+        From,
+        To,
+        CallerName
+      );
+
+      // Log call details for tracking
+      if (assignment) {
+        console.log('Call matched to tracking session:', {
+          sessionId: assignment.sessionId,
+          campaignId: assignment.campaignId,
+          utmData: assignment.utmData
+        });
+      }
+
+      res.set('Content-Type', 'text/xml');
+      res.send(twiml);
+    } catch (error) {
+      console.error('Error handling trunk call:', error);
+      
+      const errorTwiml = `<?xml version="1.0" encoding="UTF-8"?>
+        <Response>
+          <Say>Sorry, we're experiencing technical difficulties. Please try again later.</Say>
+          <Hangup/>
+        </Response>`;
+      
+      res.set('Content-Type', 'text/xml');
+      res.status(500).send(errorTwiml);
+    }
+  });
+
+  // JavaScript SDK for tracking number assignment
+  app.get('/api/campaigns/:id/tracking-sdk.js', async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).send('// Campaign not found');
+      }
+
+      const domain = req.get('host') || 'localhost:5000';
+      
+      const sdkCode = `
+(function() {
+  'use strict';
+  
+  // Campaign Tracking SDK for ${campaign.name}
+  var CampaignTracker = {
+    campaignId: ${campaignId},
+    apiBase: 'https://${domain}/api',
+    sessionId: null,
+    trackingNumber: null,
+    
+    // Generate unique session ID
+    generateSessionId: function() {
+      return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    },
+    
+    // Extract UTM parameters from URL
+    getUtmParameters: function() {
+      var params = new URLSearchParams(window.location.search);
+      return {
+        utmSource: params.get('utm_source'),
+        utmMedium: params.get('utm_medium'),
+        utmCampaign: params.get('utm_campaign'),
+        utmContent: params.get('utm_content'),
+        utmTerm: params.get('utm_term')
+      };
+    },
+    
+    // Get visitor information
+    getVisitorData: function() {
+      return {
+        userAgent: navigator.userAgent,
+        referrer: document.referrer,
+        ipAddress: null // Will be detected server-side
+      };
+    },
+    
+    // Request tracking number assignment
+    assignTrackingNumber: function(callback) {
+      var self = this;
+      if (!this.sessionId) {
+        this.sessionId = this.generateSessionId();
+      }
+      
+      var requestData = Object.assign({
+        sessionId: this.sessionId
+      }, this.getUtmParameters(), this.getVisitorData());
+      
+      fetch(this.apiBase + '/campaigns/' + this.campaignId + '/assign-tracking-number', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(function(response) {
+        return response.json();
+      })
+      .then(function(data) {
+        if (data.success) {
+          self.trackingNumber = data.assignment.phoneNumber;
+          self.formattedNumber = data.assignment.formattedNumber;
+          
+          // Store in session storage
+          sessionStorage.setItem('trackingSessionId', self.sessionId);
+          sessionStorage.setItem('trackingNumber', self.trackingNumber);
+          sessionStorage.setItem('formattedNumber', self.formattedNumber);
+          
+          if (callback) callback(null, data.assignment);
+        } else {
+          if (callback) callback(new Error(data.error || 'Failed to assign tracking number'));
+        }
+      })
+      .catch(function(error) {
+        if (callback) callback(error);
+      });
+    },
+    
+    // Update phone numbers on page
+    updatePhoneNumbers: function(selector) {
+      var self = this;
+      selector = selector || '[data-tracking-phone]';
+      
+      this.assignTrackingNumber(function(error, assignment) {
+        if (error) {
+          console.error('Tracking number assignment failed:', error);
+          return;
+        }
+        
+        var elements = document.querySelectorAll(selector);
+        for (var i = 0; i < elements.length; i++) {
+          var element = elements[i];
+          var format = element.getAttribute('data-format') || 'formatted';
+          
+          if (format === 'raw') {
+            element.textContent = assignment.phoneNumber;
+          } else {
+            element.textContent = assignment.formattedNumber;
+          }
+          
+          // Update href for tel: links
+          if (element.tagName === 'A' && element.href.indexOf('tel:') === 0) {
+            element.href = 'tel:' + assignment.phoneNumber;
+          }
+        }
+      });
+    },
+    
+    // Initialize tracking
+    init: function(options) {
+      options = options || {};
+      
+      // Check for existing session
+      var existingSessionId = sessionStorage.getItem('trackingSessionId');
+      var existingNumber = sessionStorage.getItem('trackingNumber');
+      var existingFormatted = sessionStorage.getItem('formattedNumber');
+      
+      if (existingSessionId && existingNumber) {
+        this.sessionId = existingSessionId;
+        this.trackingNumber = existingNumber;
+        this.formattedNumber = existingFormatted;
+        
+        // Update page immediately with cached number
+        if (options.autoUpdate !== false) {
+          this.updatePhoneNumbers(options.selector);
+        }
+      } else {
+        // Assign new tracking number
+        if (options.autoUpdate !== false) {
+          this.updatePhoneNumbers(options.selector);
+        }
+      }
+    }
+  };
+  
+  // Auto-initialize on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      CampaignTracker.init();
+    });
+  } else {
+    CampaignTracker.init();
+  }
+  
+  // Expose to global scope
+  window.CampaignTracker = CampaignTracker;
+})();`;
+
+      res.set('Content-Type', 'application/javascript');
+      res.set('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
+      res.send(sdkCode);
+    } catch (error) {
+      console.error('Error generating tracking SDK:', error);
+      res.status(500).send('// Error generating tracking SDK');
     }
   });
 

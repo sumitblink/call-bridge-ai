@@ -20,6 +20,7 @@ import WebhookTest from "@/pages/webhook-test";
 import TwilioTest from "@/pages/twilio-test";
 import PhoneNumbers from "@/pages/phone-numbers";
 import DNI from "@/pages/dni";
+import NumberPools from "@/pages/number-pools";
 
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
