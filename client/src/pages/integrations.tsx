@@ -29,20 +29,11 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
 
-interface URLParameter {
-  id: string;
-  name: string;
-  parameter: string;
-  description: string;
-  value: string;
-  isActive: boolean;
-}
-
 interface Pixel {
   id: number;
   name: string;
   pixelType: 'postback' | 'image' | 'javascript';
-  fireOnEvent: 'call_start' | 'call_complete' | 'call_transfer';
+  fireOnEvent: string;
   code: string;
   assignedCampaigns: string[];
   isActive: boolean;
@@ -66,7 +57,7 @@ export default function IntegrationsPage() {
   const [pixelForm, setPixelForm] = useState({
     name: "",
     pixelType: "postback" as 'postback' | 'image' | 'javascript',
-    fireOnEvent: "completed" as 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized',
+    fireOnEvent: "completed",
     code: "",
     assignedCampaigns: [] as string[],
     isActive: true
@@ -239,187 +230,20 @@ export default function IntegrationsPage() {
     setTestResult(null);
   };
 
-  // Pixel templates for popular tracking services
-  const getPixelTemplates = () => {
-    return {
-      postback: [
-        {
-          id: "google_analytics",
-          name: "Google Analytics 4 (Measurement Protocol)",
-          description: "Track conversions in Google Analytics 4",
-          code: "https://www.google-analytics.com/mp/collect?measurement_id=G-XXXXXXXXXX&api_secret=YOUR_API_SECRET&client_id={call_id}&events=[{\"name\":\"conversion\",\"params\":{\"call_id\":\"{call_id}\",\"campaign_id\":\"{campaign_id}\",\"phone_number\":\"{phone_number}\",\"timestamp\":\"{timestamp}\",\"value\":100,\"currency\":\"USD\"}}]"
-        },
-        {
-          id: "facebook_conversions",
-          name: "Facebook Conversions API",
-          description: "Track phone call conversions in Facebook",
-          code: "https://graph.facebook.com/v18.0/YOUR_PIXEL_ID/events?access_token=YOUR_ACCESS_TOKEN&data=[{\"event_name\":\"Lead\",\"event_time\":\"{timestamp}\",\"action_source\":\"phone_call\",\"custom_data\":{\"call_id\":\"{call_id}\",\"campaign_id\":\"{campaign_id}\",\"phone_number\":\"{phone_number}\"}}]"
-        },
-        {
-          id: "google_ads",
-          name: "Google Ads Conversion Tracking",
-          description: "Track conversions for Google Ads campaigns",
-          code: "https://www.googleadservices.com/pagead/conversion/CONVERSION_ID/?label=CONVERSION_LABEL&value=100&currency_code=USD&oid={call_id}&external_id={campaign_id}"
-        },
-        {
-          id: "ringba_postback",
-          name: "Ringba Postback",
-          description: "Standard Ringba-style postback URL",
-          code: "https://your-tracking-platform.com/postback?call_id={call_id}&campaign_id={campaign_id}&caller_id={caller_id}&duration={duration}&status={status}&timestamp={timestamp}"
-        },
-        {
-          id: "custom_postback",
-          name: "Custom Postback URL",
-          description: "Enter your own postback URL",
-          code: ""
-        }
-      ],
-      image: [
-        {
-          id: "google_analytics_pixel",
-          name: "Google Analytics Tracking Pixel",
-          description: "1x1 pixel for Google Analytics",
-          code: "<img src=\"https://www.google-analytics.com/collect?v=1&tid=UA-XXXXXXXXX-X&cid={call_id}&t=event&ec=calls&ea=conversion&el={campaign_id}&ev=1\" width=\"1\" height=\"1\" style=\"display:none;\" />"
-        },
-        {
-          id: "facebook_pixel",
-          name: "Facebook Pixel",
-          description: "Facebook tracking pixel for conversions",
-          code: "<img src=\"https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=Lead&cd[call_id]={call_id}&cd[campaign_id]={campaign_id}&cd[phone_number]={phone_number}&noscript=1\" width=\"1\" height=\"1\" style=\"display:none;\" />"
-        },
-        {
-          id: "custom_pixel",
-          name: "Custom Image Pixel",
-          description: "Enter your own tracking pixel URL",
-          code: ""
-        }
-      ],
-      javascript: [
-        {
-          id: "google_analytics_gtag",
-          name: "Google Analytics 4 (gtag)",
-          description: "Track events using Google Analytics gtag",
-          code: `// Google Analytics 4 Event Tracking
-gtag('event', 'conversion', {
-  'call_id': '{call_id}',
-  'campaign_id': '{campaign_id}',
-  'phone_number': '{phone_number}',
-  'timestamp': '{timestamp}',
-  'value': 100,
-  'currency': 'USD'
-});`
-        },
-        {
-          id: "facebook_pixel_js",
-          name: "Facebook Pixel Event",
-          description: "Track lead events with Facebook Pixel",
-          code: `// Facebook Pixel Lead Event
-fbq('track', 'Lead', {
-  call_id: '{call_id}',
-  campaign_id: '{campaign_id}',
-  phone_number: '{phone_number}',
-  timestamp: '{timestamp}',
-  value: 100,
-  currency: 'USD'
-});`
-        },
-        {
-          id: "google_ads_gtag",
-          name: "Google Ads Conversion (gtag)",
-          description: "Track Google Ads conversions",
-          code: `// Google Ads Conversion Tracking
-gtag('event', 'conversion', {
-  'send_to': 'AW-CONVERSION_ID/CONVERSION_LABEL',
-  'value': 100,
-  'currency': 'USD',
-  'transaction_id': '{call_id}',
-  'custom_parameters': {
-    'campaign_id': '{campaign_id}',
-    'phone_number': '{phone_number}',
-    'timestamp': '{timestamp}'
-  }
-});`
-        },
-        {
-          id: "custom_javascript",
-          name: "Custom JavaScript",
-          description: "Enter your own JavaScript tracking code",
-          code: ""
-        }
-      ]
-    };
-  };
-
-  // Generate pixel code based on template selection
-  const generatePixelCode = (templateId: string, customUrl: string = "") => {
-    const templates = getPixelTemplates();
-    const template = templates[pixelForm.pixelType as keyof typeof templates]?.find(t => t.id === templateId);
-    
-    if (!template) return "";
-    
-    if (templateId.includes("custom") && customUrl) {
-      switch (pixelForm.pixelType) {
-        case "postback":
-          return customUrl.includes("?") 
-            ? `${customUrl}&call_id={call_id}&campaign_id={campaign_id}&phone_number={phone_number}&timestamp={timestamp}`
-            : `${customUrl}?call_id={call_id}&campaign_id={campaign_id}&phone_number={phone_number}&timestamp={timestamp}`;
-        case "image":
-          return `<img src="${customUrl}?call_id={call_id}&campaign_id={campaign_id}&phone_number={phone_number}&timestamp={timestamp}" width="1" height="1" style="display:none;" />`;
-        case "javascript":
-          return `// Custom JavaScript tracking code
-// You can access call data using these variables:
-// {call_id}, {campaign_id}, {phone_number}, {timestamp}
-${customUrl}`;
-        default:
-          return customUrl;
-      }
-    }
-    
-    return template.code;
-  };
-
-  // Handle template selection
-  const handleTemplateSelect = (templateId: string) => {
-    setSelectedTemplate(templateId);
-    const generatedCode = generatePixelCode(templateId, customUrl);
-    setPixelForm({...pixelForm, code: generatedCode});
-    
-    // Auto-generate pixel name based on template
-    const templates = getPixelTemplates();
-    const template = templates[pixelForm.pixelType as keyof typeof templates]?.find(t => t.id === templateId);
-    if (template && !pixelForm.name) {
-      setPixelForm(prev => ({...prev, name: template.name, code: generatedCode}));
-    }
-  };
-
-  // Handle custom URL input
-  const handleCustomUrlChange = (url: string) => {
-    setCustomUrl(url);
-    if (selectedTemplate.includes("custom")) {
-      const generatedCode = generatePixelCode(selectedTemplate, url);
-      setPixelForm({...pixelForm, code: generatedCode});
-    }
-  };
-
   const handlePixelSubmit = () => {
+    if (!pixelForm.name || !pixelForm.code) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (editingItem) {
       updatePixelMutation.mutate({ id: editingItem.id, data: pixelForm });
     } else {
       createPixelMutation.mutate(pixelForm);
-    }
-  };
-
-  // Map old event types to new ones for backward compatibility
-  const mapEventType = (oldEvent: string): 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized' => {
-    switch (oldEvent) {
-      case 'call_start':
-        return 'incoming';
-      case 'call_complete':
-        return 'completed';
-      case 'call_transfer':
-        return 'connected';
-      default:
-        return oldEvent as 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized';
     }
   };
 
@@ -428,91 +252,69 @@ ${customUrl}`;
     setPixelForm({
       name: pixel.name,
       pixelType: pixel.pixelType,
-      fireOnEvent: mapEventType(pixel.fireOnEvent),
+      fireOnEvent: pixel.fireOnEvent,
       code: pixel.code,
       assignedCampaigns: pixel.assignedCampaigns || [],
       isActive: pixel.isActive
     });
-    setTestResult(null);
     setIsDialogOpen(true);
   };
 
-  const testPixelCode = () => {
+  const handleDeletePixel = (id: number) => {
+    if (confirm("Are you sure you want to delete this tracking pixel?")) {
+      deletePixelMutation.mutate(id);
+    }
+  };
+
+  const handleTestPixel = () => {
+    if (!pixelForm.code) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter pixel code to test",
+        variant: "destructive"
+      });
+      return;
+    }
+
     testPixelMutation.mutate({
       pixelType: pixelForm.pixelType,
       code: pixelForm.code
     });
   };
 
-  const getPixelCodePlaceholder = (type: string) => {
-    switch (type) {
-      case 'postback':
-        return 'https://example.com/postback?call_id={call_id}&campaign_id={campaign_id}&phone={phone_number}&timestamp={timestamp}';
-      case 'image':
-        return '<img src="https://example.com/pixel.gif?call_id={call_id}&campaign_id={campaign_id}" width="1" height="1" />';
-      case 'javascript':
-        return `// Example JavaScript pixel
-gtag('event', 'conversion', {
-  'call_id': '{call_id}',
-  'campaign_id': '{campaign_id}',
-  'phone_number': '{phone_number}',
-  'timestamp': '{timestamp}'
-});`;
-      default:
-        return '';
-    }
-  };
-
   const getPixelTypeIcon = (type: string) => {
     switch (type) {
-      case 'postback':
-        return <ExternalLink className="h-4 w-4" />;
-      case 'image':
-        return <Globe className="h-4 w-4" />;
-      case 'javascript':
-        return <Code className="h-4 w-4" />;
-      default:
-        return <Code className="h-4 w-4" />;
+      case 'postback': return <Webhook className="h-4 w-4 text-blue-500" />;
+      case 'image': return <Globe className="h-4 w-4 text-green-500" />;
+      case 'javascript': return <Code className="h-4 w-4 text-purple-500" />;
+      default: return <Code className="h-4 w-4" />;
     }
   };
 
   const getEventBadgeColor = (event: string) => {
     switch (event) {
-      case 'incoming':
-        return 'bg-blue-100 text-blue-800';
-      case 'connected':
-        return 'bg-green-100 text-green-800';
-      case 'completed':
-        return 'bg-emerald-100 text-emerald-800';
-      case 'converted':
-        return 'bg-purple-100 text-purple-800';
-      case 'error':
-        return 'bg-red-100 text-red-800';
-      case 'payout':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'recording':
-        return 'bg-indigo-100 text-indigo-800';
-      case 'finalized':
-        return 'bg-slate-100 text-slate-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'connected': return 'bg-blue-100 text-blue-800';
+      case 'incoming': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
     <Layout>
-      <div className="space-y-6 ml-[0px] mr-[0px] pl-[15px] pr-[15px] pt-[10px] pb-[10px]">
-        <div>
-          <h1 className="text-2xl font-bold">Integrations</h1>
-          <p className="text-gray-600">Manage tracking pixels, webhooks, and third-party integrations</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Integrations</h1>
+            <p className="text-gray-600">Manage tracking pixels, webhooks, and external integrations</p>
+          </div>
         </div>
 
-        <Tabs defaultValue="pixels" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="pixels" className="space-y-6">
+          <TabsList>
             <TabsTrigger value="pixels">Tracking Pixels</TabsTrigger>
             <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
             <TabsTrigger value="apis">API Keys</TabsTrigger>
-            <TabsTrigger value="platforms">Platforms</TabsTrigger>
           </TabsList>
 
           {/* Tracking Pixels Tab */}
@@ -549,206 +351,131 @@ gtag('event', 'conversion', {
                       Add Pixel
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                      <DialogTitle>{editingItem ? 'Edit Pixel' : 'Create New Pixel'}</DialogTitle>
+                      <DialogTitle>
+                        {editingItem ? 'Edit Tracking Pixel' : 'Create Tracking Pixel'}
+                      </DialogTitle>
                       <DialogDescription>
-                        Configure tracking pixel with macro replacement for real-time call data
+                        Configure tracking pixels with macro replacement for call data
                       </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="pixel-name">Name *</Label>
+                          <Label htmlFor="pixel-name">Name</Label>
                           <Input
                             id="pixel-name"
+                            placeholder="Conversion Pixel"
                             value={pixelForm.name}
-                            onChange={(e) => setPixelForm({...pixelForm, name: e.target.value})}
-                            placeholder="e.g., Google Analytics Conversion"
+                            onChange={(e) => setPixelForm(prev => ({ ...prev, name: e.target.value }))}
                           />
                         </div>
                         <div>
-                          <Label htmlFor="pixel-type">Pixel Type *</Label>
+                          <Label htmlFor="pixel-type">Type</Label>
                           <Select 
                             value={pixelForm.pixelType} 
-                            onValueChange={(value) => setPixelForm({...pixelForm, pixelType: value as 'postback' | 'image' | 'javascript'})}
+                            onValueChange={(value) => setPixelForm(prev => ({ 
+                              ...prev, 
+                              pixelType: value as 'postback' | 'image' | 'javascript' 
+                            }))}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select pixel type" />
+                              <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="postback">Postback URL</SelectItem>
                               <SelectItem value="image">Image Pixel</SelectItem>
-                              <SelectItem value="javascript">JavaScript Code</SelectItem>
+                              <SelectItem value="javascript">JavaScript</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
 
                       <div>
-                        <Label htmlFor="fire-on-event">Fire On Event *</Label>
+                        <Label htmlFor="fire-event">Fire On Event</Label>
                         <Select 
                           value={pixelForm.fireOnEvent} 
-                          onValueChange={(value) => setPixelForm({...pixelForm, fireOnEvent: value as 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized'})}
+                          onValueChange={(value) => setPixelForm(prev => ({ ...prev, fireOnEvent: value }))}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select when to fire pixel" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="incoming">Incoming</SelectItem>
-                            <SelectItem value="connected">Connected (Answered)</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="converted">Converted</SelectItem>
-                            <SelectItem value="error">Error</SelectItem>
-                            <SelectItem value="payout">Payout</SelectItem>
-                            <SelectItem value="recording">Recording</SelectItem>
-                            <SelectItem value="finalized">Finalized</SelectItem>
+                            <SelectItem value="incoming">Call Incoming</SelectItem>
+                            <SelectItem value="connected">Call Connected</SelectItem>
+                            <SelectItem value="completed">Call Completed</SelectItem>
+                            <SelectItem value="converted">Conversion</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div>
-                        <Label>Choose Template (Recommended for Beginners)</Label>
-                        <div className="bg-blue-50 p-3 rounded-lg mb-3">
-                          <p className="text-sm text-blue-800">
-                            <strong>New to tracking pixels?</strong> Select from pre-built templates for popular services like Google Analytics, Facebook, and Google Ads. The system will automatically generate the code with proper macro replacements.
-                          </p>
-                        </div>
+                        <Label htmlFor="pixel-code">Pixel Code</Label>
+                        <Textarea
+                          id="pixel-code"
+                          placeholder="Enter your tracking pixel code with macros like {call_id}, {phone_number}, etc."
+                          value={pixelForm.code}
+                          onChange={(e) => setPixelForm(prev => ({ ...prev, code: e.target.value }))}
+                          className="min-h-[100px] font-mono text-sm"
+                        />
+                        <p className="text-sm text-gray-500 mt-1">
+                          Available macros: {'{call_id}'}, {'{phone_number}'}, {'{campaign_id}'}, {'{timestamp}'}, {'{duration}'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="assigned-campaigns">Assigned Campaigns</Label>
                         <Select 
-                          value={selectedTemplate} 
-                          onValueChange={handleTemplateSelect}
+                          value={pixelForm.assignedCampaigns[0] || ""} 
+                          onValueChange={(value) => setPixelForm(prev => ({ 
+                            ...prev, 
+                            assignedCampaigns: value ? [value] : [] 
+                          }))}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a pre-built template or start from scratch" />
+                            <SelectValue placeholder="Select campaigns" />
                           </SelectTrigger>
                           <SelectContent>
-                            {getPixelTemplates()[pixelForm.pixelType as keyof ReturnType<typeof getPixelTemplates>]?.map((template) => (
-                              <SelectItem key={template.id} value={template.id}>
-                                <div>
-                                  <div className="font-medium">{template.name}</div>
-                                  <div className="text-xs text-gray-500">{template.description}</div>
-                                </div>
+                            <SelectItem value="">All Campaigns</SelectItem>
+                            {campaigns.map((campaign) => (
+                              <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                                {campaign.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        {selectedTemplate && !selectedTemplate.includes("custom") && (
-                          <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded">
-                            <div className="text-sm text-amber-800">
-                              <strong>Setup Required:</strong> Replace placeholder values like YOUR_PIXEL_ID, YOUR_API_SECRET, etc. with your actual credentials from your tracking platform.
-                            </div>
-                          </div>
-                        )}
                       </div>
 
-                      {selectedTemplate.includes("custom") && (
-                        <div>
-                          <Label htmlFor="custom-url">
-                            {pixelForm.pixelType === "javascript" ? "Your JavaScript Code" : "Your URL"}
-                          </Label>
-                          <Input
-                            id="custom-url"
-                            value={customUrl}
-                            onChange={(e) => handleCustomUrlChange(e.target.value)}
-                            placeholder={
-                              pixelForm.pixelType === "postback" 
-                                ? "https://your-tracking-platform.com/postback" 
-                                : pixelForm.pixelType === "image"
-                                ? "https://your-tracking-platform.com/pixel.gif"
-                                : "console.log('Call received:', {call_id});"
-                            }
-                          />
+                      <div className="flex items-center justify-between pt-4 border-t">
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            onClick={handleTestPixel}
+                            disabled={testPixelMutation.isPending}
+                          >
+                            <Play className="h-4 w-4 mr-2" />
+                            {testPixelMutation.isPending ? 'Testing...' : 'Test Pixel'}
+                          </Button>
+                          {testResult && (
+                            <Badge variant="outline" className="text-green-600">
+                              Test {testResult.success ? 'Passed' : 'Failed'}
+                            </Badge>
+                          )}
                         </div>
-                      )}
-
-                      <div>
-                        <Label htmlFor="pixel-code">
-                          Generated Pixel Code *
-                          <span className="text-sm text-gray-500 ml-2">
-                            Macros: {'{call_id}'}, {'{campaign_id}'}, {'{phone_number}'}, {'{timestamp}'}, etc.
-                          </span>
-                        </Label>
-                        <Textarea
-                          id="pixel-code"
-                          rows={8}
-                          value={pixelForm.code}
-                          onChange={(e) => setPixelForm({...pixelForm, code: e.target.value})}
-                          placeholder="Select a template above or enter your custom pixel code here"
-                          className="font-mono text-sm"
-                        />
-                        <div className="text-xs text-gray-500 mt-1">
-                          {selectedTemplate ? "Code generated from template. You can edit it if needed." : "Manual entry - use templates above for easier setup."}
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={handlePixelSubmit}
+                            disabled={createPixelMutation.isPending || updatePixelMutation.isPending}
+                          >
+                            {editingItem ? 'Update' : 'Create'} Pixel
+                          </Button>
                         </div>
                       </div>
-
-                      <div>
-                        <Label>Assign to Campaigns</Label>
-                        <div className="grid grid-cols-2 gap-2 mt-2 max-h-32 overflow-y-auto">
-                          {campaigns?.map((campaign) => (
-                            <div key={campaign.id} className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id={`campaign-${campaign.id}`}
-                                checked={pixelForm.assignedCampaigns.includes(campaign.id.toString())}
-                                onChange={(e) => {
-                                  const campaignId = campaign.id.toString();
-                                  if (e.target.checked) {
-                                    setPixelForm({
-                                      ...pixelForm,
-                                      assignedCampaigns: [...pixelForm.assignedCampaigns, campaignId]
-                                    });
-                                  } else {
-                                    setPixelForm({
-                                      ...pixelForm,
-                                      assignedCampaigns: pixelForm.assignedCampaigns.filter(id => id !== campaignId)
-                                    });
-                                  }
-                                }}
-                                className="rounded"
-                              />
-                              <Label htmlFor={`campaign-${campaign.id}`} className="text-sm">
-                                {campaign.name}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <Button 
-                          type="button" 
-                          variant="outline"
-                          onClick={testPixelCode}
-                          disabled={!pixelForm.code || !pixelForm.pixelType || testPixelMutation.isPending}
-                        >
-                          <Zap className="h-4 w-4 mr-2" />
-                          {testPixelMutation.isPending ? "Testing..." : "Test Pixel"}
-                        </Button>
-                        <Button 
-                          onClick={handlePixelSubmit}
-                          disabled={createPixelMutation.isPending || updatePixelMutation.isPending || !pixelForm.name || !pixelForm.code || !pixelForm.pixelType || !pixelForm.fireOnEvent}
-                        >
-                          {(createPixelMutation.isPending || updatePixelMutation.isPending) ? "Saving..." : editingItem ? "Update Pixel" : "Create Pixel"}
-                        </Button>
-                      </div>
-
-                      {testResult && (
-                        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                          <h4 className="font-medium mb-2">Test Result:</h4>
-                          <div className="space-y-2">
-                            <div>
-                              <Label className="text-sm">Original Code:</Label>
-                              <pre className="bg-white p-2 rounded text-xs overflow-x-auto">{testResult.originalCode}</pre>
-                            </div>
-                            <div>
-                              <Label className="text-sm">Processed Code:</Label>
-                              <pre className="bg-white p-2 rounded text-xs overflow-x-auto">{testResult.processedCode}</pre>
-                            </div>
-                            <div className="text-sm text-gray-600">{testResult.note}</div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -783,62 +510,42 @@ gtag('event', 'conversion', {
                           <CardTitle className="text-base">{pixel.name}</CardTitle>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleEditPixel(pixel)}
                           >
                             <Edit className="h-3 w-3" />
                           </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => deletePixelMutation.mutate(pixel.id)}
-                            disabled={deletePixelMutation.isPending}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeletePixel(pixel.id)}
+                            className="text-red-600 hover:text-red-700"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <Badge className={getEventBadgeColor(pixel.fireOnEvent)}>
-                          {pixel.fireOnEvent.replace('_', ' ')}
-                        </Badge>
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="text-xs">
                           {pixel.pixelType}
                         </Badge>
-                        <Badge className={pixel.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                        <Badge className={`text-xs ${getEventBadgeColor(pixel.fireOnEvent)}`}>
+                          {pixel.fireOnEvent}
+                        </Badge>
+                        <Badge variant={pixel.isActive ? "default" : "secondary"} className="text-xs">
                           {pixel.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </div>
-
-                      <div>
-                        <Label className="text-xs text-gray-500">Pixel Code:</Label>
-                        <pre className="bg-gray-50 p-2 rounded text-xs overflow-hidden">
-                          {pixel.code.length > 100 ? `${pixel.code.substring(0, 100)}...` : pixel.code}
-                        </pre>
+                      <div className="text-xs text-gray-500 font-mono truncate">
+                        {pixel.code.substring(0, 80)}...
                       </div>
-
                       {pixel.assignedCampaigns && pixel.assignedCampaigns.length > 0 && (
-                        <div>
-                          <Label className="text-xs text-gray-500">Campaigns ({pixel.assignedCampaigns.length}):</Label>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {pixel.assignedCampaigns.slice(0, 3).map((campaignId) => {
-                              const campaign = campaigns.find(c => c.id.toString() === campaignId);
-                              return campaign ? (
-                                <Badge key={campaignId} variant="secondary" className="text-xs">
-                                  {campaign.name}
-                                </Badge>
-                              ) : null;
-                            })}
-                            {pixel.assignedCampaigns.length > 3 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{pixel.assignedCampaigns.length - 3} more
-                              </Badge>
-                            )}
-                          </div>
+                        <div className="text-xs text-gray-600">
+                          Campaigns: {pixel.assignedCampaigns.length} assigned
                         </div>
                       )}
                     </CardContent>
@@ -848,28 +555,21 @@ gtag('event', 'conversion', {
             </div>
           </TabsContent>
 
-          {/* Other tabs content */}
+          {/* Webhooks Tab */}
           <TabsContent value="webhooks" className="space-y-6">
-            <div className="text-center py-8">
+            <div className="text-center py-12">
               <Webhook className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium mb-2">Webhooks</h3>
-              <p className="text-gray-600">Webhook configuration coming soon</p>
+              <h3 className="text-lg font-medium mb-2">Webhook Integration</h3>
+              <p className="text-gray-600">Webhook functionality coming soon</p>
             </div>
           </TabsContent>
 
+          {/* API Keys Tab */}
           <TabsContent value="apis" className="space-y-6">
-            <div className="text-center py-8">
+            <div className="text-center py-12">
               <Key className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium mb-2">API Keys</h3>
+              <h3 className="text-lg font-medium mb-2">API Key Management</h3>
               <p className="text-gray-600">API key management coming soon</p>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="platforms" className="space-y-6">
-            <div className="text-center py-8">
-              <Settings className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium mb-2">Platform Integrations</h3>
-              <p className="text-gray-600">Platform integrations coming soon</p>
             </div>
           </TabsContent>
         </Tabs>
