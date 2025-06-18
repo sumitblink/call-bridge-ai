@@ -1341,6 +1341,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DNI Tracking Number Request (used by JavaScript SDK)
+  app.get('/api/dni/tracking-number', async (req, res) => {
+    try {
+      const requestData: DNIRequest = {
+        campaignId: req.query.campaign_id ? parseInt(req.query.campaign_id as string) : undefined,
+        campaignName: req.query.campaign_name as string,
+        source: req.query.source as string,
+        medium: req.query.medium as string,
+        campaign: req.query.campaign as string,
+        content: req.query.content as string,
+        term: req.query.term as string,
+        gclid: req.query.gclid as string,
+        fbclid: req.query.fbclid as string,
+        referrer: req.query.referrer as string,
+        userAgent: req.query.user_agent as string,
+        ipAddress: req.ip,
+        sessionId: req.query.session_id as string,
+        customFields: {}
+      };
+
+      // Collect custom fields from query parameters
+      Object.keys(req.query).forEach(key => {
+        if (key.startsWith('custom_')) {
+          const fieldName = key.replace('custom_', '');
+          if (!requestData.customFields) requestData.customFields = {};
+          requestData.customFields[fieldName] = req.query[key] as string;
+        }
+      });
+
+      const response = await DNIService.getTrackingNumber(requestData);
+      res.json(response);
+    } catch (error) {
+      console.error('DNI tracking number error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to get tracking number',
+        phoneNumber: '',
+        formattedNumber: '',
+        campaignId: 0,
+        campaignName: '',
+        trackingId: ''
+      });
+    }
+  });
+
   // DNI HTML snippet endpoint
   app.get('/api/dni/html-snippet', async (req, res) => {
     try {
