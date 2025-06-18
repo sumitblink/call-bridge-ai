@@ -1326,15 +1326,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/dni.js', async (req, res) => {
     try {
       const domain = req.get('host') || 'localhost:5000';
-      const campaignId = req.query.campaign || req.query.campaign_id;
-      const campaignName = req.query.name || `Campaign ${campaignId}`;
+      const protocol = req.secure ? 'https' : 'http';
+      const jsCode = DNIService.generateJavaScriptSDK(`${protocol}://${domain}`);
       
-      if (!campaignId) {
-        return res.status(400).type('text/javascript').send('console.error("DNI: campaign_id parameter required");');
-      }
-
-      const jsCode = DNIService.generateJavaScriptSDK(`https://${domain}`);
-      res.type('text/javascript').send(jsCode);
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.send(jsCode);
     } catch (error) {
       console.error('DNI SDK error:', error);
       res.status(500).type('text/javascript').send('console.error("DNI: Failed to load SDK");');
@@ -1977,16 +1975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve DNI JavaScript SDK
-  app.get('/dni.js', (req, res) => {
-    const domain = req.hostname;
-    const jsCode = DNIService.generateJavaScriptSDK(domain);
-    
-    res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.send(jsCode);
-  });
+
 
   // Generate HTML snippet for integration
   app.get('/api/dni/snippet/:campaignId', requireAuth, async (req, res) => {
