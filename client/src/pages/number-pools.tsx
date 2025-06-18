@@ -265,11 +265,11 @@ export default function NumberPoolsPage() {
                     <SelectValue placeholder="Select campaign" />
                   </SelectTrigger>
                   <SelectContent>
-                    {campaigns.map(campaign => (
+                    {campaigns?.map(campaign => (
                       <SelectItem key={campaign.id} value={campaign.id.toString()}>
                         {campaign.name}
                       </SelectItem>
-                    ))}
+                    )) || []}
                   </SelectContent>
                 </Select>
               </div>

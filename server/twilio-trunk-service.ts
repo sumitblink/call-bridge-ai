@@ -56,9 +56,11 @@ export class TwilioTrunkService {
    * Create a new SIP trunk for a campaign
    */
   static async createTrunk(campaignId: number, config: Partial<TrunkConfiguration>): Promise<TrunkConfiguration> {
-    const campaign = await storage.getCampaign(campaignId);
+    // First verify campaign exists
+    const campaigns = await storage.getCampaigns();
+    const campaign = campaigns.find(c => c.id === campaignId);
     if (!campaign) {
-      throw new Error('Campaign not found');
+      throw new Error(`Campaign with ID ${campaignId} not found`);
     }
 
     const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
