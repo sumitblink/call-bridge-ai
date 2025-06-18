@@ -1485,7 +1485,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (const twilioNumber of twilioNumbers) {
         // Check if number already exists
-        const existingNumber = await storage.getPhoneNumberByNumber(twilioNumber.phone_number);
+        const existingNumbers = await storage.getPhoneNumbers();
+        const existingNumber = existingNumbers.find(n => n.phoneNumber === twilioNumber.phone_number);
         if (existingNumber) {
           skippedNumbers.push(twilioNumber.phone_number);
           continue;

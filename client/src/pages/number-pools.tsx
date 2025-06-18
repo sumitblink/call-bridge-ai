@@ -445,15 +445,29 @@ export default function NumberPoolsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleProvisionNumbers}
-                    disabled={provisionNumbersMutation.isPending}
+                    onClick={() => {
+                      fetch('/api/phone-numbers/import', { method: 'POST' })
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.imported > 0) {
+                            toast({
+                              title: "Numbers Imported",
+                              description: `Successfully imported ${data.imported} existing Twilio numbers`
+                            });
+                            queryClient.invalidateQueries({ queryKey: ['/api/campaigns', selectedCampaign, 'pool-stats'] });
+                          }
+                        })
+                        .catch(() => {
+                          toast({
+                            title: "Import Failed",
+                            description: "Could not import existing numbers from Twilio",
+                            variant: "destructive"
+                          });
+                        });
+                    }}
                   >
-                    {provisionNumbersMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                    )}
-                    Provision Numbers
+                    <Phone className="h-4 w-4 mr-2" />
+                    Import Existing Numbers
                   </Button>
                   <Button
                     variant="outline"
