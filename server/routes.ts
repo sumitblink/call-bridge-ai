@@ -2203,6 +2203,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Agent Routing & Management API
+  app.get('/api/agents/dashboard', async (req, res) => {
+    try {
+      const { AgentRouter } = await import('./agent-routing');
+      const dashboard = await AgentRouter.getAgentDashboard();
+      res.json(dashboard);
+    } catch (error) {
+      console.error('Agent dashboard error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch agent dashboard',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/agents/:id/status', async (req, res) => {
+    try {
+      const agentId = parseInt(req.params.id);
+      const { status, reason } = req.body;
+      
+      const { AgentRouter } = await import('./agent-routing');
+      await AgentRouter.updateAgentStatus(agentId, status, reason);
+      
+      res.json({ success: true, message: 'Agent status updated' });
+    } catch (error) {
+      console.error('Agent status update error:', error);
+      res.status(500).json({ 
+        error: 'Failed to update agent status',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/calls/:id/route', async (req, res) => {
+    try {
+      const callId = parseInt(req.params.id);
+      const { campaignId, requiredSkills = [] } = req.body;
+      
+      const { AgentRouter } = await import('./agent-routing');
+      const result = await AgentRouter.routeCall(callId, campaignId, requiredSkills);
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Call routing error:', error);
+      res.status(500).json({ 
+        error: 'Failed to route call',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/calls/:id/complete', async (req, res) => {
+    try {
+      const callId = parseInt(req.params.id);
+      const { disposition, rating, notes } = req.body;
+      
+      const { AgentRouter } = await import('./agent-routing');
+      await AgentRouter.completeCall(callId, disposition, rating, notes);
+      
+      res.json({ success: true, message: 'Call completed successfully' });
+    } catch (error) {
+      console.error('Call completion error:', error);
+      res.status(500).json({ 
+        error: 'Failed to complete call',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/agents/:id/metrics', async (req, res) => {
+    try {
+      const agentId = parseInt(req.params.id);
+      const days = parseInt(req.query.days as string) || 30;
+      
+      const { AgentRouter } = await import('./agent-routing');
+      const metrics = await AgentRouter.getAgentMetrics(agentId, days);
+      
+      res.json(metrics);
+    } catch (error) {
+      console.error('Agent metrics error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch agent metrics',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/agents/:id/active-calls', async (req, res) => {
+    try {
+      const agentId = parseInt(req.params.id);
+      const activeCalls = await storage.getAgentActiveCalls(agentId);
+      res.json(activeCalls);
+    } catch (error) {
+      console.error('Agent active calls error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch agent active calls',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/agents/:agentId/campaigns/:campaignId', async (req, res) => {
+    try {
+      const agentId = parseInt(req.params.agentId);
+      const campaignId = parseInt(req.params.campaignId);
+      const { priority = 1 } = req.body;
+      
+      const assignment = await storage.assignAgentToCampaign(agentId, campaignId, priority);
+      res.json(assignment);
+    } catch (error) {
+      console.error('Agent campaign assignment error:', error);
+      res.status(500).json({ 
+        error: 'Failed to assign agent to campaign',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.delete('/api/agents/:agentId/campaigns/:campaignId', async (req, res) => {
+    try {
+      const agentId = parseInt(req.params.agentId);
+      const campaignId = parseInt(req.params.campaignId);
+      
+      const success = await storage.removeAgentFromCampaign(agentId, campaignId);
+      if (success) {
+        res.json({ success: true, message: 'Agent removed from campaign' });
+      } else {
+        res.status(404).json({ error: 'Assignment not found' });
+      }
+    } catch (error) {
+      console.error('Agent campaign removal error:', error);
+      res.status(500).json({ 
+        error: 'Failed to remove agent from campaign',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

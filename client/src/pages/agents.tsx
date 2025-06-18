@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Users, Plus, Edit, Trash2, Phone, Clock, Target, TrendingUp, Activity, AlertCircle, CheckCircle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Users, Plus, Edit, Trash2, Phone, Clock, Target, TrendingUp, Activity, AlertCircle, CheckCircle, Settings, PhoneCall, UserCheck, Timer, Headphones } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
@@ -20,26 +22,68 @@ interface Agent {
   id: number;
   name: string;
   email: string;
+  phoneNumber?: string;
   status: string;
+  skills: string[];
+  maxConcurrentCalls: number;
+  priority: number;
+  isOnline: boolean;
   callsHandled: number;
+  averageCallDuration: number;
+  totalTalkTime: number;
+  lastActivityAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+interface AgentDashboard {
+  totalAgents: number;
+  onlineAgents: number;
+  availableAgents: number;
+  busyAgents: number;
+  activeCalls: number;
+  agentsList: AgentAvailability[];
+}
+
+interface AgentAvailability {
+  agentId: number;
+  name: string;
+  status: string;
+  currentCalls: number;
+  maxConcurrentCalls: number;
+  priority: number;
+  skills: string[];
+  isAvailable: boolean;
 }
 
 export default function AgentsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [selectedAgentForStatus, setSelectedAgentForStatus] = useState<Agent | null>(null);
+  const [statusChangeReason, setStatusChangeReason] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    status: "active"
+    phoneNumber: "",
+    status: "offline",
+    skills: [] as string[],
+    maxConcurrentCalls: 1,
+    priority: 5,
+    department: "",
+    timezone: "UTC"
   });
+  const [newSkill, setNewSkill] = useState("");
   const [showValidation, setShowValidation] = useState(false);
 
   const { toast } = useToast();
 
   const { data: agents = [], isLoading } = useQuery<Agent[]>({
     queryKey: ["/api/agents"],
+  });
+
+  const { data: dashboard, isLoading: isDashboardLoading } = useQuery<AgentDashboard>({
+    queryKey: ["/api/agents/dashboard"],
+    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
   });
 
   const createMutation = useMutation({
@@ -51,9 +95,20 @@ export default function AgentsPage() {
     onSuccess: (result) => {
       console.log("Agent created successfully:", result);
       queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agents/dashboard"] });
       toast({ title: "Agent created successfully" });
       setIsCreating(false);
-      setFormData({ name: "", email: "", status: "active" });
+      setFormData({ 
+        name: "", 
+        email: "", 
+        phoneNumber: "",
+        status: "offline",
+        skills: [],
+        maxConcurrentCalls: 1,
+        priority: 5,
+        department: "",
+        timezone: "UTC"
+      });
       setShowValidation(false);
     },
     onError: (error) => {
@@ -88,6 +143,23 @@ export default function AgentsPage() {
     },
     onError: () => {
       toast({ title: "Failed to delete agent", variant: "destructive" });
+    }
+  });
+
+  const statusChangeMutation = useMutation({
+    mutationFn: async ({ agentId, status, reason }: { agentId: number; status: string; reason?: string }) => {
+      const response = await apiRequest(`/api/agents/${agentId}/status`, "POST", { status, reason });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agents/dashboard"] });
+      toast({ title: "Agent status updated successfully" });
+      setSelectedAgentForStatus(null);
+      setStatusChangeReason("");
+    },
+    onError: () => {
+      toast({ title: "Failed to update agent status", variant: "destructive" });
     }
   });
 
