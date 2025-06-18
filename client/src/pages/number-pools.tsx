@@ -129,14 +129,14 @@ export default function NumberPoolsPage() {
 
   // Provision numbers mutation
   const provisionNumbersMutation = useMutation({
-    mutationFn: async (data: { campaignId: number; trunkSid: string; count: number; areaCode?: string }) => {
-      const response = await fetch(`/api/campaigns/${data.campaignId}/trunk/provision-numbers`, {
+    mutationFn: async (data: { campaignId: number; quantity: number; areaCode?: string; numberType: string }) => {
+      const response = await fetch(`/api/campaigns/${data.campaignId}/provision-numbers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          trunkSid: data.trunkSid,
-          count: data.count,
-          areaCode: data.areaCode
+          quantity: data.quantity,
+          areaCode: data.areaCode,
+          numberType: data.numberType
         })
       });
       if (!response.ok) throw new Error('Failed to provision numbers');
@@ -145,7 +145,7 @@ export default function NumberPoolsPage() {
     onSuccess: (data) => {
       toast({
         title: "Numbers Provisioned",
-        description: `Successfully provisioned ${data.count} phone numbers`
+        description: `Successfully provisioned ${data.numbers.length} phone numbers for $${data.totalCost.toFixed(2)}`
       });
       queryClient.invalidateQueries({ queryKey: ['/api/campaigns', selectedCampaign, 'pool-stats'] });
     },
@@ -183,14 +183,14 @@ export default function NumberPoolsPage() {
     });
   };
 
-  const handleProvisionNumbers = (trunkSid: string) => {
+  const handleProvisionNumbers = () => {
     if (!selectedCampaign) return;
 
     provisionNumbersMutation.mutate({
       campaignId: selectedCampaign,
-      trunkSid,
-      count: poolForm.numberProvisioning.count,
-      areaCode: poolForm.numberProvisioning.areaCode
+      quantity: poolForm.numberProvisioning.count,
+      areaCode: poolForm.numberProvisioning.areaCode,
+      numberType: 'local'
     });
   };
 
@@ -434,15 +434,30 @@ export default function NumberPoolsPage() {
                 Pool Statistics
               </div>
               {selectedCampaign && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => queryClient.invalidateQueries({ 
-                    queryKey: ['/api/campaigns', selectedCampaign, 'pool-stats'] 
-                  })}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleProvisionNumbers}
+                    disabled={provisionNumbersMutation.isPending}
+                  >
+                    {provisionNumbersMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                    )}
+                    Provision Numbers
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => queryClient.invalidateQueries({ 
+                      queryKey: ['/api/campaigns', selectedCampaign, 'pool-stats'] 
+                    })}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
             </CardTitle>
             <CardDescription>
