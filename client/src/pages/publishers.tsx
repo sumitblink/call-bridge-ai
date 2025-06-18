@@ -145,6 +145,7 @@ export default function Publishers() {
       minCallDuration: "0",
       allowedTargets: "",
       trackingSettings: "",
+      customParameters: "",
     },
   });
 
@@ -168,6 +169,7 @@ export default function Publishers() {
       minCallDuration: publisher.minCallDuration.toString(),
       allowedTargets: publisher.allowedTargets?.join(", ") || "",
       trackingSettings: publisher.trackingSettings || "",
+      customParameters: publisher.customParameters || "",
     });
   };
 
