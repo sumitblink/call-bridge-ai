@@ -134,8 +134,8 @@ export class DNIService {
       // Store tracking session for attribution analysis
       console.log('DNI Tracking Session:', {
         trackingId,
-        campaignId: campaign.id,
-        phoneNumber: phoneNumber.phoneNumber,
+        campaignId,
+        phoneNumberId,
         source: request.source,
         medium: request.medium,
         campaign: request.campaign,
@@ -169,14 +169,13 @@ export class DNIService {
    * Generate JavaScript SDK code for website integration
    */
   static generateJavaScriptSDK(domain: string): string {
-    return `
-/* Ringba-Style Dynamic Number Insertion (DNI) SDK */
+    return `/* Ringba-Style Dynamic Number Insertion (DNI) SDK */
 (function(window, document) {
   'use strict';
 
   var DNI = {
     config: {
-      endpoint: 'https://${domain}/api/dni/track',
+      endpoint: '${domain}/api/dni/tracking-number',
       timeout: 5000,
       debug: false
     },
@@ -297,7 +296,7 @@ export class DNIService {
 
     // Request tracking number from server
     requestTrackingNumber: function(data, callback) {
-      var url = '${domain}/api/dni/tracking-number?' + this.buildQueryString(data);
+      var url = this.config.endpoint + '?' + this.buildQueryString(data);
       var xhr = new XMLHttpRequest();
       xhr.open('GET', url, true);
       xhr.timeout = this.config.timeout;
@@ -373,11 +372,11 @@ export class DNIService {
     return `<!-- Dynamic Number Insertion -->
 <script>
   window.DNI_CONFIG = {
-    endpoint: 'https://${domain}/api/dni/track',
+    endpoint: '${domain}/api/dni/tracking-number',
     debug: false
   };
 </script>
-<script src="https://${domain}/dni.js"></script>
+<script src="${domain}/dni.js?campaign_id=${campaignId}&auto=true"></script>
 
 <!-- Phone number with automatic replacement -->
 <a href="tel:+1234567890" data-dni-campaign-id="${campaignId}" class="dni-phone">
