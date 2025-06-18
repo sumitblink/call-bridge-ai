@@ -100,35 +100,35 @@ class HybridStorage implements IStorage {
   // Users
   async getUser(id: string): Promise<User | undefined> {
     return this.executeOperation(
-      () => this.supabaseStorage.getUser(id),
+      () => this.databaseStorage.getUser(id),
       () => this.memStorage.getUser(id)
     );
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return this.executeOperation(
-      () => this.supabaseStorage.getUserByUsername(username),
+      () => this.databaseStorage.getUserByUsername(username),
       () => this.memStorage.getUserByUsername(username)
     );
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     return this.executeOperation(
-      () => this.supabaseStorage.getUserByEmail(email),
+      () => this.databaseStorage.getUserByEmail(email),
       () => this.memStorage.getUserByEmail(email)
     );
   }
 
   async createUser(user: InsertUser): Promise<User> {
     return this.executeOperation(
-      () => this.supabaseStorage.createUser(user),
+      () => this.databaseStorage.createUser(user),
       () => this.memStorage.createUser(user)
     );
   }
 
   async upsertUser(user: UpsertUser): Promise<User> {
     return this.executeOperation(
-      () => this.supabaseStorage.upsertUser(user),
+      () => this.databaseStorage.upsertUser(user),
       () => this.memStorage.upsertUser(user)
     );
   }
@@ -136,42 +136,42 @@ class HybridStorage implements IStorage {
   // Campaigns
   async getCampaigns(): Promise<Campaign[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getCampaigns(),
+      () => this.databaseStorage.getCampaigns(),
       () => this.memStorage.getCampaigns()
     );
   }
 
   async getCampaign(id: number): Promise<Campaign | undefined> {
     return this.executeOperation(
-      () => this.supabaseStorage.getCampaign(id),
+      () => this.databaseStorage.getCampaign(id),
       () => this.memStorage.getCampaign(id)
     );
   }
 
   async getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined> {
     return this.executeOperation(
-      () => this.supabaseStorage.getCampaignByPhoneNumber(phoneNumber),
+      () => this.databaseStorage.getCampaignByPhoneNumber(phoneNumber),
       () => this.memStorage.getCampaignByPhoneNumber(phoneNumber)
     );
   }
 
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
     return this.executeOperation(
-      () => this.supabaseStorage.createCampaign(campaign),
+      () => this.databaseStorage.createCampaign(campaign),
       () => this.memStorage.createCampaign(campaign)
     );
   }
 
   async updateCampaign(id: number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
     return this.executeOperation(
-      () => this.supabaseStorage.updateCampaign(id, campaign),
+      () => this.databaseStorage.updateCampaign(id, campaign),
       () => this.memStorage.updateCampaign(id, campaign)
     );
   }
 
   async deleteCampaign(id: number): Promise<boolean> {
     return this.executeOperation(
-      () => this.supabaseStorage.deleteCampaign(id),
+      () => this.databaseStorage.deleteCampaign(id),
       () => this.memStorage.deleteCampaign(id)
     );
   }

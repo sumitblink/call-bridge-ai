@@ -58,9 +58,12 @@ export class TwilioTrunkService {
   static async createTrunk(campaignId: number, config: Partial<TrunkConfiguration>): Promise<TrunkConfiguration> {
     // First verify campaign exists
     const campaigns = await storage.getCampaigns();
+    console.log('Available campaigns:', campaigns.map(c => ({ id: c.id, name: c.name })));
+    console.log('Looking for campaign ID:', campaignId, 'Type:', typeof campaignId);
+    
     const campaign = campaigns.find(c => c.id === campaignId);
     if (!campaign) {
-      throw new Error(`Campaign with ID ${campaignId} not found`);
+      throw new Error(`Campaign with ID ${campaignId} not found. Available IDs: ${campaigns.map(c => c.id).join(', ')}`);
     }
 
     const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
