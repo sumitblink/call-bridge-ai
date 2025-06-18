@@ -211,6 +211,27 @@ export default function NumberPoolsPage() {
     );
   }
 
+  if (!campaigns || campaigns.length === 0) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Number Pools</h1>
+            <p className="text-gray-600">Manage Twilio Elastic SIP Trunks and number pools for campaign tracking</p>
+          </div>
+        </div>
+        <div className="text-center py-12">
+          <Network className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns found</h3>
+          <p className="text-gray-500 mb-4">Create a campaign first to set up number pools.</p>
+          <Button asChild>
+            <a href="/campaigns">Create Campaign</a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
