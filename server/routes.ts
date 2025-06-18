@@ -1279,6 +1279,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DNI (Dynamic Number Insertion) API
+  app.get('/api/dni/tracking-number', async (req, res) => {
+    try {
+      const request: DNIRequest = {
+        campaignId: req.query.campaign_id ? parseInt(req.query.campaign_id as string) : undefined,
+        campaignName: req.query.campaign_name as string,
+        source: req.query.utm_source as string,
+        medium: req.query.utm_medium as string,
+        campaign: req.query.utm_campaign as string,
+        content: req.query.utm_content as string,
+        term: req.query.utm_term as string,
+        gclid: req.query.gclid as string,
+        fbclid: req.query.fbclid as string,
+        referrer: req.query.referrer as string,
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip || req.connection.remoteAddress,
+        sessionId: req.query.session_id as string,
+        customFields: {}
+      };
+
+      // Add any custom fields that start with 'custom_'
+      Object.keys(req.query).forEach(key => {
+        if (key.startsWith('custom_')) {
+          request.customFields![key] = req.query[key] as string;
+        }
+      });
+
+      const response = await DNIService.getTrackingNumber(request);
+      res.json(response);
+    } catch (error) {
+      console.error('DNI API error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to get tracking number',
+        phoneNumber: '',
+        formattedNumber: '',
+        campaignId: 0,
+        campaignName: '',
+        trackingId: ''
+      });
+    }
+  });
+
+  // DNI JavaScript SDK endpoint
+  app.get('/dni.js', async (req, res) => {
+    try {
+      const domain = req.get('host') || 'localhost:5000';
+      const campaignId = req.query.campaign || req.query.campaign_id;
+      const campaignName = req.query.name || `Campaign ${campaignId}`;
+      
+      if (!campaignId) {
+        return res.status(400).type('text/javascript').send('console.error("DNI: campaign_id parameter required");');
+      }
+
+      const jsCode = DNIService.generateJavaScriptSDK(`https://${domain}`);
+      res.type('text/javascript').send(jsCode);
+    } catch (error) {
+      console.error('DNI SDK error:', error);
+      res.status(500).type('text/javascript').send('console.error("DNI: Failed to load SDK");');
+    }
+  });
+
+  // DNI HTML snippet endpoint
+  app.get('/api/dni/html-snippet', async (req, res) => {
+    try {
+      const domain = req.get('host') || 'localhost:5000';
+      const campaignId = parseInt(req.query.campaign_id as string);
+      const campaignName = req.query.campaign_name as string || `Campaign ${campaignId}`;
+      
+      if (!campaignId) {
+        return res.status(400).json({ error: 'campaign_id parameter required' });
+      }
+
+      const htmlSnippet = DNIService.generateHTMLSnippet(campaignId, campaignName, `https://${domain}`);
+      res.json({
+        success: true,
+        htmlSnippet,
+        campaignId,
+        campaignName
+      });
+    } catch (error) {
+      console.error('DNI HTML snippet error:', error);
+      res.status(500).json({ error: 'Failed to generate HTML snippet' });
+    }
+  });
+
   // Test Twilio connection endpoint
   app.get('/api/test-twilio', requireAuth, async (req, res) => {
     try {

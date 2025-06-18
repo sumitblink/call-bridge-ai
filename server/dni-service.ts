@@ -297,9 +297,9 @@ export class DNIService {
 
     // Request tracking number from server
     requestTrackingNumber: function(data, callback) {
+      var url = '${domain}/api/dni/tracking-number?' + this.buildQueryString(data);
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', this.config.endpoint, true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.open('GET', url, true);
       xhr.timeout = this.config.timeout;
 
       xhr.onreadystatechange = function() {
@@ -325,26 +325,43 @@ export class DNIService {
         callback({ success: false, error: 'Request timeout' });
       };
 
-      xhr.send(JSON.stringify(data));
+      xhr.send();
     },
 
-    // Manual phone number replacement
-    replace: function(campaignId, campaignName, callback) {
-      var trackingData = this.collectTrackingData();
-      trackingData.campaignId = campaignId;
-      trackingData.campaignName = campaignName;
-      
-      this.requestTrackingNumber(trackingData, callback);
+    // Build query string from data object
+    buildQueryString: function(data) {
+      var params = [];
+      for (var key in data) {
+        if (data.hasOwnProperty(key) && data[key] !== null && data[key] !== undefined && data[key] !== '') {
+          if (typeof data[key] === 'object') {
+            for (var subKey in data[key]) {
+              if (data[key].hasOwnProperty(subKey)) {
+                params.push(encodeURIComponent('custom_' + subKey) + '=' + encodeURIComponent(data[key][subKey]));
+              }
+            }
+          } else {
+            var paramName = key === 'campaignId' ? 'campaign_id' : 
+                           key === 'campaignName' ? 'campaign_name' :
+                           key.replace(/([A-Z])/g, '_$1').toLowerCase();
+            params.push(encodeURIComponent(paramName) + '=' + encodeURIComponent(data[key]));
+          }
+        }
+      }
+      return params.join('&');
     }
   };
 
-  // Expose DNI globally
-  window.DNI = DNI;
-
-  // Auto-initialize if config is present
-  if (window.DNI_CONFIG) {
-    DNI.init(window.DNI_CONFIG);
+  // Auto-initialize if campaign specified in script tag
+  var scripts = document.getElementsByTagName('script');
+  var currentScript = scripts[scripts.length - 1];
+  var src = currentScript.src;
+  
+  if (src && (src.indexOf('campaign') > -1 || src.indexOf('auto=true') > -1)) {
+    DNI.init({ debug: src.indexOf('debug=true') > -1 });
   }
+
+  // Expose DNI to global scope
+  window.DNI = DNI;
 
 })(window, document);`;
   }
