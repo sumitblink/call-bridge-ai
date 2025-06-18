@@ -85,7 +85,13 @@ export default function NumberPoolsPage() {
   });
 
   // Fetch pool statistics for selected campaign
-  const { data: poolStats, isLoading: statsLoading, error: statsError } = useQuery<PoolStats>({
+  const { data: poolStats = {
+    totalNumbers: 0,
+    availableNumbers: 0,
+    assignedNumbers: 0,
+    utilizationRate: 0,
+    activeAssignments: []
+  }, isLoading: statsLoading, error: statsError } = useQuery<PoolStats>({
     queryKey: ['/api/campaigns', selectedCampaign, 'pool-stats'],
     enabled: !!selectedCampaign,
     refetchInterval: 10000
@@ -485,7 +491,7 @@ export default function NumberPoolsPage() {
                   <Progress value={poolStats.utilizationRate} className="h-2" />
                 </div>
 
-                {poolStats.activeAssignments.length > 0 && (
+                {poolStats.activeAssignments && poolStats.activeAssignments.length > 0 && (
                   <div>
                     <h4 className="font-medium mb-3">Active Assignments</h4>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
