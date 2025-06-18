@@ -136,15 +136,77 @@ export const callLogs = pgTable("call_logs", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
-// Keep agents table for backward compatibility
+// Enhanced agents table for full call center functionality
 export const agents = pgTable("agents", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   name: varchar("name", { length: 256 }).notNull(),
   email: varchar("email", { length: 256 }).notNull(),
-  status: varchar("status", { length: 50 }).default("active").notNull(),
+  phoneNumber: varchar("phone_number", { length: 20 }),
+  extensionNumber: varchar("extension_number", { length: 10 }),
+  status: varchar("status", { length: 50 }).default("offline").notNull(), // offline, available, busy, break, training
+  currentCallId: integer("current_call_id").references(() => calls.id),
+  skills: text("skills").array(), // Skills for routing: sales, support, technical, billing
+  maxConcurrentCalls: integer("max_concurrent_calls").default(1).notNull(),
+  priority: integer("priority").default(1).notNull(), // 1=highest, 10=lowest
+  department: varchar("department", { length: 100 }),
+  supervisorId: integer("supervisor_id"),
+  timezone: varchar("timezone", { length: 50 }).default("UTC"),
+  workSchedule: text("work_schedule"), // JSON: working hours and days
+  
+  // Performance metrics
   callsHandled: integer("calls_handled").default(0).notNull(),
+  totalTalkTime: integer("total_talk_time").default(0).notNull(), // seconds
+  averageCallDuration: integer("average_call_duration").default(0).notNull(), // seconds
+  totalBreakTime: integer("total_break_time").default(0).notNull(), // seconds
+  conversationRate: decimal("conversion_rate", { precision: 5, scale: 2 }).default("0.00"), // percentage
+  customerSatisfaction: decimal("customer_satisfaction", { precision: 3, scale: 2 }).default("0.00"), // 1-5 rating
+  
+  // System tracking
+  lastActivityAt: timestamp("last_activity_at"),
+  lastCallAt: timestamp("last_call_at"),
+  loginTime: timestamp("login_time"),
+  isOnline: boolean("is_online").default(false).notNull(),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Agent-Campaign assignments for skill-based routing
+export const agentCampaigns = pgTable("agent_campaigns", {
+  id: serial("id").primaryKey(),
+  agentId: integer("agent_id").references(() => agents.id).notNull(),
+  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
+  priority: integer("priority").default(1).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.agentId, table.campaignId] })
+}));
+
+// Agent status tracking for real-time monitoring
+export const agentStatusLogs = pgTable("agent_status_logs", {
+  id: serial("id").primaryKey(),
+  agentId: integer("agent_id").references(() => agents.id).notNull(),
+  previousStatus: varchar("previous_status", { length: 50 }),
+  newStatus: varchar("new_status", { length: 50 }).notNull(),
+  reason: varchar("reason", { length: 200 }), // break_lunch, break_meeting, system_update, etc.
+  duration: integer("duration"), // seconds in previous status
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+// Agent call assignments for tracking active calls
+export const agentCalls = pgTable("agent_calls", {
+  id: serial("id").primaryKey(),
+  agentId: integer("agent_id").references(() => agents.id).notNull(),
+  callId: integer("call_id").references(() => calls.id).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  answeredAt: timestamp("answered_at"),
+  endedAt: timestamp("ended_at"),
+  status: varchar("status", { length: 50 }).default("assigned").notNull(), // assigned, answered, completed, missed
+  notes: text("notes"),
+  rating: integer("rating"), // 1-5 customer satisfaction rating
+  disposition: varchar("disposition", { length: 100 }), // sale, no_sale, callback, busy, etc.
 });
 
 // Integration system tables
@@ -307,8 +369,33 @@ export const insertAgentSchema = createInsertSchema(agents).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
+  userId: z.number().optional(),
   name: z.string().min(1, "Agent name is required"),
   email: z.string().email("Valid email is required").min(1, "Email is required"),
+  phoneNumber: z.string().optional(),
+  extensionNumber: z.string().optional(),
+  status: z.enum(["offline", "available", "busy", "break", "training"]).optional(),
+  skills: z.array(z.string()).optional(),
+  maxConcurrentCalls: z.number().min(1).max(10).optional(),
+  priority: z.number().min(1).max(10).optional(),
+  department: z.string().optional(),
+  timezone: z.string().optional(),
+  workSchedule: z.string().optional(),
+});
+
+export const insertAgentCampaignSchema = createInsertSchema(agentCampaigns).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAgentStatusLogSchema = createInsertSchema(agentStatusLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertAgentCallSchema = createInsertSchema(agentCalls).omit({
+  id: true,
+  assignedAt: true,
 });
 
 export type User = typeof users.$inferSelect;
@@ -332,6 +419,15 @@ export type InsertCallLog = z.infer<typeof insertCallLogSchema>;
 
 export type Agent = typeof agents.$inferSelect;
 export type InsertAgent = z.infer<typeof insertAgentSchema>;
+
+export type AgentCampaign = typeof agentCampaigns.$inferSelect;
+export type InsertAgentCampaign = z.infer<typeof insertAgentCampaignSchema>;
+
+export type AgentStatusLog = typeof agentStatusLogs.$inferSelect;
+export type InsertAgentStatusLog = z.infer<typeof insertAgentStatusLogSchema>;
+
+export type AgentCall = typeof agentCalls.$inferSelect;
+export type InsertAgentCall = z.infer<typeof insertAgentCallSchema>;
 
 export const insertPhoneNumberSchema = createInsertSchema(phoneNumbers).omit({
   id: true,

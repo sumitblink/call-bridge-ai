@@ -291,9 +291,9 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  // Agent operations (backward compatibility)
+  // Enhanced Agent operations
   async getAgents(): Promise<Agent[]> {
-    return await db.select().from(agents);
+    return await db.select().from(agents).orderBy(agents.name);
   }
 
   async getAgent(id: number): Promise<Agent | undefined> {
@@ -302,20 +302,165 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAgent(agent: InsertAgent): Promise<Agent> {
+    const agentData = {
+      ...agent,
+      userId: agent.userId || 1, // Default to user 1 if not provided
+      status: agent.status || 'offline',
+      skills: agent.skills || [],
+      maxConcurrentCalls: agent.maxConcurrentCalls || 1,
+      priority: agent.priority || 5,
+      timezone: agent.timezone || 'UTC',
+      isOnline: false
+    };
+
     const [newAgent] = await db
       .insert(agents)
-      .values(agent)
+      .values(agentData)
       .returning();
     return newAgent;
   }
 
   async updateAgent(id: number, agent: Partial<InsertAgent>): Promise<Agent | undefined> {
-    const [updated] = await db
+    const updateData = {
+      ...agent,
+      updatedAt: new Date()
+    };
+
+    const [updatedAgent] = await db
       .update(agents)
-      .set(agent)
+      .set(updateData)
       .where(eq(agents.id, id))
       .returning();
-    return updated || undefined;
+    return updatedAgent || undefined;
+  }
+
+  async deleteAgent(id: number): Promise<boolean> {
+    const result = await db
+      .delete(agents)
+      .where(eq(agents.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Agent Campaign Management
+  async getAgentCampaigns(agentId: number): Promise<any[]> {
+    try {
+      const assignments = await db
+        .select({
+          campaignId: agentCampaigns.campaignId,
+          campaignName: campaigns.name,
+          priority: agentCampaigns.priority,
+          isActive: agentCampaigns.isActive,
+          createdAt: agentCampaigns.createdAt
+        })
+        .from(agentCampaigns)
+        .leftJoin(campaigns, eq(agentCampaigns.campaignId, campaigns.id))
+        .where(eq(agentCampaigns.agentId, agentId));
+      
+      return assignments;
+    } catch (error) {
+      console.error("Error fetching agent campaigns:", error);
+      return [];
+    }
+  }
+
+  async assignAgentToCampaign(agentId: number, campaignId: number, priority = 1): Promise<any> {
+    try {
+      const [assignment] = await db
+        .insert(agentCampaigns)
+        .values({
+          agentId,
+          campaignId,
+          priority,
+          isActive: true
+        })
+        .returning();
+      return assignment;
+    } catch (error) {
+      console.error("Error assigning agent to campaign:", error);
+      throw error;
+    }
+  }
+
+  async removeAgentFromCampaign(agentId: number, campaignId: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(agentCampaigns)
+        .where(
+          and(
+            eq(agentCampaigns.agentId, agentId),
+            eq(agentCampaigns.campaignId, campaignId)
+          )
+        );
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error("Error removing agent from campaign:", error);
+      return false;
+    }
+  }
+
+  // Agent Status Management
+  async updateAgentStatus(agentId: number, status: string, reason?: string): Promise<Agent | undefined> {
+    try {
+      const [updatedAgent] = await db
+        .update(agents)
+        .set({
+          status,
+          lastActivityAt: new Date(),
+          isOnline: status !== 'offline',
+          loginTime: status === 'available' ? new Date() : undefined
+        })
+        .where(eq(agents.id, agentId))
+        .returning();
+
+      // Log status change
+      if (reason) {
+        await db.insert(agentStatusLogs).values({
+          agentId,
+          newStatus: status,
+          reason
+        });
+      }
+
+      return updatedAgent || undefined;
+    } catch (error) {
+      console.error("Error updating agent status:", error);
+      throw error;
+    }
+  }
+
+  // Agent Call Management
+  async getAgentActiveCalls(agentId: number): Promise<any[]> {
+    try {
+      const activeCalls = await db
+        .select({
+          callId: agentCalls.callId,
+          status: agentCalls.status,
+          assignedAt: agentCalls.assignedAt,
+          answeredAt: agentCalls.answeredAt,
+          call: calls
+        })
+        .from(agentCalls)
+        .leftJoin(calls, eq(agentCalls.callId, calls.id))
+        .where(
+          and(
+            eq(agentCalls.agentId, agentId),
+            inArray(agentCalls.status, ['assigned', 'answered'])
+          )
+        );
+      
+      return activeCalls;
+    } catch (error) {
+      console.error("Error fetching agent active calls:", error);
+      return [];
+    }
+  }
+
+  async getOnlineAgents(): Promise<Agent[]> {
+    return await db
+      .select()
+      .from(agents)
+      .where(eq(agents.isOnline, true))
+      .orderBy(agents.priority, agents.name);
   }
 
   async deleteAgent(id: number): Promise<boolean> {
