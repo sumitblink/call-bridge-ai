@@ -61,6 +61,7 @@ function Router() {
           <Route path="/agents" component={Agents} />
           <Route path="/calls" component={Calls} />
           <Route path="/phone-numbers" component={PhoneNumbers} />
+          <Route path="/number-pools" component={NumberPools} />
           <Route path="/dni" component={DNI} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />

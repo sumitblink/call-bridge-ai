@@ -1,0 +1,70 @@
+Implement Complete Number Pool Flow - Missing UI Components
+I need to implement the proper user flow for my call tracking platform. The backend routes already exist, but I'm missing the frontend UI components.
+REQUIRED USER FLOW:
+1. Create Campaign → 2. Add Buyers → 3. Add Publishers → 4. Create Number Pool → 5. Add Numbers to Pool → 6. Assign Pool to Campaign → 7. Activate Campaign
+WHAT'S MISSING - PLEASE IMPLEMENT:
+1. Number Pool Management UI
+
+Create a new page: client/src/pages/number-pools.tsx
+Add CRUD interface for number pools (create, edit, delete)
+Include fields: name, pool size, assignment strategy, status
+Show pool statistics (total numbers, available, assigned)
+
+2. Pool Assignment Interface in Campaign Settings
+
+Add "Number Pools" tab to campaign details page
+Allow selecting and assigning pools to campaigns
+Show pool priority and assignment status
+Include pool statistics within campaign view
+
+3. Add Numbers to Pool Interface
+
+In the number pools page, add "Manage Numbers" button
+Allow selecting purchased phone numbers to add to pool
+Set number priority within pool
+Show which numbers are in which pools
+
+4. Pool Selection in Campaign Creation
+
+Add pool selection dropdown in campaign creation form
+Allow assigning pool during campaign setup
+Show pool availability and capacity
+
+5. Visual Flow Dashboard
+
+Create a visual representation: Pool → Campaign → Buyers
+Show routing flow with arrows and status indicators
+Display pool utilization and campaign assignment status
+
+EXISTING BACKEND ROUTES TO USE:
+
+POST /api/number-pools - Create pool
+PUT /api/number-pools/:id - Update pool
+DELETE /api/number-pools/:id - Delete pool
+POST /api/number-pools/:poolId/assign-number - Add number to pool
+POST /api/campaigns/:campaignId/assign-pool - Assign pool to campaign
+GET /api/campaigns/:id/pool-stats - Get pool statistics
+
+REMOVE CONFLICTING FEATURES:
+
+Remove direct phone number assignment from campaigns
+Remove campaign dropdown from phone numbers page
+Focus only on the pool-based assignment system
+
+COMPONENTS TO CREATE:
+
+client/src/components/NumberPoolManager.tsx
+client/src/components/campaign/CampaignPools.tsx
+client/src/components/PoolAssignmentDialog.tsx
+client/src/components/NumberPoolStats.tsx
+client/src/pages/number-pools.tsx
+
+INTEGRATION POINTS:
+
+Add "Number Pools" to main navigation
+Add pool assignment tab to campaign details
+Update campaign creation wizard to include pool selection
+Show pool status in campaign list view
+
+The backend APIs are already implemented and working. I just need the frontend components to complete the user flow. Please implement these UI components to match the existing design system using shadcn/ui components.
+Focus on creating a clean, intuitive workflow that guides users through the 7-step process above.

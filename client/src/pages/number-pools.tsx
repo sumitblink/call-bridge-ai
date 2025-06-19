@@ -1,684 +1,538 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Edit, Trash2, Settings, Phone, BarChart3, Users } from "lucide-react";
 import Layout from "@/components/Layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Progress } from "@/components/ui/progress";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Plus, Settings, BarChart3, RefreshCw, AlertCircle, CheckCircle, ShoppingCart, Loader2 } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { CardFooter } from "@/components/ui/card";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { apiRequest } from "@/lib/queryClient";
+import type { NumberPool, PhoneNumber } from "@shared/schema";
+import NumberPoolManager from "@/components/NumberPoolManager";
 
-interface Campaign {
-  id: number;
-  name: string;
-  status: string;
-  phoneNumber: string | null;
+// Schema for pool form
+const poolFormSchema = z.object({
+  name: z.string().min(1, "Pool name is required"),
+  poolSize: z.number().min(1, "Pool size must be at least 1"),
+  country: z.string().optional(),
+  numberType: z.enum(['local', 'toll-free']).optional(),
+  prefix: z.string().optional(),
+  closedBrowserDelay: z.number().optional(),
+  idleLimit: z.number().optional(),
+  isActive: z.boolean().default(true),
+});
+
+type PoolFormData = z.infer<typeof poolFormSchema>;
+
+function PoolCard({ pool, onEdit, onDelete, onManageNumbers }: {
+  pool: NumberPool;
+  onEdit: (pool: NumberPool) => void;
+  onDelete: (pool: NumberPool) => void;
+  onManageNumbers: (pool: NumberPool) => void;
+}) {
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <Badge 
+                variant={pool.isActive ? 'default' : 'secondary'}
+                className={pool.isActive ? 'bg-green-100 text-green-800' : ''}
+              >
+                {pool.isActive ? 'Active' : 'Inactive'}
+              </Badge>
+              <h3 className="text-lg font-semibold">{pool.name}</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="text-center">
+                <p className="text-gray-500 mb-1">Pool Size</p>
+                <p className="font-bold text-lg">{pool.poolSize}</p>
+              </div>
+              
+              <div className="text-center">
+                <p className="text-gray-500 mb-1">Type</p>
+                <p className="font-bold">{pool.numberType || 'Mixed'}</p>
+              </div>
+              
+              <div className="text-center">
+                <p className="text-gray-500 mb-1">Country</p>
+                <p className="font-bold">{pool.country || 'US'}</p>
+              </div>
+              
+              <div className="text-center">
+                <p className="text-gray-500 mb-1">Prefix</p>
+                <p className="font-bold">{pool.prefix || 'Any'}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 ml-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onManageNumbers(pool)}
+            >
+              <Phone className="h-4 w-4 mr-1" />
+              Numbers
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(pool)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => onDelete(pool)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
-interface TrunkConfig {
-  id: string;
-  friendlyName: string;
-  domainName: string;
-  secure: boolean;
-  cnam_lookup_enabled: boolean;
-  origination_url: string;
-}
-
-interface PoolStats {
-  totalNumbers: number;
-  availableNumbers: number;
-  assignedNumbers: number;
-  utilizationRate: number;
-  activeAssignments: {
-    sessionId: string;
-    phoneNumber: string;
-    assignedAt: string;
-    expiresAt: string;
-    utmData?: Record<string, string>;
-  }[];
-}
-
-interface NumberPoolForm {
-  campaignId: number;
-  trunkConfig: {
-    friendlyName: string;
-    domainName: string;
-    secure: boolean;
-    cnamLookupEnabled: boolean;
-  };
-  numberProvisioning: {
-    count: number;
-    areaCode: string;
-  };
-}
-
-export default function NumberPoolsPage() {
-  const [selectedCampaign, setSelectedCampaign] = useState<number | null>(null);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showStatsDialog, setShowStatsDialog] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [poolForm, setPoolForm] = useState<NumberPoolForm>({
-    campaignId: 0,
-    trunkConfig: {
-      friendlyName: "",
-      domainName: "",
-      secure: true,
-      cnamLookupEnabled: true
-    },
-    numberProvisioning: {
-      count: 10,
-      areaCode: ""
-    }
-  });
-
+function PoolForm({ pool, onSuccess }: { 
+  pool?: NumberPool; 
+  onSuccess: () => void; 
+}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch campaigns
-  const { data: campaigns = [], isLoading: campaignsLoading, error: campaignsError } = useQuery<Campaign[]>({
-    queryKey: ['/api/campaigns'],
-    refetchInterval: 30000
+  const form = useForm<PoolFormData>({
+    resolver: zodResolver(poolFormSchema),
+    defaultValues: {
+      name: pool?.name || "",
+      poolSize: pool?.poolSize || 10,
+      country: pool?.country || "US",
+      numberType: (pool?.numberType as 'local' | 'toll-free') || 'local',
+      prefix: pool?.prefix || "",
+      closedBrowserDelay: pool?.closedBrowserDelay || 0,
+      idleLimit: pool?.idleLimit || 0,
+      isActive: pool?.isActive !== false,
+    },
   });
 
-  // Fetch pool statistics for selected campaign
-  const { data: poolStats = {
-    totalNumbers: 0,
-    availableNumbers: 0,
-    assignedNumbers: 0,
-    utilizationRate: 0,
-    activeAssignments: []
-  }, isLoading: statsLoading, error: statsError } = useQuery<PoolStats>({
-    queryKey: ['/api/campaigns', selectedCampaign, 'pool-stats'],
-    enabled: !!selectedCampaign,
-    refetchInterval: 10000
-  });
-
-  // Create trunk mutation
-  const createTrunkMutation = useMutation({
-    mutationFn: async (data: { campaignId: number; trunkConfig: any }) => {
-      const response = await fetch(`/api/campaigns/${data.campaignId}/trunk/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data.trunkConfig)
-      });
-      if (!response.ok) throw new Error('Failed to create trunk');
+  const mutation = useMutation({
+    mutationFn: async (data: PoolFormData) => {
+      const url = pool ? `/api/number-pools/${pool.id}` : "/api/number-pools";
+      const method = pool ? "PUT" : "POST";
+      
+      const response = await apiRequest(url, method, data);
+      if (!response.ok) {
+        throw new Error(`Failed to ${pool ? 'update' : 'create'} pool`);
+      }
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] });
       toast({
-        title: "Trunk Created",
-        description: `SIP trunk "${data.trunk.friendlyName}" created successfully`
+        title: "Success",
+        description: `Pool ${pool ? 'updated' : 'created'} successfully`,
       });
-      setShowCreateDialog(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+      onSuccess();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to create trunk",
-        variant: "destructive"
+        description: error.message,
+        variant: "destructive",
       });
-    }
+    },
   });
 
-  // Provision numbers mutation
-  const provisionNumbersMutation = useMutation({
-    mutationFn: async (data: { campaignId: number; quantity: number; areaCode?: string; numberType: string }) => {
-      const response = await fetch(`/api/campaigns/${data.campaignId}/provision-numbers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quantity: data.quantity,
-          areaCode: data.areaCode,
-          numberType: data.numberType
-        })
-      });
-      if (!response.ok) throw new Error('Failed to provision numbers');
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Numbers Provisioned",
-        description: `Successfully provisioned ${data.numbers.length} phone numbers for $${data.totalCost.toFixed(2)}`
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/campaigns', selectedCampaign, 'pool-stats'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to provision numbers",
-        variant: "destructive"
-      });
-    }
-  });
-
-  const handleCreateTrunk = () => {
-    if (!poolForm.campaignId) {
-      toast({
-        title: "Error",
-        description: "Please select a campaign",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const campaign = campaigns.find(c => c.id === poolForm.campaignId);
-    if (!campaign) return;
-
-    const trunkConfig = {
-      ...poolForm.trunkConfig,
-      friendlyName: poolForm.trunkConfig.friendlyName || `${campaign.name} Trunk`,
-      domainName: poolForm.trunkConfig.domainName || `campaign-${poolForm.campaignId}.replit.app`
-    };
-
-    createTrunkMutation.mutate({
-      campaignId: poolForm.campaignId,
-      trunkConfig
-    });
+  const onSubmit = async (data: PoolFormData) => {
+    mutation.mutate(data);
   };
 
-  const handleProvisionNumbers = () => {
-    if (!selectedCampaign) return;
-    setShowConfirmDialog(true);
-  };
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Pool Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter pool name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-  const confirmProvisionNumbers = () => {
-    if (!selectedCampaign) return;
+        <FormField
+          control={form.control}
+          name="poolSize"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Pool Size</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder="10" 
+                  {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-    provisionNumbersMutation.mutate({
-      campaignId: selectedCampaign,
-      quantity: poolForm.numberProvisioning.count,
-      areaCode: poolForm.numberProvisioning.areaCode,
-      numberType: 'local'
-    });
-    setShowConfirmDialog(false);
-  };
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="numberType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Number Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="local">Local</SelectItem>
+                    <SelectItem value="toll-free">Toll-Free</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-  const formatPhoneNumber = (phoneNumber: string) => {
-    return phoneNumber.replace(/^\+1/, '').replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
-  };
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
-
-  const getUtmString = (utmData?: Record<string, string>) => {
-    if (!utmData) return 'No UTM data';
-    const params = Object.entries(utmData)
-      .filter(([_, value]) => value)
-      .map(([key, value]) => `${key}=${value}`)
-      .join(', ');
-    return params || 'No UTM data';
-  };
-
-  if (campaignsLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <RefreshCw className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!campaigns || campaigns.length === 0) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Number Pools</h1>
-            <p className="text-gray-600">Manage Twilio Elastic SIP Trunks and number pools for campaign tracking</p>
-          </div>
+          <FormField
+            control={form.control}
+            name="country"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Country</FormLabel>
+                <FormControl>
+                  <Input placeholder="US" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
-        <div className="text-center py-12">
-          <Phone className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns found</h3>
-          <p className="text-gray-500 mb-4">Create a campaign first to set up number pools.</p>
-          <Button asChild>
-            <a href="/campaigns">Create Campaign</a>
+
+        <FormField
+          control={form.control}
+          name="prefix"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Prefix (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., +1800" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="closedBrowserDelay"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Closed Browser Delay (minutes)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="0" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="idleLimit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Idle Limit (minutes)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="0" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="submit" disabled={mutation.isPending}>
+            {mutation.isPending ? "Saving..." : pool ? "Update Pool" : "Create Pool"}
           </Button>
         </div>
-      </div>
+      </form>
+    </Form>
+  );
+}
+
+export default function NumberPools() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingPool, setEditingPool] = useState<NumberPool | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [poolToDelete, setPoolToDelete] = useState<NumberPool | null>(null);
+  const [managingPool, setManagingPool] = useState<NumberPool | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: pools, isLoading, error } = useQuery<NumberPool[]>({
+    queryKey: ["/api/number-pools"],
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest(`/api/number-pools/${id}`, "DELETE");
+      if (!response.ok) {
+        throw new Error("Failed to delete pool");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] });
+      toast({
+        title: "Success",
+        description: "Pool deleted successfully",
+      });
+      setDeleteDialogOpen(false);
+      setPoolToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEdit = (pool: NumberPool) => {
+    setEditingPool(pool);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (pool: NumberPool) => {
+    setPoolToDelete(pool);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleManageNumbers = (pool: NumberPool) => {
+    setManagingPool(pool);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingPool(null);
+  };
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-medium mb-2">Error loading pools</h3>
+            <p className="text-muted-foreground mb-4">
+              {error instanceof Error ? error.message : "Failed to load pools"}
+            </p>
+            <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] })}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </Layout>
     );
   }
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Number Pools</h1>
-            <p className="text-gray-600">Manage Twilio Elastic SIP Trunks and number pools for campaign tracking</p>
+            <p className="text-muted-foreground">
+              Manage phone number pools for dynamic number insertion and call routing.
+            </p>
           </div>
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Pool
-              </Button>
-            </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Pool
+          </Button>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Pools</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{pools?.length || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                Active number pools
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Numbers</CardTitle>
+              <Phone className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {pools?.reduce((sum, pool) => sum + (pool.poolSize || 0), 0) || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Combined pool capacity
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Pools</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {pools?.filter(pool => pool.isActive).length || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Currently active
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Pools List */}
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="animate-pulse space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-8 bg-gray-200 rounded w-full"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : !pools || pools.length === 0 ? (
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center">
+                <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No pools yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Create your first number pool to enable dynamic number insertion.
+                </p>
+                <Button onClick={() => setIsDialogOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create First Pool
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {pools.map((pool) => (
+              <PoolCard
+                key={pool.id}
+                pool={pool}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onManageNumbers={handleManageNumbers}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Create/Edit Pool Dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Create Number Pool</DialogTitle>
+              <DialogTitle>
+                {editingPool ? "Edit Pool" : "Create New Pool"}
+              </DialogTitle>
               <DialogDescription>
-                Set up a new SIP trunk and provision phone numbers for campaign tracking
+                {editingPool 
+                  ? "Update pool configuration and settings."
+                  : "Create a new number pool for dynamic number insertion."
+                }
               </DialogDescription>
             </DialogHeader>
-            
-            <div className="space-y-6">
-              <div>
-                <Label htmlFor="campaign">Campaign</Label>
-                <Select
-                  value={poolForm.campaignId.toString()}
-                  onValueChange={(value) => setPoolForm(prev => ({ ...prev, campaignId: parseInt(value) }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select campaign" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {campaigns?.map(campaign => (
-                      <SelectItem key={campaign.id} value={campaign.id.toString()}>
-                        {campaign.name}
-                      </SelectItem>
-                    )) || []}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="friendlyName">Trunk Name</Label>
-                  <Input
-                    id="friendlyName"
-                    placeholder="e.g., Summer Campaign Trunk"
-                    value={poolForm.trunkConfig.friendlyName}
-                    onChange={(e) => setPoolForm(prev => ({
-                      ...prev,
-                      trunkConfig: { ...prev.trunkConfig, friendlyName: e.target.value }
-                    }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="domainName">Domain Name</Label>
-                  <Input
-                    id="domainName"
-                    placeholder="e.g., campaign-7.replit.app"
-                    value={poolForm.trunkConfig.domainName}
-                    onChange={(e) => setPoolForm(prev => ({
-                      ...prev,
-                      trunkConfig: { ...prev.trunkConfig, domainName: e.target.value }
-                    }))}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="numberCount">Number Count</Label>
-                  <Input
-                    id="numberCount"
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={poolForm.numberProvisioning.count}
-                    onChange={(e) => setPoolForm(prev => ({
-                      ...prev,
-                      numberProvisioning: { ...prev.numberProvisioning, count: parseInt(e.target.value) || 10 }
-                    }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="areaCode">Area Code (Optional)</Label>
-                  <Input
-                    id="areaCode"
-                    placeholder="e.g., 212"
-                    value={poolForm.numberProvisioning.areaCode}
-                    onChange={(e) => setPoolForm(prev => ({
-                      ...prev,
-                      numberProvisioning: { ...prev.numberProvisioning, areaCode: e.target.value }
-                    }))}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={poolForm.trunkConfig.secure}
-                    onChange={(e) => setPoolForm(prev => ({
-                      ...prev,
-                      trunkConfig: { ...prev.trunkConfig, secure: e.target.checked }
-                    }))}
-                  />
-                  <span>Secure (TLS)</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={poolForm.trunkConfig.cnamLookupEnabled}
-                    onChange={(e) => setPoolForm(prev => ({
-                      ...prev,
-                      trunkConfig: { ...prev.trunkConfig, cnamLookupEnabled: e.target.checked }
-                    }))}
-                  />
-                  <span>CNAM Lookup</span>
-                </label>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleCreateTrunk}
-                  disabled={createTrunkMutation.isPending}
-                >
-                  {createTrunkMutation.isPending ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Pool'
-                  )}
-                </Button>
-              </div>
-            </div>
+            <PoolForm
+              pool={editingPool || undefined}
+              onSuccess={handleCloseDialog}
+            />
           </DialogContent>
         </Dialog>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Campaign Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Phone className="h-5 w-5 mr-2" />
-              Campaigns
-            </CardTitle>
-            <CardDescription>Select a campaign to manage its number pool</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {campaigns.map(campaign => (
-                <div
-                  key={campaign.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedCampaign === campaign.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedCampaign(campaign.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">{campaign.name}</h3>
-                      <p className="text-sm text-gray-500">
-                        {campaign.phoneNumber || 'No phone number'}
-                      </p>
-                    </div>
-                    <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
-                      {campaign.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Pool</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{poolToDelete?.name}"? This action cannot be undone.
+                All numbers in this pool will be unassigned.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => poolToDelete && deleteMutation.mutate(poolToDelete.id)}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-        {/* Pool Statistics */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2" />
-                Pool Statistics
-              </div>
-              {selectedCampaign && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      fetch('/api/phone-numbers/import', { method: 'POST' })
-                        .then(res => res.json())
-                        .then(data => {
-                          if (data.imported > 0) {
-                            toast({
-                              title: "Numbers Imported",
-                              description: `Successfully imported ${data.imported} existing Twilio numbers`
-                            });
-                            queryClient.invalidateQueries({ queryKey: ['/api/campaigns', selectedCampaign, 'pool-stats'] });
-                          }
-                        })
-                        .catch(() => {
-                          toast({
-                            title: "Import Failed",
-                            description: "Could not import existing numbers from Twilio",
-                            variant: "destructive"
-                          });
-                        });
-                    }}
-                  >
-                    <Phone className="h-4 w-4 mr-2" />
-                    Import Existing Numbers
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => queryClient.invalidateQueries({ 
-                      queryKey: ['/api/campaigns', selectedCampaign, 'pool-stats'] 
-                    })}
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </CardTitle>
-            <CardDescription>
-              {selectedCampaign 
-                ? `Number pool statistics for ${campaigns.find(c => c.id === selectedCampaign)?.name}`
-                : 'Select a campaign to view pool statistics'
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!selectedCampaign ? (
-              <div className="text-center py-8 text-gray-500">
-                Select a campaign from the left to view its number pool statistics
-              </div>
-            ) : statsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <RefreshCw className="h-6 w-6 animate-spin" />
-              </div>
-            ) : statsError ? (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  No number pool found for this campaign. Create a pool to get started.
-                </AlertDescription>
-              </Alert>
-            ) : poolStats ? (
-              <div className="space-y-6">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{poolStats.totalNumbers}</div>
-                    <div className="text-sm text-gray-500">Total Numbers</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{poolStats.availableNumbers}</div>
-                    <div className="text-sm text-gray-500">Available</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600">{poolStats.assignedNumbers}</div>
-                    <div className="text-sm text-gray-500">Assigned</div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium">Pool Utilization</span>
-                    <span className="text-sm text-gray-500">{poolStats.utilizationRate}%</span>
-                  </div>
-                  <Progress value={poolStats.utilizationRate} className="h-2" />
-                </div>
-
-                {poolStats.activeAssignments && poolStats.activeAssignments.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-3">Active Assignments</h4>
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {poolStats.activeAssignments.map((assignment, index) => (
-                        <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{formatPhoneNumber(assignment.phoneNumber)}</div>
-                              <div className="text-sm text-gray-500">
-                                Session: {assignment.sessionId}
-                              </div>
-                              <div className="text-xs text-gray-400">
-                                {getUtmString(assignment.utmData)}
-                              </div>
-                            </div>
-                            <div className="text-right text-sm">
-                              <div>Assigned: {formatDateTime(assignment.assignedAt)}</div>
-                              <div>Expires: {formatDateTime(assignment.expiresAt)}</div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Integration Code */}
-      {selectedCampaign && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Integration Code</CardTitle>
-            <CardDescription>
-              Add this JavaScript code to your landing pages to enable dynamic number insertion
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="html" className="w-full">
-              <TabsList>
-                <TabsTrigger value="html">HTML Integration</TabsTrigger>
-                <TabsTrigger value="javascript">JavaScript SDK</TabsTrigger>
-                <TabsTrigger value="api">API Endpoint</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="html" className="mt-4">
-                <div className="bg-gray-100 p-4 rounded-lg">
-                  <pre className="text-sm overflow-x-auto">
-{`<!-- Add this to your HTML where you want phone numbers to appear -->
-<span data-tracking-phone data-format="formatted">Loading...</span>
-<a href="tel:+1234567890" data-tracking-phone data-format="raw">Call Now</a>
-
-<!-- Add this script before closing </body> tag -->
-<script src="https://${window.location.host}/api/campaigns/${selectedCampaign}/tracking-sdk.js"></script>`}
-                  </pre>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="javascript" className="mt-4">
-                <div className="bg-gray-100 p-4 rounded-lg">
-                  <pre className="text-sm overflow-x-auto">
-{`// Manual JavaScript integration
-CampaignTracker.assignTrackingNumber(function(error, assignment) {
-  if (error) {
-    console.error('Failed to get tracking number:', error);
-    return;
-  }
-  
-  console.log('Tracking number assigned:', assignment);
-  // Update your page with assignment.formattedNumber
-});
-
-// Update specific elements
-CampaignTracker.updatePhoneNumbers('[data-phone]');`}
-                  </pre>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="api" className="mt-4">
-                <div className="bg-gray-100 p-4 rounded-lg">
-                  <pre className="text-sm overflow-x-auto">
-{`// Direct API call
-POST /api/campaigns/${selectedCampaign}/assign-tracking-number
-
-{
-  "sessionId": "session_123",
-  "utmSource": "google",
-  "utmMedium": "cpc",
-  "utmCampaign": "summer_sale",
-  "ipAddress": "192.168.1.1",
-  "userAgent": "Mozilla/5.0...",
-  "referrer": "https://google.com"
-}`}
-                  </pre>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Confirmation Dialog */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Number Purchase</DialogTitle>
-            <DialogDescription>
-              You are about to purchase {poolForm.numberProvisioning.count} phone numbers from Twilio.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
-                <div>
-                  <h4 className="font-medium text-yellow-800">Cost Information</h4>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Estimated cost: ${(poolForm.numberProvisioning.count * 1.15).toFixed(2)} 
-                    ({poolForm.numberProvisioning.count} numbers × $1.15/month)
-                  </p>
-                  <p className="text-sm text-yellow-700">
-                    {poolForm.numberProvisioning.areaCode ? `Area code: ${poolForm.numberProvisioning.areaCode}` : 'Random area codes'}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={confirmProvisionNumbers} disabled={provisionNumbersMutation.isPending}>
-                {provisionNumbersMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Purchasing...
-                  </>
-                ) : (
-                  'Confirm Purchase'
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        {/* Number Pool Manager Dialog */}
+        {managingPool && (
+          <NumberPoolManager
+            pool={managingPool}
+            isOpen={!!managingPool}
+            onClose={() => setManagingPool(null)}
+          />
+        )}
       </div>
     </Layout>
   );
