@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import type { NumberPool, PhoneNumber } from "@shared/schema";
-import NumberPoolManager from "@/components/NumberPoolManager";
+import NumberPoolManager from "../components/NumberPoolManager";
 
 // Schema for pool form
 const poolFormSchema = z.object({

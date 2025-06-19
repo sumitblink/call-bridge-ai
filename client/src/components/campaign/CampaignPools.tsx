@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Campaign, NumberPool } from "@shared/schema";
-import PoolAssignmentDialog from "@/components/PoolAssignmentDialog";
+import PoolAssignmentDialog from "../PoolAssignmentDialog";
 
 interface CampaignPoolsProps {
   campaign: Campaign;

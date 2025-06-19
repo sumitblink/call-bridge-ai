@@ -12,6 +12,7 @@ import Layout from "@/components/Layout";
 import CampaignSettings from "@/components/campaign/CampaignSettings";
 import CampaignBuyers from "@/components/campaign/CampaignBuyers";
 import CampaignNumbers from "@/components/campaign/CampaignNumbers";
+import CampaignPools from "@/components/campaign/CampaignPools";
 import CampaignTracking from "@/components/campaign/CampaignTracking";
 import CampaignPublishers from "@/components/campaign/CampaignPublishers";
 import CampaignAnalytics from "@/components/campaign/CampaignAnalytics";
@@ -94,7 +95,7 @@ export default function CampaignDetail() {
 
         {/* Campaign Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
@@ -102,6 +103,10 @@ export default function CampaignDetail() {
             <TabsTrigger value="buyers" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Buyers</span>
+            </TabsTrigger>
+            <TabsTrigger value="pools" className="flex items-center space-x-2">
+              <Phone className="h-4 w-4" />
+              <span className="hidden sm:inline">Pools</span>
             </TabsTrigger>
             <TabsTrigger value="tracking" className="flex items-center space-x-2">
               <Globe className="h-4 w-4" />
@@ -125,7 +130,9 @@ export default function CampaignDetail() {
             <CampaignBuyers campaignId={campaign.id} />
           </TabsContent>
 
-
+          <TabsContent value="pools">
+            <CampaignPools campaign={campaign} />
+          </TabsContent>
 
           <TabsContent value="tracking">
             <CampaignTracking campaignId={campaign.id} campaign={campaign} />
