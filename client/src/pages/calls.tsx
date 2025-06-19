@@ -590,6 +590,3 @@ export default function CallsPage() {
     </Layout>
   );
 }
-
-// Export the component as both default and named export for compatibility
-export { CallsPage as Calls };
