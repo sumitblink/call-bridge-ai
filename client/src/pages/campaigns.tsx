@@ -122,6 +122,15 @@ function CampaignCard({ campaign, onDelete, onEdit }: {
                 <Play className="h-4 w-4" />
               }
             </Button>
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit(campaign)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -306,6 +315,8 @@ export default function Campaigns() {
   });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -351,6 +362,11 @@ export default function Campaigns() {
   const handleDelete = (campaign: Campaign) => {
     setCampaignToDelete(campaign);
     setDeleteDialogOpen(true);
+  };
+
+  const handleEdit = (campaign: Campaign) => {
+    setEditingCampaign(campaign);
+    setIsEditDialogOpen(true);
   };
 
   if (error) {
@@ -528,6 +544,7 @@ export default function Campaigns() {
                 key={campaign.id}
                 campaign={campaign}
                 onDelete={handleDelete}
+                onEdit={handleEdit}
               />
             ))}
           </div>
@@ -553,6 +570,27 @@ export default function Campaigns() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Edit Campaign Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit Campaign</DialogTitle>
+              <DialogDescription>
+                Update campaign details and pool assignment.
+              </DialogDescription>
+            </DialogHeader>
+            {editingCampaign && (
+              <CampaignForm
+                campaign={editingCampaign}
+                onSuccess={() => {
+                  setIsEditDialogOpen(false);
+                  setEditingCampaign(null);
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
