@@ -13,6 +13,12 @@ import {
   type InsertCampaignBuyer,
   type CallLog,
   type InsertCallLog,
+  type NumberPool,
+  type InsertNumberPool,
+  type NumberPoolAssignment,
+  type InsertNumberPoolAssignment,
+  type CampaignPoolAssignment,
+  type InsertCampaignPoolAssignment,
 } from '@shared/schema';
 
 export interface IStorage {
@@ -109,6 +115,24 @@ export interface IStorage {
   getPhoneNumberByNumber(phoneNumber: string): Promise<any | undefined>;
   assignPhoneNumberToCampaign(phoneNumberId: number, campaignId: number): Promise<any | undefined>;
   unassignPhoneNumberFromCampaign(phoneNumberId: number): Promise<any | undefined>;
+
+  // Number Pools
+  getNumberPools(userId?: number): Promise<NumberPool[]>;
+  getNumberPool(id: number): Promise<NumberPool | undefined>;
+  createNumberPool(pool: InsertNumberPool): Promise<NumberPool>;
+  updateNumberPool(id: number, pool: Partial<InsertNumberPool>): Promise<NumberPool | undefined>;
+  deleteNumberPool(id: number): Promise<boolean>;
+  
+  // Pool Assignments
+  getPoolNumbers(poolId: number): Promise<any[]>;
+  assignNumberToPool(poolId: number, phoneNumberId: number, priority?: number): Promise<NumberPoolAssignment>;
+  removeNumberFromPool(poolId: number, phoneNumberId: number): Promise<boolean>;
+  getNumberPoolAssignments(phoneNumberId: number): Promise<NumberPoolAssignment[]>;
+  
+  // Campaign Pool Assignments
+  getCampaignPools(campaignId: number): Promise<NumberPool[]>;
+  assignPoolToCampaign(campaignId: number, poolId: number, priority?: number): Promise<CampaignPoolAssignment>;
+  removePoolFromCampaign(campaignId: number, poolId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

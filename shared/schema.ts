@@ -315,6 +315,45 @@ export const phoneNumbers = pgTable("phone_numbers", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Number Pools - Core pool system like Ringba
+export const numberPools = pgTable("number_pools", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: varchar("name", { length: 256 }).notNull(),
+  country: varchar("country", { length: 10 }).default("US").notNull(),
+  numberType: varchar("number_type", { length: 20 }).default("local").notNull(), // local, toll-free
+  poolSize: integer("pool_size").notNull(),
+  closedBrowserDelay: integer("closed_browser_delay").default(30).notNull(), // seconds
+  idleLimit: integer("idle_limit").default(300).notNull(), // seconds
+  prefix: varchar("prefix", { length: 10 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Number Pool Assignments - Link numbers to pools
+export const numberPoolAssignments = pgTable("number_pool_assignments", {
+  id: serial("id").primaryKey(),
+  poolId: integer("pool_id").references(() => numberPools.id).notNull(),
+  phoneNumberId: integer("phone_number_id").references(() => phoneNumbers.id).notNull(),
+  priority: integer("priority").default(1).notNull(), // order within pool
+  isActive: boolean("is_active").default(true).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+}, (table) => [
+  // Ensure each phone number is only in one pool at a time
+  index("unique_phone_pool").on(table.phoneNumberId, table.poolId),
+]);
+
+// Campaign Pool Assignments - Link pools to campaigns
+export const campaignPoolAssignments = pgTable("campaign_pool_assignments", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
+  poolId: integer("pool_id").references(() => numberPools.id).notNull(),
+  priority: integer("priority").default(1).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
@@ -398,6 +437,30 @@ export const insertAgentCallSchema = createInsertSchema(agentCalls).omit({
   assignedAt: true,
 });
 
+export const insertNumberPoolSchema = createInsertSchema(numberPools).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  userId: z.number().optional(),
+  name: z.string().min(1, "Pool name is required"),
+  poolSize: z.number().min(1, "Pool size must be at least 1"),
+  closedBrowserDelay: z.number().min(0).max(3600).optional(),
+  idleLimit: z.number().min(0).max(3600).optional(),
+  numberType: z.enum(["local", "toll-free"]).optional(),
+  country: z.string().length(2).optional(),
+});
+
+export const insertNumberPoolAssignmentSchema = createInsertSchema(numberPoolAssignments).omit({
+  id: true,
+  assignedAt: true,
+});
+
+export const insertCampaignPoolAssignmentSchema = createInsertSchema(campaignPoolAssignments).omit({
+  id: true,
+  assignedAt: true,
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
@@ -428,6 +491,15 @@ export type InsertAgentStatusLog = z.infer<typeof insertAgentStatusLogSchema>;
 
 export type AgentCall = typeof agentCalls.$inferSelect;
 export type InsertAgentCall = z.infer<typeof insertAgentCallSchema>;
+
+export type NumberPool = typeof numberPools.$inferSelect;
+export type InsertNumberPool = z.infer<typeof insertNumberPoolSchema>;
+
+export type NumberPoolAssignment = typeof numberPoolAssignments.$inferSelect;
+export type InsertNumberPoolAssignment = z.infer<typeof insertNumberPoolAssignmentSchema>;
+
+export type CampaignPoolAssignment = typeof campaignPoolAssignments.$inferSelect;
+export type InsertCampaignPoolAssignment = z.infer<typeof insertCampaignPoolAssignmentSchema>;
 
 export const insertPhoneNumberSchema = createInsertSchema(phoneNumbers).omit({
   id: true,
