@@ -19,7 +19,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import type { Campaign, InsertCampaign, Buyer } from "@shared/schema";
+import type { Campaign, InsertCampaign, Buyer, NumberPool } from "@shared/schema";
 import { DatabaseStatus } from "@/components/DatabaseStatus";
 
 // Schema for campaign form with pool assignment
@@ -44,9 +44,10 @@ function BuyerCount({ campaignId }: { campaignId: number }) {
   return <span>{buyers.length}</span>;
 }
 
-function CampaignCard({ campaign, onDelete }: { 
+function CampaignCard({ campaign, onDelete, onEdit }: { 
   campaign: Campaign; 
   onDelete: (campaign: Campaign) => void;
+  onEdit?: (campaign: Campaign) => void;
 }) {
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -146,7 +147,7 @@ function CampaignForm({
   const queryClient = useQueryClient();
 
   // Fetch available pools
-  const { data: pools, isLoading: poolsLoading } = useQuery({
+  const { data: pools, isLoading: poolsLoading } = useQuery<NumberPool[]>({
     queryKey: ["/api/pools"],
     retry: false,
   });
@@ -273,9 +274,9 @@ function CampaignForm({
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="none">No Pool (Use Campaign Phone Number)</SelectItem>
-                  {pools && Array.isArray(pools) && pools.map((pool: any) => (
+                  {pools && pools.map((pool: NumberPool) => (
                     <SelectItem key={pool.id} value={pool.id.toString()}>
-                      {pool.name} ({pool.poolSize} numbers)
+                      {pool.name} ({pool.poolSize || 0} numbers)
                     </SelectItem>
                   ))}
                 </SelectContent>
