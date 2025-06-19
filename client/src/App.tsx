@@ -60,12 +60,8 @@ function Router() {
           <Route path="/publishers" component={Publishers} />
           <Route path="/agents" component={Agents} />
           <Route path="/calls" component={Calls} />
-          <Route path="/call-control" component={CallControl} />
           <Route path="/phone-numbers" component={PhoneNumbers} />
-          <Route path="/number-pools" component={NumberPools} />
-          <Route path="/pools" component={Pools} />
           <Route path="/dni" component={DNI} />
-          <Route path="/ivr-setup" component={IVRSetup} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />
           <Route path="/twilio-test" component={TwilioTest} />

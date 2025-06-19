@@ -9,9 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Search, Trash2, Settings, Download } from "lucide-react";
+import { Phone, Search, Trash2, Settings, Download, Plus, Users, Layers } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertNumberPoolSchema, type NumberPool } from "@shared/schema";
 
 
 interface PhoneNumber {
@@ -48,6 +53,7 @@ export default function PhoneNumbersPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("owned");
+  const [isCreatePoolDialogOpen, setIsCreatePoolDialogOpen] = useState(false);
   const [searchParams, setSearchParams] = useState({
     country: 'US',
     numberType: 'local',
@@ -68,6 +74,11 @@ export default function PhoneNumbersPage() {
   // Fetch campaigns
   const { data: campaigns = [] } = useQuery({
     queryKey: ['/api/campaigns'],
+  });
+
+  // Fetch number pools
+  const { data: pools = [] } = useQuery<NumberPool[]>({
+    queryKey: ["/api/number-pools"],
   });
 
   // Search available numbers
@@ -249,14 +260,22 @@ export default function PhoneNumbersPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="owned" className="flex items-center gap-2">
               <Phone className="h-4 w-4" />
-              Owned Numbers ({phoneNumbers.length})
+              Owned Numbers
             </TabsTrigger>
             <TabsTrigger value="search" className="flex items-center gap-2">
               <Search className="h-4 w-4" />
               Buy Numbers
+            </TabsTrigger>
+            <TabsTrigger value="pools" className="flex items-center gap-2">
+              <Layers className="h-4 w-4" />
+              Number Pools
+            </TabsTrigger>
+            <TabsTrigger value="assignments" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Pool Assignments
             </TabsTrigger>
             <TabsTrigger value="webhooks" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
