@@ -251,8 +251,8 @@ function CampaignForm({
             <FormItem>
               <FormLabel>Number Pool (Optional)</FormLabel>
               <Select 
-                onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
-                defaultValue={field.value?.toString()}
+                onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
+                defaultValue={field.value?.toString() || "none"}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -260,7 +260,7 @@ function CampaignForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No Pool (Use Campaign Phone Number)</SelectItem>
+                  <SelectItem value="none">No Pool (Use Campaign Phone Number)</SelectItem>
                   {pools && Array.isArray(pools) && pools.map((pool: any) => (
                     <SelectItem key={pool.id} value={pool.id.toString()}>
                       {pool.name} ({pool.poolSize} numbers)
