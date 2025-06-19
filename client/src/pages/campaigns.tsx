@@ -26,7 +26,7 @@ import { DatabaseStatus } from "@/components/DatabaseStatus";
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
   country: z.string().min(1, "Country is required"),
-  poolId: z.number().optional(),
+  poolId: z.number().optional().nullable(),
 });
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
@@ -156,7 +156,7 @@ function CampaignForm({
     defaultValues: {
       name: campaign?.name || "",
       country: "US", // Default to US
-      poolId: campaign?.poolId || undefined,
+      poolId: campaign?.poolId || null,
     },
   });
 
@@ -258,8 +258,11 @@ function CampaignForm({
             <FormItem>
               <FormLabel>Number Pool (Optional)</FormLabel>
               <Select 
-                onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
-                defaultValue={field.value?.toString() || "none"}
+                onValueChange={(value) => {
+                  console.log('Pool selection changed:', value);
+                  field.onChange(value === "none" ? null : parseInt(value));
+                }} 
+                value={field.value?.toString() || "none"}
               >
                 <FormControl>
                   <SelectTrigger>
