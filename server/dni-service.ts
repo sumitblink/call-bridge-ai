@@ -95,7 +95,12 @@ export class DNIService {
 
         // Pool-based rotation logic - use round-robin or least recently used
         const rotationIndex = Math.floor(Math.random() * poolNumbers.length);
-        selectedPhone = poolNumbers[rotationIndex] as PhoneNumber;
+        const poolPhone = poolNumbers[rotationIndex];
+        selectedPhone = {
+          id: poolPhone.id,
+          phoneNumber: poolPhone.phoneNumber,
+          isActive: poolPhone.isActive
+        } as PhoneNumber;
       } else {
         // Traditional DNI: Use campaign's direct phone number
         if (!campaign.phoneNumber) {
@@ -113,7 +118,7 @@ export class DNIService {
         selectedPhone = {
           id: 0,
           phoneNumber: campaign.phoneNumber,
-          status: 'active'
+          isActive: true
         } as PhoneNumber;
       }
 
