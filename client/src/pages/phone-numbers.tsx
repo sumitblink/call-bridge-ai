@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Search, Trash2, Settings, Download, Plus, Users, Layers } from "lucide-react";
@@ -54,6 +55,7 @@ export default function PhoneNumbersPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("owned");
   const [isCreatePoolDialogOpen, setIsCreatePoolDialogOpen] = useState(false);
+  const [selectedNumbers, setSelectedNumbers] = useState<Set<number>>(new Set());
   const [searchParams, setSearchParams] = useState({
     country: 'US',
     numberType: 'local',
@@ -684,45 +686,156 @@ export default function PhoneNumbersPage() {
                     Create Pool
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Create Number Pool</DialogTitle>
+                    <DialogTitle>Create Number Pool from Existing Numbers</DialogTitle>
+                    <DialogDescription>
+                      Create a pool using your existing {Array.isArray(phoneNumbers) ? phoneNumbers.length : 0} phone numbers. Select which numbers to include in this pool.
+                    </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <div>
                       <Label htmlFor="poolName">Pool Name</Label>
-                      <Input id="poolName" placeholder="Enter pool name" />
+                      <Input 
+                        id="poolName" 
+                        placeholder="e.g., 'Marketing Campaign Pool' or 'US Local Numbers'" 
+                      />
                     </div>
+                    
                     <div>
-                      <Label htmlFor="country">Country</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select country" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="US">United States</SelectItem>
-                          <SelectItem value="CA">Canada</SelectItem>
-                          <SelectItem value="UK">United Kingdom</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label>Select Phone Numbers ({selectedNumbers.size} selected)</Label>
+                      <div className="mt-2 border rounded-lg p-4 max-h-60 overflow-y-auto">
+                        {Array.isArray(phoneNumbers) && phoneNumbers.length > 0 ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2 pb-2 border-b">
+                              <Checkbox
+                                id="selectAll"
+                                checked={selectedNumbers.size === phoneNumbers.length}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedNumbers(new Set(phoneNumbers.map((n: any) => n.id)));
+                                  } else {
+                                    setSelectedNumbers(new Set());
+                                  }
+                                }}
+                              />
+                              <Label htmlFor="selectAll" className="font-medium">
+                                Select All ({phoneNumbers.length} numbers)
+                              </Label>
+                            </div>
+                            {phoneNumbers.map((number: any) => (
+                              <div key={number.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`number-${number.id}`}
+                                  checked={selectedNumbers.has(number.id)}
+                                  onCheckedChange={(checked) => {
+                                    const newSelected = new Set(selectedNumbers);
+                                    if (checked) {
+                                      newSelected.add(number.id);
+                                    } else {
+                                      newSelected.delete(number.id);
+                                    }
+                                    setSelectedNumbers(newSelected);
+                                  }}
+                                />
+                                <Label htmlFor={`number-${number.id}`} className="flex-1">
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-mono">{number.phoneNumber}</span>
+                                    <div className="flex gap-2">
+                                      <Badge variant="outline" className="text-xs">
+                                        {number.country}
+                                      </Badge>
+                                      <Badge variant="outline" className="text-xs">
+                                        {number.numberType}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  {number.friendlyName && (
+                                    <div className="text-sm text-muted-foreground">
+                                      {number.friendlyName}
+                                    </div>
+                                  )}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-4 text-muted-foreground">
+                            <Phone className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p>No phone numbers available. Purchase numbers first to create pools.</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="idleLimit">Idle Limit (seconds)</Label>
+                        <Input 
+                          id="idleLimit" 
+                          type="number" 
+                          placeholder="300" 
+                          defaultValue="300"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="closedBrowserDelay">Browser Delay (seconds)</Label>
+                        <Input 
+                          id="closedBrowserDelay" 
+                          type="number" 
+                          placeholder="60" 
+                          defaultValue="60"
+                        />
+                      </div>
+                    </div>
+
                     <div>
-                      <Label htmlFor="numberType">Number Type</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="local">Local</SelectItem>
-                          <SelectItem value="toll-free">Toll-Free</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="prefix">Number Prefix (optional)</Label>
+                      <Input 
+                        id="prefix" 
+                        placeholder="e.g., +1800, +1855" 
+                      />
                     </div>
-                    <div>
-                      <Label htmlFor="poolSize">Pool Size</Label>
-                      <Input id="poolSize" type="number" placeholder="Enter pool size" />
+
+                    <div className="flex gap-2">
+                      <Button 
+                        className="flex-1" 
+                        disabled={selectedNumbers.size === 0}
+                        onClick={() => {
+                          const poolName = (document.getElementById('poolName') as HTMLInputElement)?.value;
+                          const idleLimit = parseInt((document.getElementById('idleLimit') as HTMLInputElement)?.value || '300');
+                          const closedBrowserDelay = parseInt((document.getElementById('closedBrowserDelay') as HTMLInputElement)?.value || '60');
+                          const prefix = (document.getElementById('prefix') as HTMLInputElement)?.value || null;
+                          
+                          if (!poolName) {
+                            toast({
+                              title: "Pool name required",
+                              description: "Please enter a name for your pool",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          createPoolMutation.mutate({
+                            name: poolName,
+                            poolSize: selectedNumbers.size,
+                            idleLimit,
+                            closedBrowserDelay,
+                            prefix,
+                            isActive: true,
+                            selectedNumbers: Array.from(selectedNumbers)
+                          });
+                        }}
+                      >
+                        Create Pool ({selectedNumbers.size} numbers)
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsCreatePoolDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
                     </div>
-                    <Button className="w-full">Create Pool</Button>
                   </div>
                 </DialogContent>
               </Dialog>
