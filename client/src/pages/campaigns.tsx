@@ -140,11 +140,18 @@ function CampaignForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch available pools
+  const { data: pools, isLoading: poolsLoading } = useQuery({
+    queryKey: ["/api/pools"],
+    retry: false,
+  });
+
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignFormSchema),
     defaultValues: {
       name: campaign?.name || "",
       country: "US", // Default to US
+      poolId: campaign?.poolId || undefined,
     },
   });
 
@@ -230,6 +237,35 @@ function CampaignForm({
                   <SelectItem value="ES">Spain</SelectItem>
                   <SelectItem value="NL">Netherlands</SelectItem>
                   <SelectItem value="JP">Japan</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="poolId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Number Pool (Optional)</FormLabel>
+              <Select 
+                onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
+                defaultValue={field.value?.toString()}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={poolsLoading ? "Loading pools..." : "Select a pool"} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">No Pool (Use Campaign Phone Number)</SelectItem>
+                  {pools && Array.isArray(pools) && pools.map((pool: any) => (
+                    <SelectItem key={pool.id} value={pool.id.toString()}>
+                      {pool.name} ({pool.poolSize} numbers)
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />

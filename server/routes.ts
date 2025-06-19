@@ -2563,15 +2563,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DNI (Dynamic Number Insertion) API endpoints
+  app.get('/api/dni/number', async (req, res) => {
+    try {
+      const request = req.query as any;
+      const response = await DNIService.getTrackingNumber(request);
+      res.json(response);
+    } catch (error) {
+      console.error('DNI service error:', error);
+      res.status(500).json({
+        phoneNumber: '',
+        formattedNumber: '',
+        campaignId: 0,
+        campaignName: '',
+        trackingId: '',
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  });
+
+  app.get('/api/dni/sdk/:campaignId', async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const domain = req.get('host') || 'localhost:5000';
+      const sdk = DNIService.generateJavaScriptSDK(domain);
+      
+      res.setHeader('Content-Type', 'application/javascript');
+      res.send(sdk);
+    } catch (error) {
+      console.error('DNI SDK generation error:', error);
+      res.status(500).send('// Error generating SDK');
+    }
+  });
+
+  app.get('/api/dni/snippet/:campaignId', async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ error: 'Campaign not found' });
+      }
+
+      const domain = req.get('host') || 'localhost:5000';
+      const snippet = DNIService.generateHTMLSnippet(campaignId, campaign.name, domain);
+      
+      res.json({ snippet, success: true });
+    } catch (error) {
+      console.error('DNI snippet generation error:', error);
+      res.status(500).json({ error: 'Failed to generate snippet' });
+    }
+  });
+
   app.get('/api/campaigns/:id/numbers', requireAuth, async (req, res) => {
     try {
       const campaignId = parseInt(req.params.id);
-      const numbers = await storage.getCampaignPhoneNumbers(campaignId);
-      const stats = await NumberProvisioningService.getCampaignNumberStats(campaignId);
-
+      const numbers = await storage.getCampaignByPhoneNumber(campaignId.toString());
+      
       res.json({
-        numbers,
-        stats,
+        numbers: numbers ? [numbers] : [],
         success: true
       });
     } catch (error) {

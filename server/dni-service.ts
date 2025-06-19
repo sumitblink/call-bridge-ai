@@ -2,9 +2,9 @@
 // Provides JavaScript SDK for websites to dynamically insert tracking phone numbers
 
 import { db } from './db';
-import { campaigns, phoneNumbers } from '@shared/schema';
+import { campaigns, phoneNumbers, numberPools, numberPoolAssignments } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
-import type { Campaign, PhoneNumber } from '@shared/schema';
+import type { Campaign, PhoneNumber, NumberPool } from '@shared/schema';
 
 export interface DNIRequest {
   campaignId?: number;
@@ -36,6 +36,7 @@ export interface DNIResponse {
 export class DNIService {
   /**
    * Get a tracking phone number for a campaign based on request parameters
+   * Uses pool-based assignment if campaign has a pool, otherwise uses campaign phone number
    */
   static async getTrackingNumber(request: DNIRequest): Promise<DNIResponse> {
     try {
@@ -62,26 +63,59 @@ export class DNIService {
         };
       }
 
-      // Get campaign phone numbers directly from database
-      const campaignPhones = await db.select().from(phoneNumbers).where(
-        eq(phoneNumbers.campaignId, campaign!.id)
-      );
+      let selectedPhone: PhoneNumber;
 
-      if (campaignPhones.length === 0) {
-        return {
-          phoneNumber: '',
-          formattedNumber: '',
-          campaignId: campaign.id,
-          campaignName: campaign.name,
-          trackingId: '',
-          success: false,
-          error: 'No active phone numbers available for this campaign'
-        };
+      // Check if campaign has a pool assigned
+      if (campaign.poolId) {
+        // Pool-based DNI: Get numbers from the assigned pool
+        const poolNumbers = await db
+          .select({ 
+            phoneNumber: phoneNumbers.phoneNumber,
+            id: phoneNumbers.id,
+            isActive: phoneNumbers.isActive
+          })
+          .from(numberPoolAssignments)
+          .innerJoin(phoneNumbers, eq(numberPoolAssignments.phoneNumberId, phoneNumbers.id))
+          .where(and(
+            eq(numberPoolAssignments.poolId, campaign.poolId),
+            eq(phoneNumbers.isActive, true)
+          ));
+
+        if (poolNumbers.length === 0) {
+          return {
+            phoneNumber: '',
+            formattedNumber: '',
+            campaignId: campaign.id,
+            campaignName: campaign.name,
+            trackingId: '',
+            success: false,
+            error: 'No active phone numbers available in assigned pool'
+          };
+        }
+
+        // Pool-based rotation logic - use round-robin or least recently used
+        const rotationIndex = Math.floor(Math.random() * poolNumbers.length);
+        selectedPhone = poolNumbers[rotationIndex] as PhoneNumber;
+      } else {
+        // Traditional DNI: Use campaign's direct phone number
+        if (!campaign.phoneNumber) {
+          return {
+            phoneNumber: '',
+            formattedNumber: '',
+            campaignId: campaign.id,
+            campaignName: campaign.name,
+            trackingId: '',
+            success: false,
+            error: 'Campaign has no phone number or pool assigned'
+          };
+        }
+
+        selectedPhone = {
+          id: 0,
+          phoneNumber: campaign.phoneNumber,
+          status: 'active'
+        } as PhoneNumber;
       }
-
-      // Select phone number (for now, use round-robin or first available)
-      // In production, you might implement more sophisticated logic based on source, geo, etc.
-      const selectedPhone = campaignPhones[0];
 
       // Generate tracking ID for attribution
       const trackingId = this.generateTrackingId(campaign.id, request);
