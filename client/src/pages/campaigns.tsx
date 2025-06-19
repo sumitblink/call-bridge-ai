@@ -67,10 +67,15 @@ function CampaignCard({ campaign, onDelete }: {
               </Link>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
               <div>
                 <p className="text-gray-500 mb-1">Phone Number</p>
                 <p className="font-mono font-medium">{campaign.phoneNumber || 'Not assigned'}</p>
+              </div>
+              
+              <div>
+                <p className="text-gray-500 mb-1">Pool Assignment</p>
+                <p className="font-medium">{campaign.poolId ? `Pool ID: ${campaign.poolId}` : 'No Pool'}</p>
               </div>
               
               <div className="text-center">
@@ -157,6 +162,7 @@ function CampaignForm({
 
   const createMutation = useMutation({
     mutationFn: async (data: CampaignFormData) => {
+      console.log('Form data received:', data);
       const campaignData: InsertCampaign = {
         name: data.name,
         geoTargeting: [data.country], // Map country to geoTargeting array
@@ -167,6 +173,7 @@ function CampaignForm({
         userId: 1, // Default user ID for now
         poolId: data.poolId || null, // Include pool assignment
       };
+      console.log('Campaign data to send:', campaignData);
       
       const response = await apiRequest("/api/campaigns", "POST", campaignData);
       if (!response.ok) {

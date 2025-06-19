@@ -369,8 +369,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: Number(userId)
       };
       
+      console.log('Raw request body:', req.body);
+      console.log('Campaign data before validation:', campaignData);
+      
       const validatedData = insertCampaignSchema.parse(campaignData);
+      console.log('Validated campaign data:', validatedData);
+      
       const campaign = await storage.createCampaign(validatedData);
+      console.log('Created campaign:', campaign);
       
       res.status(201).json(campaign);
     } catch (error) {
