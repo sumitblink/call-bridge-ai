@@ -22,10 +22,11 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Campaign, InsertCampaign, Buyer } from "@shared/schema";
 import { DatabaseStatus } from "@/components/DatabaseStatus";
 
-// Schema for campaign form with just name and country
+// Schema for campaign form with pool assignment
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
   country: z.string().min(1, "Country is required"),
+  poolId: z.number().optional(),
 });
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
@@ -157,6 +158,7 @@ function CampaignForm({
         maxConcurrentCalls: 10,
         callCap: 100,
         userId: 1, // Default user ID for now
+        poolId: data.poolId || null, // Include pool assignment
       };
       
       const response = await apiRequest("/api/campaigns", "POST", campaignData);

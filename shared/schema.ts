@@ -38,6 +38,7 @@ export const campaigns = pgTable("campaigns", {
   
   // Phone & Routing
   phoneNumber: varchar("phone_number", { length: 20 }),
+  poolId: integer("pool_id").references(() => numberPools.id), // assigned number pool
   routingType: varchar("routing_type", { length: 50 }).default("priority").notNull(), // priority, round_robin, geo, time_based, weighted
   maxConcurrentCalls: integer("max_concurrent_calls").default(5).notNull(),
   callCap: integer("call_cap").default(100).notNull(), // daily call cap
