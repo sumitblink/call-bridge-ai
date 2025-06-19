@@ -13,6 +13,9 @@ import {
   phoneNumbers,
   publishers,
   publisherCampaigns,
+  numberPools,
+  numberPoolAssignments,
+  campaignPoolAssignments,
   type User, 
   type InsertUser,
   type UpsertUser,
@@ -30,6 +33,12 @@ import {
   type InsertCallLog,
   type Agent, 
   type InsertAgent,
+  type NumberPool,
+  type InsertNumberPool,
+  type NumberPoolAssignment,
+  type InsertNumberPoolAssignment,
+  type CampaignPoolAssignment,
+  type InsertCampaignPoolAssignment,
 } from '@shared/schema';
 import { db } from './db';
 import { eq, and, sql, inArray } from 'drizzle-orm';
@@ -818,6 +827,132 @@ export class DatabaseStorage implements IStorage {
       .where(eq(phoneNumbers.id, phoneNumberId))
       .returning();
     return updatedNumber;
+  }
+
+  // Number Pools
+  async getNumberPools(userId?: number): Promise<NumberPool[]> {
+    if (userId) {
+      return await db.select().from(numberPools).where(eq(numberPools.userId, userId));
+    }
+    return await db.select().from(numberPools);
+  }
+
+  async getNumberPool(id: number): Promise<NumberPool | undefined> {
+    const [pool] = await db.select().from(numberPools).where(eq(numberPools.id, id));
+    return pool;
+  }
+
+  async createNumberPool(pool: InsertNumberPool): Promise<NumberPool> {
+    const [newPool] = await db.insert(numberPools).values(pool).returning();
+    return newPool;
+  }
+
+  async updateNumberPool(id: number, pool: Partial<InsertNumberPool>): Promise<NumberPool | undefined> {
+    const [updatedPool] = await db
+      .update(numberPools)
+      .set({ ...pool, updatedAt: new Date() })
+      .where(eq(numberPools.id, id))
+      .returning();
+    return updatedPool;
+  }
+
+  async deleteNumberPool(id: number): Promise<boolean> {
+    // First remove all number assignments
+    await db.delete(numberPoolAssignments).where(eq(numberPoolAssignments.poolId, id));
+    // Then remove campaign assignments
+    await db.delete(campaignPoolAssignments).where(eq(campaignPoolAssignments.poolId, id));
+    // Finally delete the pool
+    const result = await db.delete(numberPools).where(eq(numberPools.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Pool Assignments
+  async getPoolNumbers(poolId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: phoneNumbers.id,
+        phoneNumber: phoneNumbers.phoneNumber,
+        friendlyName: phoneNumbers.friendlyName,
+        numberType: phoneNumbers.numberType,
+        country: phoneNumbers.country,
+        isActive: phoneNumbers.isActive,
+        priority: numberPoolAssignments.priority,
+        assignedAt: numberPoolAssignments.assignedAt,
+      })
+      .from(numberPoolAssignments)
+      .innerJoin(phoneNumbers, eq(numberPoolAssignments.phoneNumberId, phoneNumbers.id))
+      .where(eq(numberPoolAssignments.poolId, poolId));
+    return result;
+  }
+
+  async assignNumberToPool(poolId: number, phoneNumberId: number, priority = 1): Promise<NumberPoolAssignment> {
+    // Remove any existing assignments for this phone number
+    await db.delete(numberPoolAssignments).where(eq(numberPoolAssignments.phoneNumberId, phoneNumberId));
+    
+    // Create new assignment
+    const [assignment] = await db
+      .insert(numberPoolAssignments)
+      .values({ poolId, phoneNumberId, priority })
+      .returning();
+    return assignment;
+  }
+
+  async removeNumberFromPool(poolId: number, phoneNumberId: number): Promise<boolean> {
+    const result = await db
+      .delete(numberPoolAssignments)
+      .where(and(
+        eq(numberPoolAssignments.poolId, poolId),
+        eq(numberPoolAssignments.phoneNumberId, phoneNumberId)
+      ));
+    return result.rowCount > 0;
+  }
+
+  async getNumberPoolAssignments(phoneNumberId: number): Promise<NumberPoolAssignment[]> {
+    return await db
+      .select()
+      .from(numberPoolAssignments)
+      .where(eq(numberPoolAssignments.phoneNumberId, phoneNumberId));
+  }
+
+  // Campaign Pool Assignments
+  async getCampaignPools(campaignId: number): Promise<NumberPool[]> {
+    const result = await db
+      .select({
+        id: numberPools.id,
+        userId: numberPools.userId,
+        name: numberPools.name,
+        country: numberPools.country,
+        numberType: numberPools.numberType,
+        poolSize: numberPools.poolSize,
+        closedBrowserDelay: numberPools.closedBrowserDelay,
+        idleLimit: numberPools.idleLimit,
+        prefix: numberPools.prefix,
+        isActive: numberPools.isActive,
+        createdAt: numberPools.createdAt,
+        updatedAt: numberPools.updatedAt,
+      })
+      .from(campaignPoolAssignments)
+      .innerJoin(numberPools, eq(campaignPoolAssignments.poolId, numberPools.id))
+      .where(eq(campaignPoolAssignments.campaignId, campaignId));
+    return result;
+  }
+
+  async assignPoolToCampaign(campaignId: number, poolId: number, priority = 1): Promise<CampaignPoolAssignment> {
+    const [assignment] = await db
+      .insert(campaignPoolAssignments)
+      .values({ campaignId, poolId, priority })
+      .returning();
+    return assignment;
+  }
+
+  async removePoolFromCampaign(campaignId: number, poolId: number): Promise<boolean> {
+    const result = await db
+      .delete(campaignPoolAssignments)
+      .where(and(
+        eq(campaignPoolAssignments.campaignId, campaignId),
+        eq(campaignPoolAssignments.poolId, poolId)
+      ));
+    return result.rowCount > 0;
   }
 }
 
