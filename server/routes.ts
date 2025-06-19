@@ -1756,6 +1756,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Number Pool API endpoints
+  app.get('/api/number-pools', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const pools = await storage.getNumberPools(userId);
+      res.json(pools);
+    } catch (error) {
+      console.error('Error fetching number pools:', error);
+      res.status(500).json({ error: 'Failed to fetch number pools' });
+    }
+  });
+
+  app.get('/api/number-pools/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const pool = await storage.getNumberPool(parseInt(id));
+      
+      if (!pool) {
+        return res.status(404).json({ error: 'Number pool not found' });
+      }
+
+      // Get assigned numbers for this pool
+      const numbers = await storage.getPoolNumbers(pool.id);
+      
+      res.json({
+        ...pool,
+        assignedNumbers: numbers
+      });
+    } catch (error) {
+      console.error('Error fetching number pool:', error);
+      res.status(500).json({ error: 'Failed to fetch number pool' });
+    }
+  });
+
+  app.post('/api/number-pools', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const poolData = { ...req.body, userId };
+      
+      const newPool = await storage.createNumberPool(poolData);
+      res.json(newPool);
+    } catch (error) {
+      console.error('Error creating number pool:', error);
+      res.status(500).json({ error: 'Failed to create number pool' });
+    }
+  });
+
+  app.put('/api/number-pools/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updatedPool = await storage.updateNumberPool(parseInt(id), req.body);
+      
+      if (!updatedPool) {
+        return res.status(404).json({ error: 'Number pool not found' });
+      }
+
+      res.json(updatedPool);
+    } catch (error) {
+      console.error('Error updating number pool:', error);
+      res.status(500).json({ error: 'Failed to update number pool' });
+    }
+  });
+
+  app.delete('/api/number-pools/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteNumberPool(parseInt(id));
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'Number pool not found' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting number pool:', error);
+      res.status(500).json({ error: 'Failed to delete number pool' });
+    }
+  });
+
+  // Pool assignment endpoints
+  app.post('/api/number-pools/:poolId/assign-number', requireAuth, async (req, res) => {
+    try {
+      const { poolId } = req.params;
+      const { phoneNumberId, priority = 1 } = req.body;
+      
+      const assignment = await storage.assignNumberToPool(parseInt(poolId), phoneNumberId, priority);
+      res.json(assignment);
+    } catch (error) {
+      console.error('Error assigning number to pool:', error);
+      res.status(500).json({ error: 'Failed to assign number to pool' });
+    }
+  });
+
+  app.delete('/api/number-pools/:poolId/numbers/:phoneNumberId', requireAuth, async (req, res) => {
+    try {
+      const { poolId, phoneNumberId } = req.params;
+      const removed = await storage.removeNumberFromPool(parseInt(poolId), parseInt(phoneNumberId));
+      
+      if (!removed) {
+        return res.status(404).json({ error: 'Assignment not found' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error removing number from pool:', error);
+      res.status(500).json({ error: 'Failed to remove number from pool' });
+    }
+  });
+
+  // Campaign pool assignment endpoints
+  app.post('/api/campaigns/:campaignId/assign-pool', requireAuth, async (req, res) => {
+    try {
+      const { campaignId } = req.params;
+      const { poolId, priority = 1 } = req.body;
+      
+      const assignment = await storage.assignPoolToCampaign(parseInt(campaignId), poolId, priority);
+      res.json(assignment);
+    } catch (error) {
+      console.error('Error assigning pool to campaign:', error);
+      res.status(500).json({ error: 'Failed to assign pool to campaign' });
+    }
+  });
+
+  app.delete('/api/campaigns/:campaignId/pools/:poolId', requireAuth, async (req, res) => {
+    try {
+      const { campaignId, poolId } = req.params;
+      const removed = await storage.removePoolFromCampaign(parseInt(campaignId), parseInt(poolId));
+      
+      if (!removed) {
+        return res.status(404).json({ error: 'Pool assignment not found' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error removing pool from campaign:', error);
+      res.status(500).json({ error: 'Failed to remove pool from campaign' });
+    }
+  });
+
   // Admin routes
   app.post('/api/admin/clear-database', requireAuth, async (req, res) => {
     try {
