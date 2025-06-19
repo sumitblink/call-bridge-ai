@@ -81,6 +81,44 @@ export default function PhoneNumbersPage() {
     queryKey: ["/api/number-pools"],
   });
 
+  // Pool management mutations
+  const createPoolMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/number-pools", "POST", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] });
+      setIsCreatePoolDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Number pool created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create number pool",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deletePoolMutation = useMutation({
+    mutationFn: (poolId: number) => apiRequest(`/api/number-pools/${poolId}`, "DELETE"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] });
+      toast({
+        title: "Success",
+        description: "Number pool deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete number pool",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Search available numbers
   const searchMutation = useMutation({
     mutationFn: async (params: any) => {
@@ -634,6 +672,148 @@ export default function PhoneNumbersPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Number Pools Tab */}
+          <TabsContent value="pools" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Number Pools</h3>
+              <Dialog open={isCreatePoolDialogOpen} onOpenChange={setIsCreatePoolDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Pool
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Number Pool</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="poolName">Pool Name</Label>
+                      <Input id="poolName" placeholder="Enter pool name" />
+                    </div>
+                    <div>
+                      <Label htmlFor="country">Country</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="US">United States</SelectItem>
+                          <SelectItem value="CA">Canada</SelectItem>
+                          <SelectItem value="UK">United Kingdom</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="numberType">Number Type</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="local">Local</SelectItem>
+                          <SelectItem value="toll-free">Toll-Free</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="poolSize">Pool Size</Label>
+                      <Input id="poolSize" type="number" placeholder="Enter pool size" />
+                    </div>
+                    <Button className="w-full">Create Pool</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div className="grid gap-4">
+              {pools.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <Layers className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Number Pools</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Create pools to organize your phone numbers by geography, campaign, or routing rules.
+                    </p>
+                    <Button onClick={() => setIsCreatePoolDialogOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Your First Pool
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                pools.map((pool: NumberPool) => (
+                  <Card key={pool.id}>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <Layers className="h-5 w-5" />
+                            {pool.name}
+                          </CardTitle>
+                          <CardDescription>
+                            {pool.country} • {pool.numberType} • Pool Size: {pool.poolSize}
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge variant={pool.isActive ? "default" : "secondary"}>
+                            {pool.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deletePoolMutation.mutate(pool.id)}
+                            disabled={deletePoolMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Idle Limit:</span>
+                          <p className="font-medium">{pool.idleLimit}s</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Browser Delay:</span>
+                          <p className="font-medium">{pool.closedBrowserDelay}s</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Prefix:</span>
+                          <p className="font-medium">{pool.prefix || 'None'}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Pool Assignments Tab */}
+          <TabsContent value="assignments" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Pool Assignments</h3>
+            </div>
+            
+            <Card>
+              <CardContent className="text-center py-8">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Pool Assignment Management</h3>
+                <p className="text-muted-foreground mb-4">
+                  Assign your purchased phone numbers to specific pools for organized routing and management.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  This feature will be available once you have both phone numbers and pools created.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
         </Tabs>
       </div>
     </Layout>

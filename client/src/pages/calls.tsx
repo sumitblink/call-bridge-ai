@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded, History, Radio, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
@@ -67,6 +68,7 @@ interface Buyer {
 }
 
 export default function CallsPage() {
+  const [activeTab, setActiveTab] = useState("history");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -232,14 +234,32 @@ export default function CallsPage() {
   return (
     <Layout>
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-end mb-8">
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Calls</h1>
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
         </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <History className="h-4 w-4" />
+              Call History
+            </TabsTrigger>
+            <TabsTrigger value="live" className="flex items-center gap-2">
+              <Radio className="h-4 w-4" />
+              Live Calls
+            </TabsTrigger>
+            <TabsTrigger value="control" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Call Control
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Call History Tab */}
+          <TabsContent value="history" className="space-y-6">
 
         {/* Real-time Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -514,6 +534,58 @@ export default function CallsPage() {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          {/* Live Calls Tab */}
+          <TabsContent value="live" className="space-y-6">
+            <Card>
+              <CardContent className="text-center py-8">
+                <Radio className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Live Call Monitoring</h3>
+                <p className="text-muted-foreground mb-4">
+                  Real-time monitoring of active calls with live status updates.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {liveCallsCount} calls currently active
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Call Control Tab */}
+          <TabsContent value="control" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Call Control Center</CardTitle>
+                <CardDescription>
+                  Advanced call management and control features
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button className="h-16 flex flex-col gap-2">
+                    <PhoneCall className="h-6 w-6" />
+                    <span>Initiate Call</span>
+                  </Button>
+                  <Button variant="outline" className="h-16 flex flex-col gap-2">
+                    <PhoneForwarded className="h-6 w-6" />
+                    <span>Transfer Call</span>
+                  </Button>
+                  <Button variant="outline" className="h-16 flex flex-col gap-2">
+                    <Mic className="h-6 w-6" />
+                    <span>Recording Controls</span>
+                  </Button>
+                </div>
+                
+                <div className="text-center py-8 text-muted-foreground">
+                  <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Call control features are available when calls are active.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+        </Tabs>
       </div>
     </Layout>
   );
