@@ -1879,6 +1879,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/campaigns/:campaignId/unassign-pool', requireAuth, async (req, res) => {
+    try {
+      const { campaignId } = req.params;
+      const { poolId } = req.body;
+      
+      const removed = await storage.removePoolFromCampaign(parseInt(campaignId), poolId);
+      
+      if (!removed) {
+        return res.status(404).json({ error: 'Pool assignment not found' });
+      }
+
+      res.json({ success: true, message: 'Pool unassigned from campaign successfully' });
+    } catch (error) {
+      console.error('Error unassigning pool from campaign:', error);
+      res.status(500).json({ error: 'Failed to unassign pool from campaign' });
+    }
+  });
+
   app.delete('/api/campaigns/:campaignId/pools/:poolId', requireAuth, async (req, res) => {
     try {
       const { campaignId, poolId } = req.params;
@@ -1892,6 +1910,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error removing pool from campaign:', error);
       res.status(500).json({ error: 'Failed to remove pool from campaign' });
+    }
+  });
+
+  // Campaign pool statistics endpoint
+  app.get('/api/campaigns/:campaignId/pool-stats', requireAuth, async (req, res) => {
+    try {
+      const { campaignId } = req.params;
+      const campaign = await storage.getCampaign(parseInt(campaignId));
+      
+      if (!campaign) {
+        return res.status(404).json({ error: 'Campaign not found' });
+      }
+
+      // Get pools assigned to this campaign
+      const assignedPools = await storage.getCampaignPools(parseInt(campaignId));
+      
+      if (!assignedPools || assignedPools.length === 0) {
+        return res.status(404).json({ error: 'No number pools assigned to this campaign' });
+      }
+
+      // Calculate aggregate statistics across all assigned pools
+      let totalNumbers = 0;
+      let availableNumbers = 0;
+      let assignedNumbers = 0;
+
+      for (const pool of assignedPools) {
+        const poolNumbers = await storage.getPoolNumbers(pool.id);
+        const poolSize = poolNumbers.length;
+        
+        totalNumbers += poolSize;
+        availableNumbers += poolSize; // All numbers in pool are available for rotation
+        assignedNumbers += poolSize; // All numbers are assigned to this campaign
+      }
+
+      const utilizationRate = totalNumbers > 0 ? Math.round((assignedNumbers / totalNumbers) * 100) : 0;
+
+      res.json({
+        totalNumbers,
+        availableNumbers,
+        assignedNumbers,
+        utilizationRate,
+        poolCount: assignedPools.length
+      });
+    } catch (error) {
+      console.error('Error getting campaign pool stats:', error);
+      res.status(500).json({ error: 'Failed to get campaign pool statistics' });
     }
   });
 
