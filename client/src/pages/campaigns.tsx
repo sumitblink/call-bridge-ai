@@ -260,9 +260,11 @@ function CampaignForm({
               <Select 
                 onValueChange={(value) => {
                   console.log('Pool selection changed:', value);
-                  field.onChange(value === "none" ? null : parseInt(value));
+                  const poolId = value === "none" ? null : parseInt(value);
+                  console.log('Setting poolId to:', poolId);
+                  field.onChange(poolId);
                 }} 
-                value={field.value?.toString() || "none"}
+                value={field.value ? field.value.toString() : "none"}
               >
                 <FormControl>
                   <SelectTrigger>

@@ -7,7 +7,17 @@ async function testPoolAssignment() {
   try {
     // First, get available pools
     console.log('1. Fetching available pools...');
-    const poolsResponse = await fetch(`${baseUrl}/api/pools`);
+    const poolsResponse = await fetch(`${baseUrl}/api/pools`, {
+      headers: {
+        'Cookie': 'session=your-session-cookie' // This would need actual auth
+      }
+    });
+    
+    if (!poolsResponse.ok) {
+      console.log('Pools endpoint returned:', poolsResponse.status, await poolsResponse.text());
+      return;
+    }
+    
     const pools = await poolsResponse.json();
     console.log('Available pools:', pools);
     
