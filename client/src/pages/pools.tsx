@@ -30,15 +30,12 @@ export default function PoolsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: pools = [], isLoading } = useQuery({
+  const { data: pools = [], isLoading } = useQuery<NumberPool[]>({
     queryKey: ["/api/number-pools"],
   });
 
   const createPoolMutation = useMutation({
-    mutationFn: (data: PoolFormData) => apiRequest("/api/number-pools", {
-      method: "POST",
-      body: data,
-    }),
+    mutationFn: (data: PoolFormData) => apiRequest("/api/number-pools", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] });
       setIsCreateDialogOpen(false);
@@ -57,9 +54,7 @@ export default function PoolsPage() {
   });
 
   const deletePoolMutation = useMutation({
-    mutationFn: (poolId: number) => apiRequest(`/api/number-pools/${poolId}`, {
-      method: "DELETE",
-    }),
+    mutationFn: (poolId: number) => apiRequest(`/api/number-pools/${poolId}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] });
       toast({
