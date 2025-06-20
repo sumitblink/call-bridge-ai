@@ -47,16 +47,36 @@ export default function NumberPoolManager({ pool, isOpen, onClose }: NumberPoolM
   // Mutation to add numbers to pool
   const addNumbersMutation = useMutation({
     mutationFn: async (phoneNumberIds: number[]) => {
-      const promises = phoneNumberIds.map(phoneNumberId =>
-        apiRequest(`/api/number-pools/${pool.id}/assign-number`, "POST", { phoneNumberId })
-      );
-      const responses = await Promise.all(promises);
+      const results = [];
+      let conflictErrors = [];
       
-      for (const response of responses) {
-        if (!response.ok) {
-          throw new Error("Failed to add numbers to pool");
+      for (const phoneNumberId of phoneNumberIds) {
+        try {
+          const response = await apiRequest(`/api/number-pools/${pool.id}/assign-number`, "POST", { phoneNumberId });
+          if (!response.ok) {
+            const errorData = await response.json();
+            if (response.status === 409) {
+              conflictErrors.push(errorData.error);
+            } else {
+              throw new Error(errorData.error || "Failed to add number to pool");
+            }
+          } else {
+            results.push(await response.json());
+          }
+        } catch (error: any) {
+          if (error.message.includes('already assigned to pool')) {
+            conflictErrors.push(error.message);
+          } else {
+            throw error;
+          }
         }
       }
+      
+      if (conflictErrors.length > 0) {
+        throw new Error(`Some numbers couldn't be assigned:\n${conflictErrors.join('\n')}`);
+      }
+      
+      return results;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/number-pools", pool.id, "numbers"] });

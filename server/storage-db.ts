@@ -886,8 +886,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async assignNumberToPool(poolId: number, phoneNumberId: number, priority = 1): Promise<NumberPoolAssignment> {
-    // Remove any existing assignments for this phone number
-    await db.delete(numberPoolAssignments).where(eq(numberPoolAssignments.phoneNumberId, phoneNumberId));
+    // Check if number is already assigned to a different pool
+    const [existingAssignment] = await db
+      .select({
+        poolId: numberPoolAssignments.poolId,
+        poolName: numberPools.name
+      })
+      .from(numberPoolAssignments)
+      .innerJoin(numberPools, eq(numberPoolAssignments.poolId, numberPools.id))
+      .where(eq(numberPoolAssignments.phoneNumberId, phoneNumberId))
+      .limit(1);
+    
+    if (existingAssignment && existingAssignment.poolId !== poolId) {
+      throw new Error(`Phone number is already assigned to pool "${existingAssignment.poolName}". Remove it from that pool first.`);
+    }
+    
+    // If already assigned to the same pool, return existing assignment
+    if (existingAssignment && existingAssignment.poolId === poolId) {
+      const [existing] = await db
+        .select()
+        .from(numberPoolAssignments)
+        .where(and(
+          eq(numberPoolAssignments.poolId, poolId),
+          eq(numberPoolAssignments.phoneNumberId, phoneNumberId)
+        ))
+        .limit(1);
+      return existing;
+    }
     
     // Create new assignment
     const [assignment] = await db

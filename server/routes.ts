@@ -1843,8 +1843,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const assignment = await storage.assignNumberToPool(parseInt(poolId), phoneNumberId, priority);
       res.json(assignment);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error assigning number to pool:', error);
+      
+      // Handle duplicate assignment error with specific message
+      if (error.message && error.message.includes('already assigned to pool')) {
+        return res.status(409).json({ error: error.message });
+      }
+      
       res.status(500).json({ error: 'Failed to assign number to pool' });
     }
   });
