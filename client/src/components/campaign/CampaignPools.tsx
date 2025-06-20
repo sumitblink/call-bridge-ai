@@ -34,6 +34,7 @@ export default function CampaignPools({ campaign }: CampaignPoolsProps) {
       if (!response.ok) throw new Error("Failed to fetch campaign pools");
       const pools = await response.json();
       console.log("Fetched assigned pools:", pools);
+      console.log("Pool count:", pools?.length || 0);
       return pools;
     },
   });
