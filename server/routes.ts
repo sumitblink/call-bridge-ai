@@ -1866,6 +1866,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Campaign pool assignment endpoints
+  app.get('/api/campaigns/:campaignId/pools', requireAuth, async (req, res) => {
+    try {
+      const { campaignId } = req.params;
+      const assignedPools = await storage.getCampaignPools(parseInt(campaignId));
+      
+      console.log(`Fetching pools for campaign ${campaignId}:`, assignedPools);
+      res.json(assignedPools || []);
+    } catch (error) {
+      console.error('Error fetching campaign pools:', error);
+      res.status(500).json({ error: 'Failed to fetch campaign pools' });
+    }
+  });
+
   app.post('/api/campaigns/:campaignId/assign-pool', requireAuth, async (req, res) => {
     try {
       const { campaignId } = req.params;

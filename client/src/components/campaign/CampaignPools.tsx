@@ -32,7 +32,9 @@ export default function CampaignPools({ campaign }: CampaignPoolsProps) {
     queryFn: async () => {
       const response = await fetch(`/api/campaigns/${campaign.id}/pools`);
       if (!response.ok) throw new Error("Failed to fetch campaign pools");
-      return response.json();
+      const pools = await response.json();
+      console.log("Fetched assigned pools:", pools);
+      return pools;
     },
   });
 
