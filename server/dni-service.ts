@@ -65,8 +65,8 @@ export class DNIService {
 
       let selectedPhone: PhoneNumber;
 
-      // Check if campaign has a pool assigned
-      if (campaign.poolId) {
+      // Use mutually exclusive routing: either direct number OR pool
+      if (campaign.routingType === 'pool' && campaign.poolId) {
         // Pool-based DNI: Get numbers from the assigned pool
         const poolNumbers = await db
           .select({ 
@@ -96,25 +96,24 @@ export class DNIService {
         // Pool-based rotation logic - use round-robin or least recently used
         const rotationIndex = Math.floor(Math.random() * poolNumbers.length);
         selectedPhone = poolNumbers[rotationIndex] as PhoneNumber;
-      } else {
-        // Traditional DNI: Use campaign's direct phone number
-        if (!campaign.phoneNumber) {
-          return {
-            phoneNumber: '',
-            formattedNumber: '',
-            campaignId: campaign.id,
-            campaignName: campaign.name,
-            trackingId: '',
-            success: false,
-            error: 'Campaign has no phone number or pool assigned'
-          };
-        }
-
+      } else if (campaign.routingType === 'direct' && campaign.phoneNumber) {
+        // Direct number routing: Use campaign's assigned phone number
         selectedPhone = {
           id: 0,
           phoneNumber: campaign.phoneNumber,
           status: 'active'
         } as PhoneNumber;
+      } else {
+        // No valid routing configuration
+        return {
+          phoneNumber: '',
+          formattedNumber: '',
+          campaignId: campaign.id,
+          campaignName: campaign.name,
+          trackingId: '',
+          success: false,
+          error: `Campaign routing not configured. Current type: ${campaign.routingType}, has phone: ${!!campaign.phoneNumber}, has pool: ${!!campaign.poolId}`
+        };
       }
 
       // Generate tracking ID for attribution

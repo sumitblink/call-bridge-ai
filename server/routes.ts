@@ -3212,17 +3212,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let publisher = null;
         
         if (tag.primaryNumberId) {
-          const phoneResult = await db.select().from(schema.phoneNumbers).where(eq(schema.phoneNumbers.id, tag.primaryNumberId));
+          const phoneResult = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, tag.primaryNumberId));
           primaryNumber = phoneResult[0] || null;
         }
         
         if (tag.poolId) {
-          const poolResult = await db.select().from(schema.numberPools).where(eq(schema.numberPools.id, tag.poolId));
+          const poolResult = await db.select().from(numberPools).where(eq(numberPools.id, tag.poolId));
           pool = poolResult[0] || null;
         }
         
         if (tag.publisherId) {
-          const publisherResult = await db.select().from(schema.publishers).where(eq(schema.publishers.id, tag.publisherId));
+          const publisherResult = await db.select().from(publishers).where(eq(publishers.id, tag.publisherId));
           publisher = publisherResult[0] || null;
         }
         
