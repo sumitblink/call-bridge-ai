@@ -3230,24 +3230,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       });
       
-      const newTag = await db.insert(callTrackingTags).values(validatedData).returning();
+      const [newTag] = await db.insert(callTrackingTags).values(validatedData).returning();
       
       // Generate JavaScript code for the tag
       const domain = req.get('host') || 'localhost:5000';
       const jsCode = CallTrackingService.generateJavaScriptCode(
         validatedData.tagCode,
         `http://${domain}`,
-        {
-          selectors: ['.tracking-number', '[data-tracking-number]'],
-          numberToReplace: validatedData.numberToReplace,
-          captureUserData: validatedData.captureUserData
-        }
+        validatedData.numberToReplace || '',
+        validatedData.captureUserData
       );
       
       const htmlSnippet = CallTrackingService.generateHTMLSnippet(
         validatedData.tagCode,
-        `http://${domain}`,
-        validatedData.numberToReplace
+        validatedData.numberToReplace || '',
+        `http://${domain}`
       );
       
       // Save the generated snippet
