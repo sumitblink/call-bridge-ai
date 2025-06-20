@@ -115,6 +115,7 @@ export interface IStorage {
   getPhoneNumberByNumber(phoneNumber: string): Promise<any | undefined>;
   assignPhoneNumberToCampaign(phoneNumberId: number, campaignId: number): Promise<any | undefined>;
   unassignPhoneNumberFromCampaign(phoneNumberId: number): Promise<any | undefined>;
+  getUnassignedPhoneNumbers(userId?: number): Promise<any[]>;
 
   // Number Pools
   getNumberPools(userId?: number): Promise<NumberPool[]>;

@@ -73,6 +73,12 @@ export default function PhoneNumbersPage() {
     queryKey: ['/api/phone-numbers'],
   });
 
+  // Fetch unassigned phone numbers for pool creation
+  const { data: unassignedNumbers = [], isLoading: isLoadingUnassigned } = useQuery({
+    queryKey: ['/api/phone-numbers/unassigned'],
+    enabled: isCreatePoolDialogOpen,
+  });
+
   // Fetch campaigns
   const { data: campaigns = [] } = useQuery({
     queryKey: ['/api/campaigns'],
@@ -88,6 +94,8 @@ export default function PhoneNumbersPage() {
     mutationFn: (data: any) => apiRequest("/api/number-pools", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/phone-numbers/unassigned"] });
+      setSelectedNumbers(new Set()); // Clear selected numbers
       setIsCreatePoolDialogOpen(false);
       toast({
         title: "Success",
@@ -705,25 +713,30 @@ export default function PhoneNumbersPage() {
                     <div>
                       <Label>Select Phone Numbers ({selectedNumbers.size} selected)</Label>
                       <div className="mt-2 border rounded-lg p-4 max-h-60 overflow-y-auto">
-                        {Array.isArray(phoneNumbers) && phoneNumbers.length > 0 ? (
+                        {isLoadingUnassigned ? (
+                          <div className="text-center py-4 text-muted-foreground">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                            <p>Loading available numbers...</p>
+                          </div>
+                        ) : Array.isArray(unassignedNumbers) && unassignedNumbers.length > 0 ? (
                           <div className="space-y-2">
                             <div className="flex items-center space-x-2 pb-2 border-b">
                               <Checkbox
                                 id="selectAll"
-                                checked={selectedNumbers.size === phoneNumbers.length}
+                                checked={selectedNumbers.size === unassignedNumbers.length}
                                 onCheckedChange={(checked) => {
                                   if (checked) {
-                                    setSelectedNumbers(new Set(phoneNumbers.map((n: any) => n.id)));
+                                    setSelectedNumbers(new Set(unassignedNumbers.map((n: any) => n.id)));
                                   } else {
                                     setSelectedNumbers(new Set());
                                   }
                                 }}
                               />
                               <Label htmlFor="selectAll" className="font-medium">
-                                Select All ({phoneNumbers.length} numbers)
+                                Select All ({unassignedNumbers.length} available numbers)
                               </Label>
                             </div>
-                            {phoneNumbers.map((number: any) => (
+                            {unassignedNumbers.map((number: any) => (
                               <div key={number.id} className="flex items-center space-x-2">
                                 <Checkbox
                                   id={`number-${number.id}`}
@@ -762,7 +775,8 @@ export default function PhoneNumbersPage() {
                         ) : (
                           <div className="text-center py-4 text-muted-foreground">
                             <Phone className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p>No phone numbers available. Purchase numbers first to create pools.</p>
+                            <p>No unassigned phone numbers available.</p>
+                            <p className="text-sm mt-1">All your numbers are already assigned to pools, or you need to purchase new numbers.</p>
                           </div>
                         )}
                       </div>

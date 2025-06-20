@@ -829,6 +829,35 @@ export class DatabaseStorage implements IStorage {
     return updatedNumber;
   }
 
+  async getUnassignedPhoneNumbers(userId?: number): Promise<PhoneNumber[]> {
+    // Get phone numbers that are not assigned to any pool
+    const query = db
+      .select({
+        id: phoneNumbers.id,
+        userId: phoneNumbers.userId,
+        phoneNumber: phoneNumbers.phoneNumber,
+        phoneNumberSid: phoneNumbers.phoneNumberSid,
+        friendlyName: phoneNumbers.friendlyName,
+        country: phoneNumbers.country,
+        numberType: phoneNumbers.numberType,
+        capabilities: phoneNumbers.capabilities,
+        isActive: phoneNumbers.isActive,
+        campaignId: phoneNumbers.campaignId,
+        createdAt: phoneNumbers.createdAt,
+        updatedAt: phoneNumbers.updatedAt,
+      })
+      .from(phoneNumbers)
+      .leftJoin(numberPoolAssignments, eq(phoneNumbers.id, numberPoolAssignments.phoneNumberId))
+      .where(
+        and(
+          userId ? eq(phoneNumbers.userId, userId) : undefined,
+          sql`${numberPoolAssignments.phoneNumberId} IS NULL`
+        )
+      );
+
+    return await query;
+  }
+
   // Number Pools
   async getNumberPools(userId?: number): Promise<NumberPool[]> {
     if (userId) {
