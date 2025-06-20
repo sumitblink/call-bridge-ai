@@ -3195,23 +3195,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/campaigns/:campaignId/tracking-tags', requireAuth, async (req, res) => {
     try {
       const { campaignId } = req.params;
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id || 1;
       
-      const tags = await db.query.callTrackingTags.findMany({
-        where: and(
+      const tags = await db.select().from(callTrackingTags)
+        .where(and(
           eq(callTrackingTags.campaignId, parseInt(campaignId)),
           eq(callTrackingTags.userId, userId),
           eq(callTrackingTags.isActive, true)
-        ),
-        with: {
-          primaryNumber: true,
-          pool: true,
-          publisher: true
-        },
-        orderBy: desc(callTrackingTags.createdAt)
-      });
+        ))
+        .orderBy(desc(callTrackingTags.createdAt));
       
-      res.json(tags);
+      // Manually fetch related data for each tag
+      const tagsWithRelations = await Promise.all(tags.map(async (tag) => {
+        let primaryNumber = null;
+        let pool = null;
+        let publisher = null;
+        
+        if (tag.primaryNumberId) {
+          const phoneResult = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, tag.primaryNumberId));
+          primaryNumber = phoneResult[0] || null;
+        }
+        
+        if (tag.poolId) {
+          const poolResult = await db.select().from(numberPools).where(eq(numberPools.id, tag.poolId));
+          pool = poolResult[0] || null;
+        }
+        
+        if (tag.publisherId) {
+          const publisherResult = await db.select().from(publishers).where(eq(publishers.id, tag.publisherId));
+          publisher = publisherResult[0] || null;
+        }
+        
+        return {
+          ...tag,
+          primaryNumber,
+          pool,
+          publisher
+        };
+      }));
+      
+      res.json(tagsWithRelations);
     } catch (error) {
       console.error('Error fetching tracking tags:', error);
       res.status(500).json({ error: 'Failed to fetch tracking tags' });

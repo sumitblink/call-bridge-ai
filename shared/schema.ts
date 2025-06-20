@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, json, index, primaryKey } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -678,3 +679,55 @@ export type InsertPublisher = z.infer<typeof insertPublisherSchema>;
 
 export type PublisherCampaign = typeof publisherCampaigns.$inferSelect;
 export type InsertPublisherCampaign = z.infer<typeof insertPublisherCampaignSchema>;
+
+// Database relations
+export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
+  user: one(users, {
+    fields: [campaigns.userId],
+    references: [users.id],
+  }),
+  callTrackingTags: many(callTrackingTags),
+}));
+
+export const callTrackingTagsRelations = relations(callTrackingTags, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [callTrackingTags.campaignId],
+    references: [campaigns.id],
+  }),
+  primaryNumber: one(phoneNumbers, {
+    fields: [callTrackingTags.primaryNumberId],
+    references: [phoneNumbers.id],
+  }),
+  pool: one(numberPools, {
+    fields: [callTrackingTags.poolId],
+    references: [numberPools.id],
+  }),
+  publisher: one(publishers, {
+    fields: [callTrackingTags.publisherId],
+    references: [publishers.id],
+  }),
+}));
+
+export const phoneNumbersRelations = relations(phoneNumbers, ({ one, many }) => ({
+  user: one(users, {
+    fields: [phoneNumbers.userId],
+    references: [users.id],
+  }),
+  callTrackingTags: many(callTrackingTags),
+}));
+
+export const numberPoolsRelations = relations(numberPools, ({ one, many }) => ({
+  user: one(users, {
+    fields: [numberPools.userId],
+    references: [users.id],
+  }),
+  callTrackingTags: many(callTrackingTags),
+}));
+
+export const publishersRelations = relations(publishers, ({ one, many }) => ({
+  user: one(users, {
+    fields: [publishers.userId],
+    references: [users.id],
+  }),
+  callTrackingTags: many(callTrackingTags),
+}));
