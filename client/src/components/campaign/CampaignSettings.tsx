@@ -1,13 +1,15 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { insertCampaignSchema, type Campaign, type InsertCampaign } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -37,11 +39,34 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
       name: campaign?.name || "",
       description: campaign?.description || "",
       phoneNumber: campaign?.phoneNumber || "",
+      poolId: campaign?.poolId || null,
       callCap: campaign?.callCap || 100,
-      routingType: campaign?.routingType || "round_robin",
+      routingType: campaign?.routingType || "direct",
+      callRoutingStrategy: campaign?.callRoutingStrategy || "priority",
       status: campaign?.status || "draft",
     },
   });
+
+  // Fetch available phone numbers
+  const { data: phoneNumbers = [] } = useQuery({
+    queryKey: ["/api/phone-numbers"],
+    queryFn: async () => {
+      const response = await fetch("/api/phone-numbers");
+      return response.json();
+    },
+  });
+
+  // Fetch available pools
+  const { data: numberPools = [] } = useQuery({
+    queryKey: ["/api/number-pools"],
+    queryFn: async () => {
+      const response = await fetch("/api/number-pools");
+      return response.json();
+    },
+  });
+
+  // Watch routing type to handle conditional fields
+  const watchedRoutingType = form.watch("routingType");
 
   // Reset form when campaign data changes
   React.useEffect(() => {
@@ -50,8 +75,10 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
         name: campaign.name || "",
         description: campaign.description || "",
         phoneNumber: campaign.phoneNumber || "",
+        poolId: campaign.poolId || null,
         callCap: campaign.callCap || 100,
-        routingType: campaign.routingType || "round_robin",
+        routingType: campaign.routingType || "direct",
+        callRoutingStrategy: campaign.callRoutingStrategy || "priority",
         status: campaign.status || "draft",
       };
       form.reset(formData);
@@ -135,15 +162,120 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                   )}
                 />
 
+                <div className="md:col-span-2">
+                  <FormField
+                    control={form.control}
+                    name="routingType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Call Routing Configuration</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="flex flex-col space-y-4"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="direct" id="direct" />
+                              <Label htmlFor="direct" className="flex-1">
+                                <div className="font-medium">Direct Number</div>
+                                <div className="text-sm text-muted-foreground">
+                                  Use a single Twilio phone number for all calls
+                                </div>
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="pool" id="pool" />
+                              <Label htmlFor="pool" className="flex-1">
+                                <div className="font-medium">Number Pool</div>
+                                <div className="text-sm text-muted-foreground">
+                                  Use dynamic number assignment from a pool for tracking
+                                </div>
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Conditional fields based on routing type */}
+                {watchedRoutingType === "direct" && (
+                  <FormField
+                    control={form.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Select Phone Number</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose a phone number" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {phoneNumbers.map((phone: any) => (
+                              <SelectItem key={phone.id} value={phone.phoneNumber}>
+                                {phone.phoneNumber} ({phone.friendlyName || phone.country})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {watchedRoutingType === "pool" && (
+                  <FormField
+                    control={form.control}
+                    name="poolId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Select Number Pool</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ""}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose a number pool" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {numberPools.map((pool: any) => (
+                              <SelectItem key={pool.id} value={pool.id.toString()}>
+                                {pool.name} ({pool.poolSize} numbers)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 <FormField
                   control={form.control}
-                  name="phoneNumber"
+                  name="callRoutingStrategy"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="+1234567890" {...field} />
-                      </FormControl>
+                      <FormLabel>Call Routing Strategy</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select routing strategy" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="priority">Priority Based</SelectItem>
+                          <SelectItem value="round_robin">Round Robin</SelectItem>
+                          <SelectItem value="weighted">Weighted Distribution</SelectItem>
+                          <SelectItem value="geo">Geographic</SelectItem>
+                          <SelectItem value="time_based">Time Based</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

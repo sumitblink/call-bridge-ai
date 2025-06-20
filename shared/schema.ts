@@ -37,10 +37,11 @@ export const campaigns = pgTable("campaigns", {
   status: varchar("status", { length: 50 }).default("active").notNull(),
   category: varchar("category", { length: 100 }), // Insurance, Solar, Education, etc.
   
-  // Phone & Routing
-  phoneNumber: varchar("phone_number", { length: 20 }),
-  poolId: integer("pool_id").references(() => numberPools.id), // assigned number pool
-  routingType: varchar("routing_type", { length: 50 }).default("priority").notNull(), // priority, round_robin, geo, time_based, weighted
+  // Phone & Routing - Mutually Exclusive
+  routingType: varchar("routing_type", { length: 20 }).default("direct").notNull(), // 'direct' or 'pool'
+  phoneNumber: varchar("phone_number", { length: 20 }), // Used when routingType = 'direct'
+  poolId: integer("pool_id").references(() => numberPools.id), // Used when routingType = 'pool'
+  callRoutingStrategy: varchar("call_routing_strategy", { length: 50 }).default("priority").notNull(), // priority, round_robin, geo, time_based, weighted
   maxConcurrentCalls: integer("max_concurrent_calls").default(5).notNull(),
   callCap: integer("call_cap").default(100).notNull(), // daily call cap
   
