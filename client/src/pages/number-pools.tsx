@@ -136,7 +136,11 @@ function PoolForm({ pool, onSuccess }: {
       
       const response = await apiRequest(url, method, data);
       if (!response.ok) {
-        throw new Error(`Failed to ${pool ? 'update' : 'create'} pool`);
+        const errorData = await response.json();
+        if (response.status === 409) {
+          throw new Error(errorData.error);
+        }
+        throw new Error(errorData.error || `Failed to ${pool ? 'update' : 'create'} pool`);
       }
       return response.json();
     },

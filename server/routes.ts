@@ -1797,8 +1797,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const newPool = await storage.createNumberPool(poolData);
       res.json(newPool);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating number pool:', error);
+      
+      // Handle duplicate pool name error with specific message
+      if (error.message && error.message.includes('already exists')) {
+        return res.status(409).json({ error: error.message });
+      }
+      
       res.status(500).json({ error: 'Failed to create number pool' });
     }
   });

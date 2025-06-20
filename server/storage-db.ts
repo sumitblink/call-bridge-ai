@@ -843,8 +843,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createNumberPool(pool: InsertNumberPool): Promise<NumberPool> {
-    const [newPool] = await db.insert(numberPools).values(pool).returning();
-    return newPool;
+    try {
+      const [newPool] = await db.insert(numberPools).values(pool).returning();
+      return newPool;
+    } catch (error: any) {
+      // Handle duplicate pool name error
+      if (error.code === '23505' || error.message?.includes('unique_pool_name_per_user')) {
+        throw new Error(`A pool with the name "${pool.name}" already exists. Please choose a different name.`);
+      }
+      throw error;
+    }
   }
 
   async updateNumberPool(id: number, pool: Partial<InsertNumberPool>): Promise<NumberPool | undefined> {

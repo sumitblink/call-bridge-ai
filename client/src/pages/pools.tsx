@@ -35,7 +35,14 @@ export default function PoolsPage() {
   });
 
   const createPoolMutation = useMutation({
-    mutationFn: (data: PoolFormData) => apiRequest("/api/number-pools", "POST", data),
+    mutationFn: async (data: PoolFormData) => {
+      const response = await apiRequest("/api/number-pools", "POST", data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create number pool");
+      }
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] });
       setIsCreateDialogOpen(false);
@@ -44,10 +51,10 @@ export default function PoolsPage() {
         description: "Number pool created successfully",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to create number pool",
+        description: error.message,
         variant: "destructive",
       });
     },
