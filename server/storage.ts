@@ -128,6 +128,7 @@ export interface IStorage {
   assignNumberToPool(poolId: number, phoneNumberId: number, priority?: number): Promise<NumberPoolAssignment>;
   removeNumberFromPool(poolId: number, phoneNumberId: number): Promise<boolean>;
   getNumberPoolAssignments(phoneNumberId: number): Promise<NumberPoolAssignment[]>;
+  getPoolAssignedCount(poolId: number): Promise<number>;
   
   // Campaign Pool Assignments
   getCampaignPools(campaignId: number): Promise<NumberPool[]>;

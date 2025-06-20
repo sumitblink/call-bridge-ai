@@ -1793,9 +1793,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/number-pools', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
-      const poolData = { ...req.body, userId };
+      const { selectedNumbers, ...poolData } = req.body;
+      const poolDataWithUser = { ...poolData, userId };
       
-      const newPool = await storage.createNumberPool(poolData);
+      // Create the pool first
+      const newPool = await storage.createNumberPool(poolDataWithUser);
+      
+      // If selectedNumbers array is provided, assign those numbers to the pool
+      if (selectedNumbers && Array.isArray(selectedNumbers) && selectedNumbers.length > 0) {
+        console.log(`Assigning ${selectedNumbers.length} numbers to pool ${newPool.id}`);
+        
+        // Assign each selected number to the pool
+        for (const phoneNumberId of selectedNumbers) {
+          try {
+            await storage.assignNumberToPool(newPool.id, phoneNumberId);
+          } catch (assignError: any) {
+            console.error(`Failed to assign number ${phoneNumberId} to pool ${newPool.id}:`, assignError);
+            // Continue with other numbers even if one fails
+          }
+        }
+        
+        // Update pool size to match actual assigned numbers
+        const assignedCount = await storage.getPoolAssignedCount(newPool.id);
+        if (assignedCount !== newPool.poolSize) {
+          await storage.updateNumberPool(newPool.id, { poolSize: assignedCount });
+          newPool.poolSize = assignedCount;
+        }
+      }
+      
       res.json(newPool);
     } catch (error: any) {
       console.error('Error creating number pool:', error);

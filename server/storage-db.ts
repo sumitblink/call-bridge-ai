@@ -947,6 +947,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(numberPoolAssignments.phoneNumberId, phoneNumberId));
   }
 
+  async getPoolAssignedCount(poolId: number): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(numberPoolAssignments)
+      .where(eq(numberPoolAssignments.poolId, poolId));
+    return result?.count || 0;
+  }
+
   // Campaign Pool Assignments
   async getCampaignPools(campaignId: number): Promise<NumberPool[]> {
     const result = await db
