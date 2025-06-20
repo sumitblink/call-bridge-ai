@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -38,12 +40,9 @@ const publisherSchema = z.object({
   payoutAmount: z.number().min(0, "Payout amount must be positive").default(0),
   minCallDuration: z.number().min(0, "Duration must be positive").default(0),
   allowedTargets: z.array(z.number()).default([]),
-  trackingSettings: z.string()
-    .optional()
-    .refine(validateJsonString, "Must be valid JSON format"),
-  customParameters: z.string()
-    .optional()
-    .refine(validateJsonString, "Must be valid JSON format"),
+  enableTracking: z.boolean().default(true),
+  trackingSettings: z.string().optional(),
+  customParameters: z.string().optional(),
 });
 
 type PublisherFormData = z.infer<typeof publisherSchema>;
@@ -58,6 +57,7 @@ interface Publisher {
   payoutAmount: string;
   minCallDuration: number;
   allowedTargets?: number[];
+  enableTracking?: boolean;
   trackingSettings?: string;
   customParameters?: string;
   totalCalls: number;
@@ -99,6 +99,7 @@ export default function Publishers() {
       payoutAmount: 0,
       minCallDuration: 0,
       allowedTargets: [],
+      enableTracking: true,
       trackingSettings: "",
       customParameters: "",
     },
@@ -186,6 +187,7 @@ export default function Publishers() {
       payoutAmount: parseFloat(publisher.payoutAmount),
       minCallDuration: publisher.minCallDuration,
       allowedTargets: publisher.allowedTargets || [],
+      enableTracking: !!(publisher.trackingSettings),
       trackingSettings: publisher.trackingSettings || "",
       customParameters: publisher.customParameters || "",
     });
@@ -374,244 +376,284 @@ export default function Publishers() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Basic Information */}
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Publisher Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter publisher name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="publisher@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <Tabs defaultValue="basic" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="basic">Basic Settings</TabsTrigger>
+                    <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="basic" className="space-y-6 mt-6">
+                    {/* Publisher Information */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Publisher Information</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Publisher Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter publisher name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input type="email" placeholder="publisher@example.com" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+1 (555) 123-4567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="paused">Paused</SelectItem>
-                            <SelectItem value="suspended">Suspended</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone (Optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="+1 (555) 123-4567" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="status"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Status</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="active">Active</SelectItem>
+                                  <SelectItem value="paused">Paused</SelectItem>
+                                  <SelectItem value="suspended">Suspended</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
 
-                {/* Payout Configuration */}
-                <div className="border rounded-lg p-4 space-y-4">
-                  <h3 className="font-semibold flex items-center">
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Payout Configuration
-                  </h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="payoutType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Payout Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="per_call">Per Call</SelectItem>
-                              <SelectItem value="per_minute">Per Minute</SelectItem>
-                              <SelectItem value="revenue_share">Revenue Share</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="payoutAmount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Payout Amount ($)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Amount in USD for the selected payout type
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="minCallDuration"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Min Call Duration (seconds)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number"
-                              min="0"
-                              placeholder="0"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Minimum call duration to qualify for payout
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+                    {/* Payout Configuration */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold flex items-center">
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Payout Configuration
+                      </h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="payoutType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Payout Type</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="per_call">Per Call</SelectItem>
+                                  <SelectItem value="per_minute">Per Minute</SelectItem>
+                                  <SelectItem value="revenue_share">Revenue Share</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="payoutAmount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Payout Amount ($)</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="minCallDuration"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Min Duration (sec)</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number"
+                                  min="0"
+                                  placeholder="0"
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
 
-                {/* Campaign Targeting */}
-                <div className="border rounded-lg p-4 space-y-4">
-                  <h3 className="font-semibold flex items-center">
-                    <Target className="mr-2 h-4 w-4" />
-                    Campaign Targeting
-                  </h3>
-                  <FormField
-                    control={form.control}
-                    name="allowedTargets"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Allowed Campaigns</FormLabel>
-                        <FormDescription>
-                          Select which campaigns this publisher can send traffic to. Leave empty to allow all campaigns.
-                        </FormDescription>
-                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded p-2">
-                          {campaigns.map((campaign) => (
-                            <div key={campaign.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`campaign-${campaign.id}`}
-                                checked={field.value.includes(campaign.id)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange([...field.value, campaign.id]);
-                                  } else {
-                                    field.onChange(field.value.filter((id: number) => id !== campaign.id));
-                                  }
-                                }}
-                              />
-                              <label 
-                                htmlFor={`campaign-${campaign.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                              >
-                                {campaign.name}
-                              </label>
+                    {/* Campaign Targeting */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold flex items-center">
+                        <Target className="mr-2 h-4 w-4" />
+                        Campaign Access
+                      </h3>
+                      <FormField
+                        control={form.control}
+                        name="allowedTargets"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Allowed Campaigns</FormLabel>
+                            <FormDescription>
+                              Select campaigns this publisher can access. Leave empty to allow all.
+                            </FormDescription>
+                            <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded p-3">
+                              {campaigns.length === 0 ? (
+                                <p className="text-sm text-muted-foreground col-span-2">No campaigns available</p>
+                              ) : (
+                                campaigns.map((campaign) => (
+                                  <div key={campaign.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`campaign-${campaign.id}`}
+                                      checked={field.value.includes(campaign.id)}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          field.onChange([...field.value, campaign.id]);
+                                        } else {
+                                          field.onChange(field.value.filter((id: number) => id !== campaign.id));
+                                        }
+                                      }}
+                                    />
+                                    <label 
+                                      htmlFor={`campaign-${campaign.id}`}
+                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    >
+                                      {campaign.name}
+                                    </label>
+                                  </div>
+                                ))
+                              )}
                             </div>
-                          ))}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                {/* Advanced Settings */}
-                <div className="border rounded-lg p-4 space-y-4">
-                  <h3 className="font-semibold flex items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Advanced Settings
-                  </h3>
-                  <FormField
-                    control={form.control}
-                    name="trackingSettings"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tracking Settings (JSON)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder='{"utm_source": "publisher_name", "click_id": "{click_id}", "sub_id": "{sub_id}"}'
-                            className="min-h-[80px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Custom tracking parameters for this publisher. Use JSON format to define tracking tokens and parameters.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="customParameters"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Custom Parameters (JSON)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder='{"publisher_id": "PUB123", "source_type": "affiliate", "custom_field1": "value1"}'
-                            className="min-h-[80px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Publisher-specific custom parameters for integration and tracking. These will be passed along with call data.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                    {/* Tracking Toggle */}
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="enableTracking"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">Enable Tracking</FormLabel>
+                              <FormDescription>
+                                Enable advanced tracking and attribution for this publisher
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="advanced" className="space-y-6 mt-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold flex items-center">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Advanced Tracking Settings
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Configure custom tracking parameters and integration settings for advanced users.
+                      </p>
+                      
+                      <FormField
+                        control={form.control}
+                        name="trackingSettings"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tracking Parameters (JSON)</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder='{"utm_source": "publisher_name", "click_id": "{click_id}", "sub_id": "{sub_id}"}'
+                                className="min-h-[100px]"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Define custom tracking tokens and URL parameters. Use standard UTM parameters or custom tracking tokens.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="customParameters"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Custom Integration Parameters (JSON)</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder='{"publisher_id": "PUB123", "source_type": "affiliate", "conversion_tracking": true}'
+                                className="min-h-[100px]"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Publisher-specific parameters for API integrations and custom tracking implementations.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
 
-                <div className="flex justify-end space-x-2">
+                <div className="flex justify-end space-x-2 pt-4 border-t">
                   <Button 
                     type="button" 
                     variant="outline" 
