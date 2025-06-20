@@ -197,10 +197,8 @@ export class CallTrackingService {
       var elements = document.querySelectorAll(selector);
       elements.forEach(function(element) {
         if (config.numberToReplace && element.textContent.includes(config.numberToReplace)) {
-          element.textContent = element.textContent.replace(
-            new RegExp(config.numberToReplace.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'g'),
-            trackingNumber
-          );
+          // Simple string replacement for phone numbers
+          element.textContent = element.textContent.replace(config.numberToReplace, trackingNumber);
         } else {
           element.textContent = trackingNumber;
         }

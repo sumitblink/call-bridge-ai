@@ -3224,39 +3224,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { campaignId } = req.params;
       const userId = req.user?.id;
       
-      const validatedData = insertCallTrackingTagSchema.parse({
-        ...req.body,
+      const tagData = {
+        name: req.body.name,
+        tagCode: req.body.tagCode,
         campaignId: parseInt(campaignId),
-        userId
-      });
+        userId: userId || 1,
+        primaryNumberId: req.body.primaryNumberId || null,
+        numberToReplace: req.body.numberToReplace || null,
+        poolId: req.body.poolId || null,
+        rotationStrategy: req.body.rotationStrategy || 'round_robin',
+        publisherId: req.body.publisherId || null,
+        captureUserData: req.body.captureUserData || false,
+        sessionTimeout: req.body.sessionTimeout || 1800,
+        stickyDuration: req.body.stickyDuration || 86400,
+        isActive: true
+      };
       
-      const [newTag] = await db.insert(callTrackingTags).values(validatedData).returning();
+      const [newTag] = await db.insert(callTrackingTags).values([tagData]).returning();
       
       // Generate JavaScript code for the tag
       const domain = req.get('host') || 'localhost:5000';
       const jsCode = CallTrackingService.generateJavaScriptCode(
-        validatedData.tagCode,
+        tagData.tagCode,
         `http://${domain}`,
-        validatedData.numberToReplace || '',
-        validatedData.captureUserData
+        tagData.numberToReplace || '',
+        tagData.captureUserData
       );
       
       const htmlSnippet = CallTrackingService.generateHTMLSnippet(
-        validatedData.tagCode,
-        validatedData.numberToReplace || '',
+        tagData.tagCode,
+        tagData.numberToReplace || '',
         `http://${domain}`
       );
       
       // Save the generated snippet
-      await db.insert(dniSnippets).values({
-        tagId: newTag[0].id,
+      await db.insert(dniSnippets).values([{
+        tagId: newTag.id,
         jsCode,
         htmlSnippet,
         domains: [domain],
         selectors: ['.tracking-number', '[data-tracking-number]']
-      });
+      }]);
       
-      res.json(newTag[0]);
+      res.json({
+        success: true,
+        tag: newTag,
+        jsCode,
+        htmlSnippet
+      });
     } catch (error) {
       console.error('Error creating tracking tag:', error);
       if (error instanceof Error && error.name === 'ZodError') {
