@@ -16,6 +16,8 @@ import {
   numberPools,
   numberPoolAssignments,
   campaignPoolAssignments,
+  callTrackingTags,
+  dniSnippets,
   type User, 
   type InsertUser,
   type UpsertUser,
@@ -141,10 +143,27 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCampaign(id: number): Promise<boolean> {
     try {
-      // First delete related campaign_buyers entries
+      // Delete related records in proper order to avoid foreign key constraints
+      
+      // 1. Delete DNI snippets for tracking tags related to this campaign
+      const trackingTagsToDelete = await db.select({ id: callTrackingTags.id })
+        .from(callTrackingTags)
+        .where(eq(callTrackingTags.campaignId, id));
+      
+      for (const tag of trackingTagsToDelete) {
+        await db.delete(dniSnippets).where(eq(dniSnippets.tagId, tag.id));
+      }
+      
+      // 2. Delete call tracking tags
+      await db.delete(callTrackingTags).where(eq(callTrackingTags.campaignId, id));
+      
+      // 3. Delete campaign_buyers entries
       await db.delete(campaignBuyers).where(eq(campaignBuyers.campaignId, id));
       
-      // Then delete the campaign
+      // 4. Delete publisher_campaigns entries
+      await db.delete(publisherCampaigns).where(eq(publisherCampaigns.campaignId, id));
+      
+      // 5. Finally delete the campaign
       const result = await db.delete(campaigns).where(eq(campaigns.id, id));
       return result.rowCount > 0;
     } catch (error) {
@@ -894,13 +913,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteNumberPool(id: number): Promise<boolean> {
-    // First remove all number assignments
-    await db.delete(numberPoolAssignments).where(eq(numberPoolAssignments.poolId, id));
-    // Then remove campaign assignments
-    await db.delete(campaignPoolAssignments).where(eq(campaignPoolAssignments.poolId, id));
-    // Finally delete the pool
-    const result = await db.delete(numberPools).where(eq(numberPools.id, id));
-    return result.rowCount > 0;
+    try {
+      // Delete related records in proper order to avoid foreign key constraints
+      
+      // 1. Delete DNI snippets for tracking tags related to this pool
+      const trackingTagsToDelete = await db.select({ id: callTrackingTags.id })
+        .from(callTrackingTags)
+        .where(eq(callTrackingTags.poolId, id));
+      
+      for (const tag of trackingTagsToDelete) {
+        await db.delete(dniSnippets).where(eq(dniSnippets.tagId, tag.id));
+      }
+      
+      // 2. Delete call tracking tags that reference this pool
+      await db.delete(callTrackingTags).where(eq(callTrackingTags.poolId, id));
+      
+      // 3. Remove all number assignments
+      await db.delete(numberPoolAssignments).where(eq(numberPoolAssignments.poolId, id));
+      
+      // 4. Remove campaign assignments
+      await db.delete(campaignPoolAssignments).where(eq(campaignPoolAssignments.poolId, id));
+      
+      // 5. Finally delete the pool
+      const result = await db.delete(numberPools).where(eq(numberPools.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting number pool:', error);
+      return false;
+    }
   }
 
   // Pool Assignments
