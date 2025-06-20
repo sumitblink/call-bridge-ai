@@ -1446,6 +1446,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fetch unassigned phone numbers (not in any pool)
+  app.get('/api/phone-numbers/unassigned', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const unassignedNumbers = await storage.getUnassignedPhoneNumbers(userId);
+      res.json(unassignedNumbers);
+    } catch (error) {
+      console.error('Error fetching unassigned phone numbers:', error);
+      res.status(500).json({ error: 'Failed to fetch unassigned phone numbers' });
+    }
+  });
+
   // Import existing Twilio numbers
   app.post('/api/phone-numbers/import', requireAuth, async (req, res) => {
     try {
