@@ -8,6 +8,17 @@ import { CallRouter } from "./call-routing";
 import { DNIService, type DNIRequest } from "./dni-service";
 import { TwilioTrunkService } from "./twilio-trunk-service";
 import { NumberProvisioningService } from "./number-provisioning";
+import { CallTrackingService } from "./call-tracking-service";
+import { db } from "./db";
+import { eq, and, desc } from "drizzle-orm";
+import { 
+  callTrackingTags, 
+  dniSessions, 
+  dniSnippets,
+  insertCallTrackingTagSchema,
+  CallTrackingTag,
+  InsertCallTrackingTag 
+} from "../shared/schema";
 import { handleIncomingCall, handleCallStatus, handleRecordingStatus } from "./twilio-webhooks";
 import { z } from "zod";
 import twilio from "twilio";
@@ -3175,6 +3186,238 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error generating tracking SDK:', error);
       res.status(500).send('// Error generating tracking SDK');
+    }
+  });
+
+  // Call Tracking Tags API Routes - DNI System
+  
+  // Get all tracking tags for a campaign
+  app.get('/api/campaigns/:campaignId/tracking-tags', requireAuth, async (req, res) => {
+    try {
+      const { campaignId } = req.params;
+      const userId = req.user?.id;
+      
+      const tags = await db.query.callTrackingTags.findMany({
+        where: and(
+          eq(callTrackingTags.campaignId, parseInt(campaignId)),
+          eq(callTrackingTags.userId, userId),
+          eq(callTrackingTags.isActive, true)
+        ),
+        with: {
+          primaryNumber: true,
+          pool: true,
+          publisher: true
+        },
+        orderBy: desc(callTrackingTags.createdAt)
+      });
+      
+      res.json(tags);
+    } catch (error) {
+      console.error('Error fetching tracking tags:', error);
+      res.status(500).json({ error: 'Failed to fetch tracking tags' });
+    }
+  });
+
+  // Create new tracking tag
+  app.post('/api/campaigns/:campaignId/tracking-tags', requireAuth, async (req, res) => {
+    try {
+      const { campaignId } = req.params;
+      const userId = req.user?.id;
+      
+      const validatedData = insertCallTrackingTagSchema.parse({
+        ...req.body,
+        campaignId: parseInt(campaignId),
+        userId
+      });
+      
+      const newTag = await db.insert(callTrackingTags).values(validatedData).returning();
+      
+      // Generate JavaScript code for the tag
+      const domain = req.get('host') || 'localhost:5000';
+      const jsCode = CallTrackingService.generateJavaScriptCode(
+        validatedData.tagCode,
+        `http://${domain}`,
+        {
+          selectors: ['.tracking-number', '[data-tracking-number]'],
+          numberToReplace: validatedData.numberToReplace,
+          captureUserData: validatedData.captureUserData
+        }
+      );
+      
+      const htmlSnippet = CallTrackingService.generateHTMLSnippet(
+        validatedData.tagCode,
+        `http://${domain}`,
+        validatedData.numberToReplace
+      );
+      
+      // Save the generated snippet
+      await db.insert(dniSnippets).values({
+        tagId: newTag[0].id,
+        jsCode,
+        htmlSnippet,
+        domains: [domain],
+        selectors: ['.tracking-number', '[data-tracking-number]']
+      });
+      
+      res.json(newTag[0]);
+    } catch (error) {
+      console.error('Error creating tracking tag:', error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid tracking tag data', details: error.message });
+      }
+      res.status(500).json({ error: 'Failed to create tracking tag' });
+    }
+  });
+
+  // Update tracking tag
+  app.put('/api/tracking-tags/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+      
+      const validatedData = insertCallTrackingTagSchema.partial().parse(req.body);
+      
+      const updatedTag = await db
+        .update(callTrackingTags)
+        .set({
+          ...validatedData,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(callTrackingTags.id, parseInt(id)),
+          eq(callTrackingTags.userId, userId)
+        ))
+        .returning();
+      
+      if (updatedTag.length === 0) {
+        return res.status(404).json({ error: 'Tracking tag not found' });
+      }
+      
+      res.json(updatedTag[0]);
+    } catch (error) {
+      console.error('Error updating tracking tag:', error);
+      res.status(500).json({ error: 'Failed to update tracking tag' });
+    }
+  });
+
+  // Delete tracking tag
+  app.delete('/api/tracking-tags/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+      
+      const deletedTag = await db
+        .update(callTrackingTags)
+        .set({
+          isActive: false,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(callTrackingTags.id, parseInt(id)),
+          eq(callTrackingTags.userId, userId)
+        ))
+        .returning();
+      
+      if (deletedTag.length === 0) {
+        return res.status(404).json({ error: 'Tracking tag not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting tracking tag:', error);
+      res.status(500).json({ error: 'Failed to delete tracking tag' });
+    }
+  });
+
+  // Get tracking tag code snippets
+  app.get('/api/tracking-tags/:id/snippets', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+      
+      const tag = await db.query.callTrackingTags.findFirst({
+        where: and(
+          eq(callTrackingTags.id, parseInt(id)),
+          eq(callTrackingTags.userId, userId)
+        )
+      });
+      
+      if (!tag) {
+        return res.status(404).json({ error: 'Tracking tag not found' });
+      }
+      
+      const snippet = await db.query.dniSnippets.findFirst({
+        where: eq(dniSnippets.tagId, parseInt(id))
+      });
+      
+      if (!snippet) {
+        return res.status(404).json({ error: 'Snippet not found' });
+      }
+      
+      res.json({
+        jsCode: snippet.jsCode,
+        htmlSnippet: snippet.htmlSnippet,
+        tagCode: tag.tagCode
+      });
+    } catch (error) {
+      console.error('Error fetching snippets:', error);
+      res.status(500).json({ error: 'Failed to fetch snippets' });
+    }
+  });
+
+  // DNI tracking endpoint for website integration
+  app.post('/api/dni/track', async (req, res) => {
+    try {
+      const requestData = {
+        tagCode: req.body.tagCode,
+        sessionId: req.body.sessionId,
+        visitorId: req.body.visitorId,
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent'],
+        referrer: req.body.referrer,
+        utmSource: req.body.utmSource,
+        utmMedium: req.body.utmMedium,
+        utmCampaign: req.body.utmCampaign,
+        utmContent: req.body.utmContent,
+        utmTerm: req.body.utmTerm,
+        domain: req.body.domain
+      };
+      
+      const response = await CallTrackingService.getTrackingNumber(requestData);
+      res.json(response);
+    } catch (error) {
+      console.error('DNI tracking error:', error);
+      res.status(500).json({
+        success: false,
+        sessionId: req.body.sessionId || 'unknown',
+        error: 'Failed to get tracking number'
+      });
+    }
+  });
+
+  // Get tracking tag analytics
+  app.get('/api/tracking-tags/:id/analytics', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { days = 30 } = req.query;
+      const userId = req.user?.id;
+      
+      const tag = await db.query.callTrackingTags.findFirst({
+        where: and(
+          eq(callTrackingTags.id, parseInt(id)),
+          eq(callTrackingTags.userId, userId)
+        )
+      });
+      
+      if (!tag) {
+        return res.status(404).json({ error: 'Tracking tag not found' });
+      }
+      
+      const analytics = await CallTrackingService.getTagAnalytics(parseInt(id), parseInt(days as string));
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics' });
     }
   });
 

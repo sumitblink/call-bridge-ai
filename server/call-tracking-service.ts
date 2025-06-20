@@ -437,7 +437,7 @@ export class CallTrackingService {
       elements.forEach(function(element) {
         if (config.numberToReplace && element.textContent.includes(config.numberToReplace)) {
           element.textContent = element.textContent.replace(
-            new RegExp(config.numberToReplace.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'g'),
+            new RegExp(config.numberToReplace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
             trackingNumber
           );
         } else {
