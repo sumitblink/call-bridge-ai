@@ -250,6 +250,93 @@ export const webhookConfigs = pgTable("webhook_configs", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Call Tracking Tags - DNI system for dynamic number insertion
+export const callTrackingTags = pgTable("call_tracking_tags", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
+  
+  // Tag Configuration
+  name: varchar("name", { length: 256 }).notNull(), // Tag Name
+  tagCode: varchar("tag_code", { length: 100 }).notNull().unique(), // Unique identifier for JS
+  primaryNumberId: integer("primary_number_id").references(() => phoneNumbers.id), // Primary Publisher Number
+  numberToReplace: varchar("number_to_replace", { length: 20 }), // Number to Replace
+  
+  // Pool Configuration
+  poolId: integer("pool_id").references(() => numberPools.id), // Assigned pool for rotation
+  rotationStrategy: varchar("rotation_strategy", { length: 50 }).default("round_robin").notNull(), // round_robin, sticky, random, priority
+  
+  // Publisher Assignment
+  publisherId: integer("publisher_id").references(() => publishers.id), // Assigned publisher
+  
+  // User Data Collection
+  captureUserData: boolean("capture_user_data").default(false).notNull(),
+  trackingFields: json("tracking_fields"), // {ip: true, userAgent: true, referrer: true, utm: true}
+  
+  // Session Management
+  sessionTimeout: integer("session_timeout").default(1800).notNull(), // 30 minutes in seconds
+  stickyDuration: integer("sticky_duration").default(86400).notNull(), // 24 hours for sticky routing
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// DNI Sessions - Track visitor sessions and number assignments
+export const dniSessions = pgTable("dni_sessions", {
+  id: serial("id").primaryKey(),
+  tagId: integer("tag_id").references(() => callTrackingTags.id).notNull(),
+  sessionId: varchar("session_id", { length: 128 }).notNull(), // Browser session ID
+  visitorId: varchar("visitor_id", { length: 128 }), // Persistent visitor ID
+  
+  // Assigned Number
+  assignedNumberId: integer("assigned_number_id").references(() => phoneNumbers.id).notNull(),
+  
+  // Session Data
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  referrer: text("referrer"),
+  utmSource: varchar("utm_source", { length: 255 }),
+  utmMedium: varchar("utm_medium", { length: 255 }),
+  utmCampaign: varchar("utm_campaign", { length: 255 }),
+  utmContent: varchar("utm_content", { length: 255 }),
+  utmTerm: varchar("utm_term", { length: 255 }),
+  
+  // Tracking
+  firstSeen: timestamp("first_seen").defaultNow().notNull(),
+  lastSeen: timestamp("last_seen").defaultNow().notNull(),
+  pageViews: integer("page_views").default(1).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// DNI JavaScript Snippets - Generated tracking codes
+export const dniSnippets = pgTable("dni_snippets", {
+  id: serial("id").primaryKey(),
+  tagId: integer("tag_id").references(() => callTrackingTags.id).notNull(),
+  
+  // Code Generation
+  jsCode: text("js_code").notNull(), // Generated JavaScript code
+  htmlSnippet: text("html_snippet"), // HTML integration snippet
+  version: varchar("version", { length: 10 }).default("1.0").notNull(),
+  
+  // Configuration
+  domains: text("domains").array(), // Allowed domains
+  selectors: text("selectors").array(), // CSS selectors to replace numbers
+  customConfig: json("custom_config"), // Additional configuration
+  
+  // Analytics
+  impressions: integer("impressions").default(0).notNull(),
+  conversions: integer("conversions").default(0).notNull(),
+  lastUsed: timestamp("last_used"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const webhookLogs = pgTable("webhook_logs", {
   id: serial("id").primaryKey(),
   webhookConfigId: integer("webhook_config_id").references(() => webhookConfigs.id).notNull(),
@@ -509,6 +596,41 @@ export const insertPhoneNumberSchema = createInsertSchema(phoneNumbers).omit({
 });
 export type PhoneNumber = typeof phoneNumbers.$inferSelect;
 export type InsertPhoneNumber = z.infer<typeof insertPhoneNumberSchema>;
+
+// Call Tracking Tags schemas
+export const insertCallTrackingTagSchema = createInsertSchema(callTrackingTags).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  userId: z.number().optional(),
+  name: z.string().min(1, "Tag name is required"),
+  tagCode: z.string().min(1, "Tag code is required").regex(/^[a-zA-Z0-9_-]+$/, "Tag code must contain only letters, numbers, underscores, and hyphens"),
+  rotationStrategy: z.enum(["round_robin", "sticky", "random", "priority"]).optional(),
+  sessionTimeout: z.number().min(60).max(86400).optional(),
+  stickyDuration: z.number().min(3600).max(2592000).optional(),
+});
+
+export const insertDniSessionSchema = createInsertSchema(dniSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDniSnippetSchema = createInsertSchema(dniSnippets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type CallTrackingTag = typeof callTrackingTags.$inferSelect;
+export type InsertCallTrackingTag = z.infer<typeof insertCallTrackingTagSchema>;
+
+export type DniSession = typeof dniSessions.$inferSelect;
+export type InsertDniSession = z.infer<typeof insertDniSessionSchema>;
+
+export type DniSnippet = typeof dniSnippets.$inferSelect;
+export type InsertDniSnippet = z.infer<typeof insertDniSnippetSchema>;
 
 // Publishers (Traffic Sources) table
 export const publishers = pgTable('publishers', {
