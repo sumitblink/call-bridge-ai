@@ -917,7 +917,7 @@ export class DatabaseStorage implements IStorage {
   // Campaign Pool Assignments
   async getCampaignPools(campaignId: number): Promise<NumberPool[]> {
     const result = await db
-      .select({
+      .selectDistinct({
         id: numberPools.id,
         userId: numberPools.userId,
         name: numberPools.name,
@@ -938,11 +938,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async assignPoolToCampaign(campaignId: number, poolId: number, priority = 1): Promise<CampaignPoolAssignment> {
-    const [assignment] = await db
-      .insert(campaignPoolAssignments)
-      .values({ campaignId, poolId, priority })
-      .returning();
-    return assignment;
+    try {
+      const [assignment] = await db
+        .insert(campaignPoolAssignments)
+        .values({ campaignId, poolId, priority })
+        .returning();
+      return assignment;
+    } catch (error: any) {
+      // If duplicate key error, return existing assignment
+      if (error.code === '23505' || error.message?.includes('unique_campaign_pool')) {
+        const [existing] = await db
+          .select()
+          .from(campaignPoolAssignments)
+          .where(and(
+            eq(campaignPoolAssignments.campaignId, campaignId),
+            eq(campaignPoolAssignments.poolId, poolId)
+          ));
+        return existing;
+      }
+      throw error;
+    }
   }
 
   async removePoolFromCampaign(campaignId: number, poolId: number): Promise<boolean> {
