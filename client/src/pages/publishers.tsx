@@ -113,8 +113,9 @@ export default function Publishers() {
         payoutAmount: data.payoutAmount.toString(),
         minCallDuration: data.minCallDuration,
         allowedTargets: data.allowedTargets,
+        enableTracking: data.enableTracking,
         customParameters: data.customParameters || null,
-        trackingSettings: data.trackingSettings || null,
+        trackingSettings: data.enableTracking ? (data.trackingSettings || null) : null,
       });
       return response.json();
     },
@@ -137,8 +138,9 @@ export default function Publishers() {
         payoutAmount: data.payoutAmount.toString(),
         minCallDuration: data.minCallDuration,
         allowedTargets: data.allowedTargets,
+        enableTracking: data.enableTracking,
         customParameters: data.customParameters || null,
-        trackingSettings: data.trackingSettings || null,
+        trackingSettings: data.enableTracking ? (data.trackingSettings || null) : null,
       });
       return response.json();
     },
@@ -187,7 +189,7 @@ export default function Publishers() {
       payoutAmount: parseFloat(publisher.payoutAmount),
       minCallDuration: publisher.minCallDuration,
       allowedTargets: publisher.allowedTargets || [],
-      enableTracking: !!(publisher.trackingSettings),
+      enableTracking: publisher.enableTracking ?? true,
       trackingSettings: publisher.trackingSettings || "",
       customParameters: publisher.customParameters || "",
     });
