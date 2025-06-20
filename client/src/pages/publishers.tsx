@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,17 +18,32 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
 
+// JSON validation helper
+const validateJsonString = (value: string | undefined) => {
+  if (!value || value.trim() === "") return true;
+  try {
+    JSON.parse(value);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const publisherSchema = z.object({
   name: z.string().min(1, "Publisher name is required"),
   email: z.string().email("Valid email is required"),
   phone: z.string().optional(),
   status: z.enum(["active", "paused", "suspended"]),
   payoutType: z.enum(["per_call", "per_minute", "revenue_share"]),
-  payoutAmount: z.string().min(1, "Payout amount is required"),
-  minCallDuration: z.string().default("0"),
-  allowedTargets: z.string().optional(),
-  trackingSettings: z.string().optional(),
-  customParameters: z.string().optional(),
+  payoutAmount: z.number().min(0, "Payout amount must be positive").default(0),
+  minCallDuration: z.number().min(0, "Duration must be positive").default(0),
+  allowedTargets: z.array(z.number()).default([]),
+  trackingSettings: z.string()
+    .optional()
+    .refine(validateJsonString, "Must be valid JSON format"),
+  customParameters: z.string()
+    .optional()
+    .refine(validateJsonString, "Must be valid JSON format"),
 });
 
 type PublisherFormData = z.infer<typeof publisherSchema>;
@@ -41,7 +57,7 @@ interface Publisher {
   payoutType: string;
   payoutAmount: string;
   minCallDuration: number;
-  allowedTargets?: string[];
+  allowedTargets?: number[];
   trackingSettings?: string;
   customParameters?: string;
   totalCalls: number;
@@ -57,21 +73,35 @@ interface Campaign {
 }
 
 export default function Publishers() {
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingPublisher, setEditingPublisher] = useState<Publisher | null>(null);
-  const [selectedPublisher, setSelectedPublisher] = useState<Publisher | null>(null);
-  const [showCampaignDialog, setShowCampaignDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingPublisher, setEditingPublisher] = useState<Publisher | null>(null);
 
   // Fetch publishers
-  const { data: publishers = [], isLoading } = useQuery<Publisher[]>({
+  const { data: publishers = [], isLoading, error } = useQuery<Publisher[]>({
     queryKey: ["/api/publishers"],
   });
 
-  // Fetch campaigns for assignment
+  // Fetch campaigns for multi-select
   const { data: campaigns = [] } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"],
+  });
+
+  const form = useForm<PublisherFormData>({
+    resolver: zodResolver(publisherSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      status: "active",
+      payoutType: "per_call",
+      payoutAmount: 0,
+      minCallDuration: 0,
+      allowedTargets: [],
+      trackingSettings: "",
+      customParameters: "",
+    },
   });
 
   // Create publisher mutation
@@ -79,16 +109,18 @@ export default function Publishers() {
     mutationFn: async (data: PublisherFormData) => {
       const response = await apiRequest("/api/publishers", "POST", {
         ...data,
-        payoutAmount: data.payoutAmount, // Keep as string for schema validation
-        minCallDuration: parseInt(data.minCallDuration),
-        allowedTargets: data.allowedTargets ? data.allowedTargets.split(",").map(t => t.trim()) : [],
+        payoutAmount: data.payoutAmount.toString(),
+        minCallDuration: data.minCallDuration,
+        allowedTargets: data.allowedTargets,
         customParameters: data.customParameters || null,
+        trackingSettings: data.trackingSettings || null,
       });
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/publishers"] });
       setIsCreateOpen(false);
+      form.reset();
       toast({ title: "Publisher created successfully" });
     },
     onError: () => {
@@ -101,16 +133,18 @@ export default function Publishers() {
     mutationFn: async ({ id, data }: { id: number; data: PublisherFormData }) => {
       const response = await apiRequest(`/api/publishers/${id}`, "PUT", {
         ...data,
+        payoutAmount: data.payoutAmount.toString(),
+        minCallDuration: data.minCallDuration,
+        allowedTargets: data.allowedTargets,
         customParameters: data.customParameters || null,
-        payoutAmount: data.payoutAmount, // Keep as string for schema validation
-        minCallDuration: parseInt(data.minCallDuration),
-        allowedTargets: data.allowedTargets ? data.allowedTargets.split(",").map(t => t.trim()) : [],
+        trackingSettings: data.trackingSettings || null,
       });
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/publishers"] });
       setEditingPublisher(null);
+      form.reset();
       toast({ title: "Publisher updated successfully" });
     },
     onError: () => {
@@ -133,22 +167,6 @@ export default function Publishers() {
     },
   });
 
-  const form = useForm<PublisherFormData>({
-    resolver: zodResolver(publisherSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      status: "active",
-      payoutType: "per_call",
-      payoutAmount: "0.00",
-      minCallDuration: "0",
-      allowedTargets: "",
-      trackingSettings: "",
-      customParameters: "",
-    },
-  });
-
   const onSubmit = (data: PublisherFormData) => {
     if (editingPublisher) {
       updatePublisher.mutate({ id: editingPublisher.id, data });
@@ -165,9 +183,9 @@ export default function Publishers() {
       phone: publisher.phone || "",
       status: publisher.status as any,
       payoutType: publisher.payoutType as any,
-      payoutAmount: publisher.payoutAmount,
-      minCallDuration: publisher.minCallDuration.toString(),
-      allowedTargets: publisher.allowedTargets?.join(", ") || "",
+      payoutAmount: parseFloat(publisher.payoutAmount),
+      minCallDuration: publisher.minCallDuration,
+      allowedTargets: publisher.allowedTargets || [],
       trackingSettings: publisher.trackingSettings || "",
       customParameters: publisher.customParameters || "",
     });
@@ -176,6 +194,15 @@ export default function Publishers() {
   const handleDelete = (id: number) => {
     if (confirm("Are you sure you want to delete this publisher?")) {
       deletePublisher.mutate(id);
+    }
+  };
+
+  const getPayoutTypeLabel = (type: string) => {
+    switch (type) {
+      case "per_call": return "per call";
+      case "per_minute": return "per minute";
+      case "revenue_share": return "revenue share";
+      default: return type;
     }
   };
 
@@ -188,52 +215,166 @@ export default function Publishers() {
     }
   };
 
-  const getPayoutTypeLabel = (type: string) => {
-    switch (type) {
-      case "per_call": return "Per Call";
-      case "per_minute": return "Per Minute";
-      case "revenue_share": return "Revenue Share";
-      default: return type;
-    }
-  };
-
-  if (isLoading) {
+  if (error) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">Loading publishers...</div>
+        <div className="p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-medium mb-2">Error loading publishers</h3>
+            <p className="text-muted-foreground mb-4">
+              {error instanceof Error ? error.message : "Failed to load publishers"}
+            </p>
+            <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/publishers"] })}>
+              Try Again
+            </Button>
+          </div>
+        </div>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <div className="space-y-6 p-6">
+      <div className="p-6 space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Publishers</h1>
-            <p className="text-muted-foreground">Manage traffic sources and affiliate partners</p>
+            <p className="text-muted-foreground">
+              Manage traffic sources and affiliate publishers for your campaigns.
+            </p>
           </div>
-          <Dialog open={isCreateOpen || !!editingPublisher} onOpenChange={(open) => {
-          setIsCreateOpen(open);
-          if (!open) {
-            setEditingPublisher(null);
-            form.reset();
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Publisher
-            </Button>
-          </DialogTrigger>
+          <Button onClick={() => setIsCreateOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Publisher
+          </Button>
+        </div>
+
+        {/* Publishers Grid */}
+        {isLoading ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-gray-200 rounded"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {publishers.map((publisher) => (
+              <Card key={publisher.id} className="relative">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{publisher.name}</CardTitle>
+                    <Badge className={getStatusColor(publisher.status)}>
+                      {publisher.status}
+                    </Badge>
+                  </div>
+                  <CardDescription>{publisher.email}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Payout</p>
+                      <p className="text-lg font-semibold">
+                        ${publisher.payoutAmount} {getPayoutTypeLabel(publisher.payoutType)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Calls</p>
+                      <p className="text-lg font-semibold">{publisher.totalCalls}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Payout</p>
+                      <p className="text-lg font-semibold">${publisher.totalPayout}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Min Duration</p>
+                      <p className="text-lg font-semibold">{publisher.minCallDuration}s</p>
+                    </div>
+                  </div>
+                  
+                  {publisher.allowedTargets && publisher.allowedTargets.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Allowed Targets</p>
+                      <div className="flex flex-wrap gap-1">
+                        {publisher.allowedTargets.map((targetId) => {
+                          const campaign = campaigns.find(c => c.id === targetId);
+                          return (
+                            <Badge key={targetId} variant="secondary">
+                              {campaign ? campaign.name : `Campaign ${targetId}`}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(publisher)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Publisher</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{publisher.name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(publisher.id)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Create/Edit Publisher Dialog */}
+        <Dialog 
+          open={isCreateOpen || editingPublisher !== null} 
+          onOpenChange={(open) => {
+            if (!open) {
+              setIsCreateOpen(false);
+              setEditingPublisher(null);
+              form.reset();
+            }
+          }}
+        >
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingPublisher ? "Edit Publisher" : "Create New Publisher"}
+                {editingPublisher ? "Edit Publisher" : "Create Publisher"}
               </DialogTitle>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Basic Information */}
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -271,7 +412,7 @@ export default function Publishers() {
                       <FormItem>
                         <FormLabel>Phone (Optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="+1-555-0123" {...field} />
+                          <Input placeholder="+1 (555) 123-4567" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -301,10 +442,11 @@ export default function Publishers() {
                   />
                 </div>
 
+                {/* Payout Configuration */}
                 <div className="border rounded-lg p-4 space-y-4">
                   <h3 className="font-semibold flex items-center">
                     <DollarSign className="mr-2 h-4 w-4" />
-                    Payout Rules
+                    Payout Configuration
                   </h3>
                   <div className="grid grid-cols-3 gap-4">
                     <FormField
@@ -334,10 +476,20 @@ export default function Publishers() {
                       name="payoutAmount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Amount ($)</FormLabel>
+                          <FormLabel>Payout Amount ($)</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
+                            <Input 
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
                           </FormControl>
+                          <FormDescription>
+                            Amount in USD for the selected payout type
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -347,10 +499,19 @@ export default function Publishers() {
                       name="minCallDuration"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Min Duration (sec)</FormLabel>
+                          <FormLabel>Min Call Duration (seconds)</FormLabel>
                           <FormControl>
-                            <Input type="number" min="0" placeholder="0" {...field} />
+                            <Input 
+                              type="number"
+                              min="0"
+                              placeholder="0"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
                           </FormControl>
+                          <FormDescription>
+                            Minimum call duration to qualify for payout
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -358,68 +519,92 @@ export default function Publishers() {
                   </div>
                 </div>
 
+                {/* Campaign Targeting */}
                 <div className="border rounded-lg p-4 space-y-4">
                   <h3 className="font-semibold flex items-center">
                     <Target className="mr-2 h-4 w-4" />
-                    Allowed Targets
+                    Campaign Targeting
                   </h3>
                   <FormField
                     control={form.control}
                     name="allowedTargets"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Campaign IDs (comma-separated)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="1, 2, 3" {...field} />
-                        </FormControl>
+                        <FormLabel>Allowed Campaigns</FormLabel>
+                        <FormDescription>
+                          Select which campaigns this publisher can send traffic to. Leave empty to allow all campaigns.
+                        </FormDescription>
+                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded p-2">
+                          {campaigns.map((campaign) => (
+                            <div key={campaign.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`campaign-${campaign.id}`}
+                                checked={field.value.includes(campaign.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    field.onChange([...field.value, campaign.id]);
+                                  } else {
+                                    field.onChange(field.value.filter((id: number) => id !== campaign.id));
+                                  }
+                                }}
+                              />
+                              <label 
+                                htmlFor={`campaign-${campaign.id}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                {campaign.name}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
 
+                {/* Advanced Settings */}
                 <div className="border rounded-lg p-4 space-y-4">
                   <h3 className="font-semibold flex items-center">
                     <Settings className="mr-2 h-4 w-4" />
-                    Tracking Settings
+                    Advanced Settings
                   </h3>
                   <FormField
                     control={form.control}
                     name="trackingSettings"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tracking Parameters</FormLabel>
+                        <FormLabel>Tracking Settings (JSON)</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder='{"pixel_id": "123", "conversion_tracking": true}'
-                            className="min-h-[60px]"
+                            placeholder='{"utm_source": "publisher_name", "click_id": "{click_id}", "sub_id": "{sub_id}"}'
+                            className="min-h-[80px]"
                             {...field} 
                           />
                         </FormControl>
+                        <FormDescription>
+                          Custom tracking parameters for this publisher. Use JSON format to define tracking tokens and parameters.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
-
-                <div className="border rounded-lg p-4 space-y-4">
-                  <h3 className="font-semibold flex items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Custom Parameters (JSON)
-                  </h3>
                   <FormField
                     control={form.control}
                     name="customParameters"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Publisher-Specific Parameters</FormLabel>
+                        <FormLabel>Custom Parameters (JSON)</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder='{"publisher_id": "PUB123", "source_type": "affiliate", "custom_field1": "value1", "custom_field2": "value2"}'
-                            className="min-h-[100px]"
+                            placeholder='{"publisher_id": "PUB123", "source_type": "affiliate", "custom_field1": "value1"}'
+                            className="min-h-[80px]"
                             {...field} 
                           />
                         </FormControl>
+                        <FormDescription>
+                          Publisher-specific custom parameters for integration and tracking. These will be passed along with call data.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -427,14 +612,21 @@ export default function Publishers() {
                 </div>
 
                 <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => {
-                    setIsCreateOpen(false);
-                    setEditingPublisher(null);
-                    form.reset();
-                  }}>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsCreateOpen(false);
+                      setEditingPublisher(null);
+                      form.reset();
+                    }}
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={createPublisher.isPending || updatePublisher.isPending}>
+                  <Button 
+                    type="submit" 
+                    disabled={createPublisher.isPending || updatePublisher.isPending}
+                  >
                     {editingPublisher ? "Update" : "Create"} Publisher
                   </Button>
                 </div>
@@ -442,109 +634,6 @@ export default function Publishers() {
             </Form>
           </DialogContent>
         </Dialog>
-        </div>
-
-      <div className="grid gap-6">
-        {publishers.length === 0 ? (
-          <Card>
-            <CardContent className="flex items-center justify-center h-32">
-              <div className="text-center">
-                <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No publishers found. Create your first publisher to get started.</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          publishers.map((publisher) => (
-            <Card key={publisher.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      {publisher.name}
-                      <Badge className={getStatusColor(publisher.status)}>
-                        {publisher.status}
-                      </Badge>
-                    </CardTitle>
-                    <CardDescription>{publisher.email}</CardDescription>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(publisher)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Publisher</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{publisher.name}"? This action cannot be undone and will remove all associated campaign relationships.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => deletePublisher.mutate(publisher.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Payout</p>
-                    <p className="text-lg font-semibold">
-                      ${publisher.payoutAmount} {getPayoutTypeLabel(publisher.payoutType)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Calls</p>
-                    <p className="text-lg font-semibold">{publisher.totalCalls}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Payout</p>
-                    <p className="text-lg font-semibold">${publisher.totalPayout}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Min Duration</p>
-                    <p className="text-lg font-semibold">{publisher.minCallDuration}s</p>
-                  </div>
-                </div>
-                
-                {publisher.allowedTargets && publisher.allowedTargets.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Allowed Targets</p>
-                    <div className="flex flex-wrap gap-1">
-                      {publisher.allowedTargets.map((target, idx) => (
-                        <Badge key={idx} variant="secondary">Campaign {target}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {publisher.trackingSettings && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Tracking Settings</p>
-                    <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
-                      {publisher.trackingSettings}
-                    </pre>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
       </div>
     </Layout>
   );
