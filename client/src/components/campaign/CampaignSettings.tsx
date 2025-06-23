@@ -317,30 +317,6 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="routingType"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Routing Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select routing type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="round_robin">Round Robin</SelectItem>
-                          <SelectItem value="priority">Priority Based</SelectItem>
-                          <SelectItem value="weighted">Weighted Distribution</SelectItem>
-                          <SelectItem value="least_busy">Least Busy</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <FormField
