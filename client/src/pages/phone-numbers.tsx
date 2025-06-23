@@ -888,21 +888,11 @@ export default function PhoneNumbersPage() {
                           <Badge variant={pool.isActive ? "default" : "secondary"}>
                             {pool.isActive ? "Active" : "Inactive"}
                           </Badge>
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={`/number-pools/${pool.id}`}>
-                              <Settings className="h-4 w-4" />
-                            </a>
-                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => {
-                              if (confirm(`Are you sure you want to delete the pool "${pool.name}"? This will unassign all numbers from the pool.`)) {
-                                deletePoolMutation.mutate(pool.id);
-                              }
-                            }}
+                            onClick={() => deletePoolMutation.mutate(pool.id)}
                             disabled={deletePoolMutation.isPending}
-                            className="text-red-600 hover:text-red-700"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -910,7 +900,7 @@ export default function PhoneNumbersPage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-3 gap-4 text-sm mb-4">
+                      <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
                           <span className="text-muted-foreground">Idle Limit:</span>
                           <p className="font-medium">{pool.idleLimit}s</p>
@@ -923,17 +913,6 @@ export default function PhoneNumbersPage() {
                           <span className="text-muted-foreground">Prefix:</span>
                           <p className="font-medium">{pool.prefix || 'None'}</p>
                         </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={`/number-pools/${pool.id}`}>
-                            <Settings className="h-4 w-4 mr-2" />
-                            Manage Pool
-                          </a>
-                        </Button>
-                        <span className="text-xs text-muted-foreground">
-                          Click to edit pool settings and manage numbers
-                        </span>
                       </div>
                     </CardContent>
                   </Card>
