@@ -1746,6 +1746,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH endpoint for updating phone number properties
+  app.patch('/api/phone-numbers/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const updatedNumber = await storage.updatePhoneNumber(parseInt(id), updates);
+      
+      if (!updatedNumber) {
+        return res.status(404).json({ error: 'Phone number not found' });
+      }
+
+      res.json({
+        success: true,
+        phoneNumber: updatedNumber
+      });
+    } catch (error) {
+      console.error('Error updating phone number:', error);
+      res.status(500).json({ error: 'Failed to update phone number' });
+    }
+  });
+
   app.delete('/api/phone-numbers/:id', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;

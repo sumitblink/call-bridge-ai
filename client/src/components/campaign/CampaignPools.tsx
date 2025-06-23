@@ -1,9 +1,13 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Settings, BarChart3, Phone, AlertCircle, CheckCircle2 } from "lucide-react";
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Settings, BarChart3, Phone, AlertCircle, CheckCircle2, Edit2, Plus, Trash2, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import type { Campaign, NumberPool } from "@shared/schema";
 
 interface CampaignPoolsProps {
@@ -11,6 +15,10 @@ interface CampaignPoolsProps {
 }
 
 export default function CampaignPools({ campaign }: CampaignPoolsProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isEditPoolDialogOpen, setIsEditPoolDialogOpen] = useState(false);
+
   // Fetch the assigned pool details (from campaign.poolId)
   const { data: assignedPool, isLoading: poolLoading } = useQuery<NumberPool>({
     queryKey: ["/api/number-pools", campaign.poolId],
@@ -41,6 +49,55 @@ export default function CampaignPools({ campaign }: CampaignPoolsProps) {
     const assignedCount = poolNumbers.filter((num: any) => num.campaignId).length;
     return Math.round((assignedCount / poolNumbers.length) * 100);
   };
+
+  // Mutation to remove number from pool
+  const removeNumberMutation = useMutation({
+    mutationFn: async (numberId: number) => {
+      const response = await apiRequest(`/api/phone-numbers/${numberId}`, "DELETE");
+      if (!response.ok) {
+        throw new Error("Failed to remove number from pool");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/number-pools", campaign.poolId, "numbers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/number-pools", campaign.poolId] });
+      toast({
+        title: "Success",
+        description: "Number removed from pool",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation to toggle number status
+  const toggleNumberMutation = useMutation({
+    mutationFn: async ({ numberId, isActive }: { numberId: number; isActive: boolean }) => {
+      const response = await apiRequest(`/api/phone-numbers/${numberId}`, "PATCH", { isActive });
+      if (!response.ok) {
+        throw new Error("Failed to update number status");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/number-pools", campaign.poolId, "numbers"] });
+      toast({
+        title: "Success",
+        description: "Number status updated",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   if (poolLoading || numbersLoading) {
     return (
@@ -84,6 +141,14 @@ export default function CampaignPools({ campaign }: CampaignPoolsProps) {
         <div>
           <h2 className="text-2xl font-bold">Pool Management</h2>
           <p className="text-muted-foreground">Monitor and manage your assigned number pool</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <a href={`/number-pools/${campaign.poolId}`} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Edit Pool
+            </a>
+          </Button>
         </div>
       </div>
 
@@ -145,7 +210,7 @@ export default function CampaignPools({ campaign }: CampaignPoolsProps) {
           <CardContent>
             <div className="grid gap-2">
               {poolNumbers.map((number: any) => (
-                <div key={number.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={number.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                   <div className="flex items-center space-x-3">
                     <Phone className="h-4 w-4 text-gray-500" />
                     <div>
@@ -155,11 +220,47 @@ export default function CampaignPools({ campaign }: CampaignPoolsProps) {
                       </div>
                     </div>
                   </div>
-                  <Badge variant={number.isActive ? "default" : "secondary"}>
-                    {number.isActive ? "Active" : "Inactive"}
-                  </Badge>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={number.isActive ? "default" : "secondary"}>
+                      {number.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleNumberMutation.mutate({ 
+                        numberId: number.id, 
+                        isActive: !number.isActive 
+                      })}
+                      disabled={toggleNumberMutation.isPending}
+                    >
+                      {number.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to remove ${number.phoneNumber} from this pool?`)) {
+                          removeNumberMutation.mutate(number.id);
+                        }
+                      }}
+                      disabled={removeNumberMutation.isPending}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
+            </div>
+            
+            {/* Add Numbers Button */}
+            <div className="mt-4 pt-4 border-t">
+              <Button variant="outline" asChild className="w-full">
+                <a href={`/number-pools/${campaign.poolId}`} target="_blank" rel="noopener noreferrer">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add More Numbers to Pool
+                </a>
+              </Button>
             </div>
           </CardContent>
         </Card>
