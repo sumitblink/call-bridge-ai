@@ -750,7 +750,12 @@ export default function PhoneNumbersPage() {
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
                             <p>Loading available numbers...</p>
                           </div>
-                        ) : Array.isArray(unassignedNumbers) && unassignedNumbers.length > 0 ? (
+                        ) : (
+                          <div className="mb-2 text-sm text-muted-foreground">
+                            Debug: {Array.isArray(unassignedNumbers) ? `${unassignedNumbers.length} numbers loaded` : `Data: ${JSON.stringify(unassignedNumbers)}`}
+                          </div>
+                        )}
+                        {Array.isArray(unassignedNumbers) && unassignedNumbers.length > 0 ? (
                           <div className="space-y-2">
                             <div className="flex items-center space-x-2 pb-2 border-b">
                               <Checkbox
