@@ -68,6 +68,19 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
   // Watch routing type to handle conditional fields
   const watchedRoutingType = form.watch("routingType");
 
+  // Handle routing type changes - clear conflicting fields
+  React.useEffect(() => {
+    if (watchedRoutingType === "direct") {
+      // Clear pool ID when switching to direct routing
+      form.setValue("poolId", null);
+    } else if (watchedRoutingType === "pool") {
+      // Clear phone number when switching to pool routing
+      form.setValue("phoneNumber", "");
+      // Set default routing strategy for pools
+      form.setValue("callRoutingStrategy", "round_robin");
+    }
+  }, [watchedRoutingType, form]);
+
   // Reset form when campaign data changes
   React.useEffect(() => {
     if (campaign && typeof campaign === 'object' && !Array.isArray(campaign)) {
@@ -169,27 +182,30 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Call Routing Configuration</FormLabel>
+                        <div className="text-sm text-muted-foreground mb-3">
+                          Choose how incoming calls will be routed. These options are mutually exclusive.
+                        </div>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
                             value={field.value}
                             className="flex flex-col space-y-4"
                           >
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 p-3 border rounded-lg">
                               <RadioGroupItem value="direct" id="direct" />
                               <Label htmlFor="direct" className="flex-1">
                                 <div className="font-medium">Direct Number</div>
                                 <div className="text-sm text-muted-foreground">
-                                  Use a single Twilio phone number for all calls
+                                  Use a single Twilio phone number for all calls. Best for simple campaigns.
                                 </div>
                               </Label>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 p-3 border rounded-lg">
                               <RadioGroupItem value="pool" id="pool" />
                               <Label htmlFor="pool" className="flex-1">
                                 <div className="font-medium">Number Pool</div>
                                 <div className="text-sm text-muted-foreground">
-                                  Use dynamic number assignment from a pool for tracking
+                                  Use dynamic number assignment from a pool for advanced tracking and attribution.
                                 </div>
                               </Label>
                             </div>
@@ -256,30 +272,32 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                   />
                 )}
 
-                <FormField
-                  control={form.control}
-                  name="callRoutingStrategy"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Call Routing Strategy</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select routing strategy" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="priority">Priority Based</SelectItem>
-                          <SelectItem value="round_robin">Round Robin</SelectItem>
-                          <SelectItem value="weighted">Weighted Distribution</SelectItem>
-                          <SelectItem value="geo">Geographic</SelectItem>
-                          <SelectItem value="time_based">Time Based</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {watchedRoutingType === "direct" && (
+                  <FormField
+                    control={form.control}
+                    name="callRoutingStrategy"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Call Routing Strategy</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select routing strategy" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="priority">Priority Based</SelectItem>
+                            <SelectItem value="round_robin">Round Robin</SelectItem>
+                            <SelectItem value="weighted">Weighted Distribution</SelectItem>
+                            <SelectItem value="geo">Geographic</SelectItem>
+                            <SelectItem value="time_based">Time Based</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
