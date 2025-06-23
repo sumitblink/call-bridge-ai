@@ -25,14 +25,19 @@ export default function SettingsPage() {
 
   const clearDatabaseMutation = useMutation({
     mutationFn: () => apiRequest('/api/admin/clear-database', 'POST'),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       toast({
         title: "Database Cleared",
-        description: "All data has been successfully cleared from the database.",
+        description: `Successfully cleared ${data.clearedTables || 0} tables. ${data.errors?.length ? `${data.errors.length} warnings occurred.` : 'No issues detected.'}`,
       });
       // Invalidate all queries to refresh the UI
       queryClient.invalidateQueries();
       setConfirmText("");
+      
+      // Log any errors for debugging
+      if (data.errors?.length) {
+        console.warn('Database clear warnings:', data.errors);
+      }
     },
     onError: (error: any) => {
       toast({
@@ -83,12 +88,13 @@ export default function SettingsPage() {
                 This will permanently delete all data including:
               </p>
               <ul className="text-sm text-red-700 dark:text-red-300 mb-4 space-y-1">
-                <li>• All campaigns and their configurations</li>
-                <li>• All buyer and agent records</li>
-                <li>• All call history and logs</li>
-                <li>• All phone numbers and assignments</li>
-                <li>• All tracking and integration data</li>
-                <li>• Publisher and affiliate data</li>
+                <li>• All campaigns and number pool assignments</li>
+                <li>• All buyer and agent records with routing rules</li>
+                <li>• Complete call history, logs, and recordings</li>
+                <li>• All phone numbers and pool configurations</li>
+                <li>• DNI tracking tags and JavaScript snippets</li>
+                <li>• Publisher, webhook, and integration data</li>
+                <li>• All system configurations and settings</li>
               </ul>
               
               <AlertDialog>
@@ -120,11 +126,12 @@ export default function SettingsPage() {
                     <AlertDialogDescription className="space-y-2">
                       <p>This action cannot be undone. This will permanently delete:</p>
                       <ul className="list-disc list-inside space-y-1 text-sm">
-                        <li>All campaigns and buyer assignments</li>
-                        <li>Complete call history and recordings</li>
-                        <li>All phone numbers and configurations</li>
-                        <li>Publisher and integration data</li>
-                        <li>User preferences and settings</li>
+                        <li>All campaigns, buyers, and routing configurations</li>
+                        <li>Complete call history, logs, and agent data</li>
+                        <li>All phone numbers, pools, and DNI tracking</li>
+                        <li>Publisher, webhook, and platform integrations</li>
+                        <li>Tracking pixels, JavaScript snippets, and analytics</li>
+                        <li>All system configurations and user data</li>
                       </ul>
                       <p className="font-semibold text-red-600">
                         Type "CLEAR DATABASE" to confirm this action:

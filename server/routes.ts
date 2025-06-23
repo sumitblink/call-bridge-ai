@@ -2037,19 +2037,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Starting database clear operation...');
       
-      // Clear data using SQL to avoid foreign key constraint issues
+      // Clear data using SQL in proper order to avoid foreign key constraint issues
       const { db } = await import('./db');
       
+      // Delete in order that respects foreign key constraints
       const queries = [
+        // First delete dependent records
+        'DELETE FROM dni_snippets',
+        'DELETE FROM call_tracking_tags',
         'DELETE FROM call_logs',
-        'DELETE FROM calls', 
+        'DELETE FROM calls',
+        'DELETE FROM agent_calls',
+        'DELETE FROM agent_status_logs',
         'DELETE FROM campaign_buyers',
-        'DELETE FROM campaign_publishers',
-        'DELETE FROM buyers WHERE id != $1', // Keep current user's buyers
-        'DELETE FROM campaigns WHERE id != $1', // Keep current user's campaigns  
-        'DELETE FROM phone_numbers',
+        'DELETE FROM campaign_publishers', 
+        'DELETE FROM campaign_pool_assignments',
+        'DELETE FROM phone_number_assignments',
+        'DELETE FROM tracking_sessions',
+        
+        // Then delete main records
+        'DELETE FROM campaigns',
+        'DELETE FROM buyers',
         'DELETE FROM agents',
         'DELETE FROM publishers',
+        'DELETE FROM phone_numbers',
+        'DELETE FROM number_pools',
+        
+        // Finally delete configuration tables
         'DELETE FROM tracking_pixels',
         'DELETE FROM webhook_configs',
         'DELETE FROM api_authentications',
@@ -2058,21 +2072,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       let clearedCount = 0;
+      let errors = [];
       
-      for (const query of queries) {
-        try {
-          if (query.includes('$1')) {
-            // Skip user-specific data for now, just clear all
-            const simpleQuery = query.replace(' WHERE id != $1', '');
-            await db.execute(simpleQuery);
-          } else {
-            await db.execute(query);
+      // Execute in transaction to ensure atomicity
+      await db.transaction(async (tx) => {
+        for (const query of queries) {
+          try {
+            const result = await tx.execute(query);
+            clearedCount++;
+            console.log(`Executed: ${query} - Affected rows: ${result.rowsAffected || 0}`);
+          } catch (error) {
+            const errorMsg = `Failed to execute query: ${query} - ${error instanceof Error ? error.message : 'Unknown error'}`;
+            console.warn(errorMsg);
+            errors.push(errorMsg);
           }
-          clearedCount++;
-        } catch (error) {
-          console.warn(`Failed to execute query: ${query}`, error);
         }
-      }
+      });
 
       console.log(`Database clear operation completed. Cleared ${clearedCount} tables.`);
       
@@ -2080,6 +2095,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         message: 'Database cleared successfully',
         clearedTables: clearedCount,
+        errors: errors.length > 0 ? errors : undefined,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
