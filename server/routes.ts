@@ -10,7 +10,7 @@ import { TwilioTrunkService } from "./twilio-trunk-service";
 import { NumberProvisioningService } from "./number-provisioning";
 import { CallTrackingService } from "./call-tracking-service";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { 
   callTrackingTags, 
   dniSessions, 
@@ -1991,7 +1991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         ...newPool,
-        webhookResult
+        webhookResult: updateResult || { success: false, updated: [], failed: [], errors: ['No webhook update attempted'] }
       });
     } catch (error: any) {
       console.error('Error creating number pool:', error);
@@ -2214,64 +2214,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin routes
+  // Admin routes - Clear database without transactions (Neon HTTP limitation)
   app.post('/api/admin/clear-database', requireAuth, async (req, res) => {
     try {
       console.log('Starting database clear operation...');
       
-      // Clear data using SQL in proper order to avoid foreign key constraint issues
-      const { db } = await import('./db');
+      // Import all schema tables
+      const { 
+        callLogs, agentCalls, agentStatusLogs, calls, campaignBuyers, 
+        poolAssignments, numberPools, phoneNumbers, callTrackingTags,
+        dniSessions, dniSnippets, buyers, agents, campaigns, publishers
+      } = await import('../shared/schema');
       
-      // Delete in order that respects foreign key constraints
-      const queries = [
-        // First delete dependent records
-        'DELETE FROM dni_snippets',
-        'DELETE FROM call_tracking_tags',
-        'DELETE FROM call_logs',
-        'DELETE FROM calls',
-        'DELETE FROM agent_calls',
-        'DELETE FROM agent_status_logs',
-        'DELETE FROM campaign_buyers',
-        'DELETE FROM campaign_publishers', 
-        'DELETE FROM campaign_pool_assignments',
-        'DELETE FROM phone_number_assignments',
-        'DELETE FROM tracking_sessions',
-        
-        // Then delete main records
-        'DELETE FROM campaigns',
-        'DELETE FROM buyers',
-        'DELETE FROM agents',
-        'DELETE FROM publishers',
-        'DELETE FROM phone_numbers',
-        'DELETE FROM number_pools',
-        
-        // Finally delete configuration tables
-        'DELETE FROM tracking_pixels',
-        'DELETE FROM webhook_configs',
-        'DELETE FROM api_authentications',
-        'DELETE FROM platform_integrations',
-        'DELETE FROM url_parameters'
-      ];
-
       let clearedCount = 0;
-      let errors = [];
+      const errors = [];
       
-      // Execute in transaction to ensure atomicity
-      await db.transaction(async (tx) => {
-        for (const query of queries) {
-          try {
-            const result = await tx.execute(query);
-            clearedCount++;
-            console.log(`Executed: ${query} - Affected rows: ${result.rowsAffected || 0}`);
-          } catch (error) {
-            const errorMsg = `Failed to execute query: ${query} - ${error instanceof Error ? error.message : 'Unknown error'}`;
-            console.warn(errorMsg);
-            errors.push(errorMsg);
-          }
+      // Delete in proper order to handle foreign key constraints
+      const deletions = [
+        { name: 'call_logs', table: callLogs },
+        { name: 'agent_calls', table: agentCalls },
+        { name: 'agent_status_logs', table: agentStatusLogs },
+        { name: 'calls', table: calls },
+        { name: 'campaign_buyers', table: campaignBuyers },
+        { name: 'pool_assignments', table: poolAssignments },
+        { name: 'call_tracking_tags', table: callTrackingTags },
+        { name: 'dni_sessions', table: dniSessions },
+        { name: 'dni_snippets', table: dniSnippets },
+        { name: 'number_pools', table: numberPools },
+        { name: 'phone_numbers', table: phoneNumbers },
+        { name: 'buyers', table: buyers },
+        { name: 'agents', table: agents },
+        { name: 'publishers', table: publishers },
+        { name: 'campaigns', table: campaigns }
+      ];
+      
+      // Execute deletions without transaction
+      for (const { name, table } of deletions) {
+        try {
+          const result = await db.delete(table);
+          clearedCount++;
+          console.log(`Cleared ${name}`);
+        } catch (error) {
+          const errorMsg = `Failed to clear ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          console.warn(errorMsg);
+          errors.push(errorMsg);
         }
-      });
+      }
+      
+      // Reset sequences
+      try {
+        await db.execute(sql`
+          SELECT setval('campaigns_id_seq', 1, false);
+          SELECT setval('buyers_id_seq', 1, false);
+          SELECT setval('agents_id_seq', 1, false);
+          SELECT setval('phone_numbers_id_seq', 1, false);
+          SELECT setval('number_pools_id_seq', 1, false);
+          SELECT setval('calls_id_seq', 1, false);
+          SELECT setval('call_tracking_tags_id_seq', 1, false);
+          SELECT setval('publishers_id_seq', 1, false);
+        `);
+        console.log('Reset ID sequences');
+      } catch (e) {
+        console.log('Sequence reset warning:', e);
+      }
 
-      console.log(`Database clear operation completed. Cleared ${clearedCount} tables.`);
+      console.log(`Database clear completed: ${clearedCount} tables cleared, ${errors.length} errors`);
       
       res.json({
         success: true,
