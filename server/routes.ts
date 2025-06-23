@@ -657,6 +657,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pool-based webhook endpoints for Dynamic Number Insertion
+  app.post('/api/webhooks/pool/:poolId/voice', async (req, res) => {
+    try {
+      const { poolId } = req.params;
+      const { To: toNumber, From: fromNumber, CallSid } = req.body;
+      
+      console.log(`[Pool Webhook] === INCOMING CALL TO POOL ${poolId} ===`);
+      console.log(`[Pool Webhook] Call from ${fromNumber} to ${toNumber}, CallSid: ${CallSid}`);
+      
+      // Find the pool and associated campaign
+      const pool = await storage.getNumberPool(parseInt(poolId));
+      if (!pool) {
+        console.log(`[Pool Webhook] Pool ${poolId} not found`);
+        return res.type('text/xml').send(`
+          <Response>
+            <Say>This number is not properly configured.</Say>
+            <Hangup/>
+          </Response>
+        `);
+      }
+
+      // Find campaign using this pool
+      const campaign = await storage.getCampaignByPoolId(parseInt(poolId));
+      if (!campaign) {
+        console.log(`[Pool Webhook] No campaign found using pool ${poolId}`);
+        return res.type('text/xml').send(`
+          <Response>
+            <Say>This number is not assigned to an active campaign.</Say>
+            <Hangup/>
+          </Response>
+        `);
+      }
+
+      console.log(`[Pool Webhook] Found campaign: ${campaign.name} (ID: ${campaign.id}) using pool: ${pool.name}`);
+      
+      // Use priority-based routing to select the best buyer
+      const { CallRouter } = await import('./call-routing');
+      const routingResult = await CallRouter.selectBuyer(campaign.id, fromNumber);
+      
+      if (!routingResult.selectedBuyer) {
+        console.log(`[Pool Webhook] No buyers available: ${routingResult.reason}`);
+        return res.type('text/xml').send(`
+          <Response>
+            <Say>All representatives are currently busy. Please try again later.</Say>
+            <Hangup/>
+          </Response>
+        `);
+      }
+
+      const selectedBuyer = routingResult.selectedBuyer;
+      console.log(`[Pool Webhook] Routing call to buyer: ${selectedBuyer.name} (${selectedBuyer.phoneNumber})`);
+
+      // Log the call
+      await storage.createCall({
+        campaignId: campaign.id,
+        buyerId: selectedBuyer.id,
+        callerNumber: fromNumber,
+        destinationNumber: toNumber,
+        twilioCallSid: CallSid,
+        routingData: JSON.stringify({
+          poolId: parseInt(poolId),
+          poolName: pool.name,
+          routingReason: routingResult.reason,
+          alternatives: routingResult.alternativeBuyers.length
+        }),
+        status: 'initiated',
+        startTime: new Date()
+      });
+
+      // Generate TwiML to forward the call
+      const twiml = `
+        <Response>
+          <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="/api/webhooks/recording">
+            <Number>${selectedBuyer.phoneNumber}</Number>
+          </Dial>
+          <Say>Sorry, the call could not be completed. Please try again later.</Say>
+        </Response>
+      `;
+
+      res.type('text/xml').send(twiml);
+    } catch (error) {
+      console.error('[Pool Webhook] Error processing call:', error);
+      res.type('text/xml').send(`
+        <Response>
+          <Say>We're experiencing technical difficulties. Please try again later.</Say>
+          <Hangup/>
+        </Response>
+      `);
+    }
+  });
+
+  // Pool status callback endpoint
+  app.post('/api/webhooks/pool/:poolId/status', async (req, res) => {
+    try {
+      const { poolId } = req.params;
+      const { CallSid, CallStatus, CallDuration } = req.body;
+      
+      console.log(`[Pool Status] Pool ${poolId} call ${CallSid} status: ${CallStatus}`);
+      
+      // Update call status in database
+      const calls = await storage.getCalls();
+      const call = calls.find(c => c.twilioCallSid === CallSid);
+      
+      if (call) {
+        await storage.updateCall(call.id, {
+          status: CallStatus,
+          duration: CallDuration ? parseInt(CallDuration) : undefined,
+          endTime: ['completed', 'busy', 'no-answer', 'failed', 'canceled'].includes(CallStatus) ? new Date() : undefined
+        });
+      }
+      
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error('[Pool Status] Error updating call status:', error);
+      res.status(500).send('Error');
+    }
+  });
+
   // Enhanced Twilio Webhook Endpoints for Multi-Number Support
   app.post('/api/webhooks/voice', async (req, res) => {
     try {
@@ -683,6 +801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[Webhook] Found campaign: ${campaign.name} (ID: ${campaign.id})`);
       
       // Use priority-based routing to select the best buyer
+      const { CallRouter } = await import('./call-routing');
       const routingResult = await CallRouter.selectBuyer(campaign.id, fromNumber);
       
       if (!routingResult.selectedBuyer) {
@@ -1842,9 +1961,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateNumberPool(newPool.id, { poolSize: assignedCount });
           newPool.poolSize = assignedCount;
         }
+
+        // Update Twilio webhooks for all assigned numbers
+        let webhookResult = null;
+        try {
+          const poolNumbers = await storage.getPoolNumbers(newPool.id);
+          if (poolNumbers.length > 0) {
+            console.log(`Updating Twilio webhooks for ${poolNumbers.length} numbers in pool ${newPool.id}`);
+            
+            const { TwilioWebhookService } = await import('./twilio-webhook-service');
+            webhookResult = await TwilioWebhookService.updatePoolWebhooks(newPool.id, poolNumbers);
+            
+            if (webhookResult.success) {
+              console.log(`Successfully updated webhooks for ${webhookResult.updated.length} numbers`);
+            }
+            
+            if (webhookResult.failed.length > 0) {
+              console.warn(`Failed to update webhooks for ${webhookResult.failed.length} numbers:`, webhookResult.errors);
+            }
+          }
+        } catch (webhookError) {
+          console.error('Error updating Twilio webhooks:', webhookError);
+          // Don't fail pool creation if webhook update fails
+        }
       }
       
-      res.json(newPool);
+      res.json({
+        ...newPool,
+        webhookResult
+      });
     } catch (error: any) {
       console.error('Error creating number pool:', error);
       

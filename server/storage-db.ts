@@ -106,6 +106,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined> {
+    const [campaign] = await db
+      .select()
+      .from(campaigns)
+      .where(eq(campaigns.phoneNumber, phoneNumber));
+    return campaign;
+  }
+
+  async getCampaignByPoolId(poolId: number): Promise<Campaign | undefined> {
+    const [campaign] = await db
+      .select()
+      .from(campaigns)
+      .where(eq(campaigns.poolId, poolId));
+    return campaign;
+  }
+
+  async getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined> {
     const [result] = await db
       .select({
         id: campaigns.id,
