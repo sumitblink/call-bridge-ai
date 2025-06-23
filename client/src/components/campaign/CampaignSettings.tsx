@@ -297,8 +297,8 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                         Number Pool {watchedRoutingType === "direct" && "(Optional - for backup routing)"}
                       </FormLabel>
                       <Select 
-                        onValueChange={(value) => field.onChange(value === "" ? null : parseInt(value))} 
-                        value={field.value?.toString() || ""}
+                        onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value))} 
+                        value={field.value?.toString() || "none"}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -306,7 +306,7 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">No pool selected</SelectItem>
+                          <SelectItem value="none">No pool selected</SelectItem>
                           {numberPools.map((pool: any) => (
                             <SelectItem key={pool.id} value={pool.id.toString()}>
                               {pool.name} ({pool.poolSize} numbers)
