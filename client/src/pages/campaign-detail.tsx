@@ -16,6 +16,7 @@ import CampaignPools from "@/components/campaign/CampaignPools";
 import CampaignTracking from "@/components/campaign/CampaignTracking";
 import CampaignPublishers from "@/components/campaign/CampaignPublishers";
 import CampaignAnalytics from "@/components/campaign/CampaignAnalytics";
+import { CampaignReadinessDashboard } from "@/components/campaign/CampaignReadinessDashboard";
 
 export default function CampaignDetail() {
   const { campaignId } = useParams();
@@ -92,6 +93,12 @@ export default function CampaignDetail() {
             </Button>
           </div>
         </div>
+
+        {/* Campaign Readiness Dashboard */}
+        <CampaignReadinessDashboard 
+          campaignId={campaign.id} 
+          campaignStatus={campaign.status}
+        />
 
         {/* Campaign Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

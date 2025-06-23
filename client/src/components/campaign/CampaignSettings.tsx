@@ -245,32 +245,37 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                   />
                 )}
 
-                {watchedRoutingType === "pool" && (
-                  <FormField
-                    control={form.control}
-                    name="poolId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Select Number Pool</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ""}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Choose a number pool" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {numberPools.map((pool: any) => (
-                              <SelectItem key={pool.id} value={pool.id.toString()}>
-                                {pool.name} ({pool.poolSize} numbers)
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+                {/* Show pool selection for both routing types - allow changing pools anytime */}
+                <FormField
+                  control={form.control}
+                  name="poolId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Number Pool {watchedRoutingType === "direct" && "(Optional - for backup routing)"}
+                      </FormLabel>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value === "" ? null : parseInt(value))} 
+                        value={field.value?.toString() || ""}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a number pool" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">No pool selected</SelectItem>
+                          {numberPools.map((pool: any) => (
+                            <SelectItem key={pool.id} value={pool.id.toString()}>
+                              {pool.name} ({pool.poolSize} numbers)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {watchedRoutingType === "direct" && (
                   <FormField
