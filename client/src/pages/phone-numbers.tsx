@@ -92,14 +92,27 @@ export default function PhoneNumbersPage() {
   // Pool management mutations
   const createPoolMutation = useMutation({
     mutationFn: (data: any) => apiRequest("/api/number-pools", "POST", data),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] });
       queryClient.invalidateQueries({ queryKey: ["/api/phone-numbers/unassigned"] });
       setSelectedNumbers(new Set()); // Clear selected numbers
       setIsCreatePoolDialogOpen(false);
+      
+      // Show success message with webhook status
+      const webhookResult = data.webhookResult;
+      let description = "Number pool created successfully.";
+      
+      if (webhookResult) {
+        if (webhookResult.success && webhookResult.updated.length > 0) {
+          description += ` Webhook URLs updated for ${webhookResult.updated.length} numbers.`;
+        } else if (webhookResult.failed.length > 0) {
+          description += ` Warning: Failed to update webhooks for ${webhookResult.failed.length} numbers.`;
+        }
+      }
+      
       toast({
-        title: "Success",
-        description: "Number pool created successfully",
+        title: "Pool Created",
+        description,
       });
     },
     onError: () => {
