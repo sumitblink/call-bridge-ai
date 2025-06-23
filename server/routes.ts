@@ -1991,7 +1991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         ...newPool,
-        webhookResult: updateResult || { success: false, updated: [], failed: [], errors: ['No webhook update attempted'] }
+        webhookResult: webhookResult || { success: false, updated: [], failed: [], errors: ['No webhook update attempted'] }
       });
     } catch (error: any) {
       console.error('Error creating number pool:', error);
@@ -2222,12 +2222,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import all schema tables
       const { 
         callLogs, agentCalls, agentStatusLogs, calls, campaignBuyers, 
-        poolAssignments, numberPools, phoneNumbers, callTrackingTags,
+        numberPools, phoneNumbers, callTrackingTags,
         dniSessions, dniSnippets, buyers, agents, campaigns, publishers
       } = await import('../shared/schema');
       
       let clearedCount = 0;
       const errors = [];
+      
+      // Import the correct table name for pool assignments
+      const { numberPoolAssignments } = await import('../shared/schema');
       
       // Delete in proper order to handle foreign key constraints
       const deletions = [
@@ -2236,7 +2239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { name: 'agent_status_logs', table: agentStatusLogs },
         { name: 'calls', table: calls },
         { name: 'campaign_buyers', table: campaignBuyers },
-        { name: 'pool_assignments', table: poolAssignments },
+        { name: 'number_pool_assignments', table: numberPoolAssignments },
         { name: 'call_tracking_tags', table: callTrackingTags },
         { name: 'dni_sessions', table: dniSessions },
         { name: 'dni_snippets', table: dniSnippets },
@@ -2261,21 +2264,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Reset sequences
-      try {
-        await db.execute(sql`
-          SELECT setval('campaigns_id_seq', 1, false);
-          SELECT setval('buyers_id_seq', 1, false);
-          SELECT setval('agents_id_seq', 1, false);
-          SELECT setval('phone_numbers_id_seq', 1, false);
-          SELECT setval('number_pools_id_seq', 1, false);
-          SELECT setval('calls_id_seq', 1, false);
-          SELECT setval('call_tracking_tags_id_seq', 1, false);
-          SELECT setval('publishers_id_seq', 1, false);
-        `);
-        console.log('Reset ID sequences');
-      } catch (e) {
-        console.log('Sequence reset warning:', e);
+      // Reset sequences one by one (Neon doesn't support multiple commands in prepared statement)
+      const sequences = [
+        'campaigns_id_seq',
+        'buyers_id_seq', 
+        'agents_id_seq',
+        'phone_numbers_id_seq',
+        'number_pools_id_seq',
+        'calls_id_seq',
+        'call_tracking_tags_id_seq',
+        'publishers_id_seq'
+      ];
+      
+      for (const seq of sequences) {
+        try {
+          await db.execute(sql.raw(`SELECT setval('${seq}', 1, false)`));
+          console.log(`Reset sequence: ${seq}`);
+        } catch (e) {
+          console.log(`Sequence reset warning for ${seq}:`, e);
+        }
       }
 
       console.log(`Database clear completed: ${clearedCount} tables cleared, ${errors.length} errors`);
