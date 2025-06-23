@@ -15,6 +15,9 @@ import {
   callTrackingTags, 
   dniSessions, 
   dniSnippets,
+  phoneNumbers,
+  numberPools,
+  publishers,
   insertCallTrackingTagSchema,
   CallTrackingTag,
   InsertCallTrackingTag 
