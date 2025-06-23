@@ -1,6 +1,6 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,13 @@ export default function CampaignDetail() {
     queryKey: [`/api/campaigns/${campaignId}`],
     enabled: !!campaignId,
   });
+
+  // Redirect to settings tab if currently viewing pools tab but routing type is not pool
+  useEffect(() => {
+    if (campaign && activeTab === "pools" && campaign.routingType !== "pool") {
+      setActiveTab("settings");
+    }
+  }, [campaign, activeTab]);
 
   if (isLoading) {
     return (
@@ -102,7 +109,7 @@ export default function CampaignDetail() {
 
         {/* Campaign Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className={`grid w-full ${campaign.routingType === "pool" ? "grid-cols-6" : "grid-cols-5"}`}>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
@@ -111,10 +118,12 @@ export default function CampaignDetail() {
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Buyers</span>
             </TabsTrigger>
-            <TabsTrigger value="pools" className="flex items-center space-x-2">
-              <Phone className="h-4 w-4" />
-              <span className="hidden sm:inline">Pools</span>
-            </TabsTrigger>
+            {campaign.routingType === "pool" && (
+              <TabsTrigger value="pools" className="flex items-center space-x-2">
+                <Phone className="h-4 w-4" />
+                <span className="hidden sm:inline">Pools</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="tracking" className="flex items-center space-x-2">
               <Globe className="h-4 w-4" />
               <span className="hidden sm:inline">Tracking</span>
@@ -137,9 +146,11 @@ export default function CampaignDetail() {
             <CampaignBuyers campaignId={campaign.id} />
           </TabsContent>
 
-          <TabsContent value="pools">
-            <CampaignPools campaign={campaign} />
-          </TabsContent>
+          {campaign.routingType === "pool" && (
+            <TabsContent value="pools">
+              <CampaignPools campaign={campaign} />
+            </TabsContent>
+          )}
 
           <TabsContent value="tracking">
             <CampaignTracking campaignId={campaign.id} campaign={campaign} />
