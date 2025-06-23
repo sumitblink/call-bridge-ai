@@ -77,6 +77,8 @@ export default function PhoneNumbersPage() {
   const { data: unassignedNumbers = [], isLoading: isLoadingUnassigned } = useQuery({
     queryKey: ['/api/phone-numbers/unassigned'],
     enabled: isCreatePoolDialogOpen,
+    staleTime: 0, // Always refetch when dialog opens
+    refetchOnMount: true,
   });
 
   // Fetch campaigns

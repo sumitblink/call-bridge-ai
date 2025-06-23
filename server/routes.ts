@@ -1582,8 +1582,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Fetch unassigned phone numbers (not in any pool)
   app.get('/api/phone-numbers/unassigned', requireAuth, async (req, res) => {
     try {
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
+      console.log(`Fetching unassigned numbers for user ${userId}`);
+      
       const unassignedNumbers = await storage.getUnassignedPhoneNumbers(userId);
+      console.log(`Found ${unassignedNumbers.length} unassigned numbers`);
+      
       res.json(unassignedNumbers);
     } catch (error) {
       console.error('Error fetching unassigned phone numbers:', error);
