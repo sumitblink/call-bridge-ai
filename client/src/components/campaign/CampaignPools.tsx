@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Settings, BarChart3, Phone, AlertCircle, CheckCircle2, Edit2, Plus, Trash2, ExternalLink } from "lucide-react";
+import { Settings, BarChart3, Phone, AlertCircle, CheckCircle2, Edit2, Plus, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -144,9 +144,9 @@ export default function CampaignPools({ campaign }: CampaignPoolsProps) {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <a href={`/number-pools/${campaign.poolId}`} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Edit Pool
+            <a href={`/number-pools/${campaign.poolId}`}>
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Pool
             </a>
           </Button>
         </div>
@@ -256,7 +256,7 @@ export default function CampaignPools({ campaign }: CampaignPoolsProps) {
             {/* Add Numbers Button */}
             <div className="mt-4 pt-4 border-t">
               <Button variant="outline" asChild className="w-full">
-                <a href={`/number-pools/${campaign.poolId}`} target="_blank" rel="noopener noreferrer">
+                <a href={`/number-pools/${campaign.poolId}`}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add More Numbers to Pool
                 </a>

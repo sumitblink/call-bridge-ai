@@ -19,6 +19,7 @@ import Integrations from "@/pages/integrations";
 import WebhookTest from "@/pages/webhook-test";
 import TwilioTest from "@/pages/twilio-test";
 import PhoneNumbers from "@/pages/phone-numbers";
+import NumberPoolDetail from "@/pages/number-pool-detail";
 import DNI from "@/pages/dni";
 
 
@@ -60,6 +61,7 @@ function Router() {
           <Route path="/agents" component={Agents} />
           <Route path="/calls" component={Calls} />
           <Route path="/phone-numbers" component={PhoneNumbers} />
+          <Route path="/number-pools/:id" component={NumberPoolDetail} />
           <Route path="/dni" component={DNI} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />
