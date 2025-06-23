@@ -126,11 +126,28 @@ export default function PhoneNumbersPage() {
 
   const deletePoolMutation = useMutation({
     mutationFn: (poolId: number) => apiRequest(`/api/number-pools/${poolId}`, "DELETE"),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/phone-numbers"] });
+      
+      // Show success message with webhook reset status
+      let description = "Number pool deleted successfully.";
+      
+      if (data.webhookReset) {
+        if (data.webhookReset.success && data.webhookReset.updated.length > 0) {
+          description += ` Webhook URLs reset for ${data.webhookReset.updated.length} numbers.`;
+        } else if (data.webhookReset.failed.length > 0) {
+          description += ` Warning: Failed to reset webhooks for ${data.webhookReset.failed.length} numbers.`;
+        }
+      }
+      
+      if (data.webhookResetError) {
+        description += ` ${data.webhookResetError}`;
+      }
+      
       toast({
-        title: "Success",
-        description: "Number pool deleted successfully",
+        title: "Pool Deleted",
+        description,
       });
     },
     onError: () => {

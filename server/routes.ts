@@ -2024,13 +2024,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/number-pools/:id', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      
+      // Get pool numbers before deletion for webhook cleanup
+      const poolNumbers = await storage.getPoolNumbers(parseInt(id));
+      
       const deleted = await storage.deleteNumberPool(parseInt(id));
       
       if (!deleted) {
         return res.status(404).json({ error: 'Number pool not found' });
       }
 
-      res.json({ success: true });
+      // Reset webhook URLs for all numbers that were in the pool
+      if (poolNumbers.length > 0) {
+        try {
+          console.log(`Resetting webhooks for ${poolNumbers.length} numbers from deleted pool ${id}`);
+          
+          const { TwilioWebhookService } = await import('./twilio-webhook-service');
+          const resetResult = await TwilioWebhookService.resetNumbersToUnassigned(poolNumbers);
+          
+          if (resetResult.success) {
+            console.log(`Successfully reset webhooks for ${resetResult.updated.length} numbers`);
+          }
+          
+          if (resetResult.failed.length > 0) {
+            console.warn(`Failed to reset webhooks for ${resetResult.failed.length} numbers:`, resetResult.errors);
+          }
+          
+          res.json({ 
+            success: true, 
+            webhookReset: resetResult 
+          });
+        } catch (webhookError) {
+          console.error('Error resetting webhooks:', webhookError);
+          // Don't fail deletion if webhook reset fails
+          res.json({ 
+            success: true, 
+            webhookResetError: 'Failed to reset webhooks, but pool was deleted successfully' 
+          });
+        }
+      } else {
+        res.json({ success: true });
+      }
     } catch (error) {
       console.error('Error deleting number pool:', error);
       res.status(500).json({ error: 'Failed to delete number pool' });

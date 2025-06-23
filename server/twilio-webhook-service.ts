@@ -116,46 +116,68 @@ export class TwilioWebhookService {
   }
 
   /**
-   * Remove webhook configuration (set to default)
+   * Remove webhook configuration and reset to unassigned state
    */
   static async removeWebhooks(phoneNumbers: any[]): Promise<{
     success: boolean;
     updated: string[];
     failed: string[];
+    errors: string[];
   }> {
     const client = this.getTwilioClient();
     const result = {
       success: false,
       updated: [] as string[],
-      failed: [] as string[]
+      failed: [] as string[],
+      errors: [] as string[]
     };
+
+    console.log(`Removing webhooks and resetting ${phoneNumbers.length} numbers to unassigned state`);
 
     try {
       for (const phoneNumber of phoneNumbers) {
         try {
           if (!phoneNumber.phoneNumberSid) {
             result.failed.push(phoneNumber.phoneNumber);
+            result.errors.push(`No Twilio SID found for ${phoneNumber.phoneNumber}`);
             continue;
           }
 
           await client.incomingPhoneNumbers(phoneNumber.phoneNumberSid).update({
             voiceUrl: '',
             statusCallback: '',
-            friendlyName: phoneNumber.phoneNumber
+            friendlyName: `Unassigned-${phoneNumber.phoneNumber}`
           });
 
           result.updated.push(phoneNumber.phoneNumber);
+          console.log(`Reset webhook and friendly name for ${phoneNumber.phoneNumber}`);
         } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
           result.failed.push(phoneNumber.phoneNumber);
-          console.error(`Failed to remove webhook for ${phoneNumber.phoneNumber}:`, error);
+          result.errors.push(`Failed to reset ${phoneNumber.phoneNumber}: ${errorMsg}`);
+          console.error(`Failed to reset webhook for ${phoneNumber.phoneNumber}:`, error);
         }
       }
 
       result.success = result.updated.length > 0;
+      console.log(`Webhook removal completed: ${result.updated.length} updated, ${result.failed.length} failed`);
       return result;
     } catch (error) {
       console.error('Error removing webhooks:', error);
+      result.errors.push(error instanceof Error ? error.message : 'Unknown error');
       return result;
     }
+  }
+
+  /**
+   * Reset numbers to unassigned state when removed from pools
+   */
+  static async resetNumbersToUnassigned(phoneNumbers: any[]): Promise<{
+    success: boolean;
+    updated: string[];
+    failed: string[];
+    errors: string[];
+  }> {
+    return this.removeWebhooks(phoneNumbers);
   }
 }
