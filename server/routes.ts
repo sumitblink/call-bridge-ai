@@ -2214,62 +2214,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin routes - Clear database without transactions (Neon HTTP limitation)
+  // Admin routes - Clear database using direct SQL commands
   app.post('/api/admin/clear-database', requireAuth, async (req, res) => {
     try {
       console.log('Starting database clear operation...');
       
-      // Import all schema tables
-      const { 
-        callLogs, agentCalls, agentStatusLogs, calls, campaignBuyers, 
-        numberPools, phoneNumbers, callTrackingTags,
-        dniSessions, dniSnippets, buyers, agents, campaigns, publishers
-      } = await import('../shared/schema');
-      
       let clearedCount = 0;
       const errors = [];
       
-      // Import the correct table name for pool assignments
-      const { numberPoolAssignments } = await import('../shared/schema');
-      
-      // Delete in proper order to handle foreign key constraints
-      const deletions = [
-        { name: 'call_logs', table: callLogs },
-        { name: 'agent_calls', table: agentCalls },
-        { name: 'agent_status_logs', table: agentStatusLogs },
-        { name: 'calls', table: calls },
-        { name: 'campaign_buyers', table: campaignBuyers },
-        { name: 'number_pool_assignments', table: numberPoolAssignments },
-        { name: 'call_tracking_tags', table: callTrackingTags },
-        { name: 'dni_sessions', table: dniSessions },
-        { name: 'dni_snippets', table: dniSnippets },
-        { name: 'number_pools', table: numberPools },
-        { name: 'phone_numbers', table: phoneNumbers },
-        { name: 'buyers', table: buyers },
-        { name: 'agents', table: agents },
-        { name: 'publishers', table: publishers },
-        { name: 'campaigns', table: campaigns }
+      // Clear in proper order to handle foreign key constraints
+      const clearCommands = [
+        'DELETE FROM call_logs',
+        'DELETE FROM agent_calls', 
+        'DELETE FROM agent_status_logs',
+        'DELETE FROM calls',
+        'DELETE FROM campaign_buyers',
+        'DELETE FROM campaign_pool_assignments',
+        'DELETE FROM number_pool_assignments',
+        'DELETE FROM call_tracking_tags',
+        'DELETE FROM dni_sessions',
+        'DELETE FROM dni_snippets',
+        'DELETE FROM number_pools',
+        'DELETE FROM phone_numbers',
+        'DELETE FROM buyers',
+        'DELETE FROM agents',
+        'DELETE FROM publishers',
+        'DELETE FROM campaigns'
       ];
       
-      // Execute deletions without transaction
-      for (const { name, table } of deletions) {
+      // Execute deletions
+      for (const command of clearCommands) {
         try {
-          const result = await db.delete(table);
+          const result = await db.execute(sql.raw(command));
           clearedCount++;
-          console.log(`Cleared ${name}`);
+          console.log(`Executed: ${command}`);
         } catch (error) {
-          const errorMsg = `Failed to clear ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          const errorMsg = `Failed to execute ${command}: ${error instanceof Error ? error.message : 'Unknown error'}`;
           console.warn(errorMsg);
           errors.push(errorMsg);
         }
       }
       
-      // Reset sequences one by one (Neon doesn't support multiple commands in prepared statement)
+      // Reset sequences individually
       const sequences = [
         'campaigns_id_seq',
         'buyers_id_seq', 
         'agents_id_seq',
-        'phone_numbers_id_seq',
+        'phone_numbers_id_seq', 
         'number_pools_id_seq',
         'calls_id_seq',
         'call_tracking_tags_id_seq',
@@ -2285,12 +2276,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      console.log(`Database clear completed: ${clearedCount} tables cleared, ${errors.length} errors`);
+      console.log(`Database clear completed: ${clearedCount} operations, ${errors.length} errors`);
       
       res.json({
         success: true,
-        message: 'Database cleared successfully',
-        clearedTables: clearedCount,
+        message: 'Database cleared successfully - all data removed',
+        clearedOperations: clearedCount,
         errors: errors.length > 0 ? errors : undefined,
         timestamp: new Date().toISOString()
       });
