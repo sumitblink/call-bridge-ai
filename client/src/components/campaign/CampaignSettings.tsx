@@ -75,17 +75,15 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
   // Handle routing type changes - clear conflicting fields
   React.useEffect(() => {
     if (watchedRoutingType === "direct") {
-      // Clear pool ID when switching to direct routing, but don't clear if it's the initial load
+      // Clear pool ID when switching to direct routing
       if (form.formState.isDirty) {
         form.setValue("poolId", null);
       }
     } else if (watchedRoutingType === "pool") {
-      // Clear phone number when switching to pool routing, but don't clear if it's the initial load
+      // Clear phone number when switching to pool routing
       if (form.formState.isDirty) {
         form.setValue("phoneNumber", "");
       }
-      // Set default routing strategy for pools
-      form.setValue("callRoutingStrategy", "round_robin");
     }
   }, [watchedRoutingType, form]);
 
@@ -287,37 +285,36 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                   />
                 )}
 
-                {/* Show pool selection for both routing types - allow changing pools anytime */}
-                <FormField
-                  control={form.control}
-                  name="poolId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Number Pool {watchedRoutingType === "direct" && "(Optional - for backup routing)"}
-                      </FormLabel>
-                      <Select 
-                        onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value))} 
-                        value={field.value?.toString() || "none"}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose a number pool" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">No pool selected</SelectItem>
-                          {numberPools.map((pool: any) => (
-                            <SelectItem key={pool.id} value={pool.id.toString()}>
-                              {pool.name} ({pool.poolSize} numbers)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {watchedRoutingType === "pool" && (
+                  <FormField
+                    control={form.control}
+                    name="poolId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Select Number Pool</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value))} 
+                          value={field.value?.toString() || "none"}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose a number pool" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">No pool selected</SelectItem>
+                            {numberPools.map((pool: any) => (
+                              <SelectItem key={pool.id} value={pool.id.toString()}>
+                                {pool.name} ({pool.poolSize} numbers)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {watchedRoutingType === "direct" && (
                   <FormField
