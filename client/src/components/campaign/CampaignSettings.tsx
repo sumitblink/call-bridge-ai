@@ -13,6 +13,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { insertCampaignSchema, type Campaign, type InsertCampaign } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { useCampaignValidation } from "@/hooks/useCampaignValidation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 import { z } from "zod";
 
 const campaignFormSchema = insertCampaignSchema.extend({
@@ -32,6 +35,7 @@ interface CampaignSettingsProps {
 export default function CampaignSettings({ campaignId, campaign }: CampaignSettingsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: validation } = useCampaignValidation(campaignId);
 
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignFormSchema),
@@ -71,11 +75,15 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
   // Handle routing type changes - clear conflicting fields
   React.useEffect(() => {
     if (watchedRoutingType === "direct") {
-      // Clear pool ID when switching to direct routing
-      form.setValue("poolId", null);
+      // Clear pool ID when switching to direct routing, but don't clear if it's the initial load
+      if (form.formState.isDirty) {
+        form.setValue("poolId", null);
+      }
     } else if (watchedRoutingType === "pool") {
-      // Clear phone number when switching to pool routing
-      form.setValue("phoneNumber", "");
+      // Clear phone number when switching to pool routing, but don't clear if it's the initial load
+      if (form.formState.isDirty) {
+        form.setValue("phoneNumber", "");
+      }
       // Set default routing strategy for pools
       form.setValue("callRoutingStrategy", "round_robin");
     }
@@ -121,7 +129,28 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
   });
 
   const onSubmit = (data: CampaignFormData) => {
-    updateMutation.mutate(data);
+    // Clean up data based on routing type
+    const cleanedData = { ...data };
+    
+    if (data.routingType === "direct") {
+      // Clear poolId when using direct routing
+      cleanedData.poolId = null;
+    } else if (data.routingType === "pool") {
+      // Clear phoneNumber when using pool routing
+      cleanedData.phoneNumber = "";
+    }
+    
+    // Prevent activating incomplete campaigns
+    if (data.status === "active" && validation && !validation.canActivate) {
+      toast({
+        title: "Cannot Activate Campaign",
+        description: "Please complete all required setup steps before activating.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    updateMutation.mutate(cleanedData);
   };
 
   return (
@@ -165,12 +194,25 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem 
+                            value="active"
+                            disabled={validation && !validation.canActivate}
+                          >
+                            Active {validation && !validation.canActivate && "(Setup Required)"}
+                          </SelectItem>
                           <SelectItem value="paused">Paused</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
+                      {validation && !validation.canActivate && field.value === "active" && (
+                        <Alert variant="destructive" className="mt-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertDescription>
+                            Campaign cannot be activated. Complete all required setup steps first.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </FormItem>
                   )}
                 />
