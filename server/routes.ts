@@ -1948,6 +1948,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create the pool first
       const newPool = await storage.createNumberPool(poolDataWithUser);
       
+      // Initialize webhook result
+      let updateResult = { success: false, updated: [], failed: [], errors: ['No webhook update attempted'] };
+      
       // If selectedNumbers array is provided, assign those numbers to the pool
       if (selectedNumbers && Array.isArray(selectedNumbers) && selectedNumbers.length > 0) {
         console.log(`Assigning ${selectedNumbers.length} numbers to pool ${newPool.id}`);
@@ -1970,7 +1973,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Update Twilio webhooks for all assigned numbers
-        let updateResult = null;
         try {
           const poolNumbers = await storage.getPoolNumbers(newPool.id);
           if (poolNumbers.length > 0) {
@@ -1996,7 +1998,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         ...newPool,
-        webhookResult: updateResult || { success: false, updated: [], failed: [], errors: ['No webhook update attempted'] }
+        webhookResult: updateResult
       });
     } catch (error: any) {
       console.error('Error creating number pool:', error);
