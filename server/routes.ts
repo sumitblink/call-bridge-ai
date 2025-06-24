@@ -1970,32 +1970,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Update Twilio webhooks for all assigned numbers
-        let webhookResult = null;
+        let updateResult = null;
         try {
           const poolNumbers = await storage.getPoolNumbers(newPool.id);
           if (poolNumbers.length > 0) {
             console.log(`Updating Twilio webhooks for ${poolNumbers.length} numbers in pool ${newPool.id}`);
             
             const { TwilioWebhookService } = await import('./twilio-webhook-service');
-            webhookResult = await TwilioWebhookService.updatePoolWebhooks(newPool.id, poolNumbers);
+            updateResult = await TwilioWebhookService.updatePoolWebhooks(newPool.id, poolNumbers);
             
-            if (webhookResult.success) {
-              console.log(`Successfully updated webhooks for ${webhookResult.updated.length} numbers`);
+            if (updateResult.success) {
+              console.log(`Successfully updated webhooks for ${updateResult.updated.length} numbers`);
             }
             
-            if (webhookResult.failed.length > 0) {
-              console.warn(`Failed to update webhooks for ${webhookResult.failed.length} numbers:`, webhookResult.errors);
+            if (updateResult.failed.length > 0) {
+              console.warn(`Failed to update webhooks for ${updateResult.failed.length} numbers:`, updateResult.errors);
             }
           }
         } catch (webhookError) {
           console.error('Error updating Twilio webhooks:', webhookError);
           // Don't fail pool creation if webhook update fails
+          updateResult = { success: false, updated: [], failed: [], errors: [webhookError.message] };
         }
       }
       
       res.json({
         ...newPool,
-        webhookResult: webhookResult || { success: false, updated: [], failed: [], errors: ['No webhook update attempted'] }
+        webhookResult: updateResult || { success: false, updated: [], failed: [], errors: ['No webhook update attempted'] }
       });
     } catch (error: any) {
       console.error('Error creating number pool:', error);
