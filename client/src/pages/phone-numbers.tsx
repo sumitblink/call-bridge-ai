@@ -74,11 +74,15 @@ export default function PhoneNumbersPage() {
   });
 
   // Fetch unassigned phone numbers for pool creation
-  const { data: unassignedNumbers = [], isLoading: isLoadingUnassigned } = useQuery({
+  const { data: unassignedNumbers = [], isLoading: isLoadingUnassigned, error: unassignedError } = useQuery({
     queryKey: ['/api/phone-numbers/unassigned'],
     enabled: isCreatePoolDialogOpen,
-    staleTime: 0, // Always refetch when dialog opens
+    staleTime: 0,
     refetchOnMount: true,
+    retry: 1,
+    onError: (error) => {
+      console.error('Error fetching unassigned numbers:', error);
+    },
   });
 
   // Fetch campaigns
@@ -117,10 +121,11 @@ export default function PhoneNumbersPage() {
         description,
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Pool creation error:', error);
       toast({
         title: "Error",
-        description: "Failed to create number pool",
+        description: error?.message || "Failed to create number pool",
         variant: "destructive",
       });
     },
@@ -750,9 +755,13 @@ export default function PhoneNumbersPage() {
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
                             <p>Loading available numbers...</p>
                           </div>
+                        ) : unassignedError ? (
+                          <div className="text-center py-4 text-red-600">
+                            <p>Error loading numbers: {unassignedError.message}</p>
+                          </div>
                         ) : (
                           <div className="mb-2 text-sm text-muted-foreground">
-                            Debug: {Array.isArray(unassignedNumbers) ? `${unassignedNumbers.length} numbers loaded` : `Data: ${JSON.stringify(unassignedNumbers)}`}
+                            Found {Array.isArray(unassignedNumbers) ? unassignedNumbers.length : 0} unassigned numbers
                           </div>
                         )}
                         {Array.isArray(unassignedNumbers) && unassignedNumbers.length > 0 ? (
@@ -867,15 +876,33 @@ export default function PhoneNumbersPage() {
                             return;
                           }
 
-                          createPoolMutation.mutate({
-                            name: poolName,
-                            poolSize: selectedNumbers.size,
-                            idleLimit,
-                            closedBrowserDelay,
-                            prefix,
-                            isActive: true,
-                            selectedNumbers: Array.from(selectedNumbers)
-                          });
+                          if (selectedNumbers.size === 0) {
+                            toast({
+                              title: "No numbers selected",
+                              description: "Please select at least one phone number for the pool",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          try {
+                            createPoolMutation.mutate({
+                              name: poolName,
+                              poolSize: selectedNumbers.size,
+                              idleLimit,
+                              closedBrowserDelay,
+                              prefix,
+                              isActive: true,
+                              selectedNumbers: Array.from(selectedNumbers)
+                            });
+                          } catch (error) {
+                            console.error('Error creating pool:', error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to create pool",
+                              variant: "destructive",
+                            });
+                          }
                         }}
                       >
                         Create Pool ({selectedNumbers.size} numbers)
