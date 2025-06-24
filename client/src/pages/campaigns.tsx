@@ -19,14 +19,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import type { Campaign, InsertCampaign, Buyer, NumberPool } from "@shared/schema";
+import type { Campaign, InsertCampaign, Buyer } from "@shared/schema";
 import { DatabaseStatus } from "@/components/DatabaseStatus";
 
-// Schema for campaign form with pool assignment
+// Schema for campaign form
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
   country: z.string().min(1, "Country is required"),
-  poolId: z.number().optional().nullable(),
 });
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
@@ -155,18 +154,11 @@ function CampaignForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch available pools
-  const { data: pools, isLoading: poolsLoading } = useQuery<NumberPool[]>({
-    queryKey: ["/api/pools"],
-    retry: false,
-  });
-
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignFormSchema),
     defaultValues: {
       name: campaign?.name || "",
       country: "US", // Default to US
-      poolId: campaign?.poolId || null,
     },
   });
 
@@ -181,7 +173,6 @@ function CampaignForm({
         maxConcurrentCalls: 10,
         callCap: 100,
         userId: 1, // Default user ID for now
-        poolId: data.poolId || null, // Include pool assignment
       };
       console.log('Campaign data to send:', campaignData);
       
@@ -261,39 +252,7 @@ function CampaignForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="poolId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Number Pool (Optional)</FormLabel>
-              <Select 
-                onValueChange={(value) => {
-                  console.log('Pool selection changed:', value);
-                  const poolId = value === "none" ? null : parseInt(value);
-                  console.log('Setting poolId to:', poolId);
-                  field.onChange(poolId);
-                }} 
-                value={field.value ? field.value.toString() : "none"}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={poolsLoading ? "Loading pools..." : "Select a pool"} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="none">No Pool (Use Campaign Phone Number)</SelectItem>
-                  {pools && pools.map((pool: NumberPool) => (
-                    <SelectItem key={pool.id} value={pool.id.toString()}>
-                      {pool.name} ({pool.poolSize || 0} numbers)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="submit" disabled={isPending}>
