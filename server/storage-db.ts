@@ -965,6 +965,7 @@ export class DatabaseStorage implements IStorage {
       .select({
         id: phoneNumbers.id,
         phoneNumber: phoneNumbers.phoneNumber,
+        phoneNumberSid: phoneNumbers.phoneNumberSid,
         friendlyName: phoneNumbers.friendlyName,
         numberType: phoneNumbers.numberType,
         country: phoneNumbers.country,

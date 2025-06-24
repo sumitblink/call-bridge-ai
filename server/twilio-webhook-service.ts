@@ -48,12 +48,25 @@ export class TwilioWebhookService {
     try {
       for (const phoneNumber of phoneNumbers) {
         try {
-          if (!phoneNumber.phoneNumberSid) {
+          console.log(`Processing ${phoneNumber.phoneNumber} with SID: ${phoneNumber.phoneNumberSid || 'MISSING'}`);
+          
+          if (!phoneNumber.phoneNumberSid || phoneNumber.phoneNumberSid === '' || phoneNumber.phoneNumberSid === null) {
             result.failed.push(phoneNumber.phoneNumber);
             result.errors.push(`No Twilio SID found for ${phoneNumber.phoneNumber}`);
+            console.log(`Skipping ${phoneNumber.phoneNumber}: No valid SID (actual value: ${phoneNumber.phoneNumberSid})`);
             continue;
           }
 
+          // Test if the SID format is valid (should start with PN)
+          if (!phoneNumber.phoneNumberSid.startsWith('PN')) {
+            result.failed.push(phoneNumber.phoneNumber);
+            result.errors.push(`Invalid Twilio SID format for ${phoneNumber.phoneNumber}: ${phoneNumber.phoneNumberSid}`);
+            console.log(`Skipping ${phoneNumber.phoneNumber}: Invalid SID format`);
+            continue;
+          }
+
+          console.log(`Updating Twilio webhook for ${phoneNumber.phoneNumber} (${phoneNumber.phoneNumberSid})`);
+          
           await client.incomingPhoneNumbers(phoneNumber.phoneNumberSid).update({
             voiceUrl: webhookUrl,
             voiceMethod: 'POST',
@@ -63,12 +76,12 @@ export class TwilioWebhookService {
           });
 
           result.updated.push(phoneNumber.phoneNumber);
-          console.log(`Updated webhook for ${phoneNumber.phoneNumber}`);
+          console.log(`Successfully updated webhook for ${phoneNumber.phoneNumber}`);
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : 'Unknown error';
           result.failed.push(phoneNumber.phoneNumber);
           result.errors.push(`Failed to update ${phoneNumber.phoneNumber}: ${errorMsg}`);
-          console.error(`Failed to update webhook for ${phoneNumber.phoneNumber}:`, error);
+          console.error(`Twilio API error for ${phoneNumber.phoneNumber}:`, error);
         }
       }
 
