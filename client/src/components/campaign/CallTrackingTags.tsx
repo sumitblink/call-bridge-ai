@@ -646,13 +646,13 @@ ${generateJavaScriptCode(tag)}`;
                 <div className="relative">
                   <Textarea
                     className="font-mono text-sm min-h-[300px]"
-                    value={generateJavaScriptCode(selectedTag)}
+                    value={selectedTag ? generateJavaScriptCode(selectedTag) : ''}
                     readOnly
                   />
                   <Button
                     size="sm"
                     className="absolute top-2 right-2"
-                    onClick={() => copyToClipboard(generateJavaScriptCode(selectedTag))}
+                    onClick={() => selectedTag && copyToClipboard(generateJavaScriptCode(selectedTag))}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -665,13 +665,13 @@ ${generateJavaScriptCode(tag)}`;
                 <div className="relative">
                   <Textarea
                     className="font-mono text-sm min-h-[200px]"
-                    value={generateHTMLSnippet(selectedTag)}
+                    value={selectedTag ? generateHTMLSnippet(selectedTag) : ''}
                     readOnly
                   />
                   <Button
                     size="sm"
                     className="absolute top-2 right-2"
-                    onClick={() => copyToClipboard(generateHTMLSnippet(selectedTag))}
+                    onClick={() => selectedTag && copyToClipboard(generateHTMLSnippet(selectedTag))}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
