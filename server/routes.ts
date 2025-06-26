@@ -2922,6 +2922,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // DNI (Dynamic Number Insertion) API endpoints
   app.get('/api/dni/number', async (req, res) => {
+    // CORS headers for external domain access
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
     try {
       const request = req.query as any;
       const response = await DNIService.getTrackingNumber(request);
@@ -2941,6 +2946,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/dni/sdk/:campaignId', async (req, res) => {
+    // CORS headers for external domain access
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
     try {
       const campaignId = parseInt(req.params.campaignId);
       const domain = req.get('host') || 'localhost:5000';
@@ -2955,6 +2965,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/dni/snippet/:campaignId', async (req, res) => {
+    // CORS headers for external domain access
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
     try {
       const campaignId = parseInt(req.params.campaignId);
       const campaign = await storage.getCampaign(campaignId);

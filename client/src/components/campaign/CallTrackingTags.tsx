@@ -273,7 +273,8 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(requestData),
+        mode: 'cors'
       })
       .then(function(response) {
         return response.json();
