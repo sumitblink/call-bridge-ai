@@ -3643,26 +3643,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
     try {
-      console.log('DNI Track request received:', {
-        tagCode: req.body.tagCode,
-        sessionId: req.body.sessionId,
-        domain: req.body.domain,
-        origin: req.headers.origin
-      });
+      console.log('DNI Track - Raw request body:', JSON.stringify(req.body, null, 2));
+      console.log('DNI Track - Content-Type:', req.headers['content-type']);
+      console.log('DNI Track - tagCode extracted:', req.body.tagCode);
       
-      const requestData = {
+      const requestData: DNIRequest = {
         tagCode: req.body.tagCode,
         sessionId: req.body.sessionId,
-        visitorId: req.body.visitorId,
-        ipAddress: req.ip || req.connection.remoteAddress,
-        userAgent: req.headers['user-agent'],
+        source: req.body.utmSource,
+        medium: req.body.utmMedium,
+        campaign: req.body.utmCampaign,
+        content: req.body.utmContent,
+        term: req.body.utmTerm,
         referrer: req.body.referrer,
-        utmSource: req.body.utmSource,
-        utmMedium: req.body.utmMedium,
-        utmCampaign: req.body.utmCampaign,
-        utmContent: req.body.utmContent,
-        utmTerm: req.body.utmTerm,
-        domain: req.body.domain
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip || req.connection.remoteAddress,
+        customFields: {
+          domain: req.body.domain,
+          visitorId: req.body.visitorId
+        }
       };
       
       const response = await DNIService.getTrackingNumber(requestData);
