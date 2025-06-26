@@ -2,11 +2,12 @@
 // Provides JavaScript SDK for websites to dynamically insert tracking phone numbers
 
 import { db } from './db';
-import { campaigns, phoneNumbers, numberPools, numberPoolAssignments } from '@shared/schema';
+import { campaigns, phoneNumbers, numberPools, numberPoolAssignments, callTrackingTags } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import type { Campaign, PhoneNumber, NumberPool } from '@shared/schema';
 
 export interface DNIRequest {
+  tagCode?: string;
   campaignId?: number;
   campaignName?: string;
   source?: string;
@@ -42,8 +43,26 @@ export class DNIService {
     try {
       let campaign: Campaign | undefined;
 
-      // Find campaign by ID or name
-      if (request.campaignId) {
+      // Find campaign by tracking tag code (primary method)
+      if (request.tagCode) {
+        const trackingTagResult = await db
+          .select({ 
+            campaign: campaigns,
+            tag: callTrackingTags 
+          })
+          .from(callTrackingTags)
+          .innerJoin(campaigns, eq(callTrackingTags.campaignId, campaigns.id))
+          .where(and(
+            eq(callTrackingTags.tagCode, request.tagCode),
+            eq(callTrackingTags.isActive, true)
+          ));
+        
+        if (trackingTagResult.length > 0) {
+          campaign = trackingTagResult[0].campaign;
+        }
+      }
+      // Fallback: Find campaign by ID or name
+      else if (request.campaignId) {
         const [foundCampaign] = await db.select().from(campaigns).where(eq(campaigns.id, request.campaignId));
         campaign = foundCampaign;
       } else if (request.campaignName) {
