@@ -112,6 +112,14 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Migrations**: Managed through Drizzle Kit
 - **Connection**: Neon serverless PostgreSQL client
 
+## Recent Changes
+- June 26, 2025: Completed DNI system implementation and resolved route conflicts
+  - Fixed conflicting route handlers preventing tracking tag functionality
+  - Successfully integrated Call Tracking Tags with Dynamic Number Insertion
+  - Verified external website integration with CORS support
+  - Confirmed pool-based number assignment working correctly
+  - All tracking tag features now operational including JavaScript generation
+
 ## Changelog
 - June 24, 2025. Initial setup
 
