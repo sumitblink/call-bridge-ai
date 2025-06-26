@@ -201,6 +201,118 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     });
   };
 
+  const generateJavaScriptCode = (tag: any) => {
+    if (!tag) return '';
+    
+    const currentDomain = window.location.hostname;
+    const protocol = window.location.protocol;
+    const port = window.location.port ? `:${window.location.port}` : '';
+    const baseUrl = `${protocol}//${currentDomain}${port}`;
+    
+    return `<script>
+(function() {
+  'use strict';
+  
+  var DNI = {
+    config: {
+      tagCode: '${tag.tagCode}',
+      apiUrl: '${baseUrl}/api/dni/track',
+      timeout: 5000,
+      captureUserData: ${tag.captureUserData || false},
+      debug: false
+    },
+    
+    init: function() {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', this.replaceNumbers.bind(this));
+      } else {
+        this.replaceNumbers();
+      }
+    },
+    
+    replaceNumbers: function() {
+      var elements = document.querySelectorAll('.tracking-number, [data-tracking-number]');
+      if (elements.length === 0) {
+        console.warn('DNI: No tracking number elements found');
+        return;
+      }
+      
+      this.getTrackingNumber(function(response) {
+        if (response.success && response.formattedNumber) {
+          for (var i = 0; i < elements.length; i++) {
+            elements[i].textContent = response.formattedNumber;
+            // Update href if it's a link
+            if (elements[i].tagName === 'A') {
+              elements[i].href = 'tel:' + response.phoneNumber;
+            }
+          }
+        }
+      });
+    },
+    
+    getTrackingNumber: function(callback) {
+      var requestData = {
+        tagCode: this.config.tagCode,
+        sessionId: this.getSessionId(),
+        domain: window.location.hostname,
+        referrer: document.referrer,
+        userAgent: navigator.userAgent
+      };
+      
+      if (this.config.captureUserData) {
+        var urlParams = new URLSearchParams(window.location.search);
+        requestData.utmSource = urlParams.get('utm_source');
+        requestData.utmMedium = urlParams.get('utm_medium');
+        requestData.utmCampaign = urlParams.get('utm_campaign');
+        requestData.utmContent = urlParams.get('utm_content');
+        requestData.utmTerm = urlParams.get('utm_term');
+      }
+      
+      fetch(this.config.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(function(response) {
+        return response.json();
+      })
+      .then(callback)
+      .catch(function(error) {
+        console.error('DNI Error:', error);
+      });
+    },
+    
+    getSessionId: function() {
+      var sessionId = sessionStorage.getItem('dni_session_id');
+      if (!sessionId) {
+        sessionId = 'dni_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        sessionStorage.setItem('dni_session_id', sessionId);
+      }
+      return sessionId;
+    }
+  };
+  
+  DNI.init();
+})();
+</script>`;
+  };
+
+  const generateHTMLSnippet = (tag: any) => {
+    if (!tag) return '';
+    
+    return `<!-- DNI Call Tracking Tag: ${tag.name} -->
+<!-- Replace your phone numbers with this structure -->
+<span class="tracking-number">${tag.numberToReplace || '(555) 123-4567'}</span>
+
+<!-- Or as a clickable link -->
+<a href="tel:+15551234567" class="tracking-number">${tag.numberToReplace || '(555) 123-4567'}</a>
+
+<!-- Place this script before closing </body> tag -->
+${generateJavaScriptCode(tag)}`;
+  };
+
   const rotationStrategies = [
     { value: "round_robin", label: "Round Robin" },
     { value: "sticky", label: "Sticky (Session-based)" },
@@ -534,25 +646,13 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
                 <div className="relative">
                   <Textarea
                     className="font-mono text-sm min-h-[300px]"
-                    value={`<script>
-(function() {
-  var config = {
-    tagCode: '${selectedTag?.tagCode}',
-    apiUrl: 'http://localhost:5000/api/dni/track',
-    selectors: ['.tracking-number', '[data-tracking-number]'],
-    captureUserData: ${selectedTag?.captureUserData}
-  };
-  
-  // Your tracking code will be generated here
-  // This is a placeholder - actual code will be fetched from the API
-})();
-</script>`}
+                    value={generateJavaScriptCode(selectedTag)}
                     readOnly
                   />
                   <Button
                     size="sm"
                     className="absolute top-2 right-2"
-                    onClick={() => copyToClipboard(`// Generated code for ${selectedTag?.tagCode}`)}
+                    onClick={() => copyToClipboard(generateJavaScriptCode(selectedTag))}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -565,17 +665,13 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
                 <div className="relative">
                   <Textarea
                     className="font-mono text-sm min-h-[200px]"
-                    value={`<!-- DNI Call Tracking Tag: ${selectedTag?.name} -->
-<span class="tracking-number" data-tracking-number>${selectedTag?.numberToReplace || 'Your phone number here'}</span>
-
-<!-- Place this script before closing </body> tag -->
-<script src="http://localhost:5000/tracking/${selectedTag?.tagCode}.js"></script>`}
+                    value={generateHTMLSnippet(selectedTag)}
                     readOnly
                   />
                   <Button
                     size="sm"
                     className="absolute top-2 right-2"
-                    onClick={() => copyToClipboard(`<!-- HTML snippet for ${selectedTag?.tagCode} -->`)}
+                    onClick={() => copyToClipboard(generateHTMLSnippet(selectedTag))}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>

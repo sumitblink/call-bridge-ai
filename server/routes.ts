@@ -3613,6 +3613,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DNI tracking endpoint for website integration
   app.post('/api/dni/track', async (req, res) => {
     try {
+      console.log('DNI Track request received:', {
+        tagCode: req.body.tagCode,
+        sessionId: req.body.sessionId,
+        domain: req.body.domain
+      });
+      
       const requestData = {
         tagCode: req.body.tagCode,
         sessionId: req.body.sessionId,
@@ -3629,6 +3635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const response = await CallTrackingService.getTrackingNumber(requestData);
+      console.log('DNI Track response:', response);
       res.json(response);
     } catch (error) {
       console.error('DNI tracking error:', error);
