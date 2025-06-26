@@ -1,4 +1,5 @@
 import type { Express, Request, Response, NextFunction } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage-db";
 import { insertCampaignSchema, insertBuyerSchema, insertAgentSchema } from "@shared/schema";
@@ -3635,7 +3636,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // DNI tracking endpoint for website integration
+  // DNI tracking endpoint for website integration (BEFORE auth middleware)
   app.post('/api/dni/track', async (req, res) => {
     // Additional CORS headers for DNI endpoint
     res.header('Access-Control-Allow-Origin', '*');
@@ -3643,35 +3644,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
     try {
-      console.log('DNI Track - Raw request body:', JSON.stringify(req.body, null, 2));
-      console.log('DNI Track - Content-Type:', req.headers['content-type']);
-      console.log('DNI Track - tagCode extracted:', req.body.tagCode);
+      // Extract the request data properly
+      const { tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId } = req.body;
+      
+      console.log('DNI Track received tagCode:', tagCode, 'sessionId:', sessionId);
+      console.log('DNI Track full body:', JSON.stringify(req.body, null, 2));
+      
+      if (!tagCode) {
+        return res.status(400).json({
+          phoneNumber: '',
+          formattedNumber: '',
+          campaignId: 0,
+          campaignName: '',
+          trackingId: '',
+          success: false,
+          error: 'tagCode is required'
+        });
+      }
       
       const requestData: DNIRequest = {
-        tagCode: req.body.tagCode,
-        sessionId: req.body.sessionId,
-        source: req.body.utmSource,
-        medium: req.body.utmMedium,
-        campaign: req.body.utmCampaign,
-        content: req.body.utmContent,
-        term: req.body.utmTerm,
-        referrer: req.body.referrer,
+        tagCode,
+        sessionId,
+        source: utmSource,
+        medium: utmMedium,
+        campaign: utmCampaign,
+        content: utmContent,
+        term: utmTerm,
+        referrer,
         userAgent: req.headers['user-agent'],
         ipAddress: req.ip || req.connection.remoteAddress,
         customFields: {
-          domain: req.body.domain,
-          visitorId: req.body.visitorId
+          domain,
+          visitorId
         }
       };
       
       const response = await DNIService.getTrackingNumber(requestData);
-      console.log('DNI Track response:', response);
       res.json(response);
     } catch (error) {
       console.error('DNI tracking error:', error);
       res.status(500).json({
+        phoneNumber: '',
+        formattedNumber: '',
+        campaignId: 0,
+        campaignName: '',
+        trackingId: '',
         success: false,
-        sessionId: req.body.sessionId || 'unknown',
         error: 'Failed to get tracking number'
       });
     }
