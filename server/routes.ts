@@ -2451,40 +2451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dynamic Number Insertion (DNI) API Endpoints
-  app.post('/api/dni/track', async (req, res) => {
-    try {
-      const requestData: DNIRequest = {
-        campaignId: req.body.campaignId,
-        campaignName: req.body.campaignName,
-        source: req.body.source,
-        medium: req.body.medium,
-        campaign: req.body.campaign,
-        content: req.body.content,
-        term: req.body.term,
-        gclid: req.body.gclid,
-        fbclid: req.body.fbclid,
-        referrer: req.body.referrer,
-        userAgent: req.headers['user-agent'],
-        ipAddress: req.ip || req.connection.remoteAddress,
-        sessionId: req.body.sessionId,
-        customFields: req.body.customFields
-      };
-
-      const response = await DNIService.getTrackingNumber(requestData);
-      res.json(response);
-    } catch (error) {
-      console.error('DNI tracking error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Internal server error',
-        phoneNumber: '',
-        formattedNumber: '',
-        campaignId: 0,
-        campaignName: '',
-        trackingId: ''
-      });
-    }
-  });
+  // Removed conflicting /api/dni/track handler - using tracking tag compatible version later in file
 
 
 
@@ -3644,11 +3611,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
     try {
+      console.log('=== DNI Track Handler Called ===');
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+      console.log('Content-Type:', req.headers['content-type']);
+      
       // Extract the request data properly
       const { tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId } = req.body;
-      
-      console.log('DNI Track received tagCode:', tagCode, 'sessionId:', sessionId);
-      console.log('DNI Track full body:', JSON.stringify(req.body, null, 2));
       
       if (!tagCode) {
         return res.status(400).json({
