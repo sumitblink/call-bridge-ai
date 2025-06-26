@@ -3665,7 +3665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         domain: req.body.domain
       };
       
-      const response = await CallTrackingService.getTrackingNumber(requestData);
+      const response = await DNIService.getTrackingNumber(requestData);
       console.log('DNI Track response:', response);
       res.json(response);
     } catch (error) {

@@ -41,10 +41,17 @@ export class DNIService {
    */
   static async getTrackingNumber(request: DNIRequest): Promise<DNIResponse> {
     try {
+      console.log('DNI: Service called with request:', JSON.stringify(request, null, 2));
       let campaign: Campaign | undefined;
 
       // Find campaign by tracking tag code (primary method)
       if (request.tagCode) {
+        console.log('DNI: Looking for tagCode:', request.tagCode);
+        
+        // First, let's verify the tag exists in the database
+        const allTags = await db.select().from(callTrackingTags).where(eq(callTrackingTags.tagCode, request.tagCode));
+        console.log('DNI: Direct tag lookup found:', allTags.length, 'tags');
+        
         const trackingTagResult = await db
           .select({ 
             campaign: campaigns,
@@ -57,8 +64,12 @@ export class DNIService {
             eq(callTrackingTags.isActive, true)
           ));
         
+        console.log('DNI: Found', trackingTagResult.length, 'tracking tag results');
         if (trackingTagResult.length > 0) {
           campaign = trackingTagResult[0].campaign;
+          console.log('DNI: Using campaign:', campaign.name, 'ID:', campaign.id);
+        } else {
+          console.log('DNI: No active tracking tag found for tagCode:', request.tagCode);
         }
       }
       // Fallback: Find campaign by ID or name
