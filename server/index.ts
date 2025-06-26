@@ -1,9 +1,21 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// CORS configuration for DNI external website integration
+app.use(cors({
+  origin: true, // Allow all origins for DNI functionality
+  credentials: true, // Allow cookies for session management
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Set-Cookie'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

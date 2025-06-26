@@ -1416,6 +1416,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // DNI (Dynamic Number Insertion) API
   app.get('/api/dni/tracking-number', async (req, res) => {
+    // CORS headers for external domain access
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
     try {
       const request: DNIRequest = {
         campaignId: req.query.campaign_id ? parseInt(req.query.campaign_id as string) : undefined,
@@ -1521,6 +1526,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // DNI HTML snippet endpoint
   app.get('/api/dni/html-snippet', async (req, res) => {
+    // CORS headers for external domain access
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
     try {
       const domain = req.get('host') || 'localhost:5000';
       const campaignId = parseInt(req.query.campaign_id as string);
@@ -3612,11 +3622,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // DNI tracking endpoint for website integration
   app.post('/api/dni/track', async (req, res) => {
+    // Additional CORS headers for DNI endpoint
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
     try {
       console.log('DNI Track request received:', {
         tagCode: req.body.tagCode,
         sessionId: req.body.sessionId,
-        domain: req.body.domain
+        domain: req.body.domain,
+        origin: req.headers.origin
       });
       
       const requestData = {
@@ -3645,6 +3661,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: 'Failed to get tracking number'
       });
     }
+  });
+
+  // Handle OPTIONS preflight requests for DNI endpoints
+  app.options('/api/dni/*', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    res.sendStatus(200);
   });
 
   // Get tracking tag analytics
