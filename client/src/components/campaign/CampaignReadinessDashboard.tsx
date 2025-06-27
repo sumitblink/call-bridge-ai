@@ -52,7 +52,10 @@ export function CampaignReadinessDashboard({ campaignId, campaignStatus }: Campa
         title: "Campaign Paused",
         description: "Your campaign has been paused and will not receive calls",
       });
+      // Invalidate all campaign-related queries
       queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}/validation`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
     },
   });
 
