@@ -29,7 +29,10 @@ export function CampaignReadinessDashboard({ campaignId, campaignStatus }: Campa
         title: "Campaign Activated",
         description: "Your campaign is now live and ready to receive calls",
       });
+      // Invalidate all campaign-related queries
       queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}/validation`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
     },
     onError: () => {
       toast({
