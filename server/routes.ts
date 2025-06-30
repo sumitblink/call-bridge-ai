@@ -473,6 +473,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!success) {
         return res.status(404).json({ error: "Campaign-buyer relationship not found" });
       }
+      
+      // Check if campaign still has buyers after removal
+      const remainingBuyers = await storage.getCampaignBuyers(campaignId);
+      if (remainingBuyers.length === 0) {
+        // Automatically pause campaign if no buyers remain
+        const campaign = await storage.getCampaign(campaignId);
+        if (campaign && campaign.status === 'active') {
+          await storage.updateCampaign(campaignId, { status: 'paused' });
+          console.log(`Campaign ${campaignId} automatically paused - no buyers remaining`);
+        }
+      }
+      
       res.status(204).send();
     } catch (error) {
       console.error("Error removing buyer from campaign:", error);

@@ -67,9 +67,13 @@ export default function CampaignBuyers({ campaignId }: CampaignBuyersProps) {
     onSuccess: () => {
       toast({
         title: "Buyer Removed",
-        description: "Buyer has been removed from this campaign.",
+        description: "Buyer has been removed from this campaign. Campaign status updated if needed.",
       });
+      // Invalidate all campaign-related queries to ensure status updates
       queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}/buyers`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}/validation`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
     },
     onError: (error: any) => {
       toast({
