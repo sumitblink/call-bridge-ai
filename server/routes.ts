@@ -469,21 +469,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const campaignId = parseInt(req.params.campaignId);
       const buyerId = parseInt(req.params.buyerId);
+      
+      // Remove the buyer from campaign
       const success = await storage.removeBuyerFromCampaign(campaignId, buyerId);
       if (!success) {
         return res.status(404).json({ error: "Campaign-buyer relationship not found" });
       }
       
-      // Check if campaign still has buyers after removal
-      const remainingBuyers = await storage.getCampaignBuyers(campaignId);
-      if (remainingBuyers.length === 0) {
-        // Automatically pause campaign if no buyers remain
-        const campaign = await storage.getCampaign(campaignId);
-        if (campaign && campaign.status === 'active') {
-          await storage.updateCampaign(campaignId, { status: 'paused' });
-          console.log(`Campaign ${campaignId} automatically paused - no buyers remaining`);
+      // Always check campaign validation after buyer removal
+      setTimeout(async () => {
+        try {
+          const remainingBuyers = await storage.getCampaignBuyers(campaignId);
+          const campaign = await storage.getCampaign(campaignId);
+          
+          if (remainingBuyers.length === 0 && campaign && campaign.status === 'active') {
+            await storage.updateCampaign(campaignId, { status: 'paused' });
+            console.log(`Campaign ${campaignId} automatically paused - no buyers remaining`);
+          }
+        } catch (error) {
+          console.error(`Error in post-removal validation for campaign ${campaignId}:`, error);
         }
-      }
+      }, 100); // Small delay to ensure database transaction is complete
       
       res.status(204).send();
     } catch (error) {
