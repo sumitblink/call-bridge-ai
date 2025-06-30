@@ -476,20 +476,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Campaign-buyer relationship not found" });
       }
       
-      // Always check campaign validation after buyer removal
-      setTimeout(async () => {
-        try {
-          const remainingBuyers = await storage.getCampaignBuyers(campaignId);
-          const campaign = await storage.getCampaign(campaignId);
-          
-          if (remainingBuyers.length === 0 && campaign && campaign.status === 'active') {
-            await storage.updateCampaign(campaignId, { status: 'paused' });
-            console.log(`Campaign ${campaignId} automatically paused - no buyers remaining`);
-          }
-        } catch (error) {
-          console.error(`Error in post-removal validation for campaign ${campaignId}:`, error);
-        }
-      }, 100); // Small delay to ensure database transaction is complete
+      // Immediately check campaign validation after buyer removal
+      const remainingBuyers = await storage.getCampaignBuyers(campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (remainingBuyers.length === 0 && campaign && campaign.status === 'active') {
+        await storage.updateCampaign(campaignId, { status: 'paused' });
+        console.log(`Campaign ${campaignId} automatically paused - no buyers remaining`);
+      }
       
       res.status(204).send();
     } catch (error) {

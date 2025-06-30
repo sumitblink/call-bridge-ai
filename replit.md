@@ -113,6 +113,11 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- June 30, 2025: Implemented automatic campaign validation and status management
+  - Fixed campaign status validation to automatically pause campaigns when last buyer is removed
+  - Enhanced cache invalidation for real-time status updates in frontend
+  - Prevents active campaigns from operating without proper buyer configuration
+  - Ensures data integrity in call routing by maintaining valid campaign states
 - June 26, 2025: Completed DNI system implementation and resolved route conflicts
   - Fixed conflicting route handlers preventing tracking tag functionality
   - Successfully integrated Call Tracking Tags with Dynamic Number Insertion
