@@ -3710,6 +3710,202 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RTB Routes
+  
+  // RTB Targets
+  app.get('/api/rtb/targets', requireAuth, async (req: any, res) => {
+    try {
+      const targets = await storage.getRtbTargets();
+      res.json(targets);
+    } catch (error) {
+      console.error('Error fetching RTB targets:', error);
+      res.status(500).json({ error: 'Failed to fetch RTB targets' });
+    }
+  });
+
+  app.get('/api/rtb/targets/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const target = await storage.getRtbTarget(parseInt(id));
+      if (!target) {
+        return res.status(404).json({ error: 'RTB target not found' });
+      }
+      res.json(target);
+    } catch (error) {
+      console.error('Error fetching RTB target:', error);
+      res.status(500).json({ error: 'Failed to fetch RTB target' });
+    }
+  });
+
+  app.post('/api/rtb/targets', requireAuth, async (req: any, res) => {
+    try {
+      const targetData = { ...req.body, userId: req.user.id };
+      const target = await storage.createRtbTarget(targetData);
+      res.status(201).json(target);
+    } catch (error) {
+      console.error('Error creating RTB target:', error);
+      res.status(500).json({ error: 'Failed to create RTB target' });
+    }
+  });
+
+  app.put('/api/rtb/targets/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const target = await storage.updateRtbTarget(parseInt(id), req.body);
+      if (!target) {
+        return res.status(404).json({ error: 'RTB target not found' });
+      }
+      res.json(target);
+    } catch (error) {
+      console.error('Error updating RTB target:', error);
+      res.status(500).json({ error: 'Failed to update RTB target' });
+    }
+  });
+
+  app.delete('/api/rtb/targets/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteRtbTarget(parseInt(id));
+      if (!success) {
+        return res.status(404).json({ error: 'RTB target not found' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting RTB target:', error);
+      res.status(500).json({ error: 'Failed to delete RTB target' });
+    }
+  });
+
+  // RTB Routers
+  app.get('/api/rtb/routers', requireAuth, async (req: any, res) => {
+    try {
+      const routers = await storage.getRtbRouters();
+      res.json(routers);
+    } catch (error) {
+      console.error('Error fetching RTB routers:', error);
+      res.status(500).json({ error: 'Failed to fetch RTB routers' });
+    }
+  });
+
+  app.get('/api/rtb/routers/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const router = await storage.getRtbRouter(parseInt(id));
+      if (!router) {
+        return res.status(404).json({ error: 'RTB router not found' });
+      }
+      res.json(router);
+    } catch (error) {
+      console.error('Error fetching RTB router:', error);
+      res.status(500).json({ error: 'Failed to fetch RTB router' });
+    }
+  });
+
+  app.post('/api/rtb/routers', requireAuth, async (req: any, res) => {
+    try {
+      const routerData = { ...req.body, userId: req.user.id };
+      const router = await storage.createRtbRouter(routerData);
+      res.status(201).json(router);
+    } catch (error) {
+      console.error('Error creating RTB router:', error);
+      res.status(500).json({ error: 'Failed to create RTB router' });
+    }
+  });
+
+  app.put('/api/rtb/routers/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const router = await storage.updateRtbRouter(parseInt(id), req.body);
+      if (!router) {
+        return res.status(404).json({ error: 'RTB router not found' });
+      }
+      res.json(router);
+    } catch (error) {
+      console.error('Error updating RTB router:', error);
+      res.status(500).json({ error: 'Failed to update RTB router' });
+    }
+  });
+
+  app.delete('/api/rtb/routers/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteRtbRouter(parseInt(id));
+      if (!success) {
+        return res.status(404).json({ error: 'RTB router not found' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting RTB router:', error);
+      res.status(500).json({ error: 'Failed to delete RTB router' });
+    }
+  });
+
+  // RTB Router Assignments
+  app.get('/api/rtb/routers/:id/assignments', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const assignments = await storage.getRtbRouterAssignments(parseInt(id));
+      res.json(assignments);
+    } catch (error) {
+      console.error('Error fetching RTB router assignments:', error);
+      res.status(500).json({ error: 'Failed to fetch RTB router assignments' });
+    }
+  });
+
+  app.post('/api/rtb/routers/:routerId/targets/:targetId', requireAuth, async (req: any, res) => {
+    try {
+      const { routerId, targetId } = req.params;
+      const assignment = await storage.createRtbRouterAssignment({
+        rtbRouterId: parseInt(routerId),
+        rtbTargetId: parseInt(targetId),
+        priority: req.body.priority || 1,
+        weight: req.body.weight || 100,
+        isActive: req.body.isActive ?? true
+      });
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error('Error creating RTB router assignment:', error);
+      res.status(500).json({ error: 'Failed to create RTB router assignment' });
+    }
+  });
+
+  app.delete('/api/rtb/routers/:routerId/targets/:targetId', requireAuth, async (req: any, res) => {
+    try {
+      const { routerId, targetId } = req.params;
+      const success = await storage.deleteRtbRouterAssignment(parseInt(routerId), parseInt(targetId));
+      if (!success) {
+        return res.status(404).json({ error: 'RTB router assignment not found' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting RTB router assignment:', error);
+      res.status(500).json({ error: 'Failed to delete RTB router assignment' });
+    }
+  });
+
+  // RTB Bid Requests and Responses
+  app.get('/api/rtb/bid-requests', requireAuth, async (req: any, res) => {
+    try {
+      const { campaignId } = req.query;
+      const requests = await storage.getRtbBidRequests(campaignId ? parseInt(campaignId as string) : undefined);
+      res.json(requests);
+    } catch (error) {
+      console.error('Error fetching RTB bid requests:', error);
+      res.status(500).json({ error: 'Failed to fetch RTB bid requests' });
+    }
+  });
+
+  app.get('/api/rtb/bid-requests/:requestId/responses', requireAuth, async (req: any, res) => {
+    try {
+      const { requestId } = req.params;
+      const responses = await storage.getRtbBidResponses(requestId);
+      res.json(responses);
+    } catch (error) {
+      console.error('Error fetching RTB bid responses:', error);
+      res.status(500).json({ error: 'Failed to fetch RTB bid responses' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
