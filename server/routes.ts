@@ -727,23 +727,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Import RTB service and conduct bidding
           const { RTBService } = await import('./rtb-service');
           
-          // Prepare caller data for RTB
-          const callerData = {
+          // Prepare bid request for RTB
+          const bidRequest = {
+            requestId: `pool_${poolId}_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+            campaignId: campaign.id,
             callerId: fromNumber,
             callerState: req.body.CallerState || null,
             callerZip: req.body.CallerZip || null,
-            destinationNumber: toNumber,
             callStartTime: new Date(),
-            campaignId: campaign.id
+            timeoutMs: 5000 // 5 second timeout for bidding
           };
           
-          console.log(`[Pool Webhook] Conducting bidding with caller data:`, callerData);
+          console.log(`[Pool Webhook] Conducting bidding with request:`, bidRequest);
           
           // Conduct RTB bidding
-          const biddingResult = await RTBService.conductBidding(
-            campaign.rtbRouterId,
-            campaign.id,
-            callerData
+          const biddingResult = await RTBService.initiateAuction(
+            campaign,
+            bidRequest
           );
           
           console.log(`[Pool Webhook] Bidding result:`, biddingResult);
@@ -751,9 +751,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (biddingResult.success && biddingResult.winningBid) {
             // RTB bidding successful - use winning bid
             routingMethod = 'rtb';
-            rtbRequestId = biddingResult.requestId;
-            winningBidAmount = biddingResult.winningBid.bidAmount;
-            winningTargetId = biddingResult.winningBid.targetId;
+            rtbRequestId = bidRequest.requestId;
+            winningBidAmount = parseFloat(biddingResult.winningBid.bidAmount);
+            winningTargetId = biddingResult.winningBid.rtbTargetId;
             
             // Get the winning target to determine destination
             const winningTarget = await storage.getRtbTarget(winningTargetId);
@@ -770,7 +770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   winningTargetId,
                   targetName: winningTarget.name,
                   totalTargetsPinged: biddingResult.totalTargetsPinged,
-                  responseTimeMs: biddingResult.totalResponseTimeMs
+                  responseTimeMs: biddingResult.totalResponseTime
                 };
                 
                 console.log(`[Pool Webhook] RTB SUCCESS - Winner: ${winningTarget.name}, Bid: $${winningBidAmount}, Routing to: ${targetBuyer.name} (${targetBuyer.phoneNumber})`);
@@ -783,7 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               routingMethod = 'rtb_fallback';
             }
           } else {
-            console.log(`[Pool Webhook] RTB bidding failed or no winning bid: ${biddingResult.reason || 'Unknown reason'}`);
+            console.log(`[Pool Webhook] RTB bidding failed or no winning bid: ${biddingResult.error || 'Unknown reason'}`);
             routingMethod = 'rtb_fallback';
           }
         } catch (rtbError) {
@@ -839,12 +839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       };
       
-      // Add RTB-specific fields if RTB was used
-      if (rtbRequestId) {
-        callData.rtbRequestId = rtbRequestId;
-        callData.bidAmount = winningBidAmount;
-        callData.winningTargetId = winningTargetId;
-      }
+      // RTB data is stored in routingData JSON field above
       
       await storage.createCall(callData);
 
@@ -987,7 +982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   winningTargetId,
                   targetName: winningTarget.name,
                   totalTargetsPinged: biddingResult.totalTargetsPinged,
-                  responseTimeMs: biddingResult.totalResponseTimeMs
+                  responseTimeMs: biddingResult.totalResponseTime
                 };
                 
                 console.log(`[Webhook RTB] RTB SUCCESS - Winner: ${winningTarget.name}, Bid: $${winningBidAmount}, Routing to: ${targetBuyer.name} (${targetBuyer.phoneNumber})`);
