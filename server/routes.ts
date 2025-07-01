@@ -882,13 +882,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update call status in database
       const calls = await storage.getCalls();
-      const call = calls.find(c => c.twilioCallSid === CallSid);
+      const call = calls.find(c => c.callSid === CallSid);
       
       if (call) {
         await storage.updateCall(call.id, {
           status: CallStatus,
-          duration: CallDuration ? parseInt(CallDuration) : undefined,
-          endTime: ['completed', 'busy', 'no-answer', 'failed', 'canceled'].includes(CallStatus) ? new Date() : undefined
+          duration: CallDuration ? parseInt(CallDuration) : undefined
         });
       }
       
@@ -964,9 +963,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (biddingResult.success && biddingResult.winningBid) {
             // RTB bidding successful - use winning bid
             routingMethod = 'rtb';
-            rtbRequestId = biddingResult.requestId;
-            winningBidAmount = biddingResult.winningBid.bidAmount;
-            winningTargetId = biddingResult.winningBid.targetId;
+            rtbRequestId = bidRequest.requestId;
+            winningBidAmount = parseFloat(biddingResult.winningBid.bidAmount);
+            winningTargetId = biddingResult.winningBid.rtbTargetId;
             
             // Get the winning target to determine destination
             const winningTarget = await storage.getRtbTarget(winningTargetId);
@@ -995,12 +994,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               routingMethod = 'rtb_fallback';
             }
           } else {
-            console.log(`[Webhook RTB] RTB bidding failed or no winning bid: ${biddingResult.reason || 'Unknown reason'}`);
+            console.log(`[Webhook RTB] RTB bidding failed or no winning bid: ${biddingResult.error || 'Unknown reason'}`);
             routingMethod = 'rtb_fallback';
             routingData = {
               method: 'rtb_fallback',
               rtbAttempted: true,
-              rtbFailureReason: biddingResult.reason || 'No winning bid received',
+              rtbFailureReason: biddingResult.error || 'No winning bid received',
               totalTargetsPinged: biddingResult.totalTargetsPinged || 0
             };
           }
@@ -1065,12 +1064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       };
       
-      // Add RTB-specific fields if RTB was used
-      if (rtbRequestId) {
-        callData.rtbRequestId = rtbRequestId;
-        callData.bidAmount = winningBidAmount;
-        callData.winningTargetId = winningTargetId;
-      }
+      // RTB data is stored in routingData JSON field above
       
       await storage.createCall(callData);
       
