@@ -3906,6 +3906,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RTB Seeding Endpoint (Admin/Development)
+  app.post('/api/rtb/seed-data', requireAuth, async (req, res) => {
+    try {
+      console.log('Starting RTB data seeding...');
+      const { RTBSeeder } = await import('./rtb-seeder');
+      const results = await RTBSeeder.seedAll();
+      
+      res.json({
+        success: true,
+        message: 'RTB sample data created successfully',
+        data: {
+          router: results.router.name,
+          targetsCreated: results.targets.length,
+          assignmentsCreated: results.assignments.length,
+          bidRequestsCreated: results.bidRequests.length,
+          bidResponsesCreated: results.bidResponses.length
+        }
+      });
+    } catch (error) {
+      console.error('Error seeding RTB data:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to seed RTB data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
