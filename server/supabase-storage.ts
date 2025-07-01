@@ -15,6 +15,11 @@ import {
   platformIntegrations,
   publishers,
   publisherCampaigns,
+  rtbTargets,
+  rtbRouters,
+  rtbRouterAssignments,
+  rtbBidRequests,
+  rtbBidResponses,
   type Campaign, 
   type InsertCampaign, 
   type Agent, 
@@ -29,6 +34,16 @@ import {
   type InsertCampaignBuyer,
   type CallLog,
   type InsertCallLog,
+  type RtbTarget,
+  type InsertRtbTarget,
+  type RtbRouter,
+  type InsertRtbRouter,
+  type RtbRouterAssignment,
+  type InsertRtbRouterAssignment,
+  type RtbBidRequest,
+  type InsertRtbBidRequest,
+  type RtbBidResponse,
+  type InsertRtbBidResponse,
 } from '@shared/schema';
 import type { IStorage } from './storage';
 
@@ -474,6 +489,133 @@ export class SupabaseStorage implements IStorage {
         eq(publisherCampaigns.campaignId, campaignId)
       ));
     return result.rowCount > 0;
+  }
+
+  // RTB Targets
+  async getRtbTargets(): Promise<RtbTarget[]> {
+    return await db.select().from(rtbTargets).orderBy(desc(rtbTargets.createdAt));
+  }
+
+  async getRtbTarget(id: number): Promise<RtbTarget | undefined> {
+    const result = await db.select().from(rtbTargets).where(eq(rtbTargets.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createRtbTarget(target: InsertRtbTarget): Promise<RtbTarget> {
+    const result = await db.insert(rtbTargets).values(target).returning();
+    return result[0];
+  }
+
+  async updateRtbTarget(id: number, target: Partial<InsertRtbTarget>): Promise<RtbTarget | undefined> {
+    const result = await db.update(rtbTargets)
+      .set({ ...target, updatedAt: new Date() })
+      .where(eq(rtbTargets.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteRtbTarget(id: number): Promise<boolean> {
+    const result = await db.delete(rtbTargets).where(eq(rtbTargets.id, id));
+    return result.rowCount > 0;
+  }
+
+  // RTB Routers
+  async getRtbRouters(): Promise<RtbRouter[]> {
+    return await db.select().from(rtbRouters).orderBy(desc(rtbRouters.createdAt));
+  }
+
+  async getRtbRouter(id: number): Promise<RtbRouter | undefined> {
+    const result = await db.select().from(rtbRouters).where(eq(rtbRouters.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createRtbRouter(router: InsertRtbRouter): Promise<RtbRouter> {
+    const result = await db.insert(rtbRouters).values(router).returning();
+    return result[0];
+  }
+
+  async updateRtbRouter(id: number, router: Partial<InsertRtbRouter>): Promise<RtbRouter | undefined> {
+    const result = await db.update(rtbRouters)
+      .set({ ...router, updatedAt: new Date() })
+      .where(eq(rtbRouters.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteRtbRouter(id: number): Promise<boolean> {
+    const result = await db.delete(rtbRouters).where(eq(rtbRouters.id, id));
+    return result.rowCount > 0;
+  }
+
+  // RTB Router Assignments
+  async getRtbRouterAssignments(routerId: number): Promise<RtbRouterAssignment[]> {
+    return await db.select().from(rtbRouterAssignments)
+      .where(eq(rtbRouterAssignments.rtbRouterId, routerId))
+      .orderBy(rtbRouterAssignments.priority);
+  }
+
+  async createRtbRouterAssignment(assignment: InsertRtbRouterAssignment): Promise<RtbRouterAssignment> {
+    const result = await db.insert(rtbRouterAssignments).values(assignment).returning();
+    return result[0];
+  }
+
+  async deleteRtbRouterAssignment(routerId: number, targetId: number): Promise<boolean> {
+    const result = await db.delete(rtbRouterAssignments)
+      .where(and(
+        eq(rtbRouterAssignments.rtbRouterId, routerId),
+        eq(rtbRouterAssignments.rtbTargetId, targetId)
+      ));
+    return result.rowCount > 0;
+  }
+
+  // RTB Bid Requests
+  async getRtbBidRequests(campaignId?: number): Promise<RtbBidRequest[]> {
+    const query = db.select().from(rtbBidRequests);
+    if (campaignId) {
+      return await query.where(eq(rtbBidRequests.campaignId, campaignId))
+        .orderBy(desc(rtbBidRequests.createdAt));
+    }
+    return await query.orderBy(desc(rtbBidRequests.createdAt));
+  }
+
+  async getRtbBidRequest(requestId: string): Promise<RtbBidRequest | undefined> {
+    const result = await db.select().from(rtbBidRequests)
+      .where(eq(rtbBidRequests.requestId, requestId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createRtbBidRequest(request: InsertRtbBidRequest): Promise<RtbBidRequest> {
+    const result = await db.insert(rtbBidRequests).values(request).returning();
+    return result[0];
+  }
+
+  async updateRtbBidRequest(requestId: string, request: Partial<InsertRtbBidRequest>): Promise<RtbBidRequest | undefined> {
+    const result = await db.update(rtbBidRequests)
+      .set(request)
+      .where(eq(rtbBidRequests.requestId, requestId))
+      .returning();
+    return result[0];
+  }
+
+  // RTB Bid Responses
+  async getRtbBidResponses(requestId: string): Promise<RtbBidResponse[]> {
+    return await db.select().from(rtbBidResponses)
+      .where(eq(rtbBidResponses.requestId, requestId))
+      .orderBy(desc(rtbBidResponses.bidAmount));
+  }
+
+  async createRtbBidResponse(response: InsertRtbBidResponse): Promise<RtbBidResponse> {
+    const result = await db.insert(rtbBidResponses).values(response).returning();
+    return result[0];
+  }
+
+  async updateRtbBidResponse(id: number, response: Partial<InsertRtbBidResponse>): Promise<RtbBidResponse | undefined> {
+    const result = await db.update(rtbBidResponses)
+      .set(response)
+      .where(eq(rtbBidResponses.id, id))
+      .returning();
+    return result[0];
   }
 }
 

@@ -19,6 +19,16 @@ import {
   type InsertNumberPoolAssignment,
   type CampaignPoolAssignment,
   type InsertCampaignPoolAssignment,
+  type RtbTarget,
+  type InsertRtbTarget,
+  type RtbRouter,
+  type InsertRtbRouter,
+  type RtbRouterAssignment,
+  type InsertRtbRouterAssignment,
+  type RtbBidRequest,
+  type InsertRtbBidRequest,
+  type RtbBidResponse,
+  type InsertRtbBidResponse,
 } from '@shared/schema';
 
 export interface IStorage {
@@ -135,6 +145,36 @@ export interface IStorage {
   getCampaignPools(campaignId: number): Promise<NumberPool[]>;
   assignPoolToCampaign(campaignId: number, poolId: number, priority?: number): Promise<CampaignPoolAssignment>;
   removePoolFromCampaign(campaignId: number, poolId: number): Promise<boolean>;
+  
+  // RTB Targets
+  getRtbTargets(): Promise<RtbTarget[]>;
+  getRtbTarget(id: number): Promise<RtbTarget | undefined>;
+  createRtbTarget(target: InsertRtbTarget): Promise<RtbTarget>;
+  updateRtbTarget(id: number, target: Partial<InsertRtbTarget>): Promise<RtbTarget | undefined>;
+  deleteRtbTarget(id: number): Promise<boolean>;
+  
+  // RTB Routers
+  getRtbRouters(): Promise<RtbRouter[]>;
+  getRtbRouter(id: number): Promise<RtbRouter | undefined>;
+  createRtbRouter(router: InsertRtbRouter): Promise<RtbRouter>;
+  updateRtbRouter(id: number, router: Partial<InsertRtbRouter>): Promise<RtbRouter | undefined>;
+  deleteRtbRouter(id: number): Promise<boolean>;
+  
+  // RTB Router Assignments
+  getRtbRouterAssignments(routerId: number): Promise<RtbRouterAssignment[]>;
+  createRtbRouterAssignment(assignment: InsertRtbRouterAssignment): Promise<RtbRouterAssignment>;
+  deleteRtbRouterAssignment(routerId: number, targetId: number): Promise<boolean>;
+  
+  // RTB Bid Requests
+  getRtbBidRequests(campaignId?: number): Promise<RtbBidRequest[]>;
+  getRtbBidRequest(requestId: string): Promise<RtbBidRequest | undefined>;
+  createRtbBidRequest(request: InsertRtbBidRequest): Promise<RtbBidRequest>;
+  updateRtbBidRequest(requestId: string, request: Partial<InsertRtbBidRequest>): Promise<RtbBidRequest | undefined>;
+  
+  // RTB Bid Responses
+  getRtbBidResponses(requestId: string): Promise<RtbBidResponse[]>;
+  createRtbBidResponse(response: InsertRtbBidResponse): Promise<RtbBidResponse>;
+  updateRtbBidResponse(id: number, response: Partial<InsertRtbBidResponse>): Promise<RtbBidResponse | undefined>;
 }
 
 export class MemStorage implements IStorage {
