@@ -1305,12 +1305,49 @@ const RTBAnalyticsTab = () => {
 
 // Main RTB Management Component
 export default function RTBManagement() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Mutation for seeding sample data
+  const seedDataMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/rtb/seed-data', {
+        method: 'POST',
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Sample Data Created",
+        description: `Successfully created RTB sample data: ${data.data.targetsCreated} targets, ${data.data.bidRequestsCreated} bid requests`,
+      });
+      // Invalidate all RTB queries to refresh the interface
+      queryClient.invalidateQueries({ queryKey: ['/api/rtb'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Creating Sample Data",
+        description: error.message || "Failed to create sample RTB data",
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <Layout>
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">RTB Management</h2>
-          <div className="hidden items-center space-x-2 md:flex">
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => seedDataMutation.mutate()}
+              disabled={seedDataMutation.isPending}
+              className="flex items-center gap-2"
+            >
+              <TestTube className="w-4 h-4" />
+              {seedDataMutation.isPending ? 'Creating...' : 'Seed Test Data'}
+            </Button>
             <Badge variant="outline">Real-Time Bidding</Badge>
           </div>
         </div>
