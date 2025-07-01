@@ -18,6 +18,11 @@ import {
   campaignPoolAssignments,
   callTrackingTags,
   dniSnippets,
+  rtbTargets,
+  rtbRouters,
+  rtbRouterAssignments,
+  rtbBidRequests,
+  rtbBidResponses,
   type User, 
   type InsertUser,
   type UpsertUser,
@@ -41,6 +46,16 @@ import {
   type InsertNumberPoolAssignment,
   type CampaignPoolAssignment,
   type InsertCampaignPoolAssignment,
+  type RtbTarget,
+  type InsertRtbTarget,
+  type RtbRouter,
+  type InsertRtbRouter,
+  type RtbRouterAssignment,
+  type InsertRtbRouterAssignment,
+  type RtbBidRequest,
+  type InsertRtbBidRequest,
+  type RtbBidResponse,
+  type InsertRtbBidResponse,
 } from '@shared/schema';
 import { db } from './db';
 import { eq, and, sql, inArray } from 'drizzle-orm';
@@ -1095,6 +1110,125 @@ export class DatabaseStorage implements IStorage {
         eq(campaignPoolAssignments.poolId, poolId)
       ));
     return result.rowCount > 0;
+  }
+
+  // RTB Targets
+  async getRtbTargets(): Promise<RtbTarget[]> {
+    return await db.select().from(rtbTargets);
+  }
+
+  async getRtbTarget(id: number): Promise<RtbTarget | undefined> {
+    const [target] = await db.select().from(rtbTargets).where(eq(rtbTargets.id, id));
+    return target;
+  }
+
+  async createRtbTarget(target: InsertRtbTarget): Promise<RtbTarget> {
+    const [newTarget] = await db.insert(rtbTargets).values(target).returning();
+    return newTarget;
+  }
+
+  async updateRtbTarget(id: number, target: Partial<InsertRtbTarget>): Promise<RtbTarget | undefined> {
+    const [updatedTarget] = await db
+      .update(rtbTargets)
+      .set({ ...target, updatedAt: new Date() })
+      .where(eq(rtbTargets.id, id))
+      .returning();
+    return updatedTarget;
+  }
+
+  async deleteRtbTarget(id: number): Promise<boolean> {
+    const result = await db.delete(rtbTargets).where(eq(rtbTargets.id, id));
+    return result.rowCount > 0;
+  }
+
+  // RTB Routers
+  async getRtbRouters(): Promise<RtbRouter[]> {
+    return await db.select().from(rtbRouters);
+  }
+
+  async getRtbRouter(id: number): Promise<RtbRouter | undefined> {
+    const [router] = await db.select().from(rtbRouters).where(eq(rtbRouters.id, id));
+    return router;
+  }
+
+  async createRtbRouter(router: InsertRtbRouter): Promise<RtbRouter> {
+    const [newRouter] = await db.insert(rtbRouters).values(router).returning();
+    return newRouter;
+  }
+
+  async updateRtbRouter(id: number, router: Partial<InsertRtbRouter>): Promise<RtbRouter | undefined> {
+    const [updatedRouter] = await db
+      .update(rtbRouters)
+      .set({ ...router, updatedAt: new Date() })
+      .where(eq(rtbRouters.id, id))
+      .returning();
+    return updatedRouter;
+  }
+
+  async deleteRtbRouter(id: number): Promise<boolean> {
+    const result = await db.delete(rtbRouters).where(eq(rtbRouters.id, id));
+    return result.rowCount > 0;
+  }
+
+  // RTB Router Assignments
+  async getRtbRouterAssignments(routerId: number): Promise<RtbRouterAssignment[]> {
+    return await db.select().from(rtbRouterAssignments).where(eq(rtbRouterAssignments.rtbRouterId, routerId));
+  }
+
+  async createRtbRouterAssignment(assignment: InsertRtbRouterAssignment): Promise<RtbRouterAssignment> {
+    const [newAssignment] = await db.insert(rtbRouterAssignments).values(assignment).returning();
+    return newAssignment;
+  }
+
+  async deleteRtbRouterAssignment(routerId: number, targetId: number): Promise<boolean> {
+    const result = await db
+      .delete(rtbRouterAssignments)
+      .where(and(
+        eq(rtbRouterAssignments.rtbRouterId, routerId),
+        eq(rtbRouterAssignments.rtbTargetId, targetId)
+      ));
+    return result.rowCount > 0;
+  }
+
+  // RTB Bid Requests
+  async getRtbBidRequests(campaignId?: number): Promise<RtbBidRequest[]> {
+    if (campaignId) {
+      return await db.select().from(rtbBidRequests).where(eq(rtbBidRequests.campaignId, campaignId));
+    }
+    return await db.select().from(rtbBidRequests);
+  }
+
+  async createRtbBidRequest(request: InsertRtbBidRequest): Promise<RtbBidRequest> {
+    const [newRequest] = await db.insert(rtbBidRequests).values(request).returning();
+    return newRequest;
+  }
+
+  async updateRtbBidRequest(requestId: string, updates: Partial<InsertRtbBidRequest>): Promise<RtbBidRequest | undefined> {
+    const [updatedRequest] = await db
+      .update(rtbBidRequests)
+      .set(updates)
+      .where(eq(rtbBidRequests.requestId, requestId))
+      .returning();
+    return updatedRequest;
+  }
+
+  // RTB Bid Responses
+  async getRtbBidResponses(requestId: string): Promise<RtbBidResponse[]> {
+    return await db.select().from(rtbBidResponses).where(eq(rtbBidResponses.requestId, requestId));
+  }
+
+  async createRtbBidResponse(response: InsertRtbBidResponse): Promise<RtbBidResponse> {
+    const [newResponse] = await db.insert(rtbBidResponses).values(response).returning();
+    return newResponse;
+  }
+
+  async updateRtbBidResponse(id: number, updates: Partial<InsertRtbBidResponse>): Promise<RtbBidResponse | undefined> {
+    const [updatedResponse] = await db
+      .update(rtbBidResponses)
+      .set(updates)
+      .where(eq(rtbBidResponses.id, id))
+      .returning();
+    return updatedResponse;
   }
 }
 
