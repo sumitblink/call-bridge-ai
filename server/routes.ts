@@ -707,51 +707,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`[Pool Webhook] Found campaign: ${campaign.name} (ID: ${campaign.id}) using pool: ${pool.name}`);
+      console.log(`[Pool Webhook] RTB enabled: ${campaign.enableRtb}, RTB Router ID: ${campaign.rtbRouterId}`);
       
-      // Use priority-based routing to select the best buyer
-      const { CallRouter } = await import('./call-routing');
-      const routingResult = await CallRouter.selectBuyer(campaign.id, fromNumber);
+      let routingMethod = 'traditional';
+      let selectedBuyer = null;
+      let routingData = {
+        poolId: parseInt(poolId),
+        poolName: pool.name
+      };
+      let rtbRequestId = null;
+      let winningBidAmount = null;
+      let winningTargetId = null;
       
-      if (!routingResult.selectedBuyer) {
-        console.log(`[Pool Webhook] No buyers available: ${routingResult.reason}`);
-        return res.type('text/xml').send(`
-          <Response>
-            <Say>All representatives are currently busy. Please try again later.</Say>
-            <Hangup/>
-          </Response>
-        `);
+      // Check if RTB is enabled for this campaign
+      if (campaign.enableRtb && campaign.rtbRouterId) {
+        try {
+          console.log(`[Pool Webhook] Attempting RTB bidding for router ID: ${campaign.rtbRouterId}`);
+          
+          // Import RTB service and conduct bidding
+          const { RTBService } = await import('./rtb-service');
+          
+          // Prepare caller data for RTB
+          const callerData = {
+            callerId: fromNumber,
+            callerState: req.body.CallerState || null,
+            callerZip: req.body.CallerZip || null,
+            destinationNumber: toNumber,
+            callStartTime: new Date(),
+            campaignId: campaign.id
+          };
+          
+          console.log(`[Pool Webhook] Conducting bidding with caller data:`, callerData);
+          
+          // Conduct RTB bidding
+          const biddingResult = await RTBService.conductBidding(
+            campaign.rtbRouterId,
+            campaign.id,
+            callerData
+          );
+          
+          console.log(`[Pool Webhook] Bidding result:`, biddingResult);
+          
+          if (biddingResult.success && biddingResult.winningBid) {
+            // RTB bidding successful - use winning bid
+            routingMethod = 'rtb';
+            rtbRequestId = biddingResult.requestId;
+            winningBidAmount = biddingResult.winningBid.bidAmount;
+            winningTargetId = biddingResult.winningBid.targetId;
+            
+            // Get the winning target to determine destination
+            const winningTarget = await storage.getRtbTarget(winningTargetId);
+            if (winningTarget) {
+              // Use the target's buyer information for routing
+              const targetBuyer = await storage.getBuyer(winningTarget.buyerId);
+              if (targetBuyer && targetBuyer.phoneNumber) {
+                selectedBuyer = targetBuyer;
+                routingData = {
+                  ...routingData,
+                  method: 'rtb',
+                  rtbRequestId,
+                  winningBidAmount,
+                  winningTargetId,
+                  targetName: winningTarget.name,
+                  totalTargetsPinged: biddingResult.totalTargetsPinged,
+                  responseTimeMs: biddingResult.totalResponseTimeMs
+                };
+                
+                console.log(`[Pool Webhook] RTB SUCCESS - Winner: ${winningTarget.name}, Bid: $${winningBidAmount}, Routing to: ${targetBuyer.name} (${targetBuyer.phoneNumber})`);
+              } else {
+                console.log(`[Pool Webhook] RTB winner has no valid buyer phone number, falling back to traditional routing`);
+                routingMethod = 'rtb_fallback';
+              }
+            } else {
+              console.log(`[Pool Webhook] RTB winning target not found, falling back to traditional routing`);
+              routingMethod = 'rtb_fallback';
+            }
+          } else {
+            console.log(`[Pool Webhook] RTB bidding failed or no winning bid: ${biddingResult.reason || 'Unknown reason'}`);
+            routingMethod = 'rtb_fallback';
+          }
+        } catch (rtbError) {
+          console.error(`[Pool Webhook] RTB bidding error:`, rtbError);
+          routingMethod = 'rtb_error_fallback';
+        }
+      } else {
+        console.log(`[Pool Webhook] RTB not enabled for campaign, using traditional routing`);
+        routingMethod = 'traditional';
       }
-
-      const selectedBuyer = routingResult.selectedBuyer;
-      console.log(`[Pool Webhook] Routing call to buyer: ${selectedBuyer.name} (${selectedBuyer.phoneNumber})`);
-
-      // Log the call
-      await storage.createCall({
-        campaignId: campaign.id,
-        buyerId: selectedBuyer.id,
-        callerNumber: fromNumber,
-        destinationNumber: toNumber,
-        twilioCallSid: CallSid,
-        routingData: JSON.stringify({
-          poolId: parseInt(poolId),
-          poolName: pool.name,
+      
+      // Fallback to traditional routing if RTB failed or not enabled
+      if (!selectedBuyer) {
+        console.log(`[Pool Webhook] Using traditional CallRouter for buyer selection (method: ${routingMethod})`);
+        
+        const { CallRouter } = await import('./call-routing');
+        const routingResult = await CallRouter.selectBuyer(campaign.id, fromNumber);
+        
+        if (!routingResult.selectedBuyer) {
+          console.log(`[Pool Webhook] No buyers available: ${routingResult.reason}`);
+          return res.type('text/xml').send(`
+            <Response>
+              <Say>All representatives are currently busy. Please try again later.</Say>
+              <Hangup/>
+            </Response>
+          `);
+        }
+        
+        selectedBuyer = routingResult.selectedBuyer;
+        routingData = {
+          ...routingData,
+          method: routingMethod,
           routingReason: routingResult.reason,
           alternatives: routingResult.alternativeBuyers.length
-        }),
-        status: 'initiated',
-        startTime: new Date()
-      });
+        };
+      }
 
-      // Generate TwiML to forward the call
+      console.log(`[Pool Webhook] Final routing decision - Method: ${routingMethod}, Buyer: ${selectedBuyer.name} (${selectedBuyer.phoneNumber})`);
+
+      // Create call record with RTB data
+      const callData = {
+        campaignId: campaign.id,
+        buyerId: selectedBuyer.id,
+        callSid: CallSid,
+        fromNumber,
+        toNumber,
+        status: 'initiated',
+        startTime: new Date(),
+        routingData: JSON.stringify({
+          ...routingData,
+          routingMethod,
+          timestamp: new Date().toISOString()
+        })
+      };
+      
+      // Add RTB-specific fields if RTB was used
+      if (rtbRequestId) {
+        callData.rtbRequestId = rtbRequestId;
+        callData.bidAmount = winningBidAmount;
+        callData.winningTargetId = winningTargetId;
+      }
+      
+      await storage.createCall(callData);
+
+      // Generate TwiML to forward the call with appropriate messaging
+      const connectMessage = routingMethod === 'rtb' 
+        ? 'Connecting to our premium partner, please hold.'
+        : 'Connecting your call, please hold.';
+        
       const twiml = `
         <Response>
-          <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="/api/webhooks/recording">
+          <Say>${connectMessage}</Say>
+          <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="/api/webhooks/pool/${poolId}/status" action="/api/webhooks/pool/${poolId}/status" method="POST">
             <Number>${selectedBuyer.phoneNumber}</Number>
           </Dial>
-          <Say>Sorry, the call could not be completed. Please try again later.</Say>
+          <Say>The call has ended. Thank you for calling.</Say>
+          <Hangup/>
         </Response>
       `;
 
+      console.log(`[Pool Webhook] Generated TwiML for routing to ${selectedBuyer.phoneNumber} via ${routingMethod}`);
       res.type('text/xml').send(twiml);
     } catch (error) {
       console.error('[Pool Webhook] Error processing call:', error);
@@ -791,21 +904,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced Twilio Webhook Endpoints for Multi-Number Support
+  // Enhanced Twilio Webhook Endpoints with RTB Integration
   app.post('/api/webhooks/voice', async (req, res) => {
     try {
-      console.log('[Webhook OLD] === INCOMING CALL ON OLD ENDPOINT ===');
-      console.log('[Webhook OLD] Request body:', JSON.stringify(req.body, null, 2));
+      console.log('[Webhook RTB] === INCOMING CALL WITH RTB INTEGRATION ===');
+      console.log('[Webhook RTB] Request body:', JSON.stringify(req.body, null, 2));
       
-      const { To: toNumber, From: fromNumber, CallSid } = req.body;
+      const { To: toNumber, From: fromNumber, CallSid, CallerState, CallerZip } = req.body;
       
-      console.log(`[Webhook OLD] Incoming call from ${fromNumber} to ${toNumber}, CallSid: ${CallSid}`);
+      console.log(`[Webhook RTB] Incoming call from ${fromNumber} to ${toNumber}, CallSid: ${CallSid}`);
       
       // Find campaign by phone number
       const campaign = await storage.getCampaignByPhoneNumber(toNumber);
       
       if (!campaign) {
-        console.log(`[Webhook] No campaign found for number ${toNumber}`);
+        console.log(`[Webhook RTB] No campaign found for number ${toNumber}`);
         return res.type('text/xml').send(`
           <Response>
             <Say>Sorry, this number is not configured for call routing.</Say>
@@ -814,28 +927,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `);
       }
 
-      console.log(`[Webhook] Found campaign: ${campaign.name} (ID: ${campaign.id})`);
+      console.log(`[Webhook RTB] Found campaign: ${campaign.name} (ID: ${campaign.id})`);
+      console.log(`[Webhook RTB] RTB enabled: ${campaign.enableRtb}, RTB Router ID: ${campaign.rtbRouterId}`);
       
-      // Use priority-based routing to select the best buyer
-      const { CallRouter } = await import('./call-routing');
-      const routingResult = await CallRouter.selectBuyer(campaign.id, fromNumber);
+      let routingMethod = 'traditional';
+      let selectedBuyer = null;
+      let routingData = {};
+      let rtbRequestId = null;
+      let winningBidAmount = null;
+      let winningTargetId = null;
       
-      if (!routingResult.selectedBuyer) {
-        console.log(`[Webhook] No buyers available: ${routingResult.reason}`);
-        return res.type('text/xml').send(`
-          <Response>
-            <Say>All representatives are currently busy. Please try again later.</Say>
-            <Hangup/>
-          </Response>
-        `);
+      // Check if RTB is enabled for this campaign
+      if (campaign.enableRtb && campaign.rtbRouterId) {
+        try {
+          console.log(`[Webhook RTB] Attempting RTB bidding for router ID: ${campaign.rtbRouterId}`);
+          
+          // Import RTB service and conduct bidding
+          const { RTBService } = await import('./rtb-service');
+          
+          // Prepare bid request for RTB
+          const bidRequest = {
+            requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+            campaignId: campaign.id,
+            callerId: fromNumber,
+            callerState: CallerState || null,
+            callerZip: CallerZip || null,
+            callStartTime: new Date(),
+            timeoutMs: 5000 // 5 second timeout for bidding
+          };
+          
+          console.log(`[Webhook RTB] Conducting bidding with request:`, bidRequest);
+          
+          // Conduct RTB bidding
+          const biddingResult = await RTBService.initiateAuction(
+            campaign,
+            bidRequest
+          );
+          
+          console.log(`[Webhook RTB] Bidding result:`, biddingResult);
+          
+          if (biddingResult.success && biddingResult.winningBid) {
+            // RTB bidding successful - use winning bid
+            routingMethod = 'rtb';
+            rtbRequestId = biddingResult.requestId;
+            winningBidAmount = biddingResult.winningBid.bidAmount;
+            winningTargetId = biddingResult.winningBid.targetId;
+            
+            // Get the winning target to determine destination
+            const winningTarget = await storage.getRtbTarget(winningTargetId);
+            if (winningTarget) {
+              // Use the target's buyer information for routing
+              const targetBuyer = await storage.getBuyer(winningTarget.buyerId);
+              if (targetBuyer && targetBuyer.phoneNumber) {
+                selectedBuyer = targetBuyer;
+                routingData = {
+                  method: 'rtb',
+                  rtbRequestId,
+                  winningBidAmount,
+                  winningTargetId,
+                  targetName: winningTarget.name,
+                  totalTargetsPinged: biddingResult.totalTargetsPinged,
+                  responseTimeMs: biddingResult.totalResponseTimeMs
+                };
+                
+                console.log(`[Webhook RTB] RTB SUCCESS - Winner: ${winningTarget.name}, Bid: $${winningBidAmount}, Routing to: ${targetBuyer.name} (${targetBuyer.phoneNumber})`);
+              } else {
+                console.log(`[Webhook RTB] RTB winner has no valid buyer phone number, falling back to traditional routing`);
+                routingMethod = 'rtb_fallback';
+              }
+            } else {
+              console.log(`[Webhook RTB] RTB winning target not found, falling back to traditional routing`);
+              routingMethod = 'rtb_fallback';
+            }
+          } else {
+            console.log(`[Webhook RTB] RTB bidding failed or no winning bid: ${biddingResult.reason || 'Unknown reason'}`);
+            routingMethod = 'rtb_fallback';
+            routingData = {
+              method: 'rtb_fallback',
+              rtbAttempted: true,
+              rtbFailureReason: biddingResult.reason || 'No winning bid received',
+              totalTargetsPinged: biddingResult.totalTargetsPinged || 0
+            };
+          }
+        } catch (rtbError) {
+          console.error(`[Webhook RTB] RTB bidding error:`, rtbError);
+          routingMethod = 'rtb_error_fallback';
+          routingData = {
+            method: 'rtb_error_fallback',
+            rtbAttempted: true,
+            rtbError: rtbError instanceof Error ? rtbError.message : 'Unknown RTB error'
+          };
+        }
+      } else {
+        console.log(`[Webhook RTB] RTB not enabled for campaign, using traditional routing`);
+        routingMethod = 'traditional';
       }
-
-      const selectedBuyer = routingResult.selectedBuyer;
       
-      console.log(`[Webhook] Routing call to buyer: ${selectedBuyer.name} (${selectedBuyer.phoneNumber})`);
+      // Fallback to traditional routing if RTB failed or not enabled
+      if (!selectedBuyer) {
+        console.log(`[Webhook RTB] Using traditional CallRouter for buyer selection (method: ${routingMethod})`);
+        
+        const { CallRouter } = await import('./call-routing');
+        const routingResult = await CallRouter.selectBuyer(campaign.id, fromNumber);
+        
+        if (!routingResult.selectedBuyer) {
+          console.log(`[Webhook RTB] No buyers available via traditional routing: ${routingResult.reason}`);
+          return res.type('text/xml').send(`
+            <Response>
+              <Say>All representatives are currently busy. Please try again later.</Say>
+              <Hangup/>
+            </Response>
+          `);
+        }
+        
+        selectedBuyer = routingResult.selectedBuyer;
+        
+        // Merge traditional routing data
+        routingData = {
+          ...routingData,
+          traditionalReason: routingResult.reason,
+          alternativeBuyers: routingResult.alternativeBuyers.length
+        };
+        
+        console.log(`[Webhook RTB] Traditional routing selected buyer: ${selectedBuyer.name} (${selectedBuyer.phoneNumber})`);
+      }
       
-      // Create call record
-      await storage.createCall({
+      console.log(`[Webhook RTB] Final routing decision - Method: ${routingMethod}, Buyer: ${selectedBuyer.name}`);
+      
+      // Create call record with RTB data
+      const callData = {
         campaignId: campaign.id,
         buyerId: selectedBuyer.id,
         callSid: CallSid,
@@ -843,12 +1063,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         toNumber,
         status: 'ringing',
         startTime: new Date(),
-      });
-
-      // Generate TwiML to dial the buyer
+        routingData: JSON.stringify({
+          ...routingData,
+          routingMethod,
+          timestamp: new Date().toISOString()
+        })
+      };
+      
+      // Add RTB-specific fields if RTB was used
+      if (rtbRequestId) {
+        callData.rtbRequestId = rtbRequestId;
+        callData.bidAmount = winningBidAmount;
+        callData.winningTargetId = winningTargetId;
+      }
+      
+      await storage.createCall(callData);
+      
+      // Generate TwiML to dial the selected buyer
+      const connectMessage = routingMethod === 'rtb' 
+        ? 'Connecting to our premium partner, please hold.'
+        : 'Connecting your call, please hold.';
+        
       const twiml = `
         <Response>
-          <Say>Connecting your call, please hold.</Say>
+          <Say>${connectMessage}</Say>
           <Dial timeout="30" callerId="${fromNumber}" action="https://${req.hostname}/api/webhooks/dial-status" method="POST">
             <Number>${selectedBuyer.phoneNumber}</Number>
           </Dial>
@@ -857,6 +1095,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         </Response>
       `;
       
+      console.log(`[Webhook RTB] Generated TwiML for routing to ${selectedBuyer.phoneNumber}`);
       res.type('text/xml').send(twiml);
       
     } catch (error) {
