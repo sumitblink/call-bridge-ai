@@ -74,6 +74,10 @@ export const campaigns = pgTable("campaigns", {
   integrationSettings: json("integration_settings"), // platform-specific configs
   urlParameters: json("url_parameters"), // tracking parameters
   
+  // RTB Integration
+  rtbRouterId: integer("rtb_router_id"), // References rtb_routers.id, foreign key added later
+  enableRtb: boolean("enable_rtb").default(false).notNull(),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -665,6 +669,160 @@ export const publisherCampaigns = pgTable('publisher_campaigns', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+// RTB (Real-Time Bidding) Tables
+export const rtbTargets = pgTable("rtb_targets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  buyerId: integer("buyer_id").references(() => buyers.id).notNull(),
+  
+  // Target Configuration
+  name: varchar("name", { length: 256 }).notNull(),
+  endpointUrl: varchar("endpoint_url", { length: 512 }).notNull(),
+  timeoutMs: integer("timeout_ms").default(3000).notNull(),
+  connectionTimeout: integer("connection_timeout").default(5000).notNull(),
+  
+  // Authentication
+  authMethod: varchar("auth_method", { length: 50 }).default("none").notNull(), // none, api_key, bearer, basic
+  authToken: varchar("auth_token", { length: 512 }),
+  authHeaders: json("auth_headers"), // jsonb for custom headers
+  
+  // Operational Settings
+  timezone: varchar("timezone", { length: 50 }).default("UTC").notNull(),
+  hoursOfOperation: json("hours_of_operation"), // jsonb: {monday: {start: "09:00", end: "17:00"}, ...}
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // Capacity Management
+  maxConcurrentCalls: integer("max_concurrent_calls").default(10).notNull(),
+  dailyCap: integer("daily_cap").default(100).notNull(),
+  hourlyCap: integer("hourly_cap").default(10).notNull(),
+  monthlyCap: integer("monthly_cap").default(3000).notNull(),
+  
+  // Bidding Configuration
+  minBidAmount: decimal("min_bid_amount", { precision: 10, scale: 2 }).default("0.00").notNull(),
+  maxBidAmount: decimal("max_bid_amount", { precision: 10, scale: 2 }).default("100.00").notNull(),
+  currency: varchar("currency", { length: 3 }).default("USD").notNull(),
+  
+  // Performance Tracking
+  totalPings: integer("total_pings").default(0).notNull(),
+  successfulBids: integer("successful_bids").default(0).notNull(),
+  wonCalls: integer("won_calls").default(0).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_rtb_targets_user").on(table.userId),
+  index("idx_rtb_targets_buyer").on(table.buyerId),
+  index("idx_rtb_targets_active").on(table.isActive),
+]);
+
+export const rtbRouters = pgTable("rtb_routers", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  
+  // Router Configuration
+  name: varchar("name", { length: 256 }).notNull(),
+  description: text("description"),
+  biddingTimeoutMs: integer("bidding_timeout_ms").default(3000).notNull(),
+  minBiddersRequired: integer("min_bidders_required").default(1).notNull(),
+  enablePredictiveRouting: boolean("enable_predictive_routing").default(false).notNull(),
+  
+  // Business Logic
+  revenueType: varchar("revenue_type", { length: 50 }).default("per_call").notNull(), // per_call, per_minute, cpa, cpl
+  conversionTracking: boolean("conversion_tracking").default(false).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_rtb_routers_user").on(table.userId),
+  index("idx_rtb_routers_active").on(table.isActive),
+]);
+
+export const rtbRouterAssignments = pgTable("rtb_router_assignments", {
+  id: serial("id").primaryKey(),
+  rtbRouterId: integer("rtb_router_id").references(() => rtbRouters.id).notNull(),
+  rtbTargetId: integer("rtb_target_id").references(() => rtbTargets.id).notNull(),
+  
+  // Assignment Configuration
+  priority: integer("priority").default(1).notNull(),
+  weight: integer("weight").default(100).notNull(), // for weighted distribution
+  isActive: boolean("is_active").default(true).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_rtb_assignments_router").on(table.rtbRouterId),
+  index("idx_rtb_assignments_target").on(table.rtbTargetId),
+  index("idx_rtb_assignments_active").on(table.isActive),
+  // Unique constraint to prevent duplicate assignments
+  index("unique_router_target").on(table.rtbRouterId, table.rtbTargetId),
+]);
+
+export const rtbBidRequests = pgTable("rtb_bid_requests", {
+  id: serial("id").primaryKey(),
+  requestId: varchar("request_id", { length: 128 }).notNull().unique(),
+  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
+  rtbRouterId: integer("rtb_router_id").references(() => rtbRouters.id).notNull(),
+  
+  // Call Information
+  callerId: varchar("caller_id", { length: 20 }),
+  callerState: varchar("caller_state", { length: 2 }),
+  callerZip: varchar("caller_zip", { length: 10 }),
+  callStartTime: timestamp("call_start_time").notNull(),
+  
+  // Request Configuration
+  tags: json("tags"), // jsonb for flexible metadata
+  timeoutMs: integer("timeout_ms").default(3000).notNull(),
+  
+  // Response Tracking
+  totalTargetsPinged: integer("total_targets_pinged").default(0).notNull(),
+  successfulResponses: integer("successful_responses").default(0).notNull(),
+  
+  // Auction Results
+  winningBidAmount: decimal("winning_bid_amount", { precision: 10, scale: 2 }),
+  winningTargetId: integer("winning_target_id").references(() => rtbTargets.id),
+  
+  // Performance Metrics
+  requestSentAt: timestamp("request_sent_at").defaultNow().notNull(),
+  biddingCompletedAt: timestamp("bidding_completed_at"),
+  totalResponseTimeMs: integer("total_response_time_ms"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_rtb_requests_campaign").on(table.campaignId),
+  index("idx_rtb_requests_router").on(table.rtbRouterId),
+  index("idx_rtb_requests_winner").on(table.winningTargetId),
+  index("idx_rtb_requests_created").on(table.createdAt),
+]);
+
+export const rtbBidResponses = pgTable("rtb_bid_responses", {
+  id: serial("id").primaryKey(),
+  requestId: varchar("request_id", { length: 128 }).references(() => rtbBidRequests.requestId).notNull(),
+  rtbTargetId: integer("rtb_target_id").references(() => rtbTargets.id).notNull(),
+  
+  // Bid Information
+  bidAmount: decimal("bid_amount", { precision: 10, scale: 2 }).notNull(),
+  bidCurrency: varchar("bid_currency", { length: 3 }).default("USD").notNull(),
+  requiredDuration: integer("required_duration"), // minimum call duration required
+  destinationNumber: varchar("destination_number", { length: 20 }).notNull(),
+  
+  // Response Tracking
+  responseTimeMs: integer("response_time_ms").notNull(),
+  responseStatus: varchar("response_status", { length: 50 }).notNull(), // success, timeout, error, invalid
+  errorMessage: text("error_message"),
+  rawResponse: json("raw_response"), // jsonb for full response storage
+  
+  // Bid Validation
+  isValid: boolean("is_valid").default(true).notNull(),
+  isWinningBid: boolean("is_winning_bid").default(false).notNull(),
+  rejectionReason: text("rejection_reason"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_rtb_responses_request").on(table.requestId),
+  index("idx_rtb_responses_target").on(table.rtbTargetId),
+  index("idx_rtb_responses_winning").on(table.isWinningBid),
+  index("idx_rtb_responses_valid").on(table.isValid),
+]);
+
 export const insertPublisherSchema = createInsertSchema(publishers).omit({
   id: true,
   createdAt: true,
@@ -681,6 +839,81 @@ export type InsertPublisher = z.infer<typeof insertPublisherSchema>;
 
 export type PublisherCampaign = typeof publisherCampaigns.$inferSelect;
 export type InsertPublisherCampaign = z.infer<typeof insertPublisherCampaignSchema>;
+
+// RTB Insert Schemas and Types
+export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  userId: z.number().optional(),
+  name: z.string().min(1, "Target name is required"),
+  endpointUrl: z.string().url("Valid endpoint URL is required"),
+  timeoutMs: z.number().min(1000).max(30000).optional(),
+  connectionTimeout: z.number().min(1000).max(30000).optional(),
+  authMethod: z.enum(["none", "api_key", "bearer", "basic"]).optional(),
+  timezone: z.string().optional(),
+  minBidAmount: z.number().min(0).optional(),
+  maxBidAmount: z.number().min(0).optional(),
+  currency: z.string().length(3).optional(),
+});
+
+export const insertRtbRouterSchema = createInsertSchema(rtbRouters).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  userId: z.number().optional(),
+  name: z.string().min(1, "Router name is required"),
+  biddingTimeoutMs: z.number().min(1000).max(30000).optional(),
+  minBiddersRequired: z.number().min(1).max(10).optional(),
+  revenueType: z.enum(["per_call", "per_minute", "cpa", "cpl"]).optional(),
+});
+
+export const insertRtbRouterAssignmentSchema = createInsertSchema(rtbRouterAssignments).omit({
+  id: true,
+  assignedAt: true,
+}).extend({
+  priority: z.number().min(1).max(10).optional(),
+  weight: z.number().min(1).max(1000).optional(),
+});
+
+export const insertRtbBidRequestSchema = createInsertSchema(rtbBidRequests).omit({
+  id: true,
+  createdAt: true,
+  requestSentAt: true,
+}).extend({
+  requestId: z.string().min(1, "Request ID is required"),
+  callStartTime: z.date(),
+  timeoutMs: z.number().min(1000).max(30000).optional(),
+});
+
+export const insertRtbBidResponseSchema = createInsertSchema(rtbBidResponses).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  requestId: z.string().min(1, "Request ID is required"),
+  bidAmount: z.number().min(0, "Bid amount must be positive"),
+  bidCurrency: z.string().length(3).optional(),
+  destinationNumber: z.string().min(1, "Destination number is required"),
+  responseTimeMs: z.number().min(0),
+  responseStatus: z.enum(["success", "timeout", "error", "invalid"]),
+});
+
+export type RtbTarget = typeof rtbTargets.$inferSelect;
+export type InsertRtbTarget = z.infer<typeof insertRtbTargetSchema>;
+
+export type RtbRouter = typeof rtbRouters.$inferSelect;
+export type InsertRtbRouter = z.infer<typeof insertRtbRouterSchema>;
+
+export type RtbRouterAssignment = typeof rtbRouterAssignments.$inferSelect;
+export type InsertRtbRouterAssignment = z.infer<typeof insertRtbRouterAssignmentSchema>;
+
+export type RtbBidRequest = typeof rtbBidRequests.$inferSelect;
+export type InsertRtbBidRequest = z.infer<typeof insertRtbBidRequestSchema>;
+
+export type RtbBidResponse = typeof rtbBidResponses.$inferSelect;
+export type InsertRtbBidResponse = z.infer<typeof insertRtbBidResponseSchema>;
 
 // Database relations
 export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
@@ -732,4 +965,66 @@ export const publishersRelations = relations(publishers, ({ one, many }) => ({
     references: [users.id],
   }),
   callTrackingTags: many(callTrackingTags),
+}));
+
+// RTB Relations
+export const rtbTargetsRelations = relations(rtbTargets, ({ one, many }) => ({
+  user: one(users, {
+    fields: [rtbTargets.userId],
+    references: [users.id],
+  }),
+  buyer: one(buyers, {
+    fields: [rtbTargets.buyerId],
+    references: [buyers.id],
+  }),
+  routerAssignments: many(rtbRouterAssignments),
+  bidResponses: many(rtbBidResponses),
+}));
+
+export const rtbRoutersRelations = relations(rtbRouters, ({ one, many }) => ({
+  user: one(users, {
+    fields: [rtbRouters.userId],
+    references: [users.id],
+  }),
+  routerAssignments: many(rtbRouterAssignments),
+  bidRequests: many(rtbBidRequests),
+  campaigns: many(campaigns),
+}));
+
+export const rtbRouterAssignmentsRelations = relations(rtbRouterAssignments, ({ one }) => ({
+  rtbRouter: one(rtbRouters, {
+    fields: [rtbRouterAssignments.rtbRouterId],
+    references: [rtbRouters.id],
+  }),
+  rtbTarget: one(rtbTargets, {
+    fields: [rtbRouterAssignments.rtbTargetId],
+    references: [rtbTargets.id],
+  }),
+}));
+
+export const rtbBidRequestsRelations = relations(rtbBidRequests, ({ one, many }) => ({
+  campaign: one(campaigns, {
+    fields: [rtbBidRequests.campaignId],
+    references: [campaigns.id],
+  }),
+  rtbRouter: one(rtbRouters, {
+    fields: [rtbBidRequests.rtbRouterId],
+    references: [rtbRouters.id],
+  }),
+  winningTarget: one(rtbTargets, {
+    fields: [rtbBidRequests.winningTargetId],
+    references: [rtbTargets.id],
+  }),
+  bidResponses: many(rtbBidResponses),
+}));
+
+export const rtbBidResponsesRelations = relations(rtbBidResponses, ({ one }) => ({
+  bidRequest: one(rtbBidRequests, {
+    fields: [rtbBidResponses.requestId],
+    references: [rtbBidRequests.requestId],
+  }),
+  rtbTarget: one(rtbTargets, {
+    fields: [rtbBidResponses.rtbTargetId],
+    references: [rtbTargets.id],
+  }),
 }));
