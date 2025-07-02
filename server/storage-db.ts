@@ -1166,6 +1166,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteRtbRouter(id: number): Promise<boolean> {
+    // First delete all assignments for this router
+    await db.delete(rtbRouterAssignments).where(eq(rtbRouterAssignments.rtbRouterId, id));
+    
+    // Then delete the router
     const result = await db.delete(rtbRouters).where(eq(rtbRouters.id, id));
     return result.rowCount > 0;
   }

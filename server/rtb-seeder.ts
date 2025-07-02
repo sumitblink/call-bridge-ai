@@ -173,7 +173,13 @@ export class RTBSeeder {
    */
   private static async createSampleBidRequests(): Promise<any[]> {
     const bidRequests = [];
-    const campaigns = [1]; // Using campaign ID 1 for consistency
+    // Get actual campaigns from database
+    const campaigns = await storage.getCampaigns();
+    if (campaigns.length === 0) {
+      console.log('No campaigns found, skipping bid requests creation');
+      return [];
+    }
+    const campaignIds = campaigns.map(c => c.id);
     const callerNumbers = [
       "+15551234567", "+15559876543", "+15555678901", 
       "+15552345678", "+15557890123", "+15554567890"
@@ -190,7 +196,7 @@ export class RTBSeeder {
       
       const requestData: InsertRtbBidRequest = {
         requestId: `req_${Date.now()}_${i.toString().padStart(3, '0')}`,
-        campaignId: campaigns[Math.floor(Math.random() * campaigns.length)],
+        campaignId: campaignIds[Math.floor(Math.random() * campaignIds.length)],
         rtbRouterId: 1, // Will reference the router we created
         callerId: callerNumbers[Math.floor(Math.random() * callerNumbers.length)],
         callStartTime: callTime,

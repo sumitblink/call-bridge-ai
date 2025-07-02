@@ -111,11 +111,11 @@ const RTBRoutersTab = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: routers, isLoading } = useQuery({
+  const { data: routers = [], isLoading } = useQuery({
     queryKey: ['/api/rtb/routers'],
   });
 
-  const { data: targets } = useQuery({
+  const { data: targets = [] } = useQuery({
     queryKey: ['/api/rtb/targets'],
   });
 
@@ -1078,7 +1078,10 @@ const RTBTargetsTab = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div>${target.minBidAmount.toFixed(2)} - ${target.maxBidAmount.toFixed(2)} {target.currency}</div>
+                      <div>
+                        ${typeof target.minBidAmount === 'number' ? target.minBidAmount.toFixed(2) : parseFloat(target.minBidAmount || '0').toFixed(2)} - 
+                        ${typeof target.maxBidAmount === 'number' ? target.maxBidAmount.toFixed(2) : parseFloat(target.maxBidAmount || '0').toFixed(2)} {target.currency}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
