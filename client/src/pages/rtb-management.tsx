@@ -1261,7 +1261,10 @@ const RTBAnalyticsTab = () => {
                     <TableRow key={target.id}>
                       <TableCell>
                         <div className="font-medium">{target.name}</div>
-                        <div className="text-sm text-muted-foreground">${target.minBidAmount.toFixed(2)} - ${target.maxBidAmount.toFixed(2)}</div>
+                        <div className="text-sm text-muted-foreground">
+                          ${typeof target.minBidAmount === 'number' ? target.minBidAmount.toFixed(2) : parseFloat(target.minBidAmount || '0').toFixed(2)} - 
+                          ${typeof target.maxBidAmount === 'number' ? target.maxBidAmount.toFixed(2) : parseFloat(target.maxBidAmount || '0').toFixed(2)}
+                        </div>
                       </TableCell>
                       <TableCell>{target.totalPings.toLocaleString()}</TableCell>
                       <TableCell>{target.successfulBids.toLocaleString()}</TableCell>
