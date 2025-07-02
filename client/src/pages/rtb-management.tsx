@@ -250,7 +250,10 @@ const RTBRoutersTab = () => {
         </div>
         <Dialog open={isCreateDialogOpen || !!editingRouter} onOpenChange={handleCloseDialog}>
           <DialogTrigger asChild>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Button onClick={() => {
+              console.log('Create Router button clicked');
+              setIsCreateDialogOpen(true);
+            }}>
               <Plus className="w-4 h-4 mr-2" />
               Create Router
             </Button>
@@ -440,14 +443,14 @@ const RTBRoutersTab = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {routers?.length === 0 ? (
+              {!Array.isArray(routers) || routers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     No RTB routers found. Create your first router to get started.
                   </TableCell>
                 </TableRow>
               ) : (
-                routers?.map((router: RtbRouter) => (
+                routers.map((router: RtbRouter) => (
                   <TableRow key={router.id}>
                     <TableCell>
                       <div>
@@ -752,11 +755,11 @@ const RTBTargetsTab = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {buyers?.map((buyer: any) => (
+                            {Array.isArray(buyers) ? buyers.map((buyer: any) => (
                               <SelectItem key={buyer.id} value={buyer.id.toString()}>
                                 {buyer.name}
                               </SelectItem>
-                            ))}
+                            )) : null}
                           </SelectContent>
                         </Select>
                         <FormMessage />
