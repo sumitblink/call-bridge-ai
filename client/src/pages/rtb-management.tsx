@@ -219,6 +219,7 @@ const RTBRoutersTab = () => {
   };
 
   const handleCloseDialog = () => {
+    console.log('Closing dialog, setting state to false');
     setIsCreateDialogOpen(false);
     setEditingRouter(null);
     form.reset();
@@ -248,16 +249,15 @@ const RTBRoutersTab = () => {
             Manage your real-time bidding router configurations
           </p>
         </div>
+        <Button onClick={() => {
+          console.log('Create Router button clicked, setting state to true');
+          setIsCreateDialogOpen(true);
+        }}>
+          <Plus className="w-4 h-4 mr-2" />
+          Create Router
+        </Button>
+        
         <Dialog open={isCreateDialogOpen || !!editingRouter} onOpenChange={handleCloseDialog}>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
-              console.log('Create Router button clicked');
-              setIsCreateDialogOpen(true);
-            }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Router
-            </Button>
-          </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
