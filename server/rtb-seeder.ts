@@ -81,11 +81,17 @@ export class RTBSeeder {
   private static async createSampleTargets(): Promise<any[]> {
     const targets = [];
     
+    // Get existing buyers to use correct IDs
+    const buyers = await storage.getBuyers();
+    if (buyers.length === 0) {
+      throw new Error('No buyers found. Please create buyers first before seeding RTB targets.');
+    }
+    
     // Create targets individually to avoid type issues
     const target1 = await storage.createRtbTarget({
       name: "LeadGen Pro Network",
       userId: 1,
-      buyerId: 1,
+      buyerId: buyers[0].id,
       endpointUrl: "https://api.leadgenpro.com/rtb/bid",
       timeoutMs: 300,
       connectionTimeout: 5000,
@@ -104,7 +110,7 @@ export class RTBSeeder {
     const target2 = await storage.createRtbTarget({
       name: "CallCenters USA",
       userId: 1,
-      buyerId: 1,
+      buyerId: buyers[0].id,
       endpointUrl: "https://rtb.callcentersusa.com/v2/bid",
       timeoutMs: 400,
       connectionTimeout: 6000,
@@ -123,7 +129,7 @@ export class RTBSeeder {
     const target3 = await storage.createRtbTarget({
       name: "Pacific Lead Exchange",
       userId: 1,
-      buyerId: 1,
+      buyerId: buyers[0].id,
       endpointUrl: "https://exchange.pacificleads.io/rtb/auction",
       timeoutMs: 250,
       connectionTimeout: 4000,
