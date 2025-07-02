@@ -510,11 +510,11 @@ const RTBTargetsTab = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: targets, isLoading } = useQuery({
+  const { data: targets = [], isLoading } = useQuery({
     queryKey: ['/api/rtb/targets'],
   });
 
-  const { data: buyers } = useQuery({
+  const { data: buyers = [] } = useQuery({
     queryKey: ['/api/buyers'],
   });
 
@@ -1134,11 +1134,11 @@ const RTBTargetsTab = () => {
 
 // RTB Analytics Component
 const RTBAnalyticsTab = () => {
-  const { data: bidRequests, isLoading: requestsLoading } = useQuery({
+  const { data: bidRequests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ['/api/rtb/bid-requests'],
   });
 
-  const { data: targets } = useQuery({
+  const { data: targets = [] } = useQuery({
     queryKey: ['/api/rtb/targets'],
   });
 
