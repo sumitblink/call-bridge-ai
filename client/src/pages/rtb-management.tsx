@@ -120,8 +120,17 @@ const RTBRoutersTab = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: z.infer<typeof rtbRouterSchema>) => 
-      apiRequest('/api/rtb/routers', { method: 'POST', body: data }),
+    mutationFn: async (data: z.infer<typeof rtbRouterSchema>) => {
+      const response = await fetch('/api/rtb/routers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create RTB router');
+      }
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/rtb/routers'] });
       setIsCreateDialogOpen(false);
@@ -133,8 +142,17 @@ const RTBRoutersTab = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<z.infer<typeof rtbRouterSchema>> }) =>
-      apiRequest(`/api/rtb/routers/${id}`, { method: 'PUT', body: data }),
+    mutationFn: async ({ id, data }: { id: number; data: Partial<z.infer<typeof rtbRouterSchema>> }) => {
+      const response = await fetch(`/api/rtb/routers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update RTB router');
+      }
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/rtb/routers'] });
       setEditingRouter(null);
@@ -146,7 +164,15 @@ const RTBRoutersTab = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/rtb/routers/${id}`, { method: 'DELETE' }),
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/rtb/routers/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete RTB router');
+      }
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/rtb/routers'] });
       toast({ title: "Success", description: "RTB router deleted successfully" });
@@ -490,8 +516,17 @@ const RTBTargetsTab = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: z.infer<typeof rtbTargetSchema>) => 
-      apiRequest('/api/rtb/targets', { method: 'POST', body: data }),
+    mutationFn: async (data: z.infer<typeof rtbTargetSchema>) => {
+      const response = await fetch('/api/rtb/targets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create RTB target');
+      }
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
       setIsCreateDialogOpen(false);
@@ -503,8 +538,17 @@ const RTBTargetsTab = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<z.infer<typeof rtbTargetSchema>> }) =>
-      apiRequest(`/api/rtb/targets/${id}`, { method: 'PUT', body: data }),
+    mutationFn: async ({ id, data }: { id: number; data: Partial<z.infer<typeof rtbTargetSchema>> }) => {
+      const response = await fetch(`/api/rtb/targets/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update RTB target');
+      }
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
       setEditingTarget(null);
@@ -516,7 +560,15 @@ const RTBTargetsTab = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/rtb/targets/${id}`, { method: 'DELETE' }),
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/rtb/targets/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete RTB target');
+      }
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
       toast({ title: "Success", description: "RTB target deleted successfully" });
@@ -1311,9 +1363,14 @@ export default function RTBManagement() {
   // Mutation for seeding sample data
   const seedDataMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/rtb/seed-data', {
+      const response = await fetch('/api/rtb/seed-data', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
       });
+      if (!response.ok) {
+        throw new Error('Failed to create sample data');
+      }
+      return response.json();
     },
     onSuccess: (data) => {
       toast({
