@@ -24,6 +24,7 @@ import {
   InsertCallTrackingTag 
 } from "../shared/schema";
 import { handleIncomingCall, handleCallStatus, handleRecordingStatus } from "./twilio-webhooks";
+import { RTBIdGenerator } from "./rtb-id-generator";
 import { z } from "zod";
 import twilio from "twilio";
 import fetch from "node-fetch";
@@ -385,6 +386,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const validatedData = insertCampaignSchema.parse(campaignData);
+      
+      // Generate RTB ID if RTB is enabled
+      if (validatedData.enableRtb) {
+        validatedData.rtbId = await RTBIdGenerator.generateUniqueRTBId();
+        console.log(`Generated RTB ID for new campaign: ${validatedData.rtbId}`);
+      }
+      
       const campaign = await storage.createCampaign(validatedData);
       
       res.status(201).json(campaign);
@@ -401,6 +409,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertCampaignSchema.partial().parse(req.body);
+      
+      // Get existing campaign to check current RTB status
+      const existingCampaign = await storage.getCampaign(id);
+      if (!existingCampaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      // Generate RTB ID if RTB is being enabled and campaign doesn't have one
+      if (validatedData.enableRtb && !existingCampaign.rtbId) {
+        validatedData.rtbId = await RTBIdGenerator.generateUniqueRTBId();
+        console.log(`Generated RTB ID for campaign ${id}: ${validatedData.rtbId}`);
+      }
+      
       const campaign = await storage.updateCampaign(id, validatedData);
       if (!campaign) {
         return res.status(404).json({ error: "Campaign not found" });
@@ -438,6 +459,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting campaign:", error);
       res.status(500).json({ error: "Failed to delete campaign" });
+    }
+  });
+
+  // Admin endpoint for RTB ID lookup (for debugging and support)
+  app.get('/api/internal/campaigns/rtb-lookup/:rtbId', requireAuth, async (req, res) => {
+    try {
+      const { rtbId } = req.params;
+      
+      // Validate RTB ID format
+      if (!RTBIdGenerator.isValidRTBId(rtbId)) {
+        return res.status(400).json({ error: "Invalid RTB ID format" });
+      }
+      
+      const campaign = await RTBIdGenerator.getCampaignByRTBId(rtbId);
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found for RTB ID" });
+      }
+      
+      // Log the lookup for audit purposes
+      console.log(`RTB ID lookup: ${rtbId} -> Campaign ${campaign.id} (${campaign.name})`);
+      
+      res.json({
+        rtbId,
+        campaign: {
+          id: campaign.id,
+          name: campaign.name,
+          status: campaign.status,
+          enableRtb: campaign.enableRtb,
+          rtbRouterId: campaign.rtbRouterId,
+          createdAt: campaign.createdAt
+        }
+      });
+    } catch (error) {
+      console.error("Error in RTB ID lookup:", error);
+      res.status(500).json({ error: "Failed to lookup RTB ID" });
     }
   });
 
@@ -731,6 +787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const bidRequest = {
             requestId: `pool_${poolId}_${Date.now()}_${Math.random().toString(36).substring(2)}`,
             campaignId: campaign.id,
+            campaignRtbId: campaign.rtbId || undefined, // Use RTB ID for external bid requests
             callerId: fromNumber,
             callerState: req.body.CallerState || null,
             callerZip: req.body.CallerZip || null,
@@ -943,6 +1000,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const bidRequest = {
             requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
             campaignId: campaign.id,
+            campaignRtbId: campaign.rtbId || undefined, // Use RTB ID for external bid requests
             callerId: fromNumber,
             callerState: CallerState || null,
             callerZip: CallerZip || null,

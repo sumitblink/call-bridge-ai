@@ -11,7 +11,8 @@ import type {
 
 export interface BidRequest {
   requestId: string;
-  campaignId: number;
+  campaignId: number; // Internal database ID for storage
+  campaignRtbId?: string; // External RTB ID for bid requests
   callerId?: string;
   callerState?: string;
   callerZip?: string;
@@ -227,10 +228,10 @@ export class RTBService {
         throw new Error('Target outside operating hours');
       }
 
-      // Prepare bid request payload
+      // Prepare bid request payload - use RTB ID for external requests
       const payload = {
         requestId: bidRequest.requestId,
-        campaignId: bidRequest.campaignId,
+        campaignId: bidRequest.campaignRtbId || bidRequest.campaignId.toString(), // Use RTB ID if available, fallback to numeric ID
         callerId: bidRequest.callerId,
         callerState: bidRequest.callerState,
         callerZip: bidRequest.callerZip,

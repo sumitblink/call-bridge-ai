@@ -77,6 +77,7 @@ export const campaigns = pgTable("campaigns", {
   // RTB Integration
   rtbRouterId: integer("rtb_router_id"), // References rtb_routers.id, foreign key added later
   enableRtb: boolean("enable_rtb").default(false).notNull(),
+  rtbId: varchar("rtb_id", { length: 32 }).unique(), // 32-character hexadecimal ID for external RTB operations
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
