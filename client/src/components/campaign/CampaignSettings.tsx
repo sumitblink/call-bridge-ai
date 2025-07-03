@@ -273,8 +273,26 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                           </FormControl>
                           <SelectContent>
                             {phoneNumbers.map((phone: any) => (
-                              <SelectItem key={phone.id} value={phone.phoneNumber}>
-                                {phone.phoneNumber} ({phone.friendlyName || phone.country})
+                              <SelectItem 
+                                key={phone.id} 
+                                value={phone.phoneNumber}
+                                disabled={phone.status === 'assigned' && phone.assignedTo !== campaign?.name}
+                              >
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{phone.phoneNumber} ({phone.friendlyName || phone.country})</span>
+                                  <div className="flex items-center gap-2">
+                                    {phone.status === 'available' && (
+                                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                                        Available
+                                      </span>
+                                    )}
+                                    {phone.status === 'assigned' && (
+                                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
+                                        {phone.assignedType === 'campaign' ? 'Campaign' : 'Pool'}: {phone.assignedTo}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </SelectItem>
                             ))}
                           </SelectContent>

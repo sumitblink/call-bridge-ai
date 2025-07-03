@@ -1823,7 +1823,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user?.id;
       const numbers = await storage.getPhoneNumbers(userId);
-      res.json(numbers);
+      
+      // Get all campaigns and pools to check assignments
+      const campaigns = await storage.getCampaigns();
+      const pools = await storage.getNumberPools();
+      
+      // Enhance each number with availability status
+      const enhancedNumbers = numbers.map(number => {
+        // Check if assigned to campaign
+        const assignedCampaign = campaigns.find(c => c.phoneNumber === number.phoneNumber);
+        
+        // Check if assigned to pool
+        const assignedPool = pools.find(p => 
+          p.phoneNumbers && p.phoneNumbers.includes(number.phoneNumber)
+        );
+        
+        let status = 'available';
+        let assignedTo = null;
+        let assignedType = null;
+        
+        if (assignedCampaign) {
+          status = 'assigned';
+          assignedTo = assignedCampaign.name;
+          assignedType = 'campaign';
+        } else if (assignedPool) {
+          status = 'assigned';
+          assignedTo = assignedPool.name;
+          assignedType = 'pool';
+        }
+        
+        return {
+          ...number,
+          status,
+          assignedTo,
+          assignedType
+        };
+      });
+      
+      res.json(enhancedNumbers);
     } catch (error) {
       console.error('Error fetching phone numbers:', error);
       res.status(500).json({ error: 'Failed to fetch phone numbers' });
