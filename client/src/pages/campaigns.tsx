@@ -192,7 +192,7 @@ function CampaignForm({
     resolver: zodResolver(campaignFormSchema),
     defaultValues: {
       name: campaign?.name || "",
-      country: "US", // Default to US
+      country: campaign?.geoTargeting?.[0] || "US", // Use existing geo targeting or default to US
       enableRtb: campaign?.enableRtb || false,
       rtbRouterId: campaign?.rtbRouterId || undefined,
     },
@@ -237,11 +237,52 @@ function CampaignForm({
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async (data: CampaignFormData) => {
+      console.log('Updating campaign with data:', data);
+      const campaignData = {
+        name: data.name,
+        geoTargeting: [data.country],
+        enableRtb: data.enableRtb,
+        rtbRouterId: data.rtbRouterId,
+      };
+      console.log('Campaign update data to send:', campaignData);
+      
+      const response = await apiRequest(`/api/campaigns/${campaign!.id}`, "PUT", campaignData);
+      if (!response.ok) {
+        throw new Error(`Failed to update campaign: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign!.id}`] });
+      toast({
+        title: "Success",
+        description: "Campaign updated successfully",
+      });
+      onSuccess?.();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update campaign",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = async (data: CampaignFormData) => {
-    createMutation.mutate(data);
+    if (campaign) {
+      // Edit mode - update existing campaign
+      updateMutation.mutate(data);
+    } else {
+      // Create mode - create new campaign
+      createMutation.mutate(data);
+    }
   };
 
-  const isPending = createMutation.isPending;
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Form {...form}>
@@ -350,7 +391,10 @@ function CampaignForm({
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="submit" disabled={isPending}>
-            {isPending ? "Creating..." : "Create Campaign"}
+            {isPending 
+              ? (campaign ? "Updating..." : "Creating...") 
+              : (campaign ? "Update Campaign" : "Create Campaign")
+            }
           </Button>
         </div>
       </form>
@@ -590,6 +634,13 @@ export default function Campaigns() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => handleEdit(campaign)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleDelete(campaign)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -642,7 +693,7 @@ export default function Campaigns() {
             <DialogHeader>
               <DialogTitle>Edit Campaign</DialogTitle>
               <DialogDescription>
-                Update campaign details and pool assignment.
+                Update campaign details, RTB settings, and configuration.
               </DialogDescription>
             </DialogHeader>
             {editingCampaign && (

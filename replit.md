@@ -113,6 +113,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 3, 2025: Fixed critical campaign editing bug and completed RTB integration
+  - Fixed campaign form to properly update existing campaigns instead of creating duplicates
+  - Added separate create vs update mutations with proper HTTP methods (POST vs PUT)
+  - Implemented RTB toggle switch and router dropdown in campaign forms
+  - Added RTB status badges throughout campaign interface (cards and table views)
+  - Enhanced form validation requiring RTB router selection when RTB is enabled
+  - Campaign editing now properly preserves existing data while allowing RTB configuration changes
 - July 1, 2025: Implemented comprehensive Real-Time Bidding (RTB) system
   - Created complete 5-table RTB database schema with proper foreign key relationships
   - Added RTB columns to campaigns table (rtb_router_id, enable_rtb) for campaign-level RTB control
