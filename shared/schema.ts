@@ -693,9 +693,35 @@ export const rtbTargets = pgTable("rtb_targets", {
   
   // Capacity Management
   maxConcurrentCalls: integer("max_concurrent_calls").default(10).notNull(),
+  hourlyConcurrency: integer("hourly_concurrency").default(5).notNull(),
   dailyCap: integer("daily_cap").default(100).notNull(),
   hourlyCap: integer("hourly_cap").default(10).notNull(),
   monthlyCap: integer("monthly_cap").default(3000).notNull(),
+  globalCallCap: integer("global_call_cap").default(10000).notNull(),
+  
+  // Sub ID Support for campaign segmentation
+  subIdTracking: boolean("sub_id_tracking").default(false).notNull(),
+  allowedSubIds: text("allowed_sub_ids").array(), // array of allowed sub IDs
+  
+  // Dynamic routing capabilities
+  enableDynamicNumber: boolean("enable_dynamic_number").default(false).notNull(),
+  enableDynamicSip: boolean("enable_dynamic_sip").default(false).notNull(),
+  
+  // RTB Shareable Tags
+  rtbShareableTags: boolean("rtb_shareable_tags").default(false).notNull(),
+  sharedTagGroups: text("shared_tag_groups").array(), // group IDs for tag sharing
+  
+  // IVR Configuration
+  enableIvr: boolean("enable_ivr").default(false).notNull(),
+  ivrOptions: json("ivr_options"), // jsonb: {prompts: [], routing: {}}
+  
+  // Duplicate call handling
+  restrictDuplicates: boolean("restrict_duplicates").default(false).notNull(),
+  duplicateWindow: integer("duplicate_window").default(3600).notNull(), // seconds
+  duplicateAction: varchar("duplicate_action", { length: 50 }).default("block").notNull(), // block, route_to_fallback, allow
+  
+  // Recording settings
+  disableRecordings: boolean("disable_recordings").default(false).notNull(),
   
   // Bidding Configuration
   minBidAmount: decimal("min_bid_amount", { precision: 10, scale: 2 }).default("0.00").notNull(),
@@ -729,6 +755,22 @@ export const rtbRouters = pgTable("rtb_routers", {
   // Business Logic
   revenueType: varchar("revenue_type", { length: 50 }).default("per_call").notNull(), // per_call, per_minute, cpa, cpl
   conversionTracking: boolean("conversion_tracking").default(false).notNull(),
+  minRevenueAmount: decimal("min_revenue_amount", { precision: 10, scale: 2 }).default("0.00").notNull(),
+  useRingTreeSettings: boolean("use_ring_tree_settings").default(false).notNull(),
+  
+  // Error Handling Settings
+  inheritFromRingTree: boolean("inherit_from_ring_tree").default(false).notNull(),
+  errorHandlingMode: varchar("error_handling_mode", { length: 50 }).default("continue").notNull(), // continue, stop, fallback
+  
+  // Priority Bump Settings (-10 to +10 scale)
+  priorityBumpEnabled: boolean("priority_bump_enabled").default(false).notNull(),
+  priorityBumpValue: integer("priority_bump_value").default(0).notNull(), // -10 to +10
+  
+  // Predictive Routing Advanced Settings
+  estimatedRevenue: decimal("estimated_revenue", { precision: 10, scale: 2 }).default("0.00").notNull(),
+  useEstimatedRevenue: boolean("use_estimated_revenue").default(false).notNull(),
+  useCampaignSettings: boolean("use_campaign_settings").default(true).notNull(),
+  
   isActive: boolean("is_active").default(true).notNull(),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),

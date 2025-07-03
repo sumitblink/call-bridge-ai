@@ -13,8 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleSwitch } from "@/components/ui/toggle-switch";
+import { EnhancedRTBTargetDialog } from "@/components/rtb/EnhancedRTBTargetDialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube } from "lucide-react";
+import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -710,330 +712,20 @@ const RTBTargetsTab = () => {
             Manage bidding targets and their endpoint configurations
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen || !!editingTarget} onOpenChange={handleCloseDialog}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Target
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingTarget ? "Edit RTB Target" : "Create RTB Target"}
-              </DialogTitle>
-              <DialogDescription>
-                Configure a bidding target with endpoint and capacity settings.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Target Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Premium Insurance Buyer" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="buyerId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Associated Buyer</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select buyer" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Array.isArray(buyers) ? buyers.map((buyer: any) => (
-                              <SelectItem key={buyer.id} value={buyer.id.toString()}>
-                                {buyer.name}
-                              </SelectItem>
-                            )) : null}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="endpointUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Endpoint URL</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://api.example.com/bid" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="timeoutMs"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Request Timeout (ms)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="3000" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="connectionTimeout"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Connection Timeout (ms)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="5000" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="timezone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Timezone</FormLabel>
-                        <FormControl>
-                          <Input placeholder="UTC" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="authMethod"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Authentication Method</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select auth method" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            <SelectItem value="api_key">API Key</SelectItem>
-                            <SelectItem value="bearer">Bearer Token</SelectItem>
-                            <SelectItem value="basic">Basic Auth</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {form.watch("authMethod") !== "none" && (
-                    <FormField
-                      control={form.control}
-                      name="authToken"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Auth Token</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter token/key" type="password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </div>
-
-                <div className="grid grid-cols-4 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="maxConcurrentCalls"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Max Concurrent</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="10" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="hourlyCap"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Hourly Cap</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="10" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="dailyCap"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Daily Cap</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="100" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="monthlyCap"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Monthly Cap</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="3000" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="minBidAmount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Min Bid Amount</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01"
-                            placeholder="0.00" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="maxBidAmount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Max Bid Amount</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01"
-                            placeholder="100.00" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="currency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Currency</FormLabel>
-                        <FormControl>
-                          <Input placeholder="USD" maxLength={3} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel>Active</FormLabel>
-                        <div className="text-sm text-muted-foreground">
-                          Enable this target for live bidding
-                        </div>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                    {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Target"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Create Ring Tree Target
+        </Button>
+        
+        <EnhancedRTBTargetDialog
+          open={isCreateDialogOpen || !!editingTarget}
+          onOpenChange={(open) => {
+            if (!open) handleCloseDialog();
+          }}
+          onSubmit={onSubmit}
+          buyers={buyers}
+          editingTarget={editingTarget}
+        />
       </div>
 
       <Card>
@@ -1048,81 +740,118 @@ const RTBTargetsTab = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Endpoint</TableHead>
-                <TableHead>Bid Range</TableHead>
-                <TableHead>Performance</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Buyer</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Destination</TableHead>
+                <TableHead>Live</TableHead>
+                <TableHead>Hour</TableHead>
+                <TableHead>Day</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {targets?.length === 0 ? (
+              {Array.isArray(targets) && targets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No RTB targets found. Create your first target to get started.
                   </TableCell>
                 </TableRow>
               ) : (
-                targets?.map((target: RtbTarget) => (
-                  <TableRow key={target.id}>
-                    <TableCell>
-                      <div className="font-medium">{target.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {target.maxConcurrentCalls} concurrent | {target.dailyCap}/day
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-mono text-sm">{target.endpointUrl}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {target.timeoutMs}ms timeout
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        ${typeof target.minBidAmount === 'number' ? target.minBidAmount.toFixed(2) : parseFloat(target.minBidAmount || '0').toFixed(2)} - 
-                        ${typeof target.maxBidAmount === 'number' ? target.maxBidAmount.toFixed(2) : parseFloat(target.maxBidAmount || '0').toFixed(2)} {target.currency}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>{target.successfulBids}/{target.totalPings} bids</div>
-                        <div>{target.wonCalls} wins</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={target.isActive ? "default" : "secondary"}>
-                        {target.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleTest(target)}
-                          disabled={testMutation.isPending && testingTarget?.id === target.id}
-                        >
-                          <TestTube className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(target)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteMutation.mutate(target.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                Array.isArray(targets) && targets.map((target: RtbTarget) => {
+                  const buyer = Array.isArray(buyers) ? buyers.find((b: any) => b.id === target.buyerId) : null;
+                  return (
+                    <TableRow key={target.id}>
+                      <TableCell>
+                        <div className="font-medium">{target.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Sub ID: {target.subId || 'None'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2"
+                          >
+                            {buyer?.name || 'Unknown Buyer'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                          >
+                            <Settings className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {target.type || 'Number'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-sm truncate max-w-[200px]">
+                          {target.number || target.endpointUrl}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          {target.isActive ? (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          )}
+                          <span className="text-sm">
+                            {target.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-center">
+                          <div className="font-medium">{target.wonCalls || 0}</div>
+                          <div className="text-muted-foreground text-xs">calls</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-center">
+                          <div className="font-medium">{target.totalPings || 0}</div>
+                          <div className="text-muted-foreground text-xs">total</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleTest(target)}
+                            disabled={testMutation.isPending && testingTarget?.id === target.id}
+                            className="h-8 w-8 p-0"
+                          >
+                            <TestTube className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(target)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteMutation.mutate(target.id)}
+                            disabled={deleteMutation.isPending}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
