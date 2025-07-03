@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -26,6 +27,16 @@ import { DatabaseStatus } from "@/components/DatabaseStatus";
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
   country: z.string().min(1, "Country is required"),
+  enableRtb: z.boolean().default(false),
+  rtbRouterId: z.number().optional(),
+}).refine((data) => {
+  if (data.enableRtb && !data.rtbRouterId) {
+    return false;
+  }
+  return true;
+}, {
+  message: "RTB Router is required when RTB is enabled",
+  path: ["rtbRouterId"],
 });
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
@@ -60,6 +71,14 @@ function CampaignCard({ campaign, onDelete, onEdit }: {
               >
                 {campaign.status === 'active' ? 'Active' : 'Paused'}
               </Badge>
+              {campaign.enableRtb && (
+                <Badge 
+                  variant="outline" 
+                  className="bg-purple-50 text-purple-700 border-purple-200"
+                >
+                  RTB Enabled
+                </Badge>
+              )}
               <Link href={`/campaigns/${campaign.id}`}>
                 <Button variant="link" className="p-0 h-auto text-lg font-semibold text-blue-600 hover:text-blue-800">
                   {campaign.name}
@@ -107,6 +126,12 @@ function CampaignCard({ campaign, onDelete, onEdit }: {
                 <BarChart3 className="h-4 w-4" />
                 Recording: Yes
               </div>
+              {campaign.enableRtb && (
+                <div className="flex items-center gap-1 text-sm text-purple-600">
+                  <PhoneCall className="h-4 w-4" />
+                  RTB: Router ID {campaign.rtbRouterId}
+                </div>
+              )}
             </div>
           </div>
           
@@ -154,11 +179,22 @@ function CampaignForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch RTB routers for the dropdown
+  const { data: rtbRouters = [] } = useQuery({
+    queryKey: ["/api/rtb/routers"],
+    queryFn: async () => {
+      const response = await fetch("/api/rtb/routers");
+      return response.json();
+    },
+  });
+
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignFormSchema),
     defaultValues: {
       name: campaign?.name || "",
       country: "US", // Default to US
+      enableRtb: campaign?.enableRtb || false,
+      rtbRouterId: campaign?.rtbRouterId || undefined,
     },
   });
 
@@ -173,6 +209,8 @@ function CampaignForm({
         maxConcurrentCalls: 10,
         callCap: 100,
         userId: 1, // Default user ID for now
+        enableRtb: data.enableRtb,
+        rtbRouterId: data.rtbRouterId,
       };
       console.log('Campaign data to send:', campaignData);
       
@@ -252,7 +290,63 @@ function CampaignForm({
           )}
         />
 
+        {/* RTB Configuration Section */}
+        <div className="space-y-4 pt-4 border-t">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            Real-Time Bidding (RTB)
+          </h3>
+          
+          <FormField
+            control={form.control}
+            name="enableRtb"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">Enable RTB</FormLabel>
+                  <div className="text-sm text-muted-foreground">
+                    Turn on real-time bidding for this campaign
+                  </div>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
+          {form.watch("enableRtb") && (
+            <FormField
+              control={form.control}
+              name="rtbRouterId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>RTB Router</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(parseInt(value))} 
+                    value={field.value?.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select RTB router" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Array.isArray(rtbRouters) && rtbRouters.map((router: any) => (
+                        <SelectItem key={router.id} value={router.id.toString()}>
+                          {router.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </div>
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="submit" disabled={isPending}>
@@ -429,6 +523,7 @@ export default function Campaigns() {
                     <TableHead>Status</TableHead>
                     <TableHead>Campaign Name</TableHead>
                     <TableHead>Phone Number</TableHead>
+                    <TableHead>RTB</TableHead>
                     <TableHead>Recording</TableHead>
                     <TableHead className="text-center">Today</TableHead>
                     <TableHead className="text-center">Month</TableHead>
@@ -457,6 +552,17 @@ export default function Campaigns() {
                       </TableCell>
                       <TableCell className="font-mono text-sm">
                         {campaign.phoneNumber || 'Not assigned'}
+                      </TableCell>
+                      <TableCell>
+                        {campaign.enableRtb ? (
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                            Enabled
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">
+                            Disabled
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
