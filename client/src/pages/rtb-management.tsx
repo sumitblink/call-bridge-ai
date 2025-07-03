@@ -1070,7 +1070,7 @@ const RTBAnalyticsTab = () => {
                     <TableCell>
                       {request.winningBidAmount ? (
                         <div className="text-green-600 font-medium">
-                          ${request.winningBidAmount.toFixed(2)}
+                          ${typeof request.winningBidAmount === 'number' ? request.winningBidAmount.toFixed(2) : parseFloat(request.winningBidAmount || '0').toFixed(2)}
                         </div>
                       ) : (
                         <div className="text-muted-foreground">No bid</div>
