@@ -77,6 +77,9 @@ const enhancedRTBTargetSchema = z.object({
   acceptanceParsing: z.enum(["Choose Property", "price", "accepted", "duration"]),
   acceptanceOperator: z.enum(["Equals", "Greater Than", "Less Than", "Not Equals"]),
   acceptanceValue: z.string().optional(),
+}).refine((data) => data.maxBidAmount >= data.minBidAmount, {
+  message: "Maximum bid amount must be greater than or equal to minimum bid amount",
+  path: ["maxBidAmount"],
 });
 
 interface EnhancedRTBTargetDialogProps {
@@ -149,8 +152,8 @@ export function EnhancedRTBTargetDialog({
         rtbShareableTags: editingTarget.rtbShareableTags || false,
         type: "Number",
         number: buyers.find(b => b.id === editingTarget.buyerId)?.phoneNumber || "",
-        minBidAmount: editingTarget.minBidAmount || 0,
-        maxBidAmount: editingTarget.maxBidAmount || 100,
+        minBidAmount: typeof editingTarget.minBidAmount === 'number' ? editingTarget.minBidAmount : (editingTarget.minBidAmount ? parseFloat(editingTarget.minBidAmount) : 0),
+        maxBidAmount: typeof editingTarget.maxBidAmount === 'number' ? editingTarget.maxBidAmount : (editingTarget.maxBidAmount ? parseFloat(editingTarget.maxBidAmount) : 100),
         currency: editingTarget.currency || "USD",
         connectionTimeout: editingTarget.connectionTimeout || 5000,
         dialIvrOptions: editingTarget.dialIvrOptions || "",
@@ -523,8 +526,11 @@ Please add tags with numerical values only."
                                   step="0.01"
                                   min="0"
                                   placeholder="0.00"
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                  value={field.value || ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    field.onChange(value === "" ? 0 : parseFloat(value) || 0);
+                                  }}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -544,8 +550,11 @@ Please add tags with numerical values only."
                                   step="0.01"
                                   min="0"
                                   placeholder="100.00"
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                  value={field.value || ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    field.onChange(value === "" ? 0 : parseFloat(value) || 0);
+                                  }}
                                 />
                               </FormControl>
                               <FormMessage />
