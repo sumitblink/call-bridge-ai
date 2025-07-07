@@ -4099,6 +4099,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear all RTB targets for user
+  app.delete('/api/rtb/targets/clear-all', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get all targets for the user
+      const targets = await storage.getRtbTargets();
+      const userTargets = targets.filter(target => target.userId === userId);
+      
+      // Delete all user targets (this will also remove router assignments)
+      for (const target of userTargets) {
+        await storage.deleteRtbTarget(target.id);
+      }
+      
+      res.json({ 
+        success: true, 
+        deletedCount: userTargets.length,
+        message: `Deleted ${userTargets.length} RTB targets`
+      });
+    } catch (error) {
+      console.error('Error clearing all RTB targets:', error);
+      res.status(500).json({ error: 'Failed to clear RTB targets' });
+    }
+  });
+
   // RTB Routers
   app.get('/api/rtb/routers', requireAuth, async (req: any, res) => {
     try {

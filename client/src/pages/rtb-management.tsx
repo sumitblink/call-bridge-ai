@@ -583,6 +583,25 @@ const RTBTargetsTab = () => {
     },
   });
 
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/rtb/targets/clear-all', {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to clear all RTB targets');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
+      toast({ title: "Success", description: "All RTB targets cleared successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const testMutation = useMutation({
     mutationFn: async (target: RtbTarget) => {
       // Simulate a test bid request
@@ -693,6 +712,12 @@ const RTBTargetsTab = () => {
     testMutation.mutate(target);
   };
 
+  const handleClearAllTargets = () => {
+    if (confirm('Are you sure you want to delete all RTB targets? This action cannot be undone.')) {
+      clearAllMutation.mutate();
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -712,21 +737,43 @@ const RTBTargetsTab = () => {
             Manage bidding targets and their endpoint configurations
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Ring Tree Target
-        </Button>
-        
-        <EnhancedRTBTargetDialog
-          open={isCreateDialogOpen || !!editingTarget}
-          onOpenChange={(open) => {
-            if (!open) handleCloseDialog();
-          }}
-          onSubmit={onSubmit}
-          buyers={buyers}
-          editingTarget={editingTarget}
-        />
+        <div className="flex gap-2">
+          {Array.isArray(targets) && targets.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleClearAllTargets}
+              disabled={clearAllMutation.isPending}
+            >
+              {clearAllMutation.isPending ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  Clearing...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Clear All
+                </>
+              )}
+            </Button>
+          )}
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Ring Tree Target
+          </Button>
+        </div>
       </div>
+      
+      <EnhancedRTBTargetDialog
+        open={isCreateDialogOpen || !!editingTarget}
+        onOpenChange={(open) => {
+          if (!open) handleCloseDialog();
+        }}
+        onSubmit={onSubmit}
+        buyers={buyers}
+        editingTarget={editingTarget}
+      />
 
       <Card>
         <CardHeader>
