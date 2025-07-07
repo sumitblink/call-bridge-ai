@@ -812,13 +812,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             winningBidAmount = parseFloat(biddingResult.winningBid.bidAmount);
             winningTargetId = biddingResult.winningBid.rtbTargetId;
             
-            // Get the winning target to determine destination
+            // Get the winning target for buyer information and use destination number from bid response
             const winningTarget = await storage.getRtbTarget(winningTargetId);
-            if (winningTarget) {
-              // Use the target's buyer information for routing
+            if (winningTarget && biddingResult.winningBid.destinationNumber) {
+              // Get buyer info but use destination number from bid response
               const targetBuyer = await storage.getBuyer(winningTarget.buyerId);
-              if (targetBuyer && targetBuyer.phoneNumber) {
-                selectedBuyer = targetBuyer;
+              if (targetBuyer) {
+                // Create a synthetic buyer object with the destination number from the bid
+                selectedBuyer = {
+                  ...targetBuyer,
+                  phoneNumber: biddingResult.winningBid.destinationNumber // Use destination from bid response
+                };
+                
                 routingData = {
                   ...routingData,
                   method: 'rtb',
@@ -830,13 +835,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   responseTimeMs: biddingResult.totalResponseTime
                 };
                 
-                console.log(`[Pool Webhook] RTB SUCCESS - Winner: ${winningTarget.name}, Bid: $${winningBidAmount}, Routing to: ${targetBuyer.name} (${targetBuyer.phoneNumber})`);
+                console.log(`[Pool Webhook] RTB SUCCESS - Winner: ${winningTarget.name}, Bid: $${winningBidAmount}, Routing to: ${biddingResult.winningBid.destinationNumber} [RTB Destination]`);
               } else {
-                console.log(`[Pool Webhook] RTB winner has no valid buyer phone number, falling back to traditional routing`);
+                console.log(`[Pool Webhook] RTB winning target buyer not found, falling back to traditional routing`);
                 routingMethod = 'rtb_fallback';
               }
             } else {
-              console.log(`[Pool Webhook] RTB winning target not found, falling back to traditional routing`);
+              console.log(`[Pool Webhook] RTB winning target not found or missing destination number, falling back to traditional routing`);
               routingMethod = 'rtb_fallback';
             }
           } else {
