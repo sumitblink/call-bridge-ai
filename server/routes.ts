@@ -4382,16 +4382,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/test-bid', (req, res) => {
     console.log('Test bid request received:', JSON.stringify(req.body, null, 2));
     
-    const { requestId, campaignId, callerId, minBidAmount, maxBidAmount } = req.body;
+    const { requestId, campaignId, callerId, minBid, maxBid } = req.body;
     
     // Simulate bid decision (80% chance to bid for testing)
     const shouldBid = Math.random() > 0.2;
     
     if (shouldBid) {
-      // Generate bid amount between min and max
-      const minBid = parseFloat(minBidAmount) || 1.0;
-      const maxBid = parseFloat(maxBidAmount) || 5.0;
-      const bidAmount = (Math.random() * (maxBid - minBid) + minBid).toFixed(2);
+      // Generate bid amount between min and max (use correct field names)
+      const minBidAmount = parseFloat(minBid) || 1.0;
+      const maxBidAmount = parseFloat(maxBid) || 5.0;
+      const bidAmount = (Math.random() * (maxBidAmount - minBidAmount) + minBidAmount).toFixed(2);
       
       const response = {
         requestId,
