@@ -30,6 +30,11 @@ const enhancedRTBTargetSchema = z.object({
   type: z.enum(["Number", "SIP"]),
   number: z.string().optional(),
   
+  // Bid Amount Settings (moved to Basic tab)
+  minBidAmount: z.number().min(0, "Minimum bid amount must be positive"),
+  maxBidAmount: z.number().min(0, "Maximum bid amount must be positive"),
+  currency: z.enum(["USD", "EUR", "GBP", "CAD", "AUD"]),
+  
   // Connection Settings
   connectionTimeout: z.number().min(1000, "Connection timeout must be at least 1000ms").max(30000, "Connection timeout cannot exceed 30000ms"),
   
@@ -97,6 +102,9 @@ export function EnhancedRTBTargetDialog({
       rtbShareableTags: editingTarget?.rtbShareableTags || false,
       type: editingTarget?.type || "Number",
       number: editingTarget?.number || "",
+      minBidAmount: editingTarget?.minBidAmount || 0,
+      maxBidAmount: editingTarget?.maxBidAmount || 100,
+      currency: editingTarget?.currency || "USD",
       connectionTimeout: editingTarget?.connectionTimeout || 5000,
       dialIvrOptions: editingTarget?.dialIvrOptions || "",
       disableRecordings: editingTarget?.disableRecordings || false,
@@ -140,12 +148,13 @@ export function EnhancedRTBTargetDialog({
       hourlyConcurrency: data.hourlyConcurrency,
       enableDynamicNumber: data.enableDynamicNumber,
       rtbShareableTags: data.rtbShareableTags,
+      // Include bid amount fields
+      minBidAmount: data.minBidAmount,
+      maxBidAmount: data.maxBidAmount,
+      currency: data.currency,
       restrictDuplicates: data.restrictDuplicates !== "Buyer Settings (Do not Restrict)",
       disableRecordings: data.disableRecordings,
       priorityBumpValue: data.priorityBump,
-      minBidAmount: 0,
-      maxBidAmount: 1000,
-      currency: "USD",
     });
   };
 
@@ -220,7 +229,16 @@ export function EnhancedRTBTargetDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Buyer <span className="text-red-500">*</span></FormLabel>
-                          <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                          <Select onValueChange={(value) => {
+                            const buyerId = parseInt(value);
+                            field.onChange(buyerId);
+                            
+                            // Auto-populate phone number from selected buyer
+                            const selectedBuyer = buyers.find(buyer => buyer.id === buyerId);
+                            if (selectedBuyer?.phoneNumber) {
+                              form.setValue('number', selectedBuyer.phoneNumber);
+                            }
+                          }}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select Buyer" />
@@ -394,6 +412,83 @@ Please add tags with numerical values only."
                         </FormItem>
                       )}
                     />
+
+                    {/* Bid Amount Settings */}
+                    <div className="space-y-4 pt-4 border-t">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <h4 className="text-sm font-medium">Bid Amount Settings</h4>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="minBidAmount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Min Bid Amount <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="maxBidAmount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Max Bid Amount <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="100.00"
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="currency"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Currency <span className="text-red-500">*</span></FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select Currency" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="USD">USD - US Dollar</SelectItem>
+                                  <SelectItem value="EUR">EUR - Euro</SelectItem>
+                                  <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                                  <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                                  <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
