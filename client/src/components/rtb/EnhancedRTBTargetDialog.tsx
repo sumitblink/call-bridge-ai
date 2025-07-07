@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -96,17 +96,17 @@ export function EnhancedRTBTargetDialog({
   const form = useForm<z.infer<typeof enhancedRTBTargetSchema>>({
     resolver: zodResolver(enhancedRTBTargetSchema),
     defaultValues: {
-      name: editingTarget?.name || "",
-      subId: editingTarget?.subId || "",
-      buyerId: editingTarget?.buyerId || 0,
-      enableDynamicNumber: editingTarget?.enableDynamicNumber || false,
-      rtbShareableTags: editingTarget?.rtbShareableTags || false,
-      type: editingTarget?.type || "Number",
-      number: editingTarget?.endpointUrl || "",
-      minBidAmount: editingTarget?.minBidAmount || 0,
-      maxBidAmount: editingTarget?.maxBidAmount || 100,
-      currency: editingTarget?.currency || "USD",
-      connectionTimeout: editingTarget?.connectionTimeout || 5000,
+      name: "",
+      subId: "",
+      buyerId: 0,
+      enableDynamicNumber: false,
+      rtbShareableTags: false,
+      type: "Number",
+      number: "",
+      minBidAmount: 0,
+      maxBidAmount: 100,
+      currency: "USD",
+      connectionTimeout: 5000,
       dialIvrOptions: editingTarget?.dialIvrOptions || "",
       disableRecordings: editingTarget?.disableRecordings || false,
       timezone: editingTarget?.timezone || "UTC",
@@ -133,6 +133,79 @@ export function EnhancedRTBTargetDialog({
   const priorityBumpValue = form.watch("priorityBump");
   const capOn = form.watch("capOn");
   const estimatedRevenue = form.watch("estimatedRevenue");
+
+  // Reset form when editingTarget changes
+  useEffect(() => {
+    if (editingTarget) {
+      form.reset({
+        name: editingTarget.name || "",
+        subId: editingTarget.subId || "",
+        buyerId: editingTarget.buyerId || 0,
+        enableDynamicNumber: editingTarget.enableDynamicNumber || false,
+        rtbShareableTags: editingTarget.rtbShareableTags || false,
+        type: "Number",
+        number: editingTarget.endpointUrl || "",
+        minBidAmount: editingTarget.minBidAmount || 0,
+        maxBidAmount: editingTarget.maxBidAmount || 100,
+        currency: editingTarget.currency || "USD",
+        connectionTimeout: editingTarget.connectionTimeout || 5000,
+        dialIvrOptions: editingTarget.dialIvrOptions || "",
+        disableRecordings: editingTarget.disableRecordings || false,
+        timezone: editingTarget.timezone || "UTC",
+        capOn: "Conversion",
+        globalCallCap: editingTarget.globalCallCap || 0,
+        monthlyCap: editingTarget.monthlyCap || 0,
+        dailyCap: editingTarget.dailyCap || 0,
+        hourlyCap: editingTarget.hourlyCap || 0,
+        maxConcurrency: editingTarget.maxConcurrentCalls || 0,
+        hourlyConcurrency: editingTarget.hourlyConcurrency || 0,
+        restrictDuplicates: "Buyer Settings (Do not Restrict)",
+        estimatedRevenue: "Use Campaign Setting",
+        priorityBump: 0,
+        endpointUrl: editingTarget.endpointUrl || "",
+        httpMethod: "GET",
+        authentication: editingTarget.authMethod === "choose_authentication" ? "Choose Authentication" : editingTarget.authMethod || "Choose Authentication",
+        authToken: editingTarget.authToken || "",
+        acceptanceParsing: "Choose Property",
+        acceptanceOperator: "Equals",
+        acceptanceValue: "",
+      });
+    } else {
+      form.reset({
+        name: "",
+        subId: "",
+        buyerId: 0,
+        enableDynamicNumber: false,
+        rtbShareableTags: false,
+        type: "Number",
+        number: "",
+        minBidAmount: 0,
+        maxBidAmount: 100,
+        currency: "USD",
+        connectionTimeout: 5000,
+        dialIvrOptions: "",
+        disableRecordings: false,
+        timezone: "UTC",
+        capOn: "Conversion",
+        globalCallCap: 0,
+        monthlyCap: 0,
+        dailyCap: 0,
+        hourlyCap: 0,
+        maxConcurrency: 0,
+        hourlyConcurrency: 0,
+        restrictDuplicates: "Buyer Settings (Do not Restrict)",
+        estimatedRevenue: "Use Campaign Setting",
+        priorityBump: 0,
+        endpointUrl: "",
+        httpMethod: "GET",
+        authentication: "Choose Authentication",
+        authToken: "",
+        acceptanceParsing: "Choose Property",
+        acceptanceOperator: "Equals",
+        acceptanceValue: "",
+      });
+    }
+  }, [editingTarget, form]);
 
   const handleSubmit = async (data: z.infer<typeof enhancedRTBTargetSchema>) => {
     if (isSubmitting) return; // Prevent double submission
