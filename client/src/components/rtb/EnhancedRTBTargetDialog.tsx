@@ -68,6 +68,8 @@ const enhancedRTBTargetSchema = z.object({
   // Request Settings
   endpointUrl: z.string().url("Valid endpoint URL is required"),
   httpMethod: z.enum(["GET", "POST", "PUT", "PATCH"]),
+  contentType: z.enum(["application/json", "application/x-www-form-urlencoded", "text/plain", "application/xml"]),
+  requestBody: z.string().optional(),
   authentication: z.enum(["Choose Authentication", "API Key", "Bearer Token", "Basic Auth"]),
   authToken: z.string().optional(),
   
@@ -122,6 +124,8 @@ export function EnhancedRTBTargetDialog({
       priorityBump: editingTarget?.priorityBump || 0,
       endpointUrl: editingTarget?.endpointUrl || "",
       httpMethod: editingTarget?.httpMethod || "GET",
+      contentType: editingTarget?.contentType || "application/json",
+      requestBody: editingTarget?.requestBody || "",
       authentication: editingTarget?.authentication || "Choose Authentication",
       authToken: editingTarget?.authToken || "",
       acceptanceParsing: editingTarget?.acceptanceParsing || "Choose Property",
@@ -164,6 +168,8 @@ export function EnhancedRTBTargetDialog({
         priorityBump: 0,
         endpointUrl: editingTarget.endpointUrl || "",
         httpMethod: "GET",
+        contentType: editingTarget.contentType || "application/json",
+        requestBody: editingTarget.requestBody || "",
         authentication: editingTarget.authMethod === "choose_authentication" ? "Choose Authentication" : editingTarget.authMethod || "Choose Authentication",
         authToken: editingTarget.authToken || "",
         acceptanceParsing: "Choose Property",
@@ -198,6 +204,8 @@ export function EnhancedRTBTargetDialog({
         priorityBump: 0,
         endpointUrl: "",
         httpMethod: "GET",
+        contentType: "application/json",
+        requestBody: "",
         authentication: "Choose Authentication",
         authToken: "",
         acceptanceParsing: "Choose Property",
@@ -912,6 +920,51 @@ Please add tags with numerical values only."
                               <SelectItem value="PATCH">PATCH</SelectItem>
                             </SelectContent>
                           </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="contentType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Content Type</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="application/json">application/json</SelectItem>
+                              <SelectItem value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</SelectItem>
+                              <SelectItem value="text/plain">text/plain</SelectItem>
+                              <SelectItem value="application/xml">application/xml</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="requestBody"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Request Body</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Enter request body content (for POST/PUT/PATCH requests)"
+                              className="min-h-[100px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            The request body will be sent with POST, PUT, and PATCH requests. Leave empty for GET requests.
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

@@ -679,6 +679,9 @@ export const rtbTargets = pgTable("rtb_targets", {
   // Target Configuration
   name: varchar("name", { length: 256 }).notNull(),
   endpointUrl: varchar("endpoint_url", { length: 512 }).notNull(),
+  httpMethod: varchar("http_method", { length: 10 }).default("POST").notNull(),
+  contentType: varchar("content_type", { length: 100 }).default("application/json").notNull(),
+  requestBody: text("request_body"),
   timeoutMs: integer("timeout_ms").default(3000).notNull(),
   connectionTimeout: integer("connection_timeout").default(5000).notNull(),
   
