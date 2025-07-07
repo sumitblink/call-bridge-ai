@@ -113,6 +113,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 7, 2025: Enhanced RTB Target form UX and prevented duplicate submissions
+  - Fixed auto-population of phone numbers when buyer is selected in RTB Target creation
+  - Moved bid amount fields (Min/Max Bid Amount, Currency) to Basic tab for easier access
+  - Added form submission protection to prevent duplicate RTB targets from double-clicking
+  - Enhanced form validation with proper number inputs and currency selection
+  - Improved user experience with loading states and disabled buttons during submission
 - July 3, 2025: Implemented enterprise-level RTB ID system like Ringba
   - Added `rtb_id` VARCHAR(32) UNIQUE column to campaigns table for external RTB operations
   - Built RTB ID generation service with crypto-secure 32-character hexadecimal IDs

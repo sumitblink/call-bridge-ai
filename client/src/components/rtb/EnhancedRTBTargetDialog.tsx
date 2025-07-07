@@ -92,6 +92,7 @@ export function EnhancedRTBTargetDialog({
   buyers,
   editingTarget 
 }: EnhancedRTBTargetDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<z.infer<typeof enhancedRTBTargetSchema>>({
     resolver: zodResolver(enhancedRTBTargetSchema),
     defaultValues: {
@@ -133,29 +134,37 @@ export function EnhancedRTBTargetDialog({
   const capOn = form.watch("capOn");
   const estimatedRevenue = form.watch("estimatedRevenue");
 
-  const handleSubmit = (data: z.infer<typeof enhancedRTBTargetSchema>) => {
-    onSubmit({
-      ...data,
-      // Convert form data to backend format
-      isActive: true,
-      timeoutMs: data.connectionTimeout,
-      authMethod: data.authentication.toLowerCase().replace(" ", "_"),
-      maxConcurrentCalls: data.maxConcurrency,
-      globalCallCap: data.globalCallCap,
-      monthlyCap: data.monthlyCap,
-      dailyCap: data.dailyCap,
-      hourlyCap: data.hourlyCap,
-      hourlyConcurrency: data.hourlyConcurrency,
-      enableDynamicNumber: data.enableDynamicNumber,
-      rtbShareableTags: data.rtbShareableTags,
-      // Include bid amount fields
-      minBidAmount: data.minBidAmount,
-      maxBidAmount: data.maxBidAmount,
-      currency: data.currency,
-      restrictDuplicates: data.restrictDuplicates !== "Buyer Settings (Do not Restrict)",
-      disableRecordings: data.disableRecordings,
-      priorityBumpValue: data.priorityBump,
-    });
+  const handleSubmit = async (data: z.infer<typeof enhancedRTBTargetSchema>) => {
+    if (isSubmitting) return; // Prevent double submission
+    
+    setIsSubmitting(true);
+    
+    try {
+      await onSubmit({
+        ...data,
+        // Convert form data to backend format
+        isActive: true,
+        timeoutMs: data.connectionTimeout,
+        authMethod: data.authentication.toLowerCase().replace(" ", "_"),
+        maxConcurrentCalls: data.maxConcurrency,
+        globalCallCap: data.globalCallCap,
+        monthlyCap: data.monthlyCap,
+        dailyCap: data.dailyCap,
+        hourlyCap: data.hourlyCap,
+        hourlyConcurrency: data.hourlyConcurrency,
+        enableDynamicNumber: data.enableDynamicNumber,
+        rtbShareableTags: data.rtbShareableTags,
+        // Include bid amount fields
+        minBidAmount: data.minBidAmount,
+        maxBidAmount: data.maxBidAmount,
+        currency: data.currency,
+        restrictDuplicates: data.restrictDuplicates !== "Buyer Settings (Do not Restrict)",
+        disableRecordings: data.disableRecordings,
+        priorityBumpValue: data.priorityBump,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -964,11 +973,14 @@ Please add tags with numerical values only."
             </Tabs>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit">
-                {editingTarget ? "Update Target" : "Create Target"}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting 
+                  ? "Creating..." 
+                  : editingTarget ? "Update Target" : "Create Target"
+                }
               </Button>
             </DialogFooter>
           </form>
