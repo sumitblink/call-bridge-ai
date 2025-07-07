@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { EnhancedRTBTargetDialog } from "@/components/rtb/EnhancedRTBTargetDialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings } from "lucide-react";
+import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -869,6 +869,202 @@ const RTBTargetsTab = () => {
   );
 };
 
+// RTB Overview Component with Setup Guidance
+const RTBOverviewTab = () => {
+  const { data: routers = [] } = useQuery({
+    queryKey: ['/api/rtb/routers'],
+  });
+
+  const { data: targets = [] } = useQuery({
+    queryKey: ['/api/rtb/targets'],
+  });
+
+  const { data: bidRequests = [] } = useQuery({
+    queryKey: ['/api/rtb/bid-requests'],
+  });
+
+  const { data: buyers = [] } = useQuery({
+    queryKey: ['/api/buyers'],
+  });
+
+  const totalRouters = routers?.length || 0;
+  const totalTargets = targets?.length || 0;
+  const totalRequests = bidRequests?.length || 0;
+  const recentRequests = bidRequests?.slice(0, 3) || [];
+
+  const isSetupComplete = totalRouters > 0 && totalTargets > 0;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium">RTB System Overview</h3>
+        <p className="text-sm text-muted-foreground">
+          Real-time bidding dashboard and setup guidance
+        </p>
+      </div>
+
+      {/* Setup Status Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">RTB Targets</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalTargets}</div>
+            <p className="text-xs text-muted-foreground">
+              {totalTargets > 0 ? 'Targets configured' : 'No targets yet'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">RTB Routers</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalRouters}</div>
+            <p className="text-xs text-muted-foreground">
+              {totalRouters > 0 ? 'Routers active' : 'No routers yet'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Bid Requests</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalRequests}</div>
+            <p className="text-xs text-muted-foreground">
+              Total RTB auctions
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">System Status</CardTitle>
+            {isSetupComplete ? (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            ) : (
+              <XCircle className="h-4 w-4 text-red-500" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {isSetupComplete ? 'Ready' : 'Setup'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {isSetupComplete ? 'RTB system operational' : 'Configuration needed'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Setup Guide */}
+      {!isSetupComplete && (
+        <Card>
+          <CardHeader>
+            <CardTitle>RTB Setup Guide</CardTitle>
+            <CardDescription>
+              Follow these steps to configure your real-time bidding system
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 border rounded-lg">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-blue-600">1</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium">Create RTB Targets</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Set up bidding endpoints for your buyers with bid ranges and timeouts
+                  </p>
+                  <Button size="sm" className="mt-2" variant="outline">
+                    Go to RTB Targets <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 border rounded-lg">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-blue-600">2</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium">Configure RTB Router</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Create a router and assign targets with priorities for bidding logic
+                  </p>
+                  <Button size="sm" className="mt-2" variant="outline">
+                    Go to RTB Routers <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 border rounded-lg">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-blue-600">3</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium">Enable RTB on Campaign</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Assign your RTB router to campaigns for live bidding
+                  </p>
+                  <Button size="sm" className="mt-2" variant="outline">
+                    Go to Campaigns <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Activity */}
+      {recentRequests.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent RTB Activity</CardTitle>
+            <CardDescription>
+              Latest bidding requests and results
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentRequests.map((request: any) => (
+                <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <div className="text-sm font-medium">Request {request.requestId}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {request.totalTargetsPinged} targets pinged • {request.totalResponseTimeMs}ms
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {request.winningBidAmount ? (
+                      <div className="text-sm font-medium text-green-600">
+                        ${request.winningBidAmount}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">No bid</div>
+                    )}
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(request.createdAt).toLocaleTimeString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
 // RTB Analytics Component
 const RTBAnalyticsTab = () => {
   const { data: bidRequests = [], isLoading: requestsLoading } = useQuery({
@@ -1155,28 +1351,36 @@ export default function RTBManagement() {
           </div>
         </div>
         
-        <Tabs defaultValue="routers" className="space-y-4">
+        <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="routers" className="flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              RTB Routers
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Overview
             </TabsTrigger>
             <TabsTrigger value="targets" className="flex items-center gap-2">
               <Play className="w-4 h-4" />
               RTB Targets
             </TabsTrigger>
+            <TabsTrigger value="routers" className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              RTB Routers
+            </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <Activity className="w-4 h-4" />
+              <BarChart className="w-4 h-4" />
               Analytics
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="routers">
-            <RTBRoutersTab />
+          <TabsContent value="overview">
+            <RTBOverviewTab />
           </TabsContent>
           
           <TabsContent value="targets">
             <RTBTargetsTab />
+          </TabsContent>
+          
+          <TabsContent value="routers">
+            <RTBRoutersTab />
           </TabsContent>
           
           <TabsContent value="analytics">
