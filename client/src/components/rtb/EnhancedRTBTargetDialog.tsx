@@ -322,16 +322,19 @@ export function EnhancedRTBTargetDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Buyer <span className="text-red-500">*</span></FormLabel>
-                          <Select onValueChange={(value) => {
-                            const buyerId = parseInt(value);
-                            field.onChange(buyerId);
-                            
-                            // Auto-populate phone number from selected buyer
-                            const selectedBuyer = buyers.find(buyer => buyer.id === buyerId);
-                            if (selectedBuyer?.phoneNumber) {
-                              form.setValue('number', selectedBuyer.phoneNumber);
-                            }
-                          }}>
+                          <Select 
+                            value={field.value ? field.value.toString() : ""} 
+                            onValueChange={(value) => {
+                              const buyerId = parseInt(value);
+                              field.onChange(buyerId);
+                              
+                              // Auto-populate phone number from selected buyer
+                              const selectedBuyer = buyers.find(buyer => buyer.id === buyerId);
+                              if (selectedBuyer?.phoneNumber) {
+                                form.setValue('number', selectedBuyer.phoneNumber);
+                              }
+                            }}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select Buyer" />
@@ -395,7 +398,7 @@ export function EnhancedRTBTargetDialog({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue />
@@ -488,7 +491,7 @@ Please add tags with numerical values only."
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Time Zone <span className="text-red-500">*</span></FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Search Timezone" />
@@ -568,7 +571,7 @@ Please add tags with numerical values only."
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Currency <span className="text-red-500">*</span></FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                   <SelectTrigger>
                                     <SelectValue placeholder="Select Currency" />
@@ -916,7 +919,7 @@ Please add tags with numerical values only."
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>HTTP Method</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue />
@@ -940,7 +943,7 @@ Please add tags with numerical values only."
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Content Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue />
@@ -985,7 +988,7 @@ Please add tags with numerical values only."
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Authentication</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue />
