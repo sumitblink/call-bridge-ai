@@ -113,6 +113,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 7, 2025: Successfully implemented external destination routing for RTB winning bidders
+  - Fixed RTB routing logic to use external bidder destination numbers instead of internal buyer phone numbers
+  - Updated both webhook endpoints (/api/webhooks/voice and /api/webhooks/pool/{poolId}/voice) with external routing
+  - Created virtual buyer objects with destinationNumber from winning bid responses  
+  - Enhanced console logging to show "Routing to EXTERNAL: [destinationNumber]" for clarity
+  - Successfully tested external routing: calls now route to +1800555EXTERNAL from winning bidders
+  - RTB system now properly routes calls to external insurance companies, lead buyers, and partners
 - July 7, 2025: Fixed RTB test bidding endpoint and achieved full RTB system operational status
   - Fixed test bidding endpoint parameter mapping (minBid/maxBid vs minBidAmount/maxBidAmount)
   - Resolved RTB auction failures due to invalid bid amounts below minimum thresholds

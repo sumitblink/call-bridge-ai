@@ -1030,13 +1030,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             winningBidAmount = parseFloat(biddingResult.winningBid.bidAmount);
             winningTargetId = biddingResult.winningBid.rtbTargetId;
             
-            // Get the winning target to determine destination
+            // Get the winning target and use external destination number
             const winningTarget = await storage.getRtbTarget(winningTargetId);
-            if (winningTarget) {
-              // Use the target's buyer information for routing
+            if (winningTarget && biddingResult.winningBid.destinationNumber) {
+              // Get buyer info but use destination number from bid response
               const targetBuyer = await storage.getBuyer(winningTarget.buyerId);
-              if (targetBuyer && targetBuyer.phoneNumber) {
-                selectedBuyer = targetBuyer;
+              if (targetBuyer) {
+                // Create a virtual buyer object with the external destination number
+                selectedBuyer = {
+                  ...targetBuyer,
+                  phoneNumber: biddingResult.winningBid.destinationNumber
+                };
+                
                 routingData = {
                   method: 'rtb',
                   rtbRequestId,
@@ -1044,16 +1049,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   winningTargetId,
                   targetName: winningTarget.name,
                   totalTargetsPinged: biddingResult.totalTargetsPinged,
-                  responseTimeMs: biddingResult.totalResponseTime
+                  responseTimeMs: biddingResult.totalResponseTime,
+                  externalDestination: biddingResult.winningBid.destinationNumber
                 };
                 
-                console.log(`[Webhook RTB] RTB SUCCESS - Winner: ${winningTarget.name}, Bid: $${winningBidAmount}, Routing to: ${targetBuyer.name} (${targetBuyer.phoneNumber})`);
+                console.log(`[Webhook RTB] RTB SUCCESS - Winner: ${winningTarget.name}, Bid: $${winningBidAmount}, Routing to EXTERNAL: ${biddingResult.winningBid.destinationNumber}`);
               } else {
-                console.log(`[Webhook RTB] RTB winner has no valid buyer phone number, falling back to traditional routing`);
+                console.log(`[Webhook RTB] RTB winning target buyer not found, falling back to traditional routing`);
                 routingMethod = 'rtb_fallback';
               }
             } else {
-              console.log(`[Webhook RTB] RTB winning target not found, falling back to traditional routing`);
+              console.log(`[Webhook RTB] RTB winning target not found or missing destination number, falling back to traditional routing`);
               routingMethod = 'rtb_fallback';
             }
           } else {
@@ -1147,7 +1153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         </Response>
       `;
       
-      console.log(`[Webhook RTB] Generated TwiML for routing to ${selectedBuyer.phoneNumber}`);
+      console.log(`[Webhook RTB] Generated TwiML for routing to ${selectedBuyer.phoneNumber} via ${routingMethod}`);
       res.type('text/xml').send(twiml);
       
     } catch (error) {
@@ -4397,7 +4403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestId,
         bidAmount: parseFloat(bidAmount),
         bidCurrency: 'USD',
-        destinationNumber: '+917208280595', // Test destination number
+        destinationNumber: '+1800555EXTERNAL', // External bidder destination
         requiredDuration: 60, // 60 seconds minimum
         accepted: true,
         callerId,
