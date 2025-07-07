@@ -276,6 +276,10 @@ export class RTBService {
       const responseTime = Date.now() - startTime;
 
       if (!response.ok) {
+        if (response.status === 204) {
+          // No bid response, return null to indicate no bid
+          return null;
+        }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -286,6 +290,8 @@ export class RTBService {
         throw new Error('Invalid bid response format');
       }
 
+      const isValid = this.isBidValid(responseData, target);
+      
       return {
         targetId: target.id,
         bidAmount: parseFloat(responseData.bidAmount),
@@ -293,7 +299,7 @@ export class RTBService {
         destinationNumber: responseData.destinationNumber,
         requiredDuration: responseData.requiredDuration,
         responseTimeMs: responseTime,
-        isValid: this.isBidValid(responseData, target)
+        isValid
       };
 
     } catch (error) {
@@ -330,9 +336,9 @@ export class RTBService {
   private static validateBidResponse(response: any, target: RtbTarget): boolean {
     return (
       typeof response === 'object' &&
-      typeof response.bidAmount === 'number' &&
+      (typeof response.bidAmount === 'number' || !isNaN(parseFloat(response.bidAmount))) &&
       typeof response.destinationNumber === 'string' &&
-      response.bidAmount >= 0 &&
+      parseFloat(response.bidAmount) >= 0 &&
       response.destinationNumber.length > 0
     );
   }
@@ -342,10 +348,14 @@ export class RTBService {
    */
   private static isBidValid(response: any, target: RtbTarget): boolean {
     const bidAmount = parseFloat(response.bidAmount);
+    const minBid = parseFloat(target.minBidAmount as any);
+    const maxBid = parseFloat(target.maxBidAmount as any);
+    
+    // Removed debug logging for production
     
     return (
-      bidAmount >= target.minBidAmount &&
-      bidAmount <= target.maxBidAmount &&
+      bidAmount >= minBid &&
+      bidAmount <= maxBid &&
       response.destinationNumber &&
       response.destinationNumber.length > 0
     );

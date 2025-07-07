@@ -4325,6 +4325,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test bidding endpoint for RTB development
+  app.post('/api/test-bid', (req, res) => {
+    console.log('Test bid request received:', JSON.stringify(req.body, null, 2));
+    
+    const { requestId, campaignId, callerId, minBidAmount, maxBidAmount } = req.body;
+    
+    // Simulate bid decision (80% chance to bid for testing)
+    const shouldBid = Math.random() > 0.2;
+    
+    if (shouldBid) {
+      // Generate bid amount between min and max
+      const minBid = parseFloat(minBidAmount) || 1.0;
+      const maxBid = parseFloat(maxBidAmount) || 5.0;
+      const bidAmount = (Math.random() * (maxBid - minBid) + minBid).toFixed(2);
+      
+      const response = {
+        requestId,
+        bidAmount: parseFloat(bidAmount),
+        bidCurrency: 'USD',
+        destinationNumber: '+917208280595', // Test destination number
+        requiredDuration: 60, // 60 seconds minimum
+        accepted: true,
+        callerId,
+        campaignId,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('Test bid response:', response);
+      res.json(response);
+    } else {
+      // No bid
+      console.log('Test bidder not bidding on this request');
+      res.status(204).send(); // No content
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
