@@ -1138,15 +1138,15 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRtbTarget(id: number): Promise<boolean> {
     try {
-      // First delete all bid requests that reference this target
-      await db
-        .delete(rtbBidRequests)
-        .where(eq(rtbBidRequests.winningTargetId, id));
-      
-      // Then delete all bid responses that reference this target
+      // First delete all bid responses that reference this target
       await db
         .delete(rtbBidResponses)
         .where(eq(rtbBidResponses.rtbTargetId, id));
+      
+      // Then delete all bid requests that reference this target as winning target
+      await db
+        .delete(rtbBidRequests)
+        .where(eq(rtbBidRequests.winningTargetId, id));
       
       // Remove all router assignments for this target
       await db
@@ -1188,12 +1188,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRtbRouter(id: number): Promise<boolean> {
     try {
-      // First delete all bid requests that reference this router
-      await db
-        .delete(rtbBidRequests)
-        .where(eq(rtbBidRequests.rtbRouterId, id));
-      
-      // Then delete all bid responses for targets assigned to this router
+      // First delete all bid responses for targets assigned to this router
       const assignedTargets = await db
         .select({ targetId: rtbRouterAssignments.rtbTargetId })
         .from(rtbRouterAssignments)
@@ -1205,6 +1200,11 @@ export class DatabaseStorage implements IStorage {
           .delete(rtbBidResponses)
           .where(inArray(rtbBidResponses.rtbTargetId, targetIds));
       }
+      
+      // Then delete all bid requests that reference this router
+      await db
+        .delete(rtbBidRequests)
+        .where(eq(rtbBidRequests.rtbRouterId, id));
       
       // Delete all assignments for this router
       await db.delete(rtbRouterAssignments).where(eq(rtbRouterAssignments.rtbRouterId, id));
@@ -1290,11 +1290,15 @@ export class DatabaseStorage implements IStorage {
   // Clear all RTB audit data (bid requests and responses)
   async clearRtbAuditData(): Promise<void> {
     try {
-      // Delete all bid responses first
-      await db.delete(rtbBidResponses);
+      console.log('Clearing RTB audit data: bid responses first, then bid requests');
+      
+      // Delete all bid responses first (they reference bid requests via request_id)
+      const responsesResult = await db.delete(rtbBidResponses);
+      console.log(`Deleted ${responsesResult.rowCount} bid responses`);
       
       // Then delete all bid requests
-      await db.delete(rtbBidRequests);
+      const requestsResult = await db.delete(rtbBidRequests);
+      console.log(`Deleted ${requestsResult.rowCount} bid requests`);
     } catch (error) {
       console.error('Error clearing RTB audit data:', error);
       throw error;
