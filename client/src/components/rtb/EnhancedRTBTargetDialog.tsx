@@ -144,7 +144,7 @@ export function EnhancedRTBTargetDialog({
         enableDynamicNumber: editingTarget.enableDynamicNumber || false,
         rtbShareableTags: editingTarget.rtbShareableTags || false,
         type: "Number",
-        number: editingTarget.endpointUrl || "",
+        number: buyers.find(b => b.id === editingTarget.buyerId)?.phoneNumber || "",
         minBidAmount: editingTarget.minBidAmount || 0,
         maxBidAmount: editingTarget.maxBidAmount || 100,
         currency: editingTarget.currency || "USD",
