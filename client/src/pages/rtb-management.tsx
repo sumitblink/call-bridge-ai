@@ -779,7 +779,9 @@ const RTBTargetsTab = () => {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => handleEdit(target)}
                             className="h-6 w-6 p-0"
+                            title="Edit Target Settings"
                           >
                             <Settings className="w-3 h-3" />
                           </Button>
@@ -820,32 +822,38 @@ const RTBTargetsTab = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex justify-end gap-2">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => handleTest(target)}
                             disabled={testMutation.isPending && testingTarget?.id === target.id}
-                            className="h-8 w-8 p-0"
+                            className="h-8 px-2"
+                            title="Test Endpoint"
                           >
-                            <TestTube className="w-4 h-4" />
+                            <TestTube className="w-4 h-4 mr-1" />
+                            {testMutation.isPending && testingTarget?.id === target.id ? "Testing..." : "Test"}
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => handleEdit(target)}
-                            className="h-8 w-8 p-0"
+                            className="h-8 px-2"
+                            title="Edit Target"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-4 h-4 mr-1" />
+                            Edit
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="destructive"
                             size="sm"
                             onClick={() => deleteMutation.mutate(target.id)}
                             disabled={deleteMutation.isPending}
-                            className="h-8 w-8 p-0"
+                            className="h-8 px-2"
+                            title="Delete Target"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            {deleteMutation.isPending ? "Deleting..." : "Delete"}
                           </Button>
                         </div>
                       </TableCell>
