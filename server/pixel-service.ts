@@ -69,7 +69,7 @@ export class PixelService {
         method: 'GET',
         signal: controller.signal,
         headers: {
-          'User-Agent': 'Ringba-Pixel-Service/1.0',
+          'User-Agent': 'CallCenter-Pixel-Service/1.0',
         },
       });
       
@@ -109,7 +109,7 @@ export class PixelService {
         method: 'GET',
         signal: controller.signal,
         headers: {
-          'User-Agent': 'Ringba-Pixel-Service/1.0',
+          'User-Agent': 'CallCenter-Pixel-Service/1.0',
           'Accept': 'image/*',
         },
       });

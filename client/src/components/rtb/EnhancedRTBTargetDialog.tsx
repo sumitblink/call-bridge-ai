@@ -246,7 +246,7 @@ export function EnhancedRTBTargetDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            {editingTarget ? "Edit Ring Tree Target" : "Create Ring Tree Target"}
+            {editingTarget ? "Edit RTB Target" : "Create RTB Target"}
           </DialogTitle>
           <DialogDescription>
             Configure your RTB target with enterprise-level controls and settings

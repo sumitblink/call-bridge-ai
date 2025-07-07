@@ -263,8 +263,8 @@ export default function IntegrationsPage() {
         },
         {
           id: "ringba_postback",
-          name: "Ringba Postback",
-          description: "Standard Ringba-style postback URL",
+          name: "Standard Postback",
+          description: "Standard postback URL format",
           code: "https://your-tracking-platform.com/postback?call_id={call_id}&campaign_id={campaign_id}&caller_id={caller_id}&duration={duration}&status={status}&timestamp={timestamp}"
         },
         {

@@ -232,7 +232,7 @@ export class DNIService {
    * Generate JavaScript SDK code for website integration
    */
   static generateJavaScriptSDK(domain: string): string {
-    return `/* Ringba-Style Dynamic Number Insertion (DNI) SDK */
+    return `/* Dynamic Number Insertion (DNI) SDK */
 (function(window, document) {
   'use strict';
 

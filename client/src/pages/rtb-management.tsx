@@ -889,7 +889,7 @@ const RTBTargetsTab = () => {
           )}
           <Button onClick={() => setIsCreateDialogOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            Create Ring Tree Target
+            Create RTB Target
           </Button>
         </div>
       </div>
