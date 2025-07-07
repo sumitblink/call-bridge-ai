@@ -1188,6 +1188,18 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRtbRouter(id: number): Promise<boolean> {
     try {
+      // Check if any campaigns are using this router
+      const campaignsUsingRouter = await db
+        .select({ id: campaigns.id, name: campaigns.name })
+        .from(campaigns)
+        .where(eq(campaigns.rtbRouterId, id));
+      
+      if (campaignsUsingRouter.length > 0) {
+        console.error(`Cannot delete RTB router ${id}: ${campaignsUsingRouter.length} campaigns are using it:`, 
+                     campaignsUsingRouter.map(c => `${c.name} (ID: ${c.id})`).join(', '));
+        return false;
+      }
+      
       // First delete all bid responses for targets assigned to this router
       const assignedTargets = await db
         .select({ targetId: rtbRouterAssignments.rtbTargetId })

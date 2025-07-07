@@ -200,7 +200,13 @@ const RTBRoutersTab = () => {
         method: 'DELETE',
       });
       if (!response.ok) {
-        throw new Error('Failed to delete RTB router');
+        const errorData = await response.json();
+        if (response.status === 400 && errorData.campaigns) {
+          // Router is in use by campaigns
+          const campaignNames = errorData.campaigns.map((c: any) => c.name).join(', ');
+          throw new Error(`Cannot delete router: ${errorData.reason}. Campaigns using this router: ${campaignNames}. ${errorData.suggestion}`);
+        }
+        throw new Error(errorData.error || 'Failed to delete RTB router');
       }
       return response.json();
     },
@@ -209,7 +215,11 @@ const RTBRoutersTab = () => {
       toast({ title: "Success", description: "RTB router deleted successfully" });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ 
+        title: "Cannot Delete RTB Router", 
+        description: error.message, 
+        variant: "destructive" 
+      });
     },
   });
 

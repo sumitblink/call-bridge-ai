@@ -4259,9 +4259,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/rtb/routers/:id', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
+      
+      // Check if any campaigns are using this router
+      const allCampaigns = await storage.getCampaigns();
+      const activeCampaigns = allCampaigns.filter(c => c.rtbRouterId === parseInt(id));
+      
+      if (activeCampaigns.length > 0) {
+        return res.status(400).json({ 
+          error: 'Cannot delete active RTB router', 
+          reason: `${activeCampaigns.length} campaign(s) are currently using this router`,
+          campaigns: activeCampaigns.map(c => ({ id: c.id, name: c.name })),
+          suggestion: 'Please disable RTB or change the router for these campaigns first'
+        });
+      }
+      
       const success = await storage.deleteRtbRouter(parseInt(id));
       if (!success) {
-        return res.status(404).json({ error: 'RTB router not found' });
+        return res.status(404).json({ error: 'RTB router not found or deletion failed' });
       }
       res.json({ success: true });
     } catch (error) {
