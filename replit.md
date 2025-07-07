@@ -113,6 +113,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 7, 2025: Implemented comprehensive RTB target deletion and fixed router assignments
+  - Fixed RTB target deletion to properly handle foreign key constraints (router assignments)
+  - Added "Clear All" button for bulk RTB target deletion with user confirmation
+  - Created `/api/rtb/targets/clear-all` endpoint for safe bulk operations
+  - Fixed RTB system requiring targets to be assigned to routers for bidding
+  - Enhanced RTB management UI with improved deletion workflow and error handling
 - July 7, 2025: Enhanced RTB Target form UX and prevented duplicate submissions
   - Fixed auto-population of phone numbers when buyer is selected in RTB Target creation
   - Moved bid amount fields (Min/Max Bid Amount, Currency) to Basic tab for easier access
