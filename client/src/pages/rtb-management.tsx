@@ -110,6 +110,7 @@ type RtbBidRequest = {
 const RTBRoutersTab = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingRouter, setEditingRouter] = useState<RtbRouter | null>(null);
+  const [targetAssignments, setTargetAssignments] = useState<{[key: number]: {priority: number, active: boolean}}>({});
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -119,6 +120,14 @@ const RTBRoutersTab = () => {
 
   const { data: targets = [] } = useQuery({
     queryKey: ['/api/rtb/targets'],
+  });
+
+  const { data: assignments = [] } = useQuery({
+    queryKey: ['/api/rtb/router-assignments'],
+  });
+
+  const { data: buyers = [] } = useQuery({
+    queryKey: ['/api/buyers'],
   });
 
   const createMutation = useMutation({
@@ -144,20 +153,40 @@ const RTBRoutersTab = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<z.infer<typeof rtbRouterSchema>> }) => {
-      const response = await fetch(`/api/rtb/routers/${id}`, {
+    mutationFn: async ({ id, data, assignments }: { 
+      id: number; 
+      data: Partial<z.infer<typeof rtbRouterSchema>>; 
+      assignments?: Array<{targetId: number, priority: number, isActive: boolean}>
+    }) => {
+      // Update router
+      const routerResponse = await fetch(`/api/rtb/routers/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!response.ok) {
+      if (!routerResponse.ok) {
         throw new Error('Failed to update RTB router');
       }
-      return response.json();
+      
+      // Update assignments if provided
+      if (assignments) {
+        const assignmentResponse = await fetch(`/api/rtb/routers/${id}/assignments`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assignments }),
+        });
+        if (!assignmentResponse.ok) {
+          throw new Error('Failed to update router assignments');
+        }
+      }
+      
+      return routerResponse.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/rtb/routers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/rtb/router-assignments'] });
       setEditingRouter(null);
+      setTargetAssignments({});
       toast({ title: "Success", description: "RTB router updated successfully" });
     },
     onError: (error: any) => {
@@ -198,9 +227,18 @@ const RTBRoutersTab = () => {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof rtbRouterSchema>) => {
+  const onSubmit = async (data: z.infer<typeof rtbRouterSchema>) => {
     if (editingRouter) {
-      updateMutation.mutate({ id: editingRouter.id, data });
+      // Update router and assignments
+      updateMutation.mutate({ 
+        id: editingRouter.id, 
+        data, 
+        assignments: Object.entries(targetAssignments).map(([targetId, config]) => ({
+          targetId: parseInt(targetId),
+          priority: config.priority,
+          isActive: config.active
+        }))
+      });
     } else {
       createMutation.mutate(data);
     }
@@ -218,12 +256,24 @@ const RTBRoutersTab = () => {
       conversionTracking: router.conversionTracking,
       isActive: router.isActive,
     });
+    
+    // Load current assignments for this router
+    const routerAssignments = assignments.filter((a: any) => a.rtbRouterId === router.id);
+    const assignmentMap: {[key: number]: {priority: number, active: boolean}} = {};
+    routerAssignments.forEach((assignment: any) => {
+      assignmentMap[assignment.rtbTargetId] = {
+        priority: assignment.priority,
+        active: assignment.isActive
+      };
+    });
+    setTargetAssignments(assignmentMap);
   };
 
   const handleCloseDialog = () => {
     console.log('Closing dialog, setting state to false');
     setIsCreateDialogOpen(false);
     setEditingRouter(null);
+    setTargetAssignments({});
     form.reset();
   };
 
@@ -411,6 +461,85 @@ const RTBRoutersTab = () => {
                     )}
                   />
                 </div>
+
+                {/* Target Assignment Section */}
+                {editingRouter && (
+                  <div className="space-y-4">
+                    <div className="border-t pt-4">
+                      <h4 className="text-sm font-medium mb-3">Target Assignments</h4>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Select targets to assign to this router and set their priority order
+                      </p>
+                      
+                      {Array.isArray(targets) && targets.length > 0 ? (
+                        <div className="space-y-3">
+                          {targets.map((target: RtbTarget) => {
+                            const currentAssignment = assignments.find(
+                              (a: any) => a.rtbTargetId === target.id && a.rtbRouterId === editingRouter?.id
+                            );
+                            const isAssigned = !!currentAssignment;
+                            const currentPriority = currentAssignment?.priority || 1;
+                            
+                            return (
+                              <div key={target.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                                <input
+                                  type="checkbox"
+                                  id={`target-${target.id}`}
+                                  checked={isAssigned}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setTargetAssignments(prev => ({
+                                      ...prev,
+                                      [target.id]: checked 
+                                        ? { priority: currentPriority, active: true }
+                                        : { priority: 1, active: false }
+                                    }));
+                                  }}
+                                  className="w-4 h-4 rounded border-gray-300"
+                                />
+                                <div className="flex-1">
+                                  <label htmlFor={`target-${target.id}`} className="text-sm font-medium cursor-pointer">
+                                    {target.name}
+                                  </label>
+                                  <div className="text-xs text-muted-foreground">
+                                    Buyer: {buyers.find((b: any) => b.id === target.buyerId)?.name || 'Unknown'}
+                                  </div>
+                                </div>
+                                {(isAssigned || targetAssignments[target.id]?.active) && (
+                                  <div className="flex items-center space-x-2">
+                                    <label className="text-xs text-muted-foreground">Priority:</label>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      max="99"
+                                      value={targetAssignments[target.id]?.priority || currentPriority}
+                                      onChange={(e) => {
+                                        const priority = parseInt(e.target.value) || 1;
+                                        setTargetAssignments(prev => ({
+                                          ...prev,
+                                          [target.id]: { 
+                                            priority, 
+                                            active: prev[target.id]?.active || isAssigned 
+                                          }
+                                        }));
+                                      }}
+                                      className="w-16 px-2 py-1 text-xs border rounded"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground text-center py-4">
+                          No RTB targets available. Create targets first to assign them to routers.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={handleCloseDialog}>
                     Cancel

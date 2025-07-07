@@ -1186,8 +1186,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   // RTB Router Assignments
-  async getRtbRouterAssignments(routerId: number): Promise<RtbRouterAssignment[]> {
-    return await db.select().from(rtbRouterAssignments).where(eq(rtbRouterAssignments.rtbRouterId, routerId));
+  async getRtbRouterAssignments(routerId?: number): Promise<RtbRouterAssignment[]> {
+    if (routerId) {
+      return await db.select().from(rtbRouterAssignments).where(eq(rtbRouterAssignments.rtbRouterId, routerId));
+    }
+    return await db.select().from(rtbRouterAssignments);
+  }
+
+  async deleteRtbRouterAssignmentById(id: number): Promise<boolean> {
+    const result = await db.delete(rtbRouterAssignments).where(eq(rtbRouterAssignments.id, id));
+    return result.rowCount > 0;
   }
 
   async createRtbRouterAssignment(assignment: InsertRtbRouterAssignment): Promise<RtbRouterAssignment> {

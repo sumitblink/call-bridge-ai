@@ -4124,6 +4124,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RTB Router Assignments
+  app.get('/api/rtb/router-assignments', requireAuth, async (req: any, res) => {
+    try {
+      const assignments = await storage.getRtbRouterAssignments();
+      res.json(assignments);
+    } catch (error) {
+      console.error('Error fetching RTB router assignments:', error);
+      res.status(500).json({ error: 'Failed to fetch RTB router assignments' });
+    }
+  });
+
+  // Update router target assignments
+  app.put('/api/rtb/routers/:id/assignments', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { assignments } = req.body; // Array of {targetId, priority, isActive}
+      
+      // First, remove existing assignments for this router
+      const existingAssignments = await storage.getRtbRouterAssignments(parseInt(id));
+      
+      for (const assignment of existingAssignments) {
+        await storage.deleteRtbRouterAssignmentById(assignment.id);
+      }
+      
+      // Then add new assignments
+      for (const assignment of assignments) {
+        if (assignment.isActive) {
+          await storage.createRtbRouterAssignment({
+            rtbRouterId: parseInt(id),
+            rtbTargetId: assignment.targetId,
+            priority: assignment.priority,
+            isActive: assignment.isActive,
+          });
+        }
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating router assignments:', error);
+      res.status(500).json({ error: 'Failed to update router assignments' });
+    }
+  });
+
   // RTB Routers
   app.get('/api/rtb/routers', requireAuth, async (req: any, res) => {
     try {
