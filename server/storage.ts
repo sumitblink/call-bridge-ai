@@ -175,6 +175,9 @@ export interface IStorage {
   getRtbBidResponses(requestId: string): Promise<RtbBidResponse[]>;
   createRtbBidResponse(response: InsertRtbBidResponse): Promise<RtbBidResponse>;
   updateRtbBidResponse(id: number, response: Partial<InsertRtbBidResponse>): Promise<RtbBidResponse | undefined>;
+  
+  // RTB Audit Data Cleanup
+  clearRtbAuditData(): Promise<void>;
 }
 
 export class MemStorage implements IStorage {

@@ -1138,12 +1138,22 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRtbTarget(id: number): Promise<boolean> {
     try {
-      // First remove all router assignments for this target
+      // First delete all bid requests that reference this target
+      await db
+        .delete(rtbBidRequests)
+        .where(eq(rtbBidRequests.winningTargetId, id));
+      
+      // Then delete all bid responses that reference this target
+      await db
+        .delete(rtbBidResponses)
+        .where(eq(rtbBidResponses.rtbTargetId, id));
+      
+      // Remove all router assignments for this target
       await db
         .delete(rtbRouterAssignments)
         .where(eq(rtbRouterAssignments.rtbTargetId, id));
       
-      // Then delete the target itself
+      // Finally delete the target itself
       const result = await db.delete(rtbTargets).where(eq(rtbTargets.id, id));
       return result.rowCount > 0;
     } catch (error) {
@@ -1177,12 +1187,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteRtbRouter(id: number): Promise<boolean> {
-    // First delete all assignments for this router
-    await db.delete(rtbRouterAssignments).where(eq(rtbRouterAssignments.rtbRouterId, id));
-    
-    // Then delete the router
-    const result = await db.delete(rtbRouters).where(eq(rtbRouters.id, id));
-    return result.rowCount > 0;
+    try {
+      // First delete all bid requests that reference this router
+      await db
+        .delete(rtbBidRequests)
+        .where(eq(rtbBidRequests.rtbRouterId, id));
+      
+      // Then delete all bid responses for targets assigned to this router
+      const assignedTargets = await db
+        .select({ targetId: rtbRouterAssignments.rtbTargetId })
+        .from(rtbRouterAssignments)
+        .where(eq(rtbRouterAssignments.rtbRouterId, id));
+      
+      if (assignedTargets.length > 0) {
+        const targetIds = assignedTargets.map(t => t.targetId);
+        await db
+          .delete(rtbBidResponses)
+          .where(inArray(rtbBidResponses.rtbTargetId, targetIds));
+      }
+      
+      // Delete all assignments for this router
+      await db.delete(rtbRouterAssignments).where(eq(rtbRouterAssignments.rtbRouterId, id));
+      
+      // Finally delete the router itself
+      const result = await db.delete(rtbRouters).where(eq(rtbRouters.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting RTB router:', error);
+      return false;
+    }
   }
 
   // RTB Router Assignments
@@ -1252,6 +1285,20 @@ export class DatabaseStorage implements IStorage {
       .where(eq(rtbBidResponses.id, id))
       .returning();
     return updatedResponse;
+  }
+
+  // Clear all RTB audit data (bid requests and responses)
+  async clearRtbAuditData(): Promise<void> {
+    try {
+      // Delete all bid responses first
+      await db.delete(rtbBidResponses);
+      
+      // Then delete all bid requests
+      await db.delete(rtbBidRequests);
+    } catch (error) {
+      console.error('Error clearing RTB audit data:', error);
+      throw error;
+    }
   }
 }
 

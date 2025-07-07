@@ -4109,19 +4109,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       
+      console.log(`[Clear All RTB] Starting cleanup for user ${userId}`);
+      
       // Get all targets for the user
       const targets = await storage.getRtbTargets();
       const userTargets = targets.filter(target => target.userId === userId);
       
+      console.log(`[Clear All RTB] Found ${userTargets.length} user targets to delete`);
+      
+      if (userTargets.length === 0) {
+        return res.json({ 
+          success: true, 
+          deletedCount: 0,
+          message: 'No RTB targets to delete'
+        });
+      }
+      
+      // Clear all audit data first to remove foreign key constraints
+      console.log(`[Clear All RTB] Clearing audit data first...`);
+      await storage.clearRtbAuditData();
+      
       // Delete all user targets (this will also remove router assignments)
+      console.log(`[Clear All RTB] Deleting ${userTargets.length} targets...`);
+      let successCount = 0;
+      let errorCount = 0;
+      
       for (const target of userTargets) {
-        await storage.deleteRtbTarget(target.id);
+        try {
+          const result = await storage.deleteRtbTarget(target.id);
+          if (result) {
+            successCount++;
+            console.log(`[Clear All RTB] Successfully deleted target ${target.id}`);
+          } else {
+            errorCount++;
+            console.log(`[Clear All RTB] Failed to delete target ${target.id}`);
+          }
+        } catch (error) {
+          errorCount++;
+          console.error(`[Clear All RTB] Error deleting target ${target.id}:`, error.message);
+        }
       }
       
       res.json({ 
         success: true, 
-        deletedCount: userTargets.length,
-        message: `Deleted ${userTargets.length} RTB targets`
+        deletedCount: successCount,
+        errorCount: errorCount,
+        totalTargets: userTargets.length,
+        message: `Deleted ${successCount} RTB targets${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
       });
     } catch (error) {
       console.error('Error clearing all RTB targets:', error);
