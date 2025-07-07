@@ -102,7 +102,7 @@ export function EnhancedRTBTargetDialog({
       enableDynamicNumber: editingTarget?.enableDynamicNumber || false,
       rtbShareableTags: editingTarget?.rtbShareableTags || false,
       type: editingTarget?.type || "Number",
-      number: editingTarget?.number || "",
+      number: editingTarget?.endpointUrl || "",
       minBidAmount: editingTarget?.minBidAmount || 0,
       maxBidAmount: editingTarget?.maxBidAmount || 100,
       currency: editingTarget?.currency || "USD",
