@@ -4420,6 +4420,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RTB Simulation Endpoints (Web-accessible for testing)
+  app.post('/api/rtb/simulate/bid-high', (req, res) => {
+    console.log('RTB High Bidder request received:', JSON.stringify(req.body, null, 2));
+    
+    const { request_id, campaign_id, caller_id, min_bid, max_bid } = req.body;
+    
+    // High bidder strategy: $8.00-$12.00 per call
+    const bidAmount = (Math.random() * (12.00 - 8.00) + 8.00).toFixed(2);
+    
+    const response = {
+      request_id,
+      bid_amount: parseFloat(bidAmount),
+      bid_currency: 'USD',
+      destination_number: '+1800555EXTERNAL', // External destination
+      required_duration: 60,
+      accepted: true,
+      caller_id,
+      campaign_id,
+      bidder_name: 'High Bidder (Aggressive)',
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('High bidder response:', response);
+    res.json(response);
+  });
+
+  app.post('/api/rtb/simulate/bid-low', (req, res) => {
+    console.log('RTB Low Bidder request received:', JSON.stringify(req.body, null, 2));
+    
+    const { request_id, campaign_id, caller_id, min_bid, max_bid } = req.body;
+    
+    // Low bidder strategy: $2.00-$4.00 per call
+    const bidAmount = (Math.random() * (4.00 - 2.00) + 2.00).toFixed(2);
+    
+    const response = {
+      request_id,
+      bid_amount: parseFloat(bidAmount),
+      bid_currency: 'USD',
+      destination_number: '+1800555EXTERNAL', // External destination
+      required_duration: 60,
+      accepted: true,
+      caller_id,
+      campaign_id,
+      bidder_name: 'Low Bidder (Conservative)',
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('Low bidder response:', response);
+    res.json(response);
+  });
+
+  app.post('/api/rtb/simulate/bid-random', (req, res) => {
+    console.log('RTB Random Bidder request received:', JSON.stringify(req.body, null, 2));
+    
+    const { request_id, campaign_id, caller_id, min_bid, max_bid } = req.body;
+    
+    // Random bidder strategy: $1.00-$15.00 per call (very variable)
+    const bidAmount = (Math.random() * (15.00 - 1.00) + 1.00).toFixed(2);
+    
+    // Random chance to not bid (20% chance)
+    const shouldBid = Math.random() > 0.2;
+    
+    if (shouldBid) {
+      const response = {
+        request_id,
+        bid_amount: parseFloat(bidAmount),
+        bid_currency: 'USD',
+        destination_number: '+1800555EXTERNAL', // External destination
+        required_duration: 60,
+        accepted: true,
+        caller_id,
+        campaign_id,
+        bidder_name: 'Random Bidder (Variable)',
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('Random bidder response:', response);
+      res.json(response);
+    } else {
+      console.log('Random bidder not bidding on this request');
+      res.status(204).send(); // No content
+    }
+  });
+
+  // Serve the RTB test interface
+  app.get('/rtb-test', (req, res) => {
+    res.sendFile('rtb-test-interface.html', { root: '.' });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
