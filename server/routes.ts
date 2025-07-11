@@ -4430,15 +4430,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const bidAmount = (Math.random() * (12.00 - 8.00) + 8.00).toFixed(2);
     
     const response = {
-      request_id,
-      bid_amount: parseFloat(bidAmount),
-      bid_currency: 'USD',
-      destination_number: '+1800555EXTERNAL', // External destination
-      required_duration: 60,
+      requestId: request_id,
+      bidAmount: parseFloat(bidAmount),
+      bidCurrency: 'USD',
+      destinationNumber: '+1800555EXTERNAL', // External destination
+      requiredDuration: 60,
       accepted: true,
-      caller_id,
-      campaign_id,
-      bidder_name: 'High Bidder (Aggressive)',
+      callerId: caller_id,
+      campaignId: campaign_id,
+      bidderName: 'High Bidder (Aggressive)',
       timestamp: new Date().toISOString()
     };
     
@@ -4455,15 +4455,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const bidAmount = (Math.random() * (4.00 - 2.00) + 2.00).toFixed(2);
     
     const response = {
-      request_id,
-      bid_amount: parseFloat(bidAmount),
-      bid_currency: 'USD',
-      destination_number: '+1800555EXTERNAL', // External destination
-      required_duration: 60,
+      requestId: request_id,
+      bidAmount: parseFloat(bidAmount),
+      bidCurrency: 'USD',
+      destinationNumber: '+1800555EXTERNAL', // External destination
+      requiredDuration: 60,
       accepted: true,
-      caller_id,
-      campaign_id,
-      bidder_name: 'Low Bidder (Conservative)',
+      callerId: caller_id,
+      campaignId: campaign_id,
+      bidderName: 'Low Bidder (Conservative)',
       timestamp: new Date().toISOString()
     };
     
@@ -4484,15 +4484,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (shouldBid) {
       const response = {
-        request_id,
-        bid_amount: parseFloat(bidAmount),
-        bid_currency: 'USD',
-        destination_number: '+1800555EXTERNAL', // External destination
-        required_duration: 60,
+        requestId: request_id,
+        bidAmount: parseFloat(bidAmount),
+        bidCurrency: 'USD',
+        destinationNumber: '+1800555EXTERNAL', // External destination
+        requiredDuration: 60,
         accepted: true,
-        caller_id,
-        campaign_id,
-        bidder_name: 'Random Bidder (Variable)',
+        callerId: caller_id,
+        campaignId: campaign_id,
+        bidderName: 'Random Bidder (Variable)',
         timestamp: new Date().toISOString()
       };
       
