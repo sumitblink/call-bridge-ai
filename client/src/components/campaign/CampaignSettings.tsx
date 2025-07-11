@@ -60,11 +60,11 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
     },
   });
 
-  // Fetch available pools
+  // Fetch available pools (excluding those already assigned to other campaigns)
   const { data: numberPools = [] } = useQuery({
-    queryKey: ["/api/number-pools"],
+    queryKey: ["/api/number-pools", "available", campaignId],
     queryFn: async () => {
-      const response = await fetch("/api/number-pools");
+      const response = await fetch(`/api/number-pools?available=true&excludeCampaign=${campaignId}`);
       return response.json();
     },
   });

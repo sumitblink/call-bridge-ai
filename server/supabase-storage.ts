@@ -15,6 +15,10 @@ import {
   platformIntegrations,
   publishers,
   publisherCampaigns,
+  phoneNumbers,
+  numberPools,
+  numberPoolAssignments,
+  campaignPoolAssignments,
   rtbTargets,
   rtbRouters,
   rtbRouterAssignments,
@@ -34,6 +38,12 @@ import {
   type InsertCampaignBuyer,
   type CallLog,
   type InsertCallLog,
+  type NumberPool,
+  type InsertNumberPool,
+  type NumberPoolAssignment,
+  type InsertNumberPoolAssignment,
+  type CampaignPoolAssignment,
+  type InsertCampaignPoolAssignment,
   type RtbTarget,
   type InsertRtbTarget,
   type RtbRouter,
@@ -616,6 +626,181 @@ export class SupabaseStorage implements IStorage {
       .where(eq(rtbBidResponses.id, id))
       .returning();
     return result[0];
+  }
+
+  // RTB Audit Data Cleanup
+  async clearRtbAuditData(): Promise<void> {
+    await db.delete(rtbBidResponses);
+    await db.delete(rtbBidRequests);
+  }
+
+  // Phone Numbers - missing methods
+  async getPhoneNumbers(userId?: number): Promise<any[]> {
+    const result = await db.select().from(phoneNumbers);
+    return result;
+  }
+
+  async getPhoneNumber(id: number): Promise<any | undefined> {
+    const result = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createPhoneNumber(phoneNumber: any): Promise<any> {
+    const result = await db.insert(phoneNumbers).values(phoneNumber).returning();
+    return result[0];
+  }
+
+  async updatePhoneNumber(id: number, phoneNumber: any): Promise<any | undefined> {
+    const result = await db.update(phoneNumbers)
+      .set(phoneNumber)
+      .where(eq(phoneNumbers.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deletePhoneNumber(id: number): Promise<boolean> {
+    const result = await db.delete(phoneNumbers).where(eq(phoneNumbers.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getPhoneNumberByNumber(phoneNumber: string): Promise<any | undefined> {
+    const result = await db.select().from(phoneNumbers).where(eq(phoneNumbers.phoneNumber, phoneNumber)).limit(1);
+    return result[0];
+  }
+
+  async assignPhoneNumberToCampaign(phoneNumberId: number, campaignId: number): Promise<any | undefined> {
+    const result = await db.update(phoneNumbers)
+      .set({ campaignId })
+      .where(eq(phoneNumbers.id, phoneNumberId))
+      .returning();
+    return result[0];
+  }
+
+  async unassignPhoneNumberFromCampaign(phoneNumberId: number): Promise<any | undefined> {
+    const result = await db.update(phoneNumbers)
+      .set({ campaignId: null })
+      .where(eq(phoneNumbers.id, phoneNumberId))
+      .returning();
+    return result[0];
+  }
+
+  async getUnassignedPhoneNumbers(userId?: number): Promise<any[]> {
+    const result = await db.select().from(phoneNumbers).where(eq(phoneNumbers.campaignId, null));
+    return result;
+  }
+
+  // Number Pools - missing methods
+  async getNumberPools(userId?: number): Promise<NumberPool[]> {
+    const result = await db.select().from(numberPools);
+    return result;
+  }
+
+  async getNumberPool(id: number): Promise<NumberPool | undefined> {
+    const result = await db.select().from(numberPools).where(eq(numberPools.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createNumberPool(pool: InsertNumberPool): Promise<NumberPool> {
+    const result = await db.insert(numberPools).values(pool).returning();
+    return result[0];
+  }
+
+  async updateNumberPool(id: number, pool: Partial<InsertNumberPool>): Promise<NumberPool | undefined> {
+    const result = await db.update(numberPools)
+      .set(pool)
+      .where(eq(numberPools.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteNumberPool(id: number): Promise<boolean> {
+    const result = await db.delete(numberPools).where(eq(numberPools.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Pool Assignments - missing methods
+  async getPoolNumbers(poolId: number): Promise<any[]> {
+    const result = await db
+      .select()
+      .from(numberPoolAssignments)
+      .innerJoin(phoneNumbers, eq(numberPoolAssignments.phoneNumberId, phoneNumbers.id))
+      .where(eq(numberPoolAssignments.poolId, poolId));
+    return result;
+  }
+
+  async assignNumberToPool(poolId: number, phoneNumberId: number, priority?: number): Promise<NumberPoolAssignment> {
+    const result = await db.insert(numberPoolAssignments)
+      .values({ poolId, phoneNumberId, priority: priority || 1 })
+      .returning();
+    return result[0];
+  }
+
+  async removeNumberFromPool(poolId: number, phoneNumberId: number): Promise<boolean> {
+    const result = await db.delete(numberPoolAssignments)
+      .where(and(
+        eq(numberPoolAssignments.poolId, poolId),
+        eq(numberPoolAssignments.phoneNumberId, phoneNumberId)
+      ));
+    return result.rowCount > 0;
+  }
+
+  async getNumberPoolAssignments(phoneNumberId: number): Promise<NumberPoolAssignment[]> {
+    const result = await db.select().from(numberPoolAssignments)
+      .where(eq(numberPoolAssignments.phoneNumberId, phoneNumberId));
+    return result;
+  }
+
+  async getPoolAssignedCount(poolId: number): Promise<number> {
+    const result = await db.select({ count: count() }).from(numberPoolAssignments)
+      .where(eq(numberPoolAssignments.poolId, poolId));
+    return result[0]?.count || 0;
+  }
+
+  // Campaign Pool Assignments - missing methods
+  async getCampaignPools(campaignId: number): Promise<NumberPool[]> {
+    const result = await db
+      .select({
+        id: numberPools.id,
+        userId: numberPools.userId,
+        name: numberPools.name,
+        country: numberPools.country,
+        numberType: numberPools.numberType,
+        poolSize: numberPools.poolSize,
+        closedBrowserDelay: numberPools.closedBrowserDelay,
+        idleLimit: numberPools.idleLimit,
+        prefix: numberPools.prefix,
+        isActive: numberPools.isActive,
+        createdAt: numberPools.createdAt,
+        updatedAt: numberPools.updatedAt,
+      })
+      .from(campaignPoolAssignments)
+      .innerJoin(numberPools, eq(campaignPoolAssignments.poolId, numberPools.id))
+      .where(eq(campaignPoolAssignments.campaignId, campaignId));
+    return result;
+  }
+
+  async getCampaignsByPool(poolId: number): Promise<Campaign[]> {
+    const result = await db
+      .select()
+      .from(campaigns)
+      .where(eq(campaigns.poolId, poolId));
+    return result;
+  }
+
+  async assignPoolToCampaign(campaignId: number, poolId: number, priority?: number): Promise<CampaignPoolAssignment> {
+    const result = await db.insert(campaignPoolAssignments)
+      .values({ campaignId, poolId, priority: priority || 1 })
+      .returning();
+    return result[0];
+  }
+
+  async removePoolFromCampaign(campaignId: number, poolId: number): Promise<boolean> {
+    const result = await db.delete(campaignPoolAssignments)
+      .where(and(
+        eq(campaignPoolAssignments.campaignId, campaignId),
+        eq(campaignPoolAssignments.poolId, poolId)
+      ));
+    return result.rowCount > 0;
   }
 }
 

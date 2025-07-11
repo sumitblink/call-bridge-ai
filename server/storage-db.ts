@@ -1079,6 +1079,33 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async getCampaignsByPool(poolId: number): Promise<Campaign[]> {
+    const result = await db
+      .select({
+        id: campaigns.id,
+        userId: campaigns.userId,
+        name: campaigns.name,
+        description: campaigns.description,
+        status: campaigns.status,
+        phoneNumber: campaigns.phoneNumber,
+        poolId: campaigns.poolId,
+        routingType: campaigns.routingType,
+        callRoutingStrategy: campaigns.callRoutingStrategy,
+        maxConcurrentCalls: campaigns.maxConcurrentCalls,
+        callCap: campaigns.callCap,
+        geoTargeting: campaigns.geoTargeting,
+        timeZoneRestriction: campaigns.timeZoneRestriction,
+        enableRtb: campaigns.enableRtb,
+        rtbRouterId: campaigns.rtbRouterId,
+        rtbId: campaigns.rtbId,
+        createdAt: campaigns.createdAt,
+        updatedAt: campaigns.updatedAt,
+      })
+      .from(campaigns)
+      .where(eq(campaigns.poolId, poolId));
+    return result;
+  }
+
   async assignPoolToCampaign(campaignId: number, poolId: number, priority = 1): Promise<CampaignPoolAssignment> {
     try {
       const [assignment] = await db

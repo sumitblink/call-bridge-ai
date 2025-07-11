@@ -143,6 +143,7 @@ export interface IStorage {
   
   // Campaign Pool Assignments
   getCampaignPools(campaignId: number): Promise<NumberPool[]>;
+  getCampaignsByPool(poolId: number): Promise<Campaign[]>;
   assignPoolToCampaign(campaignId: number, poolId: number, priority?: number): Promise<CampaignPoolAssignment>;
   removePoolFromCampaign(campaignId: number, poolId: number): Promise<boolean>;
   

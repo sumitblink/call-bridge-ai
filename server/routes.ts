@@ -2266,8 +2266,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/number-pools', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
-      const pools = await storage.getNumberPools(userId);
-      res.json(pools);
+      const { available, excludeCampaign } = req.query;
+      
+      if (available === 'true') {
+        // Get all pools first
+        const allPools = await storage.getNumberPools(userId);
+        
+        // Filter out pools that are already assigned to campaigns
+        const availablePools = await Promise.all(
+          allPools.map(async (pool) => {
+            const assignedCampaigns = await storage.getCampaignsByPool(pool.id);
+            const currentCampaignId = excludeCampaign ? parseInt(excludeCampaign as string) : null;
+            
+            // Pool is available if it has no assigned campaigns, or only assigned to the current campaign
+            const isAvailable = assignedCampaigns.length === 0 || 
+              (assignedCampaigns.length === 1 && assignedCampaigns[0].id === currentCampaignId);
+            
+            return isAvailable ? pool : null;
+          })
+        );
+        
+        // Filter out null values
+        const filteredPools = availablePools.filter(pool => pool !== null);
+        res.json(filteredPools);
+      } else {
+        // Return all pools (existing behavior)
+        const pools = await storage.getNumberPools(userId);
+        res.json(pools);
+      }
     } catch (error) {
       console.error('Error fetching number pools:', error);
       res.status(500).json({ error: 'Failed to fetch number pools' });
