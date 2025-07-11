@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { EnhancedRTBTargetDialog } from "@/components/rtb/EnhancedRTBTargetDialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight } from "lucide-react";
+import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -106,6 +106,248 @@ type RtbBidRequest = {
   createdAt: string;
 };
 
+type RtbBidResponse = {
+  id: number;
+  requestId: string;
+  rtbTargetId: number;
+  bidAmount: string;
+  bidCurrency: string;
+  requiredDuration: number;
+  destinationNumber: string;
+  responseTimeMs: number;
+  responseStatus: string;
+  errorMessage?: string;
+  isValid: boolean;
+  isWinningBid: boolean;
+  rejectionReason?: string;
+  createdAt: string;
+  rtbTarget?: {
+    id: number;
+    name: string;
+    buyerId: number;
+  };
+};
+
+// Detailed Bid Requests Table Component
+const BidRequestsTable = ({ bidRequests }: { bidRequests: RtbBidRequest[] }) => {
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [bidResponses, setBidResponses] = useState<{[key: string]: RtbBidResponse[]}>({});
+
+  const toggleRowExpansion = async (requestId: string, id: number) => {
+    const newExpandedRows = new Set(expandedRows);
+    
+    if (expandedRows.has(id)) {
+      newExpandedRows.delete(id);
+    } else {
+      newExpandedRows.add(id);
+      
+      // Fetch bid responses for this request if not already loaded
+      if (!bidResponses[requestId]) {
+        try {
+          const response = await fetch(`/api/rtb/bid-requests/${requestId}/responses`);
+          if (response.ok) {
+            const responses = await response.json();
+            setBidResponses(prev => ({ ...prev, [requestId]: responses }));
+          }
+        } catch (error) {
+          console.error('Failed to fetch bid responses:', error);
+        }
+      }
+    }
+    
+    setExpandedRows(newExpandedRows);
+  };
+
+  return (
+    <div className="space-y-2">
+      {bidRequests?.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          No bid requests found.
+        </div>
+      ) : (
+        bidRequests?.slice(0, 10).map((request: RtbBidRequest) => (
+          <div key={request.id} className="border rounded-lg">
+            {/* Main Row */}
+            <div 
+              className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50"
+              onClick={() => toggleRowExpansion(request.requestId, request.id)}
+            >
+              <div className="flex items-center gap-4 flex-1">
+                <div className="flex items-center gap-2">
+                  {expandedRows.has(request.id) ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
+                  <Eye className="w-4 h-4 text-muted-foreground" />
+                </div>
+                
+                <div className="grid grid-cols-6 gap-4 flex-1">
+                  <div>
+                    <div className="font-mono text-sm font-medium">{request.requestId.split('_').pop()}</div>
+                    <div className="text-xs text-muted-foreground">Request ID</div>
+                  </div>
+                  
+                  <div>
+                    <div className="font-medium">Campaign {request.campaignId}</div>
+                    <div className="text-xs text-muted-foreground">{request.callerId || 'Unknown'}</div>
+                  </div>
+                  
+                  <div>
+                    <Badge variant="outline">
+                      {request.successfulResponses}/{request.totalTargetsPinged}
+                    </Badge>
+                    <div className="text-xs text-muted-foreground">Responses</div>
+                  </div>
+                  
+                  <div>
+                    {request.winningBidAmount ? (
+                      <div className="text-green-600 font-medium">
+                        ${typeof request.winningBidAmount === 'number' ? request.winningBidAmount.toFixed(2) : parseFloat(request.winningBidAmount || '0').toFixed(2)}
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground">No bid</div>
+                    )}
+                    <div className="text-xs text-muted-foreground">Winning Bid</div>
+                  </div>
+                  
+                  <div>
+                    <div className="font-medium">
+                      {request.totalResponseTimeMs ? `${request.totalResponseTimeMs}ms` : '-'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Response Time</div>
+                  </div>
+                  
+                  <div>
+                    <div className="font-medium">
+                      {new Date(request.createdAt).toLocaleTimeString()}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Time</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Expanded Details */}
+            {expandedRows.has(request.id) && (
+              <div className="border-t bg-muted/30 p-4">
+                <div className="space-y-4">
+                  {/* Auction Summary */}
+                  <div className="grid grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <div className="font-medium text-muted-foreground">Auction ID</div>
+                      <div className="font-mono">{request.requestId}</div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-muted-foreground">Call Start</div>
+                      <div>{new Date(request.callStartTime).toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-muted-foreground">Winning Target</div>
+                      <div>{request.winningTargetId ? `Target ${request.winningTargetId}` : 'None'}</div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-muted-foreground">Total Duration</div>
+                      <div>{request.totalResponseTimeMs}ms</div>
+                    </div>
+                  </div>
+                  
+                  {/* Individual Bid Responses */}
+                  <div>
+                    <div className="font-medium text-sm mb-2 flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      Individual Bid Responses
+                    </div>
+                    
+                    {bidResponses[request.requestId] ? (
+                      <div className="space-y-2">
+                        {bidResponses[request.requestId].map((response: RtbBidResponse) => (
+                          <div 
+                            key={response.id} 
+                            className={`p-3 rounded border-l-4 ${
+                              response.isWinningBid 
+                                ? 'border-l-green-500 bg-green-50 dark:bg-green-900/20' 
+                                : 'border-l-gray-300 bg-white dark:bg-gray-800'
+                            }`}
+                          >
+                            <div className="grid grid-cols-6 gap-4 text-sm">
+                              <div>
+                                <div className="font-medium">
+                                  Target {response.rtbTargetId}
+                                  {response.isWinningBid && (
+                                    <Badge variant="default" className="ml-2 text-xs">WINNER</Badge>
+                                  )}
+                                </div>
+                                <div className="text-muted-foreground">
+                                  {response.responseStatus}
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <div className="font-medium text-green-600">
+                                  ${parseFloat(response.bidAmount).toFixed(2)}
+                                </div>
+                                <div className="text-muted-foreground">{response.bidCurrency}</div>
+                              </div>
+                              
+                              <div>
+                                <div className="font-medium flex items-center gap-1">
+                                  <Timer className="w-3 h-3" />
+                                  {response.responseTimeMs}ms
+                                </div>
+                                <div className="text-muted-foreground">Response Time</div>
+                              </div>
+                              
+                              <div>
+                                <div className="font-medium flex items-center gap-1">
+                                  <Phone className="w-3 h-3" />
+                                  {response.destinationNumber}
+                                </div>
+                                <div className="text-muted-foreground">Destination</div>
+                              </div>
+                              
+                              <div>
+                                <div className="font-medium">{response.requiredDuration}s</div>
+                                <div className="text-muted-foreground">Min Duration</div>
+                              </div>
+                              
+                              <div>
+                                <div className="font-medium">
+                                  {response.isValid ? (
+                                    <CheckCircle className="w-4 h-4 text-green-500" />
+                                  ) : (
+                                    <XCircle className="w-4 h-4 text-red-500" />
+                                  )}
+                                </div>
+                                <div className="text-muted-foreground">Valid</div>
+                              </div>
+                            </div>
+                            
+                            {response.errorMessage && (
+                              <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded text-sm text-red-600">
+                                Error: {response.errorMessage}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mx-auto mb-2"></div>
+                        Loading bid responses...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  );
+};
+
 // RTB Routers Component
 const RTBRoutersTab = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -120,6 +362,7 @@ const RTBRoutersTab = () => {
 
   const { data: targets = [] } = useQuery({
     queryKey: ['/api/rtb/targets'],
+    refetchInterval: 60000, // Auto-refresh every minute
   });
 
   const { data: assignments = [] } = useQuery({
@@ -653,6 +896,7 @@ const RTBTargetsTab = () => {
 
   const { data: targets = [], isLoading } = useQuery({
     queryKey: ['/api/rtb/targets'],
+    refetchInterval: 60000, // Auto-refresh every minute
   });
 
   const { data: buyers = [] } = useQuery({
@@ -1059,14 +1303,17 @@ const RTBTargetsTab = () => {
 const RTBOverviewTab = () => {
   const { data: routers = [] } = useQuery({
     queryKey: ['/api/rtb/routers'],
+    refetchInterval: 60000, // Auto-refresh every minute
   });
 
   const { data: targets = [] } = useQuery({
     queryKey: ['/api/rtb/targets'],
+    refetchInterval: 60000, // Auto-refresh every minute
   });
 
   const { data: bidRequests = [] } = useQuery({
     queryKey: ['/api/rtb/bid-requests'],
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
   const { data: buyers = [] } = useQuery({
@@ -1255,10 +1502,12 @@ const RTBOverviewTab = () => {
 const RTBAnalyticsTab = () => {
   const { data: bidRequests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ['/api/rtb/bid-requests'],
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
   const { data: targets = [] } = useQuery({
     queryKey: ['/api/rtb/targets'],
+    refetchInterval: 60000, // Auto-refresh every minute
   });
 
   if (requestsLoading) {
@@ -1412,71 +1661,16 @@ const RTBAnalyticsTab = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Bid Requests */}
+      {/* Recent Bid Requests with Expandable Details */}
       <Card>
         <CardHeader>
           <CardTitle>Recent Bid Requests</CardTitle>
           <CardDescription>
-            Latest RTB auction activity
+            Latest RTB auction activity with detailed bidding breakdown
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Request ID</TableHead>
-                <TableHead>Campaign</TableHead>
-                <TableHead>Caller</TableHead>
-                <TableHead>Targets Pinged</TableHead>
-                <TableHead>Winning Bid</TableHead>
-                <TableHead>Response Time</TableHead>
-                <TableHead>Time</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {bidRequests?.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No bid requests found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                bidRequests?.slice(0, 10).map((request: RtbBidRequest) => (
-                  <TableRow key={request.id}>
-                    <TableCell>
-                      <div className="font-mono text-sm">{request.requestId}</div>
-                    </TableCell>
-                    <TableCell>
-                      Campaign {request.campaignId}
-                    </TableCell>
-                    <TableCell>
-                      {request.callerId || 'Unknown'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {request.successfulResponses}/{request.totalTargetsPinged}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {request.winningBidAmount ? (
-                        <div className="text-green-600 font-medium">
-                          ${typeof request.winningBidAmount === 'number' ? request.winningBidAmount.toFixed(2) : parseFloat(request.winningBidAmount || '0').toFixed(2)}
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground">No bid</div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {request.totalResponseTimeMs ? `${request.totalResponseTimeMs}ms` : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(request.createdAt).toLocaleTimeString()}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <BidRequestsTable bidRequests={bidRequests} />
         </CardContent>
       </Card>
     </div>
