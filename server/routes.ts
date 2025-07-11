@@ -4433,7 +4433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       requestId: request_id,
       bidAmount: parseFloat(bidAmount),
       bidCurrency: 'USD',
-      destinationNumber: '+1800555EXTERNAL', // External destination
+      destinationNumber: '+15551234567', // High bidder destination
       requiredDuration: 60,
       accepted: true,
       callerId: caller_id,
@@ -4458,7 +4458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       requestId: request_id,
       bidAmount: parseFloat(bidAmount),
       bidCurrency: 'USD',
-      destinationNumber: '+1800555EXTERNAL', // External destination
+      destinationNumber: '+15559876543', // Low bidder destination
       requiredDuration: 60,
       accepted: true,
       callerId: caller_id,
@@ -4487,7 +4487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestId: request_id,
         bidAmount: parseFloat(bidAmount),
         bidCurrency: 'USD',
-        destinationNumber: '+1800555EXTERNAL', // External destination
+        destinationNumber: '+15556789012', // Random bidder destination
         requiredDuration: 60,
         accepted: true,
         callerId: caller_id,
