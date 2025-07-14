@@ -104,6 +104,10 @@ type RtbBidRequest = {
   winningTargetId?: number;
   totalResponseTimeMs?: number;
   createdAt: string;
+  campaign?: {
+    id: number;
+    name: string;
+  };
 };
 
 type RtbBidResponse = {
@@ -129,9 +133,15 @@ type RtbBidResponse = {
 };
 
 // Detailed Bid Requests Table Component
-const BidRequestsTable = ({ bidRequests }: { bidRequests: RtbBidRequest[] }) => {
+const BidRequestsTable = ({ bidRequests, campaigns }: { bidRequests: RtbBidRequest[], campaigns: any[] }) => {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [bidResponses, setBidResponses] = useState<{[key: string]: RtbBidResponse[]}>({});
+
+  // Helper function to get campaign name
+  const getCampaignName = (campaignId: number) => {
+    const campaign = campaigns?.find(c => c.id === campaignId);
+    return campaign ? campaign.name : `Campaign ${campaignId}`;
+  };
 
   const toggleRowExpansion = async (requestId: string, id: number) => {
     const newExpandedRows = new Set(expandedRows);
@@ -189,7 +199,7 @@ const BidRequestsTable = ({ bidRequests }: { bidRequests: RtbBidRequest[] }) => 
                   </div>
                   
                   <div>
-                    <div className="font-medium">Campaign {request.campaignId}</div>
+                    <div className="font-medium">{getCampaignName(request.campaignId)}</div>
                     <div className="text-xs text-muted-foreground">{request.callerId || 'Unknown'}</div>
                   </div>
                   
@@ -1316,6 +1326,11 @@ const RTBOverviewTab = () => {
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ['/api/campaigns'],
+    refetchInterval: 60000, // Auto-refresh every minute
+  });
+
   const { data: buyers = [] } = useQuery({
     queryKey: ['/api/buyers'],
   });
@@ -1510,6 +1525,17 @@ const RTBAnalyticsTab = () => {
     refetchInterval: 60000, // Auto-refresh every minute
   });
 
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ['/api/campaigns'],
+    refetchInterval: 60000, // Auto-refresh every minute
+  });
+
+  // Helper function to get campaign name
+  const getCampaignName = (campaignId: number) => {
+    const campaign = campaigns?.find(c => c.id === campaignId);
+    return campaign ? campaign.name : `Campaign ${campaignId}`;
+  };
+
   if (requestsLoading) {
     return (
       <div className="space-y-4">
@@ -1670,7 +1696,7 @@ const RTBAnalyticsTab = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <BidRequestsTable bidRequests={bidRequests} />
+          <BidRequestsTable bidRequests={bidRequests} campaigns={campaigns} />
         </CardContent>
       </Card>
     </div>
