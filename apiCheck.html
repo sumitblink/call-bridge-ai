@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CallCenter Pro API Testing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: #2563eb;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .auth-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .auth-section h2 {
+            color: #dc2626;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+
+        .status-indicator.authenticated {
+            background: #10b981;
+        }
+
+        .api-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .api-section h2 {
+            color: #1f2937;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+
+        .api-group {
+            margin-bottom: 25px;
+        }
+
+        .api-group h3 {
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        .api-endpoint {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .endpoint-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .method {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-right: 10px;
+        }
+
+        .method.GET { background: #dbeafe; color: #1e40af; }
+        .method.POST { background: #dcfce7; color: #166534; }
+        .method.PUT { background: #fef3c7; color: #92400e; }
+        .method.DELETE { background: #fecaca; color: #dc2626; }
+
+        .endpoint-url {
+            font-family: monospace;
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            font-family: monospace;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .response-container {
+            margin-top: 15px;
+            padding: 10px;
+            background: #1f2937;
+            color: #f9fafb;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .response-container.error {
+            background: #7f1d1d;
+            color: #fecaca;
+        }
+
+        .response-container.success {
+            background: #14532d;
+            color: #bbf7d0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .collapsible {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .collapsible:hover {
+            background: #f3f4f6;
+        }
+
+        .collapsed .api-endpoint {
+            display: none;
+        }
+
+        .base-url-input {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fef3c7;
+            border-radius: 6px;
+            border: 1px solid #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CallCenter Pro API Testing</h1>
+            <p>Comprehensive API testing interface for all system endpoints</p>
+        </div>
+
+        <div class="base-url-input">
+            <label for="baseUrl">Base URL:</label>
+            <input type="text" id="baseUrl" value="http://localhost:5000/api" placeholder="Enter API base URL">
+        </div>
+
+        <!-- Authentication Section -->
+        <div class="auth-section">
+            <h2>
+                <span class="status-indicator" id="authStatus"></span>
+                Authentication
+            </h2>
+            
+            <div class="api-endpoint">
+                <div class="endpoint-header">
+                    <div>
+                        <span class="method POST">POST</span>
+                        <span class="endpoint-url">/auth/login</span>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" value="sumit" placeholder="Enter username">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" value="demo123" placeholder="Enter password">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="login()">Login</button>
+                <button class="btn btn-secondary" onclick="checkAuth()">Check Auth Status</button>
+                <button class="btn btn-danger" onclick="logout()">Logout</button>
+                <div id="authResponse" class="response-container hidden"></div>
+            </div>
+        </div>
+
+        <!-- Campaign Management -->
+        <div class="api-section">
+            <h2 class="collapsible" onclick="toggleSection(this)">Campaign Management</h2>
+            <div class="api-group">
+                <h3>List Campaigns</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method GET">GET</span>
+                            <span class="endpoint-url">/campaigns</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="getCampaigns()">Get Campaigns</button>
+                    <div id="campaignsResponse" class="response-container hidden"></div>
+                </div>
+
+                <h3>Create Campaign</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method POST">POST</span>
+                            <span class="endpoint-url">/campaigns</span>
+                        </div>
+                    </div>
+                    <div class="grid">
+                        <div class="form-group">
+                            <label for="campaignName">Campaign Name:</label>
+                            <input type="text" id="campaignName" placeholder="Enter campaign name">
+                        </div>
+                        <div class="form-group">
+                            <label for="campaignDescription">Description:</label>
+                            <input type="text" id="campaignDescription" placeholder="Enter description">
+                        </div>
+                        <div class="form-group">
+                            <label for="campaignPhone">Phone Number:</label>
+                            <input type="text" id="campaignPhone" placeholder="+1234567890">
+                        </div>
+                        <div class="form-group">
+                            <label for="campaignRouting">Routing Type:</label>
+                            <select id="campaignRouting">
+                                <option value="priority">Priority</option>
+                                <option value="round_robin">Round Robin</option>
+                                <option value="pool">Pool</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="campaignStatus">Status:</label>
+                            <select id="campaignStatus">
+                                <option value="active">Active</option>
+                                <option value="paused">Paused</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="createCampaign()">Create Campaign</button>
+                    <div id="createCampaignResponse" class="response-container hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buyer Management -->
+        <div class="api-section">
+            <h2 class="collapsible" onclick="toggleSection(this)">Buyer Management</h2>
+            <div class="api-group">
+                <h3>List Buyers</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method GET">GET</span>
+                            <span class="endpoint-url">/buyers</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="getBuyers()">Get Buyers</button>
+                    <div id="buyersResponse" class="response-container hidden"></div>
+                </div>
+
+                <h3>Create Buyer</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method POST">POST</span>
+                            <span class="endpoint-url">/buyers</span>
+                        </div>
+                    </div>
+                    <div class="grid">
+                        <div class="form-group">
+                            <label for="buyerName">Buyer Name:</label>
+                            <input type="text" id="buyerName" placeholder="Enter buyer name">
+                        </div>
+                        <div class="form-group">
+                            <label for="buyerCompany">Company Name:</label>
+                            <input type="text" id="buyerCompany" placeholder="Enter company name">
+                        </div>
+                        <div class="form-group">
+                            <label for="buyerEmail">Email:</label>
+                            <input type="email" id="buyerEmail" placeholder="Enter email">
+                        </div>
+                        <div class="form-group">
+                            <label for="buyerPhone">Phone Number:</label>
+                            <input type="text" id="buyerPhone" placeholder="+1234567890">
+                        </div>
+                        <div class="form-group">
+                            <label for="buyerPriority">Priority:</label>
+                            <input type="number" id="buyerPriority" value="1" min="1" max="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="buyerMaxCalls">Max Concurrent Calls:</label>
+                            <input type="number" id="buyerMaxCalls" value="5" min="1">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="createBuyer()">Create Buyer</button>
+                    <div id="createBuyerResponse" class="response-container hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RTB System -->
+        <div class="api-section">
+            <h2 class="collapsible" onclick="toggleSection(this)">RTB (Real-Time Bidding) System</h2>
+            <div class="api-group">
+                <h3>List RTB Targets</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method GET">GET</span>
+                            <span class="endpoint-url">/rtb/targets</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="getRTBTargets()">Get RTB Targets</button>
+                    <div id="rtbTargetsResponse" class="response-container hidden"></div>
+                </div>
+
+                <h3>Create RTB Target</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method POST">POST</span>
+                            <span class="endpoint-url">/rtb/targets</span>
+                        </div>
+                    </div>
+                    <div class="grid">
+                        <div class="form-group">
+                            <label for="rtbTargetName">Target Name:</label>
+                            <input type="text" id="rtbTargetName" placeholder="Enter target name">
+                        </div>
+                        <div class="form-group">
+                            <label for="rtbTargetCompany">Company Name:</label>
+                            <input type="text" id="rtbTargetCompany" placeholder="Enter company name">
+                        </div>
+                        <div class="form-group">
+                            <label for="rtbTargetEmail">Contact Email:</label>
+                            <input type="email" id="rtbTargetEmail" placeholder="Enter contact email">
+                        </div>
+                        <div class="form-group">
+                            <label for="rtbTargetEndpoint">Endpoint URL:</label>
+                            <input type="url" id="rtbTargetEndpoint" placeholder="https://api.example.com/bid">
+                        </div>
+                        <div class="form-group">
+                            <label for="rtbTargetMethod">HTTP Method:</label>
+                            <select id="rtbTargetMethod">
+                                <option value="POST">POST</option>
+                                <option value="GET">GET</option>
+                                <option value="PUT">PUT</option>
+                                <option value="PATCH">PATCH</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="rtbTargetRequestBody">Request Body Template:</label>
+                            <textarea id="rtbTargetRequestBody" placeholder='{"requestId": "{requestId}", "campaignId": "{campaignId}", "callerId": "{callerId}"}'></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="rtbTargetBidPath">Bid Amount Path:</label>
+                            <input type="text" id="rtbTargetBidPath" value="bidAmount" placeholder="bidAmount or data.bid.amount">
+                        </div>
+                        <div class="form-group">
+                            <label for="rtbTargetDestPath">Destination Number Path:</label>
+                            <input type="text" id="rtbTargetDestPath" value="destinationNumber" placeholder="destinationNumber or data.routing.phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="rtbTargetMinBid">Min Bid Amount:</label>
+                            <input type="number" id="rtbTargetMinBid" value="2.50" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="rtbTargetMaxBid">Max Bid Amount:</label>
+                            <input type="number" id="rtbTargetMaxBid" value="25.00" step="0.01">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="createRTBTarget()">Create RTB Target</button>
+                    <div id="createRTBTargetResponse" class="response-container hidden"></div>
+                </div>
+
+                <h3>List RTB Routers</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method GET">GET</span>
+                            <span class="endpoint-url">/rtb/routers</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="getRTBRouters()">Get RTB Routers</button>
+                    <div id="rtbRoutersResponse" class="response-container hidden"></div>
+                </div>
+
+                <h3>List Bid Requests</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method GET">GET</span>
+                            <span class="endpoint-url">/rtb/bid-requests</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="getBidRequests()">Get Bid Requests</button>
+                    <div id="bidRequestsResponse" class="response-container hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DNI System -->
+        <div class="api-section">
+            <h2 class="collapsible" onclick="toggleSection(this)">DNI (Dynamic Number Insertion) System</h2>
+            <div class="api-group">
+                <h3>Track DNI Request</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method POST">POST</span>
+                            <span class="endpoint-url">/dni/track</span>
+                        </div>
+                    </div>
+                    <div class="grid">
+                        <div class="form-group">
+                            <label for="dniTagCode">Tag Code:</label>
+                            <input type="text" id="dniTagCode" placeholder="campaign_landing">
+                        </div>
+                        <div class="form-group">
+                            <label for="dniSessionId">Session ID:</label>
+                            <input type="text" id="dniSessionId" placeholder="session_123456">
+                        </div>
+                        <div class="form-group">
+                            <label for="dniDomain">Domain:</label>
+                            <input type="text" id="dniDomain" placeholder="example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="dniReferrer">Referrer:</label>
+                            <input type="text" id="dniReferrer" placeholder="https://google.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="dniUtmSource">UTM Source:</label>
+                            <input type="text" id="dniUtmSource" placeholder="google">
+                        </div>
+                        <div class="form-group">
+                            <label for="dniUtmMedium">UTM Medium:</label>
+                            <input type="text" id="dniUtmMedium" placeholder="cpc">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="trackDNI()">Track DNI Request</button>
+                    <div id="trackDNIResponse" class="response-container hidden"></div>
+                </div>
+
+                <h3>List Tracking Tags</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method GET">GET</span>
+                            <span class="endpoint-url">/tracking-tags</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="getTrackingTags()">Get Tracking Tags</button>
+                    <div id="trackingTagsResponse" class="response-container hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phone Numbers -->
+        <div class="api-section">
+            <h2 class="collapsible" onclick="toggleSection(this)">Phone Number Management</h2>
+            <div class="api-group">
+                <h3>List Phone Numbers</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method GET">GET</span>
+                            <span class="endpoint-url">/phone-numbers</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="getPhoneNumbers()">Get Phone Numbers</button>
+                    <div id="phoneNumbersResponse" class="response-container hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Number Pools -->
+        <div class="api-section">
+            <h2 class="collapsible" onclick="toggleSection(this)">Number Pool Management</h2>
+            <div class="api-group">
+                <h3>List Number Pools</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method GET">GET</span>
+                            <span class="endpoint-url">/pools</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="getPools()">Get Number Pools</button>
+                    <div id="poolsResponse" class="response-container hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calls -->
+        <div class="api-section">
+            <h2 class="collapsible" onclick="toggleSection(this)">Call Management</h2>
+            <div class="api-group">
+                <h3>List Calls</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method GET">GET</span>
+                            <span class="endpoint-url">/calls</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="getCalls()">Get Calls</button>
+                    <div id="callsResponse" class="response-container hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="api-section">
+            <h2 class="collapsible" onclick="toggleSection(this)">Statistics & Analytics</h2>
+            <div class="api-group">
+                <h3>Historical Statistics</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method GET">GET</span>
+                            <span class="endpoint-url">/stats/historical</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="statsDays">Days:</label>
+                        <input type="number" id="statsDays" value="30" min="1" max="365">
+                    </div>
+                    <button class="btn btn-primary" onclick="getHistoricalStats()">Get Historical Stats</button>
+                    <div id="historicalStatsResponse" class="response-container hidden"></div>
+                </div>
+
+                <h3>Dashboard Statistics</h3>
+                <div class="api-endpoint">
+                    <div class="endpoint-header">
+                        <div>
+                            <span class="method GET">GET</span>
+                            <span class="endpoint-url">/stats/dashboard</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="getDashboardStats()">Get Dashboard Stats</button>
+                    <div id="dashboardStatsResponse" class="response-container hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="api-section">
+            <h2>Quick Actions</h2>
+            <div class="quick-actions">
+                <button class="btn btn-primary" onclick="testAllEndpoints()">Test All Endpoints</button>
+                <button class="btn btn-secondary" onclick="clearAllResponses()">Clear All Responses</button>
+                <button class="btn btn-secondary" onclick="exportResults()">Export Results</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let baseUrl = 'http://localhost:5000/api';
+        let isAuthenticated = false;
+
+        // Update base URL
+        document.getElementById('baseUrl').addEventListener('change', function(e) {
+            baseUrl = e.target.value;
+        });
+
+        // Generic API request function
+        async function apiRequest(endpoint, method = 'GET', data = null) {
+            const url = `${baseUrl}${endpoint}`;
+            const options = {
+                method: method,
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(url, options);
+                const result = await response.json();
+                
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    data: result
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    status: 0,
+                    error: error.message
+                };
+            }
+        }
+
+        // Display response function
+        function displayResponse(elementId, response) {
+            const element = document.getElementById(elementId);
+            element.classList.remove('hidden');
+            
+            if (response.success) {
+                element.classList.remove('error');
+                element.classList.add('success');
+                element.textContent = JSON.stringify(response.data, null, 2);
+            } else {
+                element.classList.add('error');
+                element.classList.remove('success');
+                element.textContent = `Error ${response.status}: ${response.error || JSON.stringify(response.data, null, 2)}`;
+            }
+        }
+
+        // Authentication functions
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            const response = await apiRequest('/auth/login', 'POST', {
+                username: username,
+                password: password
+            });
+            
+            if (response.success) {
+                isAuthenticated = true;
+                document.getElementById('authStatus').classList.add('authenticated');
+            }
+            
+            displayResponse('authResponse', response);
+        }
+
+        async function checkAuth() {
+            const response = await apiRequest('/auth/user');
+            
+            if (response.success) {
+                isAuthenticated = true;
+                document.getElementById('authStatus').classList.add('authenticated');
+            } else {
+                isAuthenticated = false;
+                document.getElementById('authStatus').classList.remove('authenticated');
+            }
+            
+            displayResponse('authResponse', response);
+        }
+
+        async function logout() {
+            const response = await apiRequest('/auth/logout', 'POST');
+            
+            if (response.success) {
+                isAuthenticated = false;
+                document.getElementById('authStatus').classList.remove('authenticated');
+            }
+            
+            displayResponse('authResponse', response);
+        }
+
+        // Campaign functions
+        async function getCampaigns() {
+            const response = await apiRequest('/campaigns');
+            displayResponse('campaignsResponse', response);
+        }
+
+        async function createCampaign() {
+            const data = {
+                name: document.getElementById('campaignName').value,
+                description: document.getElementById('campaignDescription').value,
+                phoneNumber: document.getElementById('campaignPhone').value,
+                routingType: document.getElementById('campaignRouting').value,
+                status: document.getElementById('campaignStatus').value
+            };
+            
+            const response = await apiRequest('/campaigns', 'POST', data);
+            displayResponse('createCampaignResponse', response);
+        }
+
+        // Buyer functions
+        async function getBuyers() {
+            const response = await apiRequest('/buyers');
+            displayResponse('buyersResponse', response);
+        }
+
+        async function createBuyer() {
+            const data = {
+                name: document.getElementById('buyerName').value,
+                companyName: document.getElementById('buyerCompany').value,
+                email: document.getElementById('buyerEmail').value,
+                phoneNumber: document.getElementById('buyerPhone').value,
+                priority: parseInt(document.getElementById('buyerPriority').value),
+                maxConcurrentCalls: parseInt(document.getElementById('buyerMaxCalls').value),
+                isActive: true
+            };
+            
+            const response = await apiRequest('/buyers', 'POST', data);
+            displayResponse('createBuyerResponse', response);
+        }
+
+        // RTB functions
+        async function getRTBTargets() {
+            const response = await apiRequest('/rtb/targets');
+            displayResponse('rtbTargetsResponse', response);
+        }
+
+        async function createRTBTarget() {
+            const data = {
+                name: document.getElementById('rtbTargetName').value,
+                companyName: document.getElementById('rtbTargetCompany').value,
+                contactEmail: document.getElementById('rtbTargetEmail').value,
+                endpointUrl: document.getElementById('rtbTargetEndpoint').value,
+                httpMethod: document.getElementById('rtbTargetMethod').value,
+                requestBody: document.getElementById('rtbTargetRequestBody').value,
+                bidAmountPath: document.getElementById('rtbTargetBidPath').value,
+                destinationNumberPath: document.getElementById('rtbTargetDestPath').value,
+                minBidAmount: parseFloat(document.getElementById('rtbTargetMinBid').value),
+                maxBidAmount: parseFloat(document.getElementById('rtbTargetMaxBid').value),
+                currency: 'USD',
+                isActive: true,
+                timeoutMs: 5000,
+                connectionTimeout: 3000,
+                maxConcurrentCalls: 10,
+                dailyCap: 100,
+                hourlyCap: 20,
+                monthlyCap: 2000,
+                timezone: 'UTC'
+            };
+            
+            const response = await apiRequest('/rtb/targets', 'POST', data);
+            displayResponse('createRTBTargetResponse', response);
+        }
+
+        async function getRTBRouters() {
+            const response = await apiRequest('/rtb/routers');
+            displayResponse('rtbRoutersResponse', response);
+        }
+
+        async function getBidRequests() {
+            const response = await apiRequest('/rtb/bid-requests');
+            displayResponse('bidRequestsResponse', response);
+        }
+
+        // DNI functions
+        async function trackDNI() {
+            const data = {
+                tagCode: document.getElementById('dniTagCode').value,
+                sessionId: document.getElementById('dniSessionId').value,
+                domain: document.getElementById('dniDomain').value,
+                referrer: document.getElementById('dniReferrer').value,
+                utmSource: document.getElementById('dniUtmSource').value,
+                utmMedium: document.getElementById('dniUtmMedium').value,
+                userAgent: navigator.userAgent
+            };
+            
+            const response = await apiRequest('/dni/track', 'POST', data);
+            displayResponse('trackDNIResponse', response);
+        }
+
+        async function getTrackingTags() {
+            const response = await apiRequest('/tracking-tags');
+            displayResponse('trackingTagsResponse', response);
+        }
+
+        // Phone number functions
+        async function getPhoneNumbers() {
+            const response = await apiRequest('/phone-numbers');
+            displayResponse('phoneNumbersResponse', response);
+        }
+
+        // Pool functions
+        async function getPools() {
+            const response = await apiRequest('/pools');
+            displayResponse('poolsResponse', response);
+        }
+
+        // Call functions
+        async function getCalls() {
+            const response = await apiRequest('/calls');
+            displayResponse('callsResponse', response);
+        }
+
+        // Statistics functions
+        async function getHistoricalStats() {
+            const days = document.getElementById('statsDays').value;
+            const response = await apiRequest(`/stats/historical?days=${days}`);
+            displayResponse('historicalStatsResponse', response);
+        }
+
+        async function getDashboardStats() {
+            const response = await apiRequest('/stats/dashboard');
+            displayResponse('dashboardStatsResponse', response);
+        }
+
+        // Utility functions
+        function toggleSection(element) {
+            const section = element.parentElement;
+            section.classList.toggle('collapsed');
+        }
+
+        function clearAllResponses() {
+            const responses = document.querySelectorAll('.response-container');
+            responses.forEach(response => {
+                response.classList.add('hidden');
+                response.textContent = '';
+            });
+        }
+
+        async function testAllEndpoints() {
+            console.log('Testing all endpoints...');
+            
+            // Test authentication first
+            await checkAuth();
+            
+            // Test all GET endpoints
+            await getCampaigns();
+            await getBuyers();
+            await getRTBTargets();
+            await getRTBRouters();
+            await getBidRequests();
+            await getTrackingTags();
+            await getPhoneNumbers();
+            await getPools();
+            await getCalls();
+            await getHistoricalStats();
+            await getDashboardStats();
+            
+            console.log('All endpoints tested');
+        }
+
+        function exportResults() {
+            const responses = document.querySelectorAll('.response-container:not(.hidden)');
+            let results = [];
+            
+            responses.forEach(response => {
+                const section = response.closest('.api-section');
+                const endpoint = response.closest('.api-endpoint');
+                const sectionTitle = section.querySelector('h2').textContent;
+                const endpointUrl = endpoint.querySelector('.endpoint-url').textContent;
+                
+                results.push({
+                    section: sectionTitle,
+                    endpoint: endpointUrl,
+                    response: response.textContent
+                });
+            });
+            
+            const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'api-test-results.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+        });
+    </script>
+</body>
+</html>
