@@ -29,10 +29,6 @@ const enhancedRTBTargetSchema = z.object({
   enableDynamicNumber: z.boolean(),
   rtbShareableTags: z.boolean(),
   
-  // Type Selection
-  type: z.enum(["Number", "SIP"]),
-  number: z.string().optional(),
-  
   // Bid Amount Settings (moved to Basic tab)
   minBidAmount: z.number().min(0, "Minimum bid amount must be positive"),
   maxBidAmount: z.number().min(0, "Maximum bid amount must be positive"),
@@ -110,8 +106,6 @@ export function EnhancedRTBTargetDialog({
       contactPhone: "",
       enableDynamicNumber: false,
       rtbShareableTags: false,
-      type: "Number",
-      number: "",
       minBidAmount: 0,
       maxBidAmount: 100,
       currency: "USD",
@@ -157,8 +151,6 @@ export function EnhancedRTBTargetDialog({
         contactPhone: editingTarget.contactPhone || "",
         enableDynamicNumber: editingTarget.enableDynamicNumber || false,
         rtbShareableTags: editingTarget.rtbShareableTags || false,
-        type: "Number",
-        number: editingTarget.contactPhone || "",
         minBidAmount: typeof editingTarget.minBidAmount === 'number' ? editingTarget.minBidAmount : (editingTarget.minBidAmount ? parseFloat(editingTarget.minBidAmount) : 0),
         maxBidAmount: typeof editingTarget.maxBidAmount === 'number' ? editingTarget.maxBidAmount : (editingTarget.maxBidAmount ? parseFloat(editingTarget.maxBidAmount) : 100),
         currency: editingTarget.currency || "USD",
@@ -196,8 +188,6 @@ export function EnhancedRTBTargetDialog({
         contactPhone: "",
         enableDynamicNumber: false,
         rtbShareableTags: false,
-        type: "Number",
-        number: "",
         minBidAmount: 0,
         maxBidAmount: 100,
         currency: "USD",
@@ -416,44 +406,6 @@ export function EnhancedRTBTargetDialog({
                                 onCheckedChange={field.onChange}
                                 label="Enable Tag Sharing"
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="type"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Type</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="Number">Number</SelectItem>
-                                <SelectItem value="SIP">SIP</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="number"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Number <span className="text-red-500">*</span></FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter phone number" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
