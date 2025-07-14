@@ -4446,7 +4446,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
+  // API Testing Interface Route
+  app.get('/apiCheck.html', async (req, res) => {
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const filePath = path.join(process.cwd(), 'apiCheck.html');
+      
+      if (fs.existsSync(filePath)) {
+        const fileContent = fs.readFileSync(filePath, 'utf-8');
+        res.setHeader('Content-Type', 'text/html');
+        res.send(fileContent);
+      } else {
+        res.status(404).send('API Check file not found');
+      }
+    } catch (error) {
+      console.error('Error serving apiCheck.html:', error);
+      res.status(500).send('Error loading API testing interface');
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
