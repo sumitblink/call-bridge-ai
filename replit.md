@@ -113,6 +113,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 14, 2025: Created comprehensive API documentation covering all system endpoints and integration methods
+  - Added complete API reference with request/response examples for all major endpoints
+  - Documented authentication flow, error handling, and rate limiting
+  - Included RTB system APIs with template variables and JSONPath parsing
+  - Added DNI tracking APIs with session management and attribution
+  - Provided SDK examples for JavaScript and Python integration
+  - Covered webhook integration for Twilio and RTB systems
 - July 14, 2025: Fixed RTB Target form by removing misleading "Number" field since destination comes from bid responses
   - Removed static "Number" and "Type" fields from RTB Target creation form
   - Eliminated confusion between static destination numbers and dynamic bid response destinations
