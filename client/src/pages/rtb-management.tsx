@@ -1183,7 +1183,6 @@ const RTBTargetsTab = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Buyer</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Destination</TableHead>
                 <TableHead>Live</TableHead>
@@ -1195,7 +1194,7 @@ const RTBTargetsTab = () => {
             <TableBody>
               {Array.isArray(targets) && targets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No RTB targets found. Create your first target to get started.
                   </TableCell>
                 </TableRow>
@@ -1210,33 +1209,15 @@ const RTBTargetsTab = () => {
                           Sub ID: {target.subId || 'None'}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="flex flex-col">
-                            <div className="font-medium text-sm">{target.companyName || 'Not specified'}</div>
-                            {target.contactPerson && (
-                              <div className="text-xs text-muted-foreground">{target.contactPerson}</div>
-                            )}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(target)}
-                            className="h-6 w-6 p-0"
-                            title="Edit Target Settings"
-                          >
-                            <Settings className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
+
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
-                          {target.type || 'Number'}
+                          External Endpoint
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="font-mono text-sm truncate max-w-[200px]">
-                          {target.number || target.endpointUrl}
+                          {target.endpointUrl}
                         </div>
                       </TableCell>
                       <TableCell>
