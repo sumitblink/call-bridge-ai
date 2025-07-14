@@ -20,7 +20,10 @@ const enhancedRTBTargetSchema = z.object({
   // Basic Configuration
   name: z.string().min(1, "Target name is required"),
   subId: z.string().optional(),
-  buyerId: z.number().min(1, "Buyer is required"),
+  companyName: z.string().optional(),
+  contactPerson: z.string().optional(),
+  contactEmail: z.string().email("Valid email is required").optional().or(z.literal("")),
+  contactPhone: z.string().optional(),
   
   // Toggle Settings
   enableDynamicNumber: z.boolean(),
@@ -86,7 +89,6 @@ interface EnhancedRTBTargetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: any) => void;
-  buyers: any[];
   editingTarget?: any;
 }
 
@@ -94,7 +96,6 @@ export function EnhancedRTBTargetDialog({
   open, 
   onOpenChange, 
   onSubmit, 
-  buyers,
   editingTarget 
 }: EnhancedRTBTargetDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,7 +104,10 @@ export function EnhancedRTBTargetDialog({
     defaultValues: {
       name: "",
       subId: "",
-      buyerId: 0,
+      companyName: "",
+      contactPerson: "",
+      contactEmail: "",
+      contactPhone: "",
       enableDynamicNumber: false,
       rtbShareableTags: false,
       type: "Number",
@@ -147,11 +151,14 @@ export function EnhancedRTBTargetDialog({
       form.reset({
         name: editingTarget.name || "",
         subId: editingTarget.subId || "",
-        buyerId: editingTarget.buyerId || 0,
+        companyName: editingTarget.companyName || "",
+        contactPerson: editingTarget.contactPerson || "",
+        contactEmail: editingTarget.contactEmail || "",
+        contactPhone: editingTarget.contactPhone || "",
         enableDynamicNumber: editingTarget.enableDynamicNumber || false,
         rtbShareableTags: editingTarget.rtbShareableTags || false,
         type: "Number",
-        number: buyers.find(b => b.id === editingTarget.buyerId)?.phoneNumber || "",
+        number: editingTarget.contactPhone || "",
         minBidAmount: typeof editingTarget.minBidAmount === 'number' ? editingTarget.minBidAmount : (editingTarget.minBidAmount ? parseFloat(editingTarget.minBidAmount) : 0),
         maxBidAmount: typeof editingTarget.maxBidAmount === 'number' ? editingTarget.maxBidAmount : (editingTarget.maxBidAmount ? parseFloat(editingTarget.maxBidAmount) : 100),
         currency: editingTarget.currency || "USD",
@@ -183,7 +190,10 @@ export function EnhancedRTBTargetDialog({
       form.reset({
         name: "",
         subId: "",
-        buyerId: 0,
+        companyName: "",
+        contactPerson: "",
+        contactEmail: "",
+        contactPhone: "",
         enableDynamicNumber: false,
         rtbShareableTags: false,
         type: "Number",
@@ -316,42 +326,64 @@ export function EnhancedRTBTargetDialog({
                       />
                     </div>
 
-                    <FormField
-                      control={form.control}
-                      name="buyerId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Buyer <span className="text-red-500">*</span></FormLabel>
-                          <Select 
-                            value={field.value ? field.value.toString() : ""} 
-                            onValueChange={(value) => {
-                              const buyerId = parseInt(value);
-                              field.onChange(buyerId);
-                              
-                              // Auto-populate phone number from selected buyer
-                              const selectedBuyer = buyers.find(buyer => buyer.id === buyerId);
-                              if (selectedBuyer?.phoneNumber) {
-                                form.setValue('number', selectedBuyer.phoneNumber);
-                              }
-                            }}
-                          >
+                    {/* Contact Information */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="companyName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Company Name</FormLabel>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Buyer" />
-                              </SelectTrigger>
+                              <Input placeholder="Company or organization name" {...field} />
                             </FormControl>
-                            <SelectContent>
-                              {buyers.map((buyer) => (
-                                <SelectItem key={buyer.id} value={buyer.id.toString()}>
-                                  {buyer.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="contactPerson"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Person</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Primary contact name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="contactEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="contact@company.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="contactPhone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Phone</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+1-555-123-4567" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField

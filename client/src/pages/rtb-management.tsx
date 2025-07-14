@@ -36,7 +36,10 @@ const rtbRouterSchema = z.object({
 
 const rtbTargetSchema = z.object({
   name: z.string().min(1, "Target name is required"),
-  buyerId: z.number().min(1, "Buyer is required"),
+  companyName: z.string().optional(),
+  contactPerson: z.string().optional(),
+  contactEmail: z.string().email("Valid email is required").optional().or(z.literal("")),
+  contactPhone: z.string().optional(),
   endpointUrl: z.string().url("Valid endpoint URL is required"),
   timeoutMs: z.number().min(1000, "Timeout must be at least 1000ms").max(30000, "Timeout cannot exceed 30000ms"),
   connectionTimeout: z.number().min(1000, "Connection timeout must be at least 1000ms").max(30000, "Connection timeout cannot exceed 30000ms"),
@@ -70,7 +73,10 @@ type RtbRouter = {
 type RtbTarget = {
   id: number;
   name: string;
-  buyerId: number;
+  companyName?: string;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
   endpointUrl: string;
   timeoutMs: number;
   connectionTimeout: number;
@@ -377,10 +383,6 @@ const RTBRoutersTab = () => {
 
   const { data: assignments = [] } = useQuery({
     queryKey: ['/api/rtb/router-assignments'],
-  });
-
-  const { data: buyers = [] } = useQuery({
-    queryKey: ['/api/buyers'],
   });
 
   const createMutation = useMutation({
@@ -765,7 +767,7 @@ const RTBRoutersTab = () => {
                                     {target.name}
                                   </label>
                                   <div className="text-xs text-muted-foreground">
-                                    Buyer: {buyers.find((b: any) => b.id === target.buyerId)?.name || 'Unknown'}
+                                    Company: {target.companyName || 'Not specified'}
                                   </div>
                                 </div>
                                 {(isAssigned || targetAssignments[target.id]?.active) && (
@@ -909,10 +911,6 @@ const RTBTargetsTab = () => {
     refetchInterval: 60000, // Auto-refresh every minute
   });
 
-  const { data: buyers = [] } = useQuery({
-    queryKey: ['/api/buyers'],
-  });
-
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof rtbTargetSchema>) => {
       const response = await fetch('/api/rtb/targets', {
@@ -1046,7 +1044,10 @@ const RTBTargetsTab = () => {
     resolver: zodResolver(rtbTargetSchema),
     defaultValues: {
       name: "",
-      buyerId: 0,
+      companyName: "",
+      contactPerson: "",
+      contactEmail: "",
+      contactPhone: "",
       endpointUrl: "",
       timeoutMs: 3000,
       connectionTimeout: 5000,
@@ -1076,7 +1077,10 @@ const RTBTargetsTab = () => {
     setEditingTarget(target);
     form.reset({
       name: target.name,
-      buyerId: target.buyerId,
+      companyName: target.companyName || "",
+      contactPerson: target.contactPerson || "",
+      contactEmail: target.contactEmail || "",
+      contactPhone: target.contactPhone || "",
       endpointUrl: target.endpointUrl,
       timeoutMs: target.timeoutMs,
       connectionTimeout: target.connectionTimeout,
@@ -1164,7 +1168,6 @@ const RTBTargetsTab = () => {
           if (!open) handleCloseDialog();
         }}
         onSubmit={onSubmit}
-        buyers={buyers}
         editingTarget={editingTarget}
       />
 
@@ -1198,7 +1201,7 @@ const RTBTargetsTab = () => {
                 </TableRow>
               ) : (
                 Array.isArray(targets) && targets.map((target: RtbTarget) => {
-                  const buyer = Array.isArray(buyers) ? buyers.find((b: any) => b.id === target.buyerId) : null;
+                  // No longer using buyer lookup - RTB targets are independent
                   return (
                     <TableRow key={target.id}>
                       <TableCell>
@@ -1209,13 +1212,12 @@ const RTBTargetsTab = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 px-2"
-                          >
-                            {buyer?.name || 'Unknown Buyer'}
-                          </Button>
+                          <div className="flex flex-col">
+                            <div className="font-medium text-sm">{target.companyName || 'Not specified'}</div>
+                            {target.contactPerson && (
+                              <div className="text-xs text-muted-foreground">{target.contactPerson}</div>
+                            )}
+                          </div>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1329,10 +1331,6 @@ const RTBOverviewTab = () => {
   const { data: campaigns = [] } = useQuery({
     queryKey: ['/api/campaigns'],
     refetchInterval: 60000, // Auto-refresh every minute
-  });
-
-  const { data: buyers = [] } = useQuery({
-    queryKey: ['/api/buyers'],
   });
 
   const totalRouters = routers?.length || 0;

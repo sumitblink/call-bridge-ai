@@ -113,6 +113,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 14, 2025: Completed RTB Target architectural simplification by removing buyer dependency
+  - Removed buyer_id foreign key from rtb_targets table as it was misleading since RTB routing bypasses internal buyers
+  - Added dedicated contact information fields: company_name, contact_person, contact_email, contact_phone
+  - Updated Enhanced RTB Target Dialog to use contact information instead of buyer selection
+  - Simplified RTB Target creation form by removing confusing buyer association
+  - RTB Targets are now standalone entities with their own contact details for external bidders
+  - This change makes the RTB system more intuitive: external bidders provide their own routing destinations
 - July 7, 2025: Successfully implemented external destination routing for RTB winning bidders
   - Fixed RTB routing logic to use external bidder destination numbers instead of internal buyer phone numbers
   - Updated both webhook endpoints (/api/webhooks/voice and /api/webhooks/pool/{poolId}/voice) with external routing

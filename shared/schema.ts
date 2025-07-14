@@ -674,10 +674,15 @@ export const publisherCampaigns = pgTable('publisher_campaigns', {
 export const rtbTargets = pgTable("rtb_targets", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  buyerId: integer("buyer_id").references(() => buyers.id).notNull(),
   
   // Target Configuration
   name: varchar("name", { length: 256 }).notNull(),
+  companyName: varchar("company_name", { length: 256 }),
+  contactPerson: varchar("contact_person", { length: 256 }),
+  contactEmail: varchar("contact_email", { length: 256 }),
+  contactPhone: varchar("contact_phone", { length: 50 }),
+  
+  // Endpoint Configuration
   endpointUrl: varchar("endpoint_url", { length: 512 }).notNull(),
   httpMethod: varchar("http_method", { length: 10 }).default("POST").notNull(),
   contentType: varchar("content_type", { length: 100 }).default("application/json").notNull(),
@@ -741,7 +746,6 @@ export const rtbTargets = pgTable("rtb_targets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_rtb_targets_user").on(table.userId),
-  index("idx_rtb_targets_buyer").on(table.buyerId),
   index("idx_rtb_targets_active").on(table.isActive),
 ]);
 
@@ -894,6 +898,10 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
 }).extend({
   userId: z.number().optional(),
   name: z.string().min(1, "Target name is required"),
+  companyName: z.string().optional(),
+  contactPerson: z.string().optional(),
+  contactEmail: z.string().email().optional(),
+  contactPhone: z.string().optional(),
   endpointUrl: z.string().url("Valid endpoint URL is required"),
   timeoutMs: z.number().min(1000).max(30000).optional(),
   connectionTimeout: z.number().min(1000).max(30000).optional(),
@@ -1018,10 +1026,6 @@ export const rtbTargetsRelations = relations(rtbTargets, ({ one, many }) => ({
   user: one(users, {
     fields: [rtbTargets.userId],
     references: [users.id],
-  }),
-  buyer: one(buyers, {
-    fields: [rtbTargets.buyerId],
-    references: [buyers.id],
   }),
   routerAssignments: many(rtbRouterAssignments),
   bidResponses: many(rtbBidResponses),
