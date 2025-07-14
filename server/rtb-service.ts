@@ -19,6 +19,17 @@ export interface BidRequest {
   callStartTime: Date;
   tags?: Record<string, any>;
   timeoutMs?: number;
+  // Additional fields for template substitution
+  minBid?: number;
+  maxBid?: number;
+  currency?: string;
+  timezone?: string;
+  sourceNumber?: string;
+  userAgent?: string;
+  ipAddress?: string;
+  sessionId?: string;
+  referrer?: string;
+  customFields?: Record<string, any>;
 }
 
 export interface BidResponse {
@@ -42,6 +53,106 @@ export interface AuctionResult {
 }
 
 export class RTBService {
+  /**
+   * Substitute template variables in request body
+   */
+  private static substituteTemplateVariables(template: string, bidRequest: BidRequest): string {
+    const substitutions = {
+      '{requestId}': bidRequest.requestId,
+      '{campaignId}': bidRequest.campaignRtbId || bidRequest.campaignId.toString(),
+      '{callerId}': bidRequest.callerId || '',
+      '{callerState}': bidRequest.callerState || '',
+      '{callerZip}': bidRequest.callerZip || '',
+      '{callStartTime}': bidRequest.callStartTime.toISOString(),
+      '{timestamp}': Date.now().toString(),
+      '{isoTimestamp}': new Date().toISOString(),
+      '{minBid}': bidRequest.minBid?.toString() || '0',
+      '{maxBid}': bidRequest.maxBid?.toString() || '100',
+      '{currency}': bidRequest.currency || 'USD',
+      '{timezone}': bidRequest.timezone || 'UTC',
+      '{sourceNumber}': bidRequest.sourceNumber || '',
+      '{userAgent}': bidRequest.userAgent || '',
+      '{ipAddress}': bidRequest.ipAddress || '',
+      '{sessionId}': bidRequest.sessionId || '',
+      '{referrer}': bidRequest.referrer || '',
+    };
+
+    let result = template;
+    for (const [placeholder, value] of Object.entries(substitutions)) {
+      result = result.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
+    }
+
+    // Handle custom fields
+    if (bidRequest.customFields) {
+      for (const [key, value] of Object.entries(bidRequest.customFields)) {
+        result = result.replace(new RegExp(`{${key}}`, 'g'), value?.toString() || '');
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Extract value from response using JSONPath or simple property access
+   */
+  private static extractResponseValue(response: any, path: string): any {
+    if (!path) return null;
+
+    try {
+      // Handle simple property access first
+      if (!path.includes('.') && !path.includes('[')) {
+        return response[path];
+      }
+
+      // Handle JSONPath-style access
+      if (path.startsWith('$.')) {
+        return this.evaluateJsonPath(response, path);
+      }
+
+      // Handle dot notation
+      const keys = path.split('.');
+      let current = response;
+      for (const key of keys) {
+        if (current === null || current === undefined) return null;
+        current = current[key];
+      }
+      return current;
+    } catch (error) {
+      console.error(`Error extracting value from path ${path}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Simple JSONPath evaluator for common patterns
+   */
+  private static evaluateJsonPath(obj: any, path: string): any {
+    // Remove leading $. if present
+    const cleanPath = path.startsWith('$.') ? path.slice(2) : path;
+    
+    // Split by dots and handle array indices
+    const parts = cleanPath.split('.');
+    let current = obj;
+    
+    for (const part of parts) {
+      if (current === null || current === undefined) return null;
+      
+      // Handle array indices like 'items[0]'
+      if (part.includes('[') && part.includes(']')) {
+        const [arrayName, indexPart] = part.split('[');
+        const index = parseInt(indexPart.replace(']', ''));
+        current = current[arrayName];
+        if (Array.isArray(current)) {
+          current = current[index];
+        }
+      } else {
+        current = current[part];
+      }
+    }
+    
+    return current;
+  }
+
   /**
    * Initiate a real-time bidding auction for an incoming call
    */
@@ -228,24 +339,40 @@ export class RTBService {
         throw new Error('Target outside operating hours');
       }
 
-      // Prepare bid request payload - use RTB ID for external requests
-      const payload = {
-        requestId: bidRequest.requestId,
-        campaignId: bidRequest.campaignRtbId || bidRequest.campaignId.toString(), // Use RTB ID if available, fallback to numeric ID
-        callerId: bidRequest.callerId,
-        callerState: bidRequest.callerState,
-        callerZip: bidRequest.callerZip,
-        callStartTime: bidRequest.callStartTime.toISOString(),
-        tags: bidRequest.tags,
-        timeout: router.biddingTimeoutMs,
-        minBid: target.minBidAmount,
-        maxBid: target.maxBidAmount,
+      // Prepare bid request with template substitution
+      const requestWithTargetData = {
+        ...bidRequest,
+        minBid: parseFloat(target.minBidAmount.toString()),
+        maxBid: parseFloat(target.maxBidAmount.toString()),
         currency: target.currency
       };
 
+      // Prepare request body (template substitution or JSON payload)
+      let requestBody: string;
+      if (target.requestBody) {
+        // Use custom request body template with variable substitution
+        requestBody = this.substituteTemplateVariables(target.requestBody, requestWithTargetData);
+      } else {
+        // Default JSON payload
+        const payload = {
+          requestId: bidRequest.requestId,
+          campaignId: bidRequest.campaignRtbId || bidRequest.campaignId.toString(),
+          callerId: bidRequest.callerId,
+          callerState: bidRequest.callerState,
+          callerZip: bidRequest.callerZip,
+          callStartTime: bidRequest.callStartTime.toISOString(),
+          tags: bidRequest.tags,
+          timeout: router.biddingTimeoutMs,
+          minBid: target.minBidAmount,
+          maxBid: target.maxBidAmount,
+          currency: target.currency
+        };
+        requestBody = JSON.stringify(payload);
+      }
+
       // Prepare headers
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+        'Content-Type': target.contentType || 'application/json',
         'User-Agent': 'CallCenter-RTB/1.0'
       };
 
@@ -267,9 +394,9 @@ export class RTBService {
       
       // Make HTTP request to target endpoint
       const response = await fetch(target.endpointUrl, {
-        method: 'POST',
+        method: target.httpMethod || 'POST',
         headers,
-        body: JSON.stringify(payload),
+        body: target.httpMethod === 'GET' ? undefined : requestBody,
         timeout: target.timeoutMs
       });
 
@@ -285,19 +412,35 @@ export class RTBService {
 
       const responseData = await response.json() as any;
 
+      // Use advanced response parsing with JSONPath
+      const bidAmount = this.extractResponseValue(responseData, target.bidAmountPath) || 
+                       responseData.bidAmount || responseData.price || 0;
+      
+      const destinationNumber = this.extractResponseValue(responseData, target.destinationNumberPath) || 
+                               responseData.destinationNumber || responseData.phoneNumber || '';
+      
+      const currency = this.extractResponseValue(responseData, target.currencyPath) || 
+                      responseData.bidCurrency || responseData.currency || target.currency;
+      
+      const requiredDuration = this.extractResponseValue(responseData, target.durationPath) || 
+                              responseData.requiredDuration || responseData.duration;
+      
+      const acceptance = this.extractResponseValue(responseData, target.acceptancePath) || 
+                        responseData.accepted || responseData.accept || true;
+
       // Validate response format
-      if (!this.validateBidResponse(responseData, target)) {
+      if (!this.validateBidResponse({ bidAmount, destinationNumber, currency }, target)) {
         throw new Error('Invalid bid response format');
       }
 
-      const isValid = this.isBidValid(responseData, target);
+      const isValid = this.isBidValid({ bidAmount, destinationNumber, currency, accepted: acceptance }, target);
       
       return {
         targetId: target.id,
-        bidAmount: parseFloat(responseData.bidAmount),
-        bidCurrency: responseData.bidCurrency || target.currency,
-        destinationNumber: responseData.destinationNumber,
-        requiredDuration: responseData.requiredDuration,
+        bidAmount: parseFloat(bidAmount.toString()),
+        bidCurrency: currency,
+        destinationNumber: destinationNumber,
+        requiredDuration: requiredDuration ? parseInt(requiredDuration.toString()) : undefined,
         responseTimeMs: responseTime,
         isValid
       };
@@ -351,9 +494,11 @@ export class RTBService {
     const minBid = parseFloat(target.minBidAmount as any);
     const maxBid = parseFloat(target.maxBidAmount as any);
     
-    // Removed debug logging for production
+    // Check if the bid is explicitly accepted (if acceptance field is present)
+    const isAccepted = response.accepted === undefined ? true : Boolean(response.accepted);
     
     return (
+      isAccepted &&
       bidAmount >= minBid &&
       bidAmount <= maxBid &&
       response.destinationNumber &&

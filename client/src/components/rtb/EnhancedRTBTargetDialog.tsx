@@ -72,7 +72,14 @@ const enhancedRTBTargetSchema = z.object({
   authentication: z.enum(["Choose Authentication", "API Key", "Bearer Token", "Basic Auth"]),
   authToken: z.string().optional(),
   
-  // Acceptance Parsing
+  // Advanced Response Parsing
+  bidAmountPath: z.string().optional(),
+  destinationNumberPath: z.string().optional(),
+  acceptancePath: z.string().optional(),
+  currencyPath: z.string().optional(),
+  durationPath: z.string().optional(),
+  
+  // Legacy Acceptance Parsing (for backward compatibility)
   acceptanceParsing: z.enum(["Choose Property", "price", "accepted", "duration"]),
   acceptanceOperator: z.enum(["Equals", "Greater Than", "Less Than", "Not Equals"]),
   acceptanceValue: z.string().optional(),
@@ -174,6 +181,11 @@ export function EnhancedRTBTargetDialog({
         requestBody: editingTarget.requestBody || "",
         authentication: editingTarget.authMethod === "choose_authentication" ? "Choose Authentication" : editingTarget.authMethod || "Choose Authentication",
         authToken: editingTarget.authToken || "",
+        bidAmountPath: editingTarget.bidAmountPath || "",
+        destinationNumberPath: editingTarget.destinationNumberPath || "",
+        acceptancePath: editingTarget.acceptancePath || "",
+        currencyPath: editingTarget.currencyPath || "",
+        durationPath: editingTarget.durationPath || "",
         acceptanceParsing: "Choose Property",
         acceptanceOperator: "Equals",
         acceptanceValue: "",
@@ -211,6 +223,11 @@ export function EnhancedRTBTargetDialog({
         requestBody: "",
         authentication: "Choose Authentication",
         authToken: "",
+        bidAmountPath: "",
+        destinationNumberPath: "",
+        acceptancePath: "",
+        currencyPath: "",
+        durationPath: "",
         acceptanceParsing: "Choose Property",
         acceptanceOperator: "Equals",
         acceptanceValue: "",
@@ -950,16 +967,16 @@ Please add tags with numerical values only."
                       name="requestBody"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Request Body</FormLabel>
+                          <FormLabel>Request Body Template</FormLabel>
                           <FormControl>
                             <Textarea 
-                              placeholder="Enter request body content (for POST/PUT/PATCH requests)"
-                              className="min-h-[100px]"
+                              placeholder='{"requestId": "{requestId}", "campaignId": "{campaignId}", "callerId": "{callerId}", "callStartTime": "{callStartTime}", "minBid": {minBid}, "maxBid": {maxBid}, "currency": "{currency}"}'
+                              className="min-h-[120px] font-mono text-sm"
                               {...field}
                             />
                           </FormControl>
                           <FormDescription>
-                            The request body will be sent with POST, PUT, and PATCH requests. Leave empty for GET requests.
+                            Use template variables: {"{requestId}"}, {"{campaignId}"}, {"{callerId}"}, {"{callStartTime}"}, {"{minBid}"}, {"{maxBid}"}, {"{currency}"}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -1016,14 +1033,117 @@ Please add tags with numerical values only."
                 </Card>
               </TabsContent>
 
-              {/* Acceptance Parsing Tab */}
+              {/* Response Parsing Tab */}
               <TabsContent value="parsing" className="space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4" />
-                      Acceptance Parsing
+                      Response Field Mapping
                     </CardTitle>
+                    <CardDescription>
+                      Configure how to extract data from different response formats using JSONPath expressions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="bidAmountPath"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Bid Amount Path</FormLabel>
+                            <FormControl>
+                              <Input placeholder="bidAmount or $.bid.amount" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              JSONPath to extract bid amount from response
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="destinationNumberPath"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Destination Number Path</FormLabel>
+                            <FormControl>
+                              <Input placeholder="destinationNumber or $.routing.phone" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              JSONPath to extract destination phone number
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="acceptancePath"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Acceptance Path</FormLabel>
+                            <FormControl>
+                              <Input placeholder="accepted or $.status.accepted" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              JSONPath to check if bid is accepted
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="currencyPath"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Currency Path</FormLabel>
+                            <FormControl>
+                              <Input placeholder="currency or $.bid.currency" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              JSONPath to extract currency code
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="durationPath"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Duration Path</FormLabel>
+                            <FormControl>
+                              <Input placeholder="duration or $.requirements.duration" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              JSONPath to extract required call duration
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Legacy Acceptance Parsing
+                    </CardTitle>
+                    <CardDescription>
+                      Fallback parsing for backward compatibility
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

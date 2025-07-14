@@ -737,6 +737,13 @@ export const rtbTargets = pgTable("rtb_targets", {
   maxBidAmount: decimal("max_bid_amount", { precision: 10, scale: 2 }).default("100.00").notNull(),
   currency: varchar("currency", { length: 3 }).default("USD").notNull(),
   
+  // Advanced Response Parsing Fields
+  bidAmountPath: varchar("bid_amount_path", { length: 255 }),
+  destinationNumberPath: varchar("destination_number_path", { length: 255 }),
+  acceptancePath: varchar("acceptance_path", { length: 255 }),
+  currencyPath: varchar("currency_path", { length: 255 }),
+  durationPath: varchar("duration_path", { length: 255 }),
+  
   // Performance Tracking
   totalPings: integer("total_pings").default(0).notNull(),
   successfulBids: integer("successful_bids").default(0).notNull(),
