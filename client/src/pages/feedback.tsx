@@ -142,9 +142,10 @@ export default function Feedback() {
                 <CardTitle className="flex items-center gap-2">
                   <Bot className="h-5 w-5" />
                   AI Assistant
+                  <Badge variant="outline" className="text-xs">Powered by Claude</Badge>
                 </CardTitle>
                 <CardDescription>
-                  Ask me anything about CallCenter Pro features and functionality
+                  Ask me anything about CallCenter Pro features, project progress, and functionality
                 </CardDescription>
               </CardHeader>
               
@@ -198,6 +199,7 @@ export default function Feedback() {
                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            <span className="text-xs text-gray-500 ml-2">Claude AI is thinking...</span>
                           </div>
                         </div>
                       </div>

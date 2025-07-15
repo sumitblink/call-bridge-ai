@@ -113,6 +113,14 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 15, 2025: **CLAUDE AI INTEGRATION** - Implemented intelligent AI chatbot powered by Claude for user support and project assistance
+  - Integrated Claude Sonnet 4 API for intelligent responses about CallCenter Pro features and functionality
+  - Created comprehensive ChatbotService with project context awareness and file search capabilities
+  - Enhanced feedback page with "Powered by Claude" branding and improved user experience
+  - AI provides contextual answers about campaigns, RTB system, call routing, and project progress
+  - Responses use simple, non-technical language suitable for business users
+  - All conversations stored as feedback for continuous system improvement
+  - Fallback to basic responses if Claude API unavailable
 - July 15, 2025: **DOCUMENTATION UPDATE** - Updated comprehensive help documentation and RTB analytics improvements
   - Enhanced RTB analytics to display target names instead of generic IDs (e.g., "Premium Bid" instead of "Target 18")
   - Added new RTB system tab to in-app help documentation with detailed explanations

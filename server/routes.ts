@@ -4534,14 +4534,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { message, conversationHistory } = req.body;
       
-      // For now, return a helpful response based on common questions
-      // This will be enhanced with Claude API integration
-      const response = generateHelpResponse(message);
+      // Use Claude AI with project knowledge
+      const { ChatbotService } = await import('./chatbot-service');
+      const result = await ChatbotService.generateResponse({
+        message,
+        conversationHistory
+      });
       
-      res.json({ response });
+      res.json({ response: result.response, sources: result.sources });
     } catch (error) {
       console.error('Error processing chatbot query:', error);
-      res.status(500).json({ error: 'Failed to process query' });
+      
+      // Fallback to simple response if Claude fails
+      const response = generateHelpResponse(message);
+      res.json({ response });
     }
   });
 
