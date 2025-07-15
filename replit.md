@@ -113,6 +113,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 15, 2025: **DOCUMENTATION UPDATE** - Updated comprehensive help documentation and RTB analytics improvements
+  - Enhanced RTB analytics to display target names instead of generic IDs (e.g., "Premium Bid" instead of "Target 18")
+  - Added new RTB system tab to in-app help documentation with detailed explanations
+  - Updated main documentation with security section highlighting multi-tenancy improvements
+  - Added RTB analytics enhancements and recent improvements section
+  - Updated both in-app help and external documentation to reflect current system state
 - July 15, 2025: **CRITICAL SECURITY FIX** - Resolved multi-tenancy vulnerability and implemented comprehensive user-scoped data filtering
   - Fixed critical security issue where users could access other accounts' campaigns, buyers, RTB targets, and calls
   - Added proper authentication requirements (`requireAuth`) to all sensitive endpoints

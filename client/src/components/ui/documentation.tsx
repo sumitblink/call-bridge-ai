@@ -52,10 +52,11 @@ export function Documentation({ trigger, className }: DocumentationProps) {
         </DialogHeader>
         
         <Tabs defaultValue="quick-start" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="quick-start">Quick Start</TabsTrigger>
             <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
             <TabsTrigger value="buyers">Buyers</TabsTrigger>
+            <TabsTrigger value="rtb">RTB System</TabsTrigger>
             <TabsTrigger value="twilio">Twilio Setup</TabsTrigger>
             <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
@@ -248,6 +249,98 @@ export function Documentation({ trigger, className }: DocumentationProps) {
                       <li>• TWILIO_ACCOUNT_SID: Your account identifier</li>
                       <li>• TWILIO_AUTH_TOKEN: Authentication token</li>
                       <li>• TWILIO_PHONE_NUMBER: Primary phone number</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="rtb" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Real-Time Bidding (RTB) System
+                  </CardTitle>
+                  <CardDescription>Enterprise-level call auction system with live analytics</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2">RTB Overview</h4>
+                    <ul className="text-sm space-y-1 text-gray-600">
+                      <li>• Auction-based call distribution to multiple buyers</li>
+                      <li>• Real-time bidding with live analytics and target name resolution</li>
+                      <li>• External bidder integration with custom endpoints</li>
+                      <li>• Winning bid selection and automatic call routing</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">RTB Components</h4>
+                    <ul className="text-sm space-y-1 text-gray-600">
+                      <li>• <strong>RTB Targets:</strong> External bidding endpoints with contact info</li>
+                      <li>• <strong>RTB Routers:</strong> Auction orchestration and bidder management</li>
+                      <li>• <strong>Bid Requests:</strong> Standardized bid request format with template variables</li>
+                      <li>• <strong>Bid Responses:</strong> JSONPath field extraction and winner determination</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">Setting Up RTB</h4>
+                    <ul className="text-sm space-y-1 text-gray-600">
+                      <li>• Create RTB targets with endpoint URLs and authentication</li>
+                      <li>• Configure bid request templates with dynamic variables</li>
+                      <li>• Set up response parsing using JSONPath expressions</li>
+                      <li>• Assign targets to routers and enable RTB on campaigns</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">RTB Analytics (Enhanced)</h4>
+                    <ul className="text-sm space-y-1 text-gray-600">
+                      <li>• <strong>Target Names:</strong> Analytics show meaningful names like "Premium Bid" instead of "Target 18"</li>
+                      <li>• <strong>Bid Tracking:</strong> Real-time bid request and response monitoring</li>
+                      <li>• <strong>Winner Analysis:</strong> Detailed winning bid information with target names</li>
+                      <li>• <strong>Performance Metrics:</strong> Response times, success rates, and conversion tracking</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">Template Variables</h4>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm font-medium mb-1">Common Variables:</p>
+                      <code className="text-xs block">
+                        {`{requestId}, {campaignId}, {callerId}, {callStartTime}`}<br/>
+                        {`{minBid}, {maxBid}, {currency}, {callerState}, {callerZip}`}
+                      </code>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>RTB Security & Recent Updates</CardTitle>
+                  <CardDescription>Security improvements and latest features</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Security Features</h4>
+                    <ul className="text-sm space-y-1 text-gray-600">
+                      <li>• User-scoped RTB targets and routers with ownership validation</li>
+                      <li>• Secure bid request authentication with API keys and tokens</li>
+                      <li>• Multi-tenancy isolation for all RTB resources</li>
+                      <li>• Comprehensive security testing and validation</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">Recent Improvements (July 2025)</h4>
+                    <ul className="text-sm space-y-1 text-gray-600">
+                      <li>• Enhanced analytics with target name resolution</li>
+                      <li>• Improved bid request details visualization</li>
+                      <li>• Better tracking of winning bids and target performance</li>
+                      <li>• Complete multi-tenancy security implementation</li>
                     </ul>
                   </div>
                 </CardContent>
