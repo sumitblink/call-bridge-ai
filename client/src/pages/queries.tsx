@@ -45,12 +45,13 @@ export default function Queries() {
   };
 
   const formatMessage = (text: string) => {
+    // Replace **text** with <strong>text</strong> for bold formatting
+    const boldFormatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
     // Split by double newlines to create paragraphs
-    const paragraphs = text.split('\n\n');
+    const paragraphs = boldFormatted.split('\n\n');
     return paragraphs.map((paragraph, index) => (
-      <p key={index} className="mb-2 last:mb-0">
-        {paragraph}
-      </p>
+      <p key={index} className="mb-2 last:mb-0" dangerouslySetInnerHTML={{ __html: paragraph }} />
     ));
   };
 
@@ -120,7 +121,7 @@ export default function Queries() {
                                 <span className="text-sm font-medium text-blue-600">User</span>
                               </div>
                               <div className="bg-blue-50 rounded-lg p-3">
-                                <p className="text-sm text-gray-900">{entry.question}</p>
+                                <p className="text-sm text-gray-900" dangerouslySetInnerHTML={{ __html: entry.question.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
                               </div>
                             </div>
                           ) : (

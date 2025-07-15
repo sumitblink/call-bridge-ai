@@ -127,6 +127,12 @@ export default function Feedback() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatMessage = (text: string) => {
+    // Replace **text** with <strong>text</strong> for bold formatting
+    const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    return { __html: formattedText };
+  };
+
   return (
     <Layout>
       <div className="space-y-8">
@@ -177,9 +183,10 @@ export default function Feedback() {
                               : 'bg-gray-100 text-gray-900'
                           }`}
                         >
-                          <div className="text-sm whitespace-pre-line leading-relaxed break-words">
-                            {message.content}
-                          </div>
+                          <div 
+                            className="text-sm whitespace-pre-line leading-relaxed break-words"
+                            dangerouslySetInnerHTML={formatMessage(message.content)}
+                          />
                           <p className={`text-xs mt-2 ${
                             message.type === 'user' ? 'text-blue-200' : 'text-gray-500'
                           }`}>
