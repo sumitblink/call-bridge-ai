@@ -19,7 +19,6 @@ import Integrations from "@/pages/integrations";
 import WebhookTest from "@/pages/webhook-test";
 import TwilioTest from "@/pages/twilio-test";
 import PhoneNumbers from "@/pages/phone-numbers";
-import DNI from "@/pages/dni";
 import RTBManagement from "@/pages/rtb-management";
 
 import Settings from "@/pages/settings";
@@ -60,7 +59,6 @@ function Router() {
           <Route path="/agents" component={Agents} />
           <Route path="/calls" component={Calls} />
           <Route path="/phone-numbers" component={PhoneNumbers} />
-          <Route path="/dni" component={DNI} />
           <Route path="/rtb-management" component={RTBManagement} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />
