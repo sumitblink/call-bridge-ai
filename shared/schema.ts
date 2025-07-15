@@ -670,6 +670,140 @@ export const publisherCampaigns = pgTable('publisher_campaigns', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+// Call Flow System Tables
+export const callFlows = pgTable("call_flows", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  campaignId: integer("campaign_id").references(() => campaigns.id),
+  
+  // Flow Configuration
+  name: varchar("name", { length: 256 }).notNull(),
+  description: text("description"),
+  version: varchar("version", { length: 50 }).default("1.0.0").notNull(),
+  
+  // Flow Definition (JSON structure)
+  flowDefinition: json("flow_definition").notNull(), // Complete flow structure
+  
+  // Flow Status & Settings
+  status: varchar("status", { length: 50 }).default("draft").notNull(), // draft, active, paused, archived
+  isTemplate: boolean("is_template").default(false).notNull(),
+  templateCategory: varchar("template_category", { length: 100 }),
+  
+  // Performance Tracking
+  totalExecutions: integer("total_executions").default(0).notNull(),
+  successfulExecutions: integer("successful_executions").default(0).notNull(),
+  failedExecutions: integer("failed_executions").default(0).notNull(),
+  avgExecutionTime: integer("avg_execution_time").default(0).notNull(), // milliseconds
+  
+  // Metadata
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  lastExecuted: timestamp("last_executed"),
+});
+
+export const callFlowNodes = pgTable("call_flow_nodes", {
+  id: serial("id").primaryKey(),
+  flowId: integer("flow_id").references(() => callFlows.id).notNull(),
+  
+  // Node Configuration
+  nodeId: varchar("node_id", { length: 100 }).notNull(), // unique within flow
+  nodeType: varchar("node_type", { length: 50 }).notNull(), // condition, action, trigger, end
+  
+  // Node Properties
+  name: varchar("name", { length: 256 }).notNull(),
+  description: text("description"),
+  
+  // Node Definition
+  config: json("config").notNull(), // node-specific configuration
+  
+  // Position for visual editor
+  position: json("position"), // {x: number, y: number}
+  
+  // Execution tracking
+  executionCount: integer("execution_count").default(0).notNull(),
+  lastExecuted: timestamp("last_executed"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const callFlowConnections = pgTable("call_flow_connections", {
+  id: serial("id").primaryKey(),
+  flowId: integer("flow_id").references(() => callFlows.id).notNull(),
+  
+  // Connection Definition
+  fromNodeId: varchar("from_node_id", { length: 100 }).notNull(),
+  toNodeId: varchar("to_node_id", { length: 100 }).notNull(),
+  
+  // Connection Properties
+  conditionType: varchar("condition_type", { length: 50 }), // success, failure, timeout, custom
+  conditionValue: varchar("condition_value", { length: 256 }),
+  
+  // Connection styling for visual editor
+  style: json("style"), // connection appearance
+  
+  // Execution tracking
+  traversalCount: integer("traversal_count").default(0).notNull(),
+  lastTraversed: timestamp("last_traversed"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const callFlowExecutions = pgTable("call_flow_executions", {
+  id: serial("id").primaryKey(),
+  flowId: integer("flow_id").references(() => callFlows.id).notNull(),
+  callId: integer("call_id").references(() => calls.id),
+  
+  // Execution Details
+  executionId: varchar("execution_id", { length: 100 }).notNull().unique(),
+  status: varchar("status", { length: 50 }).notNull(), // running, completed, failed, timeout
+  
+  // Execution Path
+  startNodeId: varchar("start_node_id", { length: 100 }),
+  currentNodeId: varchar("current_node_id", { length: 100 }),
+  endNodeId: varchar("end_node_id", { length: 100 }),
+  
+  // Execution Context
+  context: json("context"), // variables and state during execution
+  inputData: json("input_data"), // initial data passed to flow
+  outputData: json("output_data"), // final result data
+  
+  // Timing
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  duration: integer("duration"), // milliseconds
+  
+  // Error handling
+  errorMessage: text("error_message"),
+  errorNode: varchar("error_node", { length: 100 }),
+  
+  // Metadata
+  executedBy: varchar("executed_by", { length: 100 }), // system, user, webhook
+  triggerSource: varchar("trigger_source", { length: 100 }), // call, test, manual
+});
+
+export const callFlowVariables = pgTable("call_flow_variables", {
+  id: serial("id").primaryKey(),
+  flowId: integer("flow_id").references(() => callFlows.id).notNull(),
+  
+  // Variable Definition
+  name: varchar("name", { length: 100 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // string, number, boolean, json, array
+  
+  // Variable Properties
+  defaultValue: text("default_value"),
+  description: text("description"),
+  isRequired: boolean("is_required").default(false).notNull(),
+  isGlobal: boolean("is_global").default(false).notNull(), // accessible across all flows
+  
+  // Validation
+  validationRules: json("validation_rules"), // regex, min/max, enum values
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // RTB (Real-Time Bidding) Tables
 export const rtbTargets = pgTable("rtb_targets", {
   id: serial("id").primaryKey(),
@@ -1046,6 +1180,61 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
 export type Feedback = typeof feedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 
+// Call Flow Schemas
+export const insertCallFlowSchema = createInsertSchema(callFlows).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastExecuted: true,
+  totalExecutions: true,
+  successfulExecutions: true,
+  failedExecutions: true,
+  avgExecutionTime: true,
+});
+
+export const insertCallFlowNodeSchema = createInsertSchema(callFlowNodes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  executionCount: true,
+  lastExecuted: true,
+});
+
+export const insertCallFlowConnectionSchema = createInsertSchema(callFlowConnections).omit({
+  id: true,
+  createdAt: true,
+  traversalCount: true,
+  lastTraversed: true,
+});
+
+export const insertCallFlowExecutionSchema = createInsertSchema(callFlowExecutions).omit({
+  id: true,
+  startedAt: true,
+  completedAt: true,
+  duration: true,
+});
+
+export const insertCallFlowVariableSchema = createInsertSchema(callFlowVariables).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type CallFlow = typeof callFlows.$inferSelect;
+export type InsertCallFlow = z.infer<typeof insertCallFlowSchema>;
+
+export type CallFlowNode = typeof callFlowNodes.$inferSelect;
+export type InsertCallFlowNode = z.infer<typeof insertCallFlowNodeSchema>;
+
+export type CallFlowConnection = typeof callFlowConnections.$inferSelect;
+export type InsertCallFlowConnection = z.infer<typeof insertCallFlowConnectionSchema>;
+
+export type CallFlowExecution = typeof callFlowExecutions.$inferSelect;
+export type InsertCallFlowExecution = z.infer<typeof insertCallFlowExecutionSchema>;
+
+export type CallFlowVariable = typeof callFlowVariables.$inferSelect;
+export type InsertCallFlowVariable = z.infer<typeof insertCallFlowVariableSchema>;
+
 // RTB Relations
 export const rtbTargetsRelations = relations(rtbTargets, ({ one, many }) => ({
   user: one(users, {
@@ -1060,6 +1249,54 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
   user: one(users, {
     fields: [feedback.userId],
     references: [users.id],
+  }),
+}));
+
+// Call Flow Relations
+export const callFlowsRelations = relations(callFlows, ({ one, many }) => ({
+  user: one(users, {
+    fields: [callFlows.userId],
+    references: [users.id],
+  }),
+  campaign: one(campaigns, {
+    fields: [callFlows.campaignId],
+    references: [campaigns.id],
+  }),
+  nodes: many(callFlowNodes),
+  connections: many(callFlowConnections),
+  executions: many(callFlowExecutions),
+  variables: many(callFlowVariables),
+}));
+
+export const callFlowNodesRelations = relations(callFlowNodes, ({ one }) => ({
+  flow: one(callFlows, {
+    fields: [callFlowNodes.flowId],
+    references: [callFlows.id],
+  }),
+}));
+
+export const callFlowConnectionsRelations = relations(callFlowConnections, ({ one }) => ({
+  flow: one(callFlows, {
+    fields: [callFlowConnections.flowId],
+    references: [callFlows.id],
+  }),
+}));
+
+export const callFlowExecutionsRelations = relations(callFlowExecutions, ({ one }) => ({
+  flow: one(callFlows, {
+    fields: [callFlowExecutions.flowId],
+    references: [callFlows.id],
+  }),
+  call: one(calls, {
+    fields: [callFlowExecutions.callId],
+    references: [calls.id],
+  }),
+}));
+
+export const callFlowVariablesRelations = relations(callFlowVariables, ({ one }) => ({
+  flow: one(callFlows, {
+    fields: [callFlowVariables.flowId],
+    references: [callFlows.id],
   }),
 }));
 

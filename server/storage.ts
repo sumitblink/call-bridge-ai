@@ -31,6 +31,8 @@ import {
   type InsertRtbBidResponse,
   type Feedback,
   type InsertFeedback,
+  type CallFlow,
+  type InsertCallFlow,
 } from '@shared/schema';
 
 export interface IStorage {
@@ -186,6 +188,13 @@ export interface IStorage {
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
   getFeedbackHistory(userId: number): Promise<Feedback[]>;
   getAllFeedback(userId: number): Promise<Feedback[]>;
+
+  // Call Flows
+  getCallFlows(userId?: number): Promise<any[]>;
+  getCallFlow(id: number): Promise<any | undefined>;
+  createCallFlow(flow: any): Promise<any>;
+  updateCallFlow(id: number, flow: any): Promise<any | undefined>;
+  deleteCallFlow(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -937,6 +946,41 @@ export class MemStorage implements IStorage {
   async getAllFeedback(userId: number): Promise<Feedback[]> {
     // For memory storage, return empty array as we don't persist feedback
     return [];
+  }
+
+  // Call Flow methods (placeholder for memory storage)
+  async getCallFlows(userId?: number): Promise<any[]> {
+    // For memory storage, return empty array as we don't persist call flows
+    return [];
+  }
+
+  async getCallFlow(id: number): Promise<any | undefined> {
+    // For memory storage, return undefined as we don't persist call flows
+    return undefined;
+  }
+
+  async createCallFlow(flow: any): Promise<any> {
+    // For memory storage, return the flow with an ID
+    return {
+      id: Date.now(),
+      ...flow,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateCallFlow(id: number, flow: any): Promise<any | undefined> {
+    // For memory storage, return the updated flow
+    return {
+      id,
+      ...flow,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteCallFlow(id: number): Promise<boolean> {
+    // For memory storage, return true as if deleted
+    return true;
   }
 }
 

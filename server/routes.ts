@@ -4593,6 +4593,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Call Flow API endpoints
+  app.get('/api/call-flows', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const callFlows = await storage.getCallFlows(userId);
+      res.json(callFlows);
+    } catch (error) {
+      console.error('Error fetching call flows:', error);
+      res.status(500).json({ error: 'Failed to fetch call flows' });
+    }
+  });
+
+  app.post('/api/call-flows', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const callFlowData = { ...req.body, userId };
+      const callFlow = await storage.createCallFlow(callFlowData);
+      res.status(201).json(callFlow);
+    } catch (error) {
+      console.error('Error creating call flow:', error);
+      res.status(500).json({ error: 'Failed to create call flow' });
+    }
+  });
+
+  app.get('/api/call-flows/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const callFlow = await storage.getCallFlow(parseInt(req.params.id));
+      if (!callFlow || callFlow.userId !== userId) {
+        return res.status(404).json({ error: 'Call flow not found' });
+      }
+      res.json(callFlow);
+    } catch (error) {
+      console.error('Error fetching call flow:', error);
+      res.status(500).json({ error: 'Failed to fetch call flow' });
+    }
+  });
+
+  app.put('/api/call-flows/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const callFlow = await storage.getCallFlow(parseInt(req.params.id));
+      if (!callFlow || callFlow.userId !== userId) {
+        return res.status(404).json({ error: 'Call flow not found' });
+      }
+      const updatedCallFlow = await storage.updateCallFlow(parseInt(req.params.id), req.body);
+      res.json(updatedCallFlow);
+    } catch (error) {
+      console.error('Error updating call flow:', error);
+      res.status(500).json({ error: 'Failed to update call flow' });
+    }
+  });
+
+  app.delete('/api/call-flows/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const callFlow = await storage.getCallFlow(parseInt(req.params.id));
+      if (!callFlow || callFlow.userId !== userId) {
+        return res.status(404).json({ error: 'Call flow not found' });
+      }
+      await storage.deleteCallFlow(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting call flow:', error);
+      res.status(500).json({ error: 'Failed to delete call flow' });
+    }
+  });
+
+  app.put('/api/call-flows/:id/status', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const callFlow = await storage.getCallFlow(parseInt(req.params.id));
+      if (!callFlow || callFlow.userId !== userId) {
+        return res.status(404).json({ error: 'Call flow not found' });
+      }
+      const updatedCallFlow = await storage.updateCallFlow(parseInt(req.params.id), { status: req.body.status });
+      res.json(updatedCallFlow);
+    } catch (error) {
+      console.error('Error updating call flow status:', error);
+      res.status(500).json({ error: 'Failed to update call flow status' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
