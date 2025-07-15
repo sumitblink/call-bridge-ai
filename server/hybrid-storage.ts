@@ -509,6 +509,42 @@ class HybridStorage implements IStorage {
       () => this.memStorage.getAllFeedback(userId)
     );
   }
+
+  // Call Flow methods
+  async getCallFlows(userId?: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getCallFlows(userId),
+      () => this.memStorage.getCallFlows(userId)
+    );
+  }
+
+  async getCallFlow(id: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getCallFlow(id),
+      () => this.memStorage.getCallFlow(id)
+    );
+  }
+
+  async createCallFlow(flow: any): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.createCallFlow(flow),
+      () => this.memStorage.createCallFlow(flow)
+    );
+  }
+
+  async updateCallFlow(id: number, flow: any): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.updateCallFlow(id, flow),
+      () => this.memStorage.updateCallFlow(id, flow)
+    );
+  }
+
+  async deleteCallFlow(id: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.deleteCallFlow(id),
+      () => this.memStorage.deleteCallFlow(id)
+    );
+  }
 }
 
 export const storage = new HybridStorage();

@@ -383,7 +383,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
                       <SelectValue placeholder="Select campaign" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No Campaign</SelectItem>
+                      <SelectItem value="none">No Campaign</SelectItem>
                       {campaigns.map((campaign) => (
                         <SelectItem key={campaign.id} value={campaign.id.toString()}>
                           {campaign.name}
