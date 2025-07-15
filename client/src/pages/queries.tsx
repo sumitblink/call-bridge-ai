@@ -113,7 +113,7 @@ export default function Queries() {
                           </div>
                           
                           {/* User Question */}
-                          {entry.question && (
+                          {entry.question && entry.question.trim() !== '' ? (
                             <div className="mb-4">
                               <div className="flex items-center gap-2 mb-2">
                                 <User className="h-4 w-4 text-blue-600" />
@@ -121,6 +121,16 @@ export default function Queries() {
                               </div>
                               <div className="bg-blue-50 rounded-lg p-3">
                                 <p className="text-sm text-gray-900">{entry.question}</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mb-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <User className="h-4 w-4 text-blue-600" />
+                                <span className="text-sm font-medium text-blue-600">User</span>
+                              </div>
+                              <div className="bg-blue-50 rounded-lg p-3">
+                                <p className="text-sm text-gray-500 italic">Question not captured (older entry)</p>
                               </div>
                             </div>
                           )}

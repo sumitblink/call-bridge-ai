@@ -55,7 +55,7 @@ export default function Feedback() {
       });
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       // Add assistant response to messages
       const assistantMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -65,9 +65,9 @@ export default function Feedback() {
       };
       setMessages(prev => [...prev, assistantMessage]);
       
-      // Store in feedback history
+      // Store in feedback history using the original question
       storeFeedbackMutation.mutate({
-        question: inputMessage,
+        question: variables, // Use the original message variable
         response: data.response
       });
       
@@ -107,8 +107,12 @@ export default function Feedback() {
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-    sendMessageMutation.mutate(inputMessage);
+    
+    // Store the question before clearing input
+    const questionToStore = inputMessage;
     setInputMessage('');
+    
+    sendMessageMutation.mutate(questionToStore);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
