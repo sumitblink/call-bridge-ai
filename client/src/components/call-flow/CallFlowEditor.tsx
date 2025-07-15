@@ -7,6 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { CallFlow, Campaign } from '@shared/schema';
 
@@ -51,6 +54,8 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   ]);
   const [connections, setConnections] = useState<FlowConnection[]>([]);
   const [selectedNode, setSelectedNode] = useState<FlowNode | null>(null);
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [configNode, setConfigNode] = useState<FlowNode | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionSource, setConnectionSource] = useState<string | null>(null);
   const [draggedNode, setDraggedNode] = useState<string | null>(null);
@@ -213,6 +218,26 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
     }
   };
 
+  const handleNodeDoubleClick = (node: FlowNode) => {
+    if (node.type !== 'start') {
+      setConfigNode(node);
+      setConfigDialogOpen(true);
+    }
+  };
+
+  const handleConfigSave = (updatedConfig: any) => {
+    if (configNode) {
+      const updatedNodes = nodes.map(node =>
+        node.id === configNode.id
+          ? { ...node, data: { ...node.data, config: updatedConfig } }
+          : node
+      );
+      setNodes(updatedNodes);
+      setConfigDialogOpen(false);
+      setConfigNode(null);
+    }
+  };
+
   const handleStartConnection = (nodeId: string) => {
     setIsConnecting(true);
     setConnectionSource(nodeId);
@@ -323,6 +348,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
         style={{ left: node.x, top: node.y }}
         onMouseDown={(e) => handleMouseDown(e, node.id)}
         onClick={() => handleNodeClick(node)}
+        onDoubleClick={() => handleNodeDoubleClick(node)}
       >
         <div className="text-sm font-medium">{node.data.label}</div>
         <div className="text-xs text-gray-500 mt-1">{node.type}</div>
@@ -1003,7 +1029,8 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
                 <GitBranch className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                 <p className="text-lg font-medium mb-2">Build Your Call Flow</p>
                 <p className="text-sm">
-                  Add nodes from the sidebar and connect them by clicking the connection handle
+                  Add nodes from the sidebar and connect them by clicking the connection handle.<br/>
+                  Double-click any node to configure its settings.
                 </p>
               </div>
             )}
@@ -1016,6 +1043,873 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             )}
           </div>
         </div>
+      </div>
+
+      {/* Configuration Dialog */}
+      <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Configure {configNode?.data.label || 'Node'}
+            </DialogTitle>
+          </DialogHeader>
+          {configNode && (
+            <NodeConfigurationDialog 
+              node={configNode} 
+              onSave={handleConfigSave}
+              onCancel={() => setConfigDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// Configuration Dialog Component
+function NodeConfigurationDialog({ node, onSave, onCancel }: {
+  node: FlowNode;
+  onSave: (config: any) => void;
+  onCancel: () => void;
+}) {
+  const [config, setConfig] = useState(node.data.config || {});
+
+  const handleSave = () => {
+    onSave(config);
+  };
+
+  const updateConfig = (key: string, value: any) => {
+    setConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const renderConfigContent = () => {
+    switch (node.type) {
+      case 'menu':
+        return (
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basic">Basic</TabsTrigger>
+              <TabsTrigger value="options">Menu Options</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="space-y-4">
+              <div>
+                <Label htmlFor="welcomeMessage">Welcome Message</Label>
+                <Textarea
+                  id="welcomeMessage"
+                  value={config.welcomeMessage || ''}
+                  onChange={(e) => updateConfig('welcomeMessage', e.target.value)}
+                  placeholder="Please press 1 for sales, 2 for support"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="timeout">Timeout (seconds)</Label>
+                  <Input
+                    id="timeout"
+                    type="number"
+                    value={config.timeout || 10}
+                    onChange={(e) => updateConfig('timeout', parseInt(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="retries">Max Retries</Label>
+                  <Input
+                    id="retries"
+                    type="number"
+                    value={config.retries || 3}
+                    onChange={(e) => updateConfig('retries', parseInt(e.target.value))}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="options" className="space-y-4">
+              <div>
+                <Label>Menu Options</Label>
+                <div className="space-y-2">
+                  {(config.options || []).map((option: any, index: number) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <Input
+                        placeholder="Key"
+                        value={option.key || ''}
+                        onChange={(e) => {
+                          const newOptions = [...(config.options || [])];
+                          newOptions[index] = { ...option, key: e.target.value };
+                          updateConfig('options', newOptions);
+                        }}
+                        className="w-16"
+                      />
+                      <Input
+                        placeholder="Label"
+                        value={option.label || ''}
+                        onChange={(e) => {
+                          const newOptions = [...(config.options || [])];
+                          newOptions[index] = { ...option, label: e.target.value };
+                          updateConfig('options', newOptions);
+                        }}
+                        className="flex-1"
+                      />
+                      <Select
+                        value={option.action || 'route'}
+                        onValueChange={(value) => {
+                          const newOptions = [...(config.options || [])];
+                          newOptions[index] = { ...option, action: value };
+                          updateConfig('options', newOptions);
+                        }}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="route">Route</SelectItem>
+                          <SelectItem value="play">Play</SelectItem>
+                          <SelectItem value="gather">Gather</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newOptions = (config.options || []).filter((_, i) => i !== index);
+                          updateConfig('options', newOptions);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const newOptions = [...(config.options || []), { key: '', label: '', action: 'route' }];
+                      updateConfig('options', newOptions);
+                    }}
+                  >
+                    Add Option
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="advanced" className="space-y-4">
+              <div>
+                <Label htmlFor="invalidRetryMessage">Invalid Input Message</Label>
+                <Textarea
+                  id="invalidRetryMessage"
+                  value={config.invalidRetryMessage || ''}
+                  onChange={(e) => updateConfig('invalidRetryMessage', e.target.value)}
+                  placeholder="Invalid selection. Please try again."
+                  rows={2}
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="allowRepeat"
+                  checked={config.allowRepeat || false}
+                  onCheckedChange={(checked) => updateConfig('allowRepeat', checked)}
+                />
+                <Label htmlFor="allowRepeat">Allow menu repeat</Label>
+              </div>
+            </TabsContent>
+          </Tabs>
+        );
+
+      case 'gather':
+        return (
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic">Basic</TabsTrigger>
+              <TabsTrigger value="validation">Validation</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="space-y-4">
+              <div>
+                <Label htmlFor="gatherType">Gather Type</Label>
+                <Select
+                  value={config.gatherType || 'digits'}
+                  onValueChange={(value) => updateConfig('gatherType', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="digits">Digits</SelectItem>
+                    <SelectItem value="speech">Speech</SelectItem>
+                    <SelectItem value="both">Both</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="prompt">Prompt Message</Label>
+                <Textarea
+                  id="prompt"
+                  value={config.prompt || ''}
+                  onChange={(e) => updateConfig('prompt', e.target.value)}
+                  placeholder="Please enter your phone number"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="numDigits">Number of Digits</Label>
+                  <Input
+                    id="numDigits"
+                    type="number"
+                    value={config.numDigits || 10}
+                    onChange={(e) => updateConfig('numDigits', parseInt(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="timeout">Timeout (seconds)</Label>
+                  <Input
+                    id="timeout"
+                    type="number"
+                    value={config.timeout || 5}
+                    onChange={(e) => updateConfig('timeout', parseInt(e.target.value))}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="validation" className="space-y-4">
+              <div>
+                <Label htmlFor="finishOnKey">Finish on Key</Label>
+                <Input
+                  id="finishOnKey"
+                  value={config.finishOnKey || '#'}
+                  onChange={(e) => updateConfig('finishOnKey', e.target.value)}
+                  placeholder="#"
+                  maxLength={1}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="validationPattern">Validation Pattern (Regex)</Label>
+                <Input
+                  id="validationPattern"
+                  value={config.validationPattern || ''}
+                  onChange={(e) => updateConfig('validationPattern', e.target.value)}
+                  placeholder="^[0-9]{10}$"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="invalidMessage">Invalid Input Message</Label>
+                <Textarea
+                  id="invalidMessage"
+                  value={config.invalidMessage || ''}
+                  onChange={(e) => updateConfig('invalidMessage', e.target.value)}
+                  placeholder="Invalid input. Please try again."
+                  rows={2}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+        );
+
+      case 'play':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="audioType">Audio Type</Label>
+              <Select
+                value={config.audioType || 'tts'}
+                onValueChange={(value) => updateConfig('audioType', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tts">Text-to-Speech</SelectItem>
+                  <SelectItem value="url">Audio URL</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {config.audioType === 'tts' ? (
+              <>
+                <div>
+                  <Label htmlFor="message">Message</Label>
+                  <Textarea
+                    id="message"
+                    value={config.message || ''}
+                    onChange={(e) => updateConfig('message', e.target.value)}
+                    placeholder="Please hold while we connect you"
+                    rows={4}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="voice">Voice</Label>
+                    <Select
+                      value={config.voice || 'alice'}
+                      onValueChange={(value) => updateConfig('voice', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="alice">Alice</SelectItem>
+                        <SelectItem value="man">Man</SelectItem>
+                        <SelectItem value="woman">Woman</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="language">Language</Label>
+                    <Select
+                      value={config.language || 'en-US'}
+                      onValueChange={(value) => updateConfig('language', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en-US">English (US)</SelectItem>
+                        <SelectItem value="en-GB">English (UK)</SelectItem>
+                        <SelectItem value="es-ES">Spanish</SelectItem>
+                        <SelectItem value="fr-FR">French</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div>
+                <Label htmlFor="audioUrl">Audio URL</Label>
+                <Input
+                  id="audioUrl"
+                  value={config.audioUrl || ''}
+                  onChange={(e) => updateConfig('audioUrl', e.target.value)}
+                  placeholder="https://example.com/audio.mp3"
+                />
+              </div>
+            )}
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="loop"
+                checked={config.loop || false}
+                onCheckedChange={(checked) => updateConfig('loop', checked)}
+              />
+              <Label htmlFor="loop">Loop audio</Label>
+            </div>
+          </div>
+        );
+
+      case 'hours':
+        return (
+          <Tabs defaultValue="schedule" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="schedule">Schedule</TabsTrigger>
+              <TabsTrigger value="holidays">Holidays</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="schedule" className="space-y-4">
+              <div>
+                <Label htmlFor="timezone">Timezone</Label>
+                <Select
+                  value={config.timezone || 'America/New_York'}
+                  onValueChange={(value) => updateConfig('timezone', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                    <SelectItem value="America/Chicago">Central Time</SelectItem>
+                    <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                    <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label>Business Hours</Label>
+                <div className="space-y-2">
+                  {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                    <div key={day} className="flex items-center space-x-2">
+                      <Switch
+                        checked={config.businessHours?.[day]?.enabled || false}
+                        onCheckedChange={(checked) => {
+                          const newHours = { ...config.businessHours };
+                          newHours[day] = { ...newHours[day], enabled: checked };
+                          updateConfig('businessHours', newHours);
+                        }}
+                      />
+                      <Label className="w-20 capitalize">{day}</Label>
+                      <Input
+                        type="time"
+                        value={config.businessHours?.[day]?.open || '09:00'}
+                        onChange={(e) => {
+                          const newHours = { ...config.businessHours };
+                          newHours[day] = { ...newHours[day], open: e.target.value };
+                          updateConfig('businessHours', newHours);
+                        }}
+                        className="w-24"
+                      />
+                      <span>to</span>
+                      <Input
+                        type="time"
+                        value={config.businessHours?.[day]?.close || '17:00'}
+                        onChange={(e) => {
+                          const newHours = { ...config.businessHours };
+                          newHours[day] = { ...newHours[day], close: e.target.value };
+                          updateConfig('businessHours', newHours);
+                        }}
+                        className="w-24"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="holidays" className="space-y-4">
+              <div>
+                <Label htmlFor="holidayHandling">Holiday Handling</Label>
+                <Select
+                  value={config.holidayHandling || 'closed'}
+                  onValueChange={(value) => updateConfig('holidayHandling', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="closed">Closed</SelectItem>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="reduced">Reduced Hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="closedMessage">Closed Message</Label>
+                <Textarea
+                  id="closedMessage"
+                  value={config.closedMessage || ''}
+                  onChange={(e) => updateConfig('closedMessage', e.target.value)}
+                  placeholder="We are currently closed. Please call back during business hours."
+                  rows={3}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+        );
+
+      case 'router':
+        return (
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basic">Basic</TabsTrigger>
+              <TabsTrigger value="rtb">RTB Settings</TabsTrigger>
+              <TabsTrigger value="targets">Targets</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="space-y-4">
+              <div>
+                <Label htmlFor="routingType">Routing Type</Label>
+                <Select
+                  value={config.routingType || 'priority'}
+                  onValueChange={(value) => updateConfig('routingType', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="priority">Priority Based</SelectItem>
+                    <SelectItem value="round-robin">Round Robin</SelectItem>
+                    <SelectItem value="capacity">Capacity Based</SelectItem>
+                    <SelectItem value="rtb">Real-Time Bidding</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="capacityLimits"
+                  checked={config.capacityLimits || false}
+                  onCheckedChange={(checked) => updateConfig('capacityLimits', checked)}
+                />
+                <Label htmlFor="capacityLimits">Enforce capacity limits</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="failoverEnabled"
+                  checked={config.failoverEnabled || false}
+                  onCheckedChange={(checked) => updateConfig('failoverEnabled', checked)}
+                />
+                <Label htmlFor="failoverEnabled">Enable failover</Label>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="rtb" className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="rtbEnabled"
+                  checked={config.rtbEnabled || false}
+                  onCheckedChange={(checked) => updateConfig('rtbEnabled', checked)}
+                />
+                <Label htmlFor="rtbEnabled">Enable RTB</Label>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="bidTimeout">Bid Timeout (ms)</Label>
+                  <Input
+                    id="bidTimeout"
+                    type="number"
+                    value={config.bidTimeout || 1000}
+                    onChange={(e) => updateConfig('bidTimeout', parseInt(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="minBid">Minimum Bid</Label>
+                  <Input
+                    id="minBid"
+                    type="number"
+                    step="0.01"
+                    value={config.minBid || 0}
+                    onChange={(e) => updateConfig('minBid', parseFloat(e.target.value))}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="targets" className="space-y-4">
+              <div>
+                <Label>Routing Targets</Label>
+                <div className="text-sm text-gray-600 mb-2">
+                  Configure routing targets and their priorities
+                </div>
+                <div className="space-y-2">
+                  {(config.targets || []).map((target: any, index: number) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <Input
+                        placeholder="Target Name"
+                        value={target.name || ''}
+                        onChange={(e) => {
+                          const newTargets = [...(config.targets || [])];
+                          newTargets[index] = { ...target, name: e.target.value };
+                          updateConfig('targets', newTargets);
+                        }}
+                      />
+                      <Input
+                        placeholder="Priority"
+                        type="number"
+                        value={target.priority || 1}
+                        onChange={(e) => {
+                          const newTargets = [...(config.targets || [])];
+                          newTargets[index] = { ...target, priority: parseInt(e.target.value) };
+                          updateConfig('targets', newTargets);
+                        }}
+                        className="w-24"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newTargets = (config.targets || []).filter((_, i) => i !== index);
+                          updateConfig('targets', newTargets);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const newTargets = [...(config.targets || []), { name: '', priority: 1 }];
+                      updateConfig('targets', newTargets);
+                    }}
+                  >
+                    Add Target
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        );
+
+      case 'splitter':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="splitType">Split Type</Label>
+              <Select
+                value={config.splitType || 'percentage'}
+                onValueChange={(value) => updateConfig('splitType', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="weight">Weight Based</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Split Targets</Label>
+              <div className="space-y-2">
+                {(config.targets || []).map((target: any, index: number) => (
+                  <div key={index} className="flex gap-2 items-center">
+                    <Input
+                      placeholder="Route Name"
+                      value={target.name || ''}
+                      onChange={(e) => {
+                        const newTargets = [...(config.targets || [])];
+                        newTargets[index] = { ...target, name: e.target.value };
+                        updateConfig('targets', newTargets);
+                      }}
+                    />
+                    <Input
+                      placeholder="Percentage"
+                      type="number"
+                      value={target.percentage || 50}
+                      onChange={(e) => {
+                        const newTargets = [...(config.targets || [])];
+                        newTargets[index] = { ...target, percentage: parseInt(e.target.value) };
+                        updateConfig('targets', newTargets);
+                      }}
+                      className="w-24"
+                    />
+                    <Input
+                      placeholder="Destination"
+                      value={target.destination || ''}
+                      onChange={(e) => {
+                        const newTargets = [...(config.targets || [])];
+                        newTargets[index] = { ...target, destination: e.target.value };
+                        updateConfig('targets', newTargets);
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newTargets = (config.targets || []).filter((_, i) => i !== index);
+                        updateConfig('targets', newTargets);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newTargets = [...(config.targets || []), { name: '', percentage: 50, destination: '' }];
+                    updateConfig('targets', newTargets);
+                  }}
+                >
+                  Add Target
+                </Button>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="randomization"
+                checked={config.randomization || false}
+                onCheckedChange={(checked) => updateConfig('randomization', checked)}
+              />
+              <Label htmlFor="randomization">Enable randomization</Label>
+            </div>
+          </div>
+        );
+
+      case 'pixel':
+        return (
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic">Basic</TabsTrigger>
+              <TabsTrigger value="parameters">Parameters</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="space-y-4">
+              <div>
+                <Label htmlFor="pixelType">Pixel Type</Label>
+                <Select
+                  value={config.pixelType || 'postback'}
+                  onValueChange={(value) => updateConfig('pixelType', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="postback">Postback</SelectItem>
+                    <SelectItem value="pixel">Tracking Pixel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="url">URL</Label>
+                <Input
+                  id="url"
+                  value={config.url || ''}
+                  onChange={(e) => updateConfig('url', e.target.value)}
+                  placeholder="https://example.com/postback"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="method">HTTP Method</Label>
+                <Select
+                  value={config.method || 'POST'}
+                  onValueChange={(value) => updateConfig('method', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GET">GET</SelectItem>
+                    <SelectItem value="POST">POST</SelectItem>
+                    <SelectItem value="PUT">PUT</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="parameters" className="space-y-4">
+              <div>
+                <Label>Parameters</Label>
+                <div className="space-y-2">
+                  {(config.parameters || []).map((param: any, index: number) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <Input
+                        placeholder="Parameter Name"
+                        value={param.name || ''}
+                        onChange={(e) => {
+                          const newParams = [...(config.parameters || [])];
+                          newParams[index] = { ...param, name: e.target.value };
+                          updateConfig('parameters', newParams);
+                        }}
+                      />
+                      <Input
+                        placeholder="Value (use {variable} for dynamic)"
+                        value={param.value || ''}
+                        onChange={(e) => {
+                          const newParams = [...(config.parameters || [])];
+                          newParams[index] = { ...param, value: e.target.value };
+                          updateConfig('parameters', newParams);
+                        }}
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newParams = (config.parameters || []).filter((_, i) => i !== index);
+                          updateConfig('parameters', newParams);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const newParams = [...(config.parameters || []), { name: '', value: '' }];
+                      updateConfig('parameters', newParams);
+                    }}
+                  >
+                    Add Parameter
+                  </Button>
+                </div>
+              </div>
+              
+              <div>
+                <Label>Available Variables</Label>
+                <div className="text-sm text-gray-600">
+                  {'{caller_number}'}, {'{campaign_id}'}, {'{call_duration}'}, {'{call_status}'}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        );
+
+      case 'javascript':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="code">Custom JavaScript Code</Label>
+              <Textarea
+                id="code"
+                value={config.code || ''}
+                onChange={(e) => updateConfig('code', e.target.value)}
+                placeholder="// Your custom JavaScript code here&#10;// Available variables: caller, campaign, context&#10;&#10;return {&#10;  route: 'default',&#10;  data: {}&#10;};"
+                rows={15}
+                className="font-mono text-sm"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="timeout">Timeout (ms)</Label>
+              <Input
+                id="timeout"
+                type="number"
+                value={config.timeout || 5000}
+                onChange={(e) => updateConfig('timeout', parseInt(e.target.value))}
+              />
+            </div>
+            
+            <div>
+              <Label>Available Variables</Label>
+              <div className="text-sm text-gray-600 space-y-1">
+                <div><code>caller</code> - Caller information (number, location, etc.)</div>
+                <div><code>campaign</code> - Campaign data and settings</div>
+                <div><code>context</code> - Call context and previous node data</div>
+              </div>
+            </div>
+            
+            <div>
+              <Label>Return Format</Label>
+              <div className="text-sm text-gray-600">
+                Return an object with <code>route</code> (string) and optional <code>data</code> (object)
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Configuration</Label>
+              <div className="text-sm text-gray-600">
+                No specific configuration available for this node type.
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {renderConfigContent()}
+      
+      <div className="flex justify-end space-x-2 pt-4 border-t">
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave}>
+          Save Configuration
+        </Button>
       </div>
     </div>
   );
