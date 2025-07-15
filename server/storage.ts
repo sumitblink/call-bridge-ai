@@ -148,15 +148,15 @@ export interface IStorage {
   removePoolFromCampaign(campaignId: number, poolId: number): Promise<boolean>;
   
   // RTB Targets
-  getRtbTargets(): Promise<RtbTarget[]>;
-  getRtbTarget(id: number): Promise<RtbTarget | undefined>;
+  getRtbTargets(userId?: number): Promise<RtbTarget[]>;
+  getRtbTarget(id: number, userId?: number): Promise<RtbTarget | undefined>;
   createRtbTarget(target: InsertRtbTarget): Promise<RtbTarget>;
   updateRtbTarget(id: number, target: Partial<InsertRtbTarget>): Promise<RtbTarget | undefined>;
   deleteRtbTarget(id: number): Promise<boolean>;
   
   // RTB Routers
-  getRtbRouters(): Promise<RtbRouter[]>;
-  getRtbRouter(id: number): Promise<RtbRouter | undefined>;
+  getRtbRouters(userId?: number): Promise<RtbRouter[]>;
+  getRtbRouter(id: number, userId?: number): Promise<RtbRouter | undefined>;
   createRtbRouter(router: InsertRtbRouter): Promise<RtbRouter>;
   updateRtbRouter(id: number, router: Partial<InsertRtbRouter>): Promise<RtbRouter | undefined>;
   deleteRtbRouter(id: number): Promise<boolean>;

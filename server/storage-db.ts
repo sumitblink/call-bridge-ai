@@ -1140,12 +1140,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   // RTB Targets
-  async getRtbTargets(): Promise<RtbTarget[]> {
+  async getRtbTargets(userId?: number): Promise<RtbTarget[]> {
+    if (userId) {
+      return await db.select().from(rtbTargets).where(eq(rtbTargets.userId, userId));
+    }
     return await db.select().from(rtbTargets);
   }
 
-  async getRtbTarget(id: number): Promise<RtbTarget | undefined> {
-    const [target] = await db.select().from(rtbTargets).where(eq(rtbTargets.id, id));
+  async getRtbTarget(id: number, userId?: number): Promise<RtbTarget | undefined> {
+    const whereConditions = [eq(rtbTargets.id, id)];
+    if (userId) {
+      whereConditions.push(eq(rtbTargets.userId, userId));
+    }
+    const [target] = await db.select().from(rtbTargets).where(and(...whereConditions));
     return target;
   }
 
@@ -1190,12 +1197,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   // RTB Routers
-  async getRtbRouters(): Promise<RtbRouter[]> {
+  async getRtbRouters(userId?: number): Promise<RtbRouter[]> {
+    if (userId) {
+      return await db.select().from(rtbRouters).where(eq(rtbRouters.userId, userId));
+    }
     return await db.select().from(rtbRouters);
   }
 
-  async getRtbRouter(id: number): Promise<RtbRouter | undefined> {
-    const [router] = await db.select().from(rtbRouters).where(eq(rtbRouters.id, id));
+  async getRtbRouter(id: number, userId?: number): Promise<RtbRouter | undefined> {
+    const whereConditions = [eq(rtbRouters.id, id)];
+    if (userId) {
+      whereConditions.push(eq(rtbRouters.userId, userId));
+    }
+    const [router] = await db.select().from(rtbRouters).where(and(...whereConditions));
     return router;
   }
 

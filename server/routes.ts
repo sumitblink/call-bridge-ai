@@ -366,8 +366,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/campaigns/:id', requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user?.id;
       const campaign = await storage.getCampaign(id);
-      if (!campaign) {
+      if (!campaign || campaign.userId !== userId) {
         return res.status(404).json({ error: "Campaign not found" });
       }
       res.json(campaign);
@@ -405,16 +406,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/campaigns/:id', async (req, res) => {
+  app.put('/api/campaigns/:id', requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertCampaignSchema.partial().parse(req.body);
+      const userId = req.user?.id;
       
-      // Get existing campaign to check current RTB status
+      // Get existing campaign to check current RTB status and ownership
       const existingCampaign = await storage.getCampaign(id);
-      if (!existingCampaign) {
+      if (!existingCampaign || existingCampaign.userId !== userId) {
         return res.status(404).json({ error: "Campaign not found" });
       }
+      
+      const validatedData = insertCampaignSchema.partial().parse(req.body);
       
       // Generate RTB ID if RTB is being enabled and campaign doesn't have one
       if (validatedData.enableRtb && !existingCampaign.rtbId) {
@@ -433,9 +436,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/campaigns/:id', async (req, res) => {
+  app.patch('/api/campaigns/:id', requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user?.id;
+      
+      // Check if campaign exists and belongs to user
+      const existingCampaign = await storage.getCampaign(id);
+      if (!existingCampaign || existingCampaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
       const validatedData = insertCampaignSchema.partial().parse(req.body);
       const campaign = await storage.updateCampaign(id, validatedData);
       if (!campaign) {
@@ -448,9 +459,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/campaigns/:id', async (req, res) => {
+  app.delete('/api/campaigns/:id', requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user?.id;
+      
+      // Check if campaign exists and belongs to user
+      const existingCampaign = await storage.getCampaign(id);
+      if (!existingCampaign || existingCampaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
       const success = await storage.deleteCampaign(id);
       if (!success) {
         return res.status(404).json({ error: "Campaign not found" });
@@ -498,9 +517,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Campaign-Buyer relationships
-  app.get('/api/campaigns/:id/buyers', async (req, res) => {
+  app.get('/api/campaigns/:id/buyers', requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user?.id;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await storage.getCampaign(id);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
       const buyers = await storage.getCampaignBuyers(id);
       res.json(buyers);
     } catch (error) {
@@ -509,10 +536,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/campaigns/:id/buyers', async (req, res) => {
+  app.post('/api/campaigns/:id/buyers', requireAuth, async (req: any, res) => {
     try {
       const campaignId = parseInt(req.params.id);
+      const userId = req.user?.id;
       const { buyerId, priority = 1 } = req.body;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      // Check if buyer exists and belongs to user
+      const buyer = await storage.getBuyer(buyerId);
+      if (!buyer || buyer.userId !== userId) {
+        return res.status(404).json({ error: "Buyer not found" });
+      }
+      
       const result = await storage.addBuyerToCampaign(campaignId, buyerId, priority);
       res.json(result);
     } catch (error) {
@@ -521,10 +562,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/campaigns/:campaignId/buyers/:buyerId', async (req, res) => {
+  app.delete('/api/campaigns/:campaignId/buyers/:buyerId', requireAuth, async (req: any, res) => {
     try {
       const campaignId = parseInt(req.params.campaignId);
       const buyerId = parseInt(req.params.buyerId);
+      const userId = req.user?.id;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      // Check if buyer exists and belongs to user
+      const buyer = await storage.getBuyer(buyerId);
+      if (!buyer || buyer.userId !== userId) {
+        return res.status(404).json({ error: "Buyer not found" });
+      }
       
       // Remove the buyer from campaign
       const success = await storage.removeBuyerFromCampaign(campaignId, buyerId);
@@ -534,7 +588,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Immediately check campaign validation after buyer removal
       const remainingBuyers = await storage.getCampaignBuyers(campaignId);
-      const campaign = await storage.getCampaign(campaignId);
       
       if (remainingBuyers.length === 0 && campaign && campaign.status === 'active') {
         await storage.updateCampaign(campaignId, { status: 'paused' });
@@ -627,9 +680,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/buyers/:id', async (req, res) => {
+  app.patch('/api/buyers/:id', requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user?.id;
+      
+      // Check if buyer exists and belongs to user
+      const existingBuyer = await storage.getBuyer(id);
+      if (!existingBuyer || existingBuyer.userId !== userId) {
+        return res.status(404).json({ error: "Buyer not found" });
+      }
+      
       const validatedData = insertBuyerSchema.partial().parse(req.body);
       const buyer = await storage.updateBuyer(id, validatedData);
       if (!buyer) {
@@ -642,9 +703,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/buyers/:id/campaigns', async (req, res) => {
+  app.get('/api/buyers/:id/campaigns', requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user?.id;
+      
+      // Check if buyer exists and belongs to user
+      const existingBuyer = await storage.getBuyer(id);
+      if (!existingBuyer || existingBuyer.userId !== userId) {
+        return res.status(404).json({ error: "Buyer not found" });
+      }
+      
       const assignments = await storage.getBuyerCampaignAssignments(id);
       res.json(assignments);
     } catch (error) {
@@ -653,9 +722,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/buyers/:id', async (req, res) => {
+  app.delete('/api/buyers/:id', requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user?.id;
+      
+      // Check if buyer exists and belongs to user
+      const existingBuyer = await storage.getBuyer(id);
+      if (!existingBuyer || existingBuyer.userId !== userId) {
+        return res.status(404).json({ error: "Buyer not found" });
+      }
+      
       const success = await storage.deleteBuyer(id);
       if (!success) {
         return res.status(404).json({ error: "Buyer not found" });
@@ -719,10 +796,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Calls
-  app.get('/api/calls', async (req, res) => {
+  app.get('/api/calls', requireAuth, async (req: any, res) => {
     try {
-      const calls = await storage.getCalls();
-      res.json(calls);
+      const userId = req.user?.id;
+      // Filter calls to only show those belonging to user's campaigns
+      const userCampaigns = await storage.getCampaigns(userId);
+      const campaignIds = userCampaigns.map(c => c.id);
+      
+      const allCalls = await storage.getCalls();
+      const userCalls = allCalls.filter(call => campaignIds.includes(call.campaignId));
+      
+      res.json(userCalls);
     } catch (error) {
       console.error("Error fetching calls:", error);
       res.status(500).json({ error: "Failed to fetch calls" });
@@ -4075,7 +4159,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // RTB Targets
   app.get('/api/rtb/targets', requireAuth, async (req: any, res) => {
     try {
-      const targets = await storage.getRtbTargets();
+      const userId = req.user?.id;
+      const targets = await storage.getRtbTargets(userId);
       res.json(targets);
     } catch (error) {
       console.error('Error fetching RTB targets:', error);
@@ -4086,7 +4171,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/rtb/targets/:id', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const target = await storage.getRtbTarget(parseInt(id));
+      const userId = req.user?.id;
+      const target = await storage.getRtbTarget(parseInt(id), userId);
       if (!target) {
         return res.status(404).json({ error: 'RTB target not found' });
       }
@@ -4111,6 +4197,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/rtb/targets/:id', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
+      const userId = req.user?.id;
+      
+      // Check if target exists and belongs to user
+      const existingTarget = await storage.getRtbTarget(parseInt(id), userId);
+      if (!existingTarget) {
+        return res.status(404).json({ error: 'RTB target not found' });
+      }
+      
       const target = await storage.updateRtbTarget(parseInt(id), req.body);
       if (!target) {
         return res.status(404).json({ error: 'RTB target not found' });
@@ -4125,6 +4219,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/rtb/targets/:id', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
+      const userId = req.user?.id;
+      
+      // Check if target exists and belongs to user
+      const existingTarget = await storage.getRtbTarget(parseInt(id), userId);
+      if (!existingTarget) {
+        return res.status(404).json({ error: 'RTB target not found' });
+      }
+      
       const success = await storage.deleteRtbTarget(parseInt(id));
       if (!success) {
         return res.status(404).json({ error: 'RTB target not found' });
@@ -4241,7 +4343,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // RTB Routers
   app.get('/api/rtb/routers', requireAuth, async (req: any, res) => {
     try {
-      const routers = await storage.getRtbRouters();
+      const userId = req.user?.id;
+      const routers = await storage.getRtbRouters(userId);
       res.json(routers);
     } catch (error) {
       console.error('Error fetching RTB routers:', error);
@@ -4252,7 +4355,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/rtb/routers/:id', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const router = await storage.getRtbRouter(parseInt(id));
+      const userId = req.user?.id;
+      const router = await storage.getRtbRouter(parseInt(id), userId);
       if (!router) {
         return res.status(404).json({ error: 'RTB router not found' });
       }
@@ -4277,6 +4381,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/rtb/routers/:id', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
+      const userId = req.user?.id;
+      
+      // Check if router exists and belongs to user
+      const existingRouter = await storage.getRtbRouter(parseInt(id), userId);
+      if (!existingRouter) {
+        return res.status(404).json({ error: 'RTB router not found' });
+      }
+      
       const router = await storage.updateRtbRouter(parseInt(id), req.body);
       if (!router) {
         return res.status(404).json({ error: 'RTB router not found' });
