@@ -149,10 +149,10 @@ export default function Feedback() {
                 </CardDescription>
               </CardHeader>
               
-              <CardContent className="flex-1 flex flex-col">
+              <CardContent className="flex-1 flex flex-col overflow-hidden">
                 {/* Messages */}
                 <ScrollArea className="flex-1 mb-4 pr-4">
-                  <div className="space-y-4">
+                  <div className="space-y-4 px-2">
                     {messages.map((message) => (
                       <div
                         key={message.id}
@@ -167,13 +167,13 @@ export default function Feedback() {
                         )}
                         
                         <div
-                          className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                          className={`max-w-[75%] rounded-lg px-4 py-2 ${
                             message.type === 'user'
                               ? 'bg-blue-600 text-white'
                               : 'bg-gray-100 text-gray-900'
                           }`}
                         >
-                          <div className="text-sm whitespace-pre-line leading-relaxed">
+                          <div className="text-sm whitespace-pre-line leading-relaxed break-words">
                             {message.content}
                           </div>
                           <p className={`text-xs mt-2 ${
@@ -210,19 +210,20 @@ export default function Feedback() {
                 </ScrollArea>
 
                 {/* Input Area */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 px-2">
                   <Input
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask me anything about CallCenter Pro..."
                     disabled={isLoading}
-                    className="flex-1"
+                    className="flex-1 min-w-0"
                   />
                   <Button
                     onClick={handleSendMessage}
                     disabled={!inputMessage.trim() || isLoading}
                     size="sm"
+                    className="flex-shrink-0"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
