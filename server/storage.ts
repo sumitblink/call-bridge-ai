@@ -948,6 +948,23 @@ export class MemStorage implements IStorage {
     return [];
   }
 
+  // RTB methods (placeholder for memory storage)
+  async getRtbTargets(userId?: number): Promise<any[]> {
+    return [];
+  }
+
+  async getRtbBidRequests(campaignId?: number): Promise<any[]> {
+    return [];
+  }
+
+  async getRtbBidResponses(requestId: string): Promise<any[]> {
+    return [];
+  }
+
+  async getRtbRouters(userId?: number): Promise<any[]> {
+    return [];
+  }
+
   // Call Flow methods (placeholder for memory storage)
   async getCallFlows(userId?: number): Promise<any[]> {
     // For memory storage, return empty array as we don't persist call flows

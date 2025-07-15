@@ -510,10 +510,39 @@ class HybridStorage implements IStorage {
     );
   }
 
+  // RTB methods - add missing methods
+  async getRtbTargets(userId?: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getRtbTargets(userId),
+      () => this.memStorage.getRtbTargets(userId)
+    );
+  }
+
+  async getRtbBidRequests(campaignId?: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getRtbBidRequests(campaignId),
+      () => this.memStorage.getRtbBidRequests(campaignId)
+    );
+  }
+
+  async getRtbBidResponses(requestId: string): Promise<any[]> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getRtbBidResponses(requestId),
+      () => this.memStorage.getRtbBidResponses(requestId)
+    );
+  }
+
+  async getRtbRouters(userId?: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.supabaseStorage.getRtbRouters(userId),
+      () => this.memStorage.getRtbRouters(userId)
+    );
+  }
+
   // Call Flow methods
   async getCallFlows(userId?: number): Promise<any[]> {
     return this.executeOperation(
-      () => this.databaseStorage.getCallFlows(userId),
+      () => this.supabaseStorage.getCallFlows(userId),
       () => this.memStorage.getCallFlows(userId)
     );
   }
