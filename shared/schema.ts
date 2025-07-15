@@ -1028,6 +1028,24 @@ export const publishersRelations = relations(publishers, ({ one, many }) => ({
   callTrackingTags: many(callTrackingTags),
 }));
 
+// Feedback table for AI chatbot interactions
+export const feedback = pgTable("feedback", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  question: text("question").notNull(),
+  response: text("response").notNull(),
+  resolved: boolean("resolved").default(false).notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const insertFeedbackSchema = createInsertSchema(feedback).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type Feedback = typeof feedback.$inferSelect;
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+
 // RTB Relations
 export const rtbTargetsRelations = relations(rtbTargets, ({ one, many }) => ({
   user: one(users, {
@@ -1036,6 +1054,13 @@ export const rtbTargetsRelations = relations(rtbTargets, ({ one, many }) => ({
   }),
   routerAssignments: many(rtbRouterAssignments),
   bidResponses: many(rtbBidResponses),
+}));
+
+export const feedbackRelations = relations(feedback, ({ one }) => ({
+  user: one(users, {
+    fields: [feedback.userId],
+    references: [users.id],
+  }),
 }));
 
 export const rtbRoutersRelations = relations(rtbRouters, ({ one, many }) => ({

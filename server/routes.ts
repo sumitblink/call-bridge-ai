@@ -4529,6 +4529,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chatbot and Feedback API endpoints
+  app.post('/api/chatbot/query', requireAuth, async (req: any, res) => {
+    try {
+      const { message, conversationHistory } = req.body;
+      
+      // For now, return a helpful response based on common questions
+      // This will be enhanced with Claude API integration
+      const response = generateHelpResponse(message);
+      
+      res.json({ response });
+    } catch (error) {
+      console.error('Error processing chatbot query:', error);
+      res.status(500).json({ error: 'Failed to process query' });
+    }
+  });
+
+  app.post('/api/feedback', requireAuth, async (req: any, res) => {
+    try {
+      const { question, response } = req.body;
+      const userId = req.user?.id;
+      
+      const feedback = await storage.createFeedback({
+        userId,
+        question,
+        response,
+        resolved: false
+      });
+      
+      res.status(201).json(feedback);
+    } catch (error) {
+      console.error('Error storing feedback:', error);
+      res.status(500).json({ error: 'Failed to store feedback' });
+    }
+  });
+
+  app.get('/api/feedback/history', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const history = await storage.getFeedbackHistory(userId);
+      res.json(history);
+    } catch (error) {
+      console.error('Error fetching feedback history:', error);
+      res.status(500).json({ error: 'Failed to fetch feedback history' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Helper function to generate helpful responses
+function generateHelpResponse(message: string): string {
+  const lowerMessage = message.toLowerCase();
+  
+  if (lowerMessage.includes('campaign')) {
+    return "To create a new campaign, go to the Campaigns page and click 'New Campaign'. You'll need to provide a name, assign a phone number, and add buyers to handle the calls. You can choose between direct routing or pool-based routing for dynamic number assignment.";
+  }
+  
+  if (lowerMessage.includes('rtb') || lowerMessage.includes('bidding')) {
+    return "The RTB (Real-Time Bidding) system allows multiple buyers to compete for incoming calls through live auctions. You can create RTB targets with external bidding endpoints, set up routers to manage auctions, and enable RTB on your campaigns for automatic call distribution to the highest bidder.";
+  }
+  
+  if (lowerMessage.includes('buyer')) {
+    return "To add buyers to your campaign, go to the Buyers page to create buyer profiles with their contact information and capacity limits. Then, in your campaign settings, use 'Manage Buyers' to assign buyers and set their priorities for call routing.";
+  }
+  
+  if (lowerMessage.includes('routing') || lowerMessage.includes('call')) {
+    return "Call routing works by directing incoming calls to available buyers based on priority, capacity, and routing rules. The system supports priority-based routing, round-robin distribution, and RTB auctions. You can set buyer priorities and daily call limits to control distribution.";
+  }
+  
+  if (lowerMessage.includes('phone') || lowerMessage.includes('number')) {
+    return "Phone numbers are managed automatically by the system. You can assign available numbers to your campaigns from the Phone Numbers page. The system supports both direct number assignment and pool-based routing for dynamic number insertion (DNI).";
+  }
+  
+  if (lowerMessage.includes('pool')) {
+    return "Number pools allow you to group phone numbers for dynamic assignment. When you create a pool, you can assign multiple numbers to it, and the system will automatically distribute different numbers to different visitors or campaigns for better tracking and attribution.";
+  }
+  
+  if (lowerMessage.includes('dni') || lowerMessage.includes('tracking')) {
+    return "Dynamic Number Insertion (DNI) allows you to track campaign performance by showing different phone numbers to different visitors. You can create tracking tags within your campaigns to generate JavaScript code that dynamically replaces phone numbers on your website.";
+  }
+  
+  if (lowerMessage.includes('analytics') || lowerMessage.includes('report')) {
+    return "Analytics are available throughout the system. Check your Dashboard for overall performance, Campaign details for specific metrics, and the RTB Management page for bidding analytics. You can track call volume, conversion rates, buyer performance, and campaign ROI.";
+  }
+  
+  if (lowerMessage.includes('twilio') || lowerMessage.includes('setup')) {
+    return "Twilio integration is fully managed by the system - you don't need to create or configure a Twilio account. Phone numbers are provisioned automatically, and all voice routing, webhooks, and call recording are handled seamlessly by the platform.";
+  }
+  
+  if (lowerMessage.includes('security') || lowerMessage.includes('access')) {
+    return "The system has enterprise-grade security with complete multi-tenant isolation. All your data (campaigns, buyers, calls, RTB targets) is securely isolated from other users. The system includes authentication, encrypted connections, and comprehensive access controls.";
+  }
+  
+  // Default helpful response
+  return "I'm here to help you with CallCenter Pro! I can answer questions about campaigns, buyers, call routing, RTB system, phone numbers, analytics, and more. Feel free to ask about any specific feature or how to accomplish a particular task.";
 }

@@ -21,6 +21,8 @@ import {
   type InsertCampaignBuyer,
   type CallLog,
   type InsertCallLog,
+  type Feedback,
+  type InsertFeedback,
 } from '@shared/schema';
 import type { IStorage } from './storage';
 import { DatabaseStorage } from './storage-db';
@@ -483,6 +485,21 @@ class HybridStorage implements IStorage {
     return this.executeOperation(
       () => this.supabaseStorage.removePublisherFromCampaign(publisherId, campaignId),
       () => this.memStorage.removePublisherFromCampaign(publisherId, campaignId)
+    );
+  }
+
+  // Feedback methods
+  async createFeedback(feedback: InsertFeedback): Promise<Feedback> {
+    return this.executeOperation(
+      () => this.databaseStorage.createFeedback(feedback),
+      () => this.memStorage.createFeedback(feedback)
+    );
+  }
+
+  async getFeedbackHistory(userId: number): Promise<Feedback[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getFeedbackHistory(userId),
+      () => this.memStorage.getFeedbackHistory(userId)
     );
   }
 }

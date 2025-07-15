@@ -29,6 +29,8 @@ import {
   type InsertRtbBidRequest,
   type RtbBidResponse,
   type InsertRtbBidResponse,
+  type Feedback,
+  type InsertFeedback,
 } from '@shared/schema';
 
 export interface IStorage {
@@ -179,6 +181,10 @@ export interface IStorage {
   
   // RTB Audit Data Cleanup
   clearRtbAuditData(): Promise<void>;
+
+  // Feedback
+  createFeedback(feedback: InsertFeedback): Promise<Feedback>;
+  getFeedbackHistory(userId: number): Promise<Feedback[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -907,6 +913,24 @@ export class MemStorage implements IStorage {
   async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
     const key = `${publisherId}-${campaignId}`;
     return this.publisherCampaigns.delete(key);
+  }
+
+  // Feedback methods
+  async createFeedback(feedback: InsertFeedback): Promise<Feedback> {
+    const newFeedback: Feedback = {
+      id: Date.now(),
+      userId: feedback.userId,
+      question: feedback.question,
+      response: feedback.response,
+      resolved: feedback.resolved ?? false,
+      timestamp: new Date()
+    };
+    return newFeedback;
+  }
+
+  async getFeedbackHistory(userId: number): Promise<Feedback[]> {
+    // For memory storage, return empty array as we don't persist feedback
+    return [];
   }
 }
 

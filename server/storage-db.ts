@@ -23,6 +23,7 @@ import {
   rtbRouterAssignments,
   rtbBidRequests,
   rtbBidResponses,
+  feedback,
   type User, 
   type InsertUser,
   type UpsertUser,
@@ -56,6 +57,8 @@ import {
   type InsertRtbBidRequest,
   type RtbBidResponse,
   type InsertRtbBidResponse,
+  type Feedback,
+  type InsertFeedback,
 } from '@shared/schema';
 import { db } from './db';
 import { eq, and, sql, inArray } from 'drizzle-orm';
@@ -1356,6 +1359,16 @@ export class DatabaseStorage implements IStorage {
       console.error('Error clearing RTB audit data:', error);
       throw error;
     }
+  }
+
+  // Feedback methods
+  async createFeedback(feedbackData: InsertFeedback): Promise<Feedback> {
+    const [newFeedback] = await db.insert(feedback).values(feedbackData).returning();
+    return newFeedback;
+  }
+
+  async getFeedbackHistory(userId: number): Promise<Feedback[]> {
+    return await db.select().from(feedback).where(eq(feedback.userId, userId)).orderBy(sql`${feedback.timestamp} DESC`);
   }
 }
 
