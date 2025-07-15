@@ -21,6 +21,7 @@ import TwilioTest from "@/pages/twilio-test";
 import PhoneNumbers from "@/pages/phone-numbers";
 import RTBManagement from "@/pages/rtb-management";
 import Feedback from "@/pages/feedback";
+import Queries from "@/pages/queries";
 
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
@@ -65,6 +66,7 @@ function Router() {
           <Route path="/webhook-test" component={WebhookTest} />
           <Route path="/twilio-test" component={TwilioTest} />
           <Route path="/feedback" component={Feedback} />
+          <Route path="/queries" component={Queries} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </>

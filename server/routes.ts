@@ -4581,6 +4581,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all feedback entries (for queries page)
+  app.get('/api/feedback/all', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const allFeedback = await storage.getAllFeedback(userId);
+      res.json(allFeedback);
+    } catch (error) {
+      console.error('Error fetching all feedback:', error);
+      res.status(500).json({ error: 'Failed to fetch all feedback' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

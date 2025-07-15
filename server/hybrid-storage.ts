@@ -502,6 +502,13 @@ class HybridStorage implements IStorage {
       () => this.memStorage.getFeedbackHistory(userId)
     );
   }
+
+  async getAllFeedback(userId: number): Promise<Feedback[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getAllFeedback(userId),
+      () => this.memStorage.getAllFeedback(userId)
+    );
+  }
 }
 
 export const storage = new HybridStorage();

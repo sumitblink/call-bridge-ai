@@ -1370,6 +1370,12 @@ export class DatabaseStorage implements IStorage {
   async getFeedbackHistory(userId: number): Promise<Feedback[]> {
     return await db.select().from(feedback).where(eq(feedback.userId, userId)).orderBy(sql`${feedback.timestamp} DESC`);
   }
+
+  async getAllFeedback(userId: number): Promise<Feedback[]> {
+    // For now, return all feedback for all users (admin view)
+    // In production, you might want to add role-based access control
+    return await db.select().from(feedback).orderBy(sql`${feedback.timestamp} DESC`);
+  }
 }
 
 export const storage = new DatabaseStorage();

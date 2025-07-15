@@ -185,6 +185,7 @@ export interface IStorage {
   // Feedback
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
   getFeedbackHistory(userId: number): Promise<Feedback[]>;
+  getAllFeedback(userId: number): Promise<Feedback[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -929,6 +930,11 @@ export class MemStorage implements IStorage {
   }
 
   async getFeedbackHistory(userId: number): Promise<Feedback[]> {
+    // For memory storage, return empty array as we don't persist feedback
+    return [];
+  }
+
+  async getAllFeedback(userId: number): Promise<Feedback[]> {
     // For memory storage, return empty array as we don't persist feedback
     return [];
   }
