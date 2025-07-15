@@ -4397,8 +4397,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/rtb/bid-requests', requireAuth, async (req: any, res) => {
     try {
       const { campaignId } = req.query;
-      const requests = await storage.getRtbBidRequests(campaignId ? parseInt(campaignId as string) : undefined);
-      res.json(requests);
+      const userId = req.user?.id;
+      
+      // Get all bid requests
+      const allRequests = await storage.getRtbBidRequests(campaignId ? parseInt(campaignId as string) : undefined);
+      
+      // Filter bid requests to only show those from user's campaigns
+      const userCampaigns = await storage.getCampaigns(userId);
+      const userCampaignIds = userCampaigns.map(c => c.id);
+      
+      const userRequests = allRequests.filter(request => {
+        // Check if the request belongs to any of the user's campaigns
+        return userCampaignIds.includes(request.campaignId);
+      });
+      
+      res.json(userRequests);
     } catch (error) {
       console.error('Error fetching RTB bid requests:', error);
       res.status(500).json({ error: 'Failed to fetch RTB bid requests' });
@@ -4408,6 +4421,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/rtb/bid-requests/:requestId/responses', requireAuth, async (req: any, res) => {
     try {
       const { requestId } = req.params;
+      const userId = req.user?.id;
+      
+      // First check if the request belongs to the user
+      const bidRequest = await storage.getRtbBidRequest(requestId);
+      if (!bidRequest) {
+        return res.status(404).json({ error: 'Bid request not found' });
+      }
+      
+      // Check if the campaign belongs to the user
+      const userCampaigns = await storage.getCampaigns(userId);
+      const userCampaignIds = userCampaigns.map(c => c.id);
+      
+      if (!userCampaignIds.includes(bidRequest.campaignId)) {
+        return res.status(404).json({ error: 'Bid request not found' });
+      }
+      
       const responses = await storage.getRtbBidResponses(requestId);
       res.json(responses);
     } catch (error) {
