@@ -283,38 +283,42 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
     
     if (!sourceNode || !targetNode) return null;
     
-    const startX = sourceNode.x + 60; // Center of source node
-    const startY = sourceNode.y + 25;
-    const endX = targetNode.x + 60; // Center of target node
-    const endY = targetNode.y + 25;
+    const startX = sourceNode.x + 120; // Right edge of source node
+    const startY = sourceNode.y + 30;
+    const endX = targetNode.x; // Left edge of target node
+    const endY = targetNode.y + 30;
+    
+    // Create curved path for better visibility
+    const midX = (startX + endX) / 2;
+    const midY = (startY + endY) / 2;
+    const pathData = `M ${startX} ${startY} Q ${midX} ${midY - 20} ${endX} ${endY}`;
     
     return (
       <g key={connection.id}>
-        <line
-          x1={startX}
-          y1={startY}
-          x2={endX}
-          y2={endY}
-          stroke="#6b7280"
-          strokeWidth="2"
+        <path
+          d={pathData}
+          stroke="#3b82f6"
+          strokeWidth="3"
+          fill="none"
           markerEnd="url(#arrowhead)"
+          className="drop-shadow-sm"
         />
         {connection.label && (
           <text
-            x={(startX + endX) / 2}
-            y={(startY + endY) / 2 - 5}
+            x={midX}
+            y={midY - 25}
             textAnchor="middle"
-            className="text-xs fill-gray-600 font-medium"
+            className="text-xs fill-blue-600 font-medium bg-white px-2 py-1 rounded"
           >
             {connection.label}
           </text>
         )}
         <circle
-          cx={(startX + endX) / 2}
-          cy={(startY + endY) / 2}
-          r="8"
+          cx={midX}
+          cy={midY}
+          r="6"
           fill="red"
-          className="cursor-pointer opacity-0 hover:opacity-100"
+          className="cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
           onClick={() => handleDeleteConnection(connection.id)}
         />
       </g>
@@ -519,6 +523,24 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             }} />
             
             {/* SVG for connections */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
+              <defs>
+                <marker
+                  id="arrowhead"
+                  markerWidth="10"
+                  markerHeight="7"
+                  refX="9"
+                  refY="3.5"
+                  orient="auto"
+                >
+                  <polygon
+                    points="0 0, 10 3.5, 0 7"
+                    fill="#3b82f6"
+                  />
+                </marker>
+              </defs>
+              {connections.map(renderConnection)}
+            </svg>
             <svg className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
               <defs>
                 <marker

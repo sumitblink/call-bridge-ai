@@ -25,16 +25,16 @@ import {
   type InsertFeedback,
 } from '@shared/schema';
 import type { IStorage } from './storage';
-import { DatabaseStorage } from './storage-db';
+import { SupabaseStorage } from './supabase-storage';
 import { MemStorage } from './storage';
 
 class HybridStorage implements IStorage {
-  private databaseStorage: DatabaseStorage;
+  private databaseStorage: SupabaseStorage;
   private memStorage: MemStorage;
   private useDatabase: boolean = true; // Use PostgreSQL as primary storage
 
   constructor() {
-    this.databaseStorage = new DatabaseStorage();
+    this.databaseStorage = new SupabaseStorage();
     this.memStorage = new MemStorage();
     this.initializeDatabase();
   }
