@@ -802,6 +802,41 @@ export class SupabaseStorage implements IStorage {
       ));
     return result.rowCount > 0;
   }
+
+  // Call Flow methods (placeholder - database schema not yet migrated)
+  async getCallFlows(userId?: number): Promise<any[]> {
+    // Return empty array until database schema is migrated
+    return [];
+  }
+
+  async getCallFlow(id: number): Promise<any | undefined> {
+    // Return undefined until database schema is migrated
+    return undefined;
+  }
+
+  async createCallFlow(flow: any): Promise<any> {
+    // Return mock flow until database schema is migrated
+    return {
+      id: Date.now(),
+      ...flow,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateCallFlow(id: number, flow: any): Promise<any | undefined> {
+    // Return updated flow until database schema is migrated
+    return {
+      id,
+      ...flow,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteCallFlow(id: number): Promise<boolean> {
+    // Return true until database schema is migrated
+    return true;
+  }
 }
 
 export const storage = new SupabaseStorage();
