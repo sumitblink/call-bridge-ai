@@ -173,8 +173,10 @@ export default function Feedback() {
                               : 'bg-gray-100 text-gray-900'
                           }`}
                         >
-                          <p className="text-sm">{message.content}</p>
-                          <p className={`text-xs mt-1 ${
+                          <div className="text-sm whitespace-pre-line leading-relaxed">
+                            {message.content}
+                          </div>
+                          <p className={`text-xs mt-2 ${
                             message.type === 'user' ? 'text-blue-200' : 'text-gray-500'
                           }`}>
                             {formatTimestamp(message.timestamp)}

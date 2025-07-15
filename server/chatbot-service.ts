@@ -67,8 +67,11 @@ export class ChatbotService {
 
       const responseText = response.content[0]?.text || "I'm sorry, I couldn't generate a response. Please try again.";
       
+      // Format response with proper line breaks and spacing
+      const formattedResponse = this.formatResponse(responseText);
+      
       return {
-        response: responseText,
+        response: formattedResponse,
         sources: context.sources
       };
     } catch (error) {
@@ -255,12 +258,36 @@ PROJECT CONTEXT:
 ${context.content}
 
 Your responses should be:
-- Clear and easy to understand
+- Clear and easy to understand with proper formatting
+- Well-structured with line breaks between key points
 - Focused on user needs and goals
 - Helpful for both beginners and experienced users
 - Free of technical code or implementation details
 - Encouraging and supportive in tone
+- Use bullet points or numbered lists when appropriate
+- Break up long paragraphs with proper spacing
 
 Answer the user's question based on the project context above.`;
+  }
+
+  /**
+   * Format response text with proper line breaks and spacing
+   */
+  private static formatResponse(text: string): string {
+    return text
+      // Add line breaks after periods followed by capital letters (new sentences)
+      .replace(/\. ([A-Z])/g, '.\n\n$1')
+      // Add line breaks after colons followed by capital letters (list items)
+      .replace(/: ([A-Z])/g, ':\n\n$1')
+      // Add line breaks before bullet points or dashes
+      .replace(/([.!?])\s*[-•]/g, '$1\n\n•')
+      // Add line breaks before numbered lists
+      .replace(/([.!?])\s*(\d+\.)/g, '$1\n\n$2')
+      // Add spacing around section headers (all caps words)
+      .replace(/([.!?])\s*([A-Z]{2,}[A-Z\s]+:)/g, '$1\n\n$2\n')
+      // Clean up excessive line breaks
+      .replace(/\n{3,}/g, '\n\n')
+      // Trim whitespace
+      .trim();
   }
 }
