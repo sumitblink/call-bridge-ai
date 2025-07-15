@@ -90,8 +90,8 @@ class HybridStorage implements IStorage {
       try {
         return await supabaseOp();
       } catch (error) {
-        console.warn('Supabase operation failed, trying memory storage:', error);
-        // Don't disable Supabase permanently, just fallback for this operation
+        console.warn('Database operation failed, trying memory storage:', error);
+        // Don't disable database permanently, just fallback for this operation
         return await memoryOp();
       }
     } else {
@@ -217,7 +217,7 @@ class HybridStorage implements IStorage {
   // Campaign-Buyer Relations
   async getCampaignBuyers(campaignId: number): Promise<Buyer[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getCampaignBuyers(campaignId),
+      () => this.databaseStorage.getCampaignBuyers(campaignId),
       () => this.memStorage.getCampaignBuyers(campaignId)
     );
   }
@@ -290,7 +290,7 @@ class HybridStorage implements IStorage {
   // Calls
   async getCalls(): Promise<Call[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getCalls(),
+      () => this.databaseStorage.getCalls(),
       () => this.memStorage.getCalls()
     );
   }
@@ -510,31 +510,47 @@ class HybridStorage implements IStorage {
     );
   }
 
+  // Phone Numbers
+  async getPhoneNumbers(userId?: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getPhoneNumbers(userId),
+      () => this.memStorage.getPhoneNumbers(userId)
+    );
+  }
+
+  // Number Pools
+  async getNumberPools(userId?: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getNumberPools(userId),
+      () => this.memStorage.getNumberPools(userId)
+    );
+  }
+
   // RTB methods - add missing methods
   async getRtbTargets(userId?: number): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getRtbTargets(userId),
+      () => this.databaseStorage.getRtbTargets(userId),
       () => this.memStorage.getRtbTargets(userId)
     );
   }
 
   async getRtbBidRequests(campaignId?: number): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getRtbBidRequests(campaignId),
+      () => this.databaseStorage.getRtbBidRequests(campaignId),
       () => this.memStorage.getRtbBidRequests(campaignId)
     );
   }
 
   async getRtbBidResponses(requestId: string): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getRtbBidResponses(requestId),
+      () => this.databaseStorage.getRtbBidResponses(requestId),
       () => this.memStorage.getRtbBidResponses(requestId)
     );
   }
 
   async getRtbRouters(userId?: number): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getRtbRouters(userId),
+      () => this.databaseStorage.getRtbRouters(userId),
       () => this.memStorage.getRtbRouters(userId)
     );
   }
@@ -542,7 +558,7 @@ class HybridStorage implements IStorage {
   // Call Flow methods
   async getCallFlows(userId?: number): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getCallFlows(userId),
+      () => this.databaseStorage.getCallFlows(userId),
       () => this.memStorage.getCallFlows(userId)
     );
   }

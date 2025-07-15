@@ -948,6 +948,16 @@ export class MemStorage implements IStorage {
     return [];
   }
 
+  // Phone Numbers methods (placeholder for memory storage)
+  async getPhoneNumbers(userId?: number): Promise<any[]> {
+    return [];
+  }
+
+  // Number Pools methods (placeholder for memory storage)
+  async getNumberPools(userId?: number): Promise<any[]> {
+    return [];
+  }
+
   // RTB methods (placeholder for memory storage)
   async getRtbTargets(userId?: number): Promise<any[]> {
     return [];
