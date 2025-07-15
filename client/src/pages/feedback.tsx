@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { MessageCircle, Send, Bot, User, HelpCircle, Clock } from "lucide-react";
+import { MessageCircle, Send, Bot, User, HelpCircle } from "lucide-react";
 
 type ChatMessage = {
   id: string;
@@ -280,32 +280,7 @@ export default function Feedback() {
               </CardContent>
             </Card>
 
-            {/* Recent Conversations */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Recent Conversations
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[200px]">
-                  <div className="space-y-3">
-                    {feedbackHistory?.slice(0, 10).map((entry) => (
-                      <div key={entry.id} className="p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm font-medium line-clamp-2">{entry.question}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(entry.timestamp).toLocaleDateString()}
-                        </p>
-                      </div>
-                    ))}
-                    {(!feedbackHistory || feedbackHistory.length === 0) && (
-                      <p className="text-sm text-gray-500">No recent conversations</p>
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+
           </div>
         </div>
       </div>
