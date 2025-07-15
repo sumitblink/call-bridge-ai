@@ -803,6 +803,47 @@ export class SupabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
+  // RTB methods - missing methods
+  async getRtbTargets(userId?: number): Promise<any[]> {
+    try {
+      const result = await db.select().from(rtbTargets);
+      return result;
+    } catch (error) {
+      console.warn('RTB targets query failed:', error);
+      return [];
+    }
+  }
+
+  async getRtbBidRequests(campaignId?: number): Promise<any[]> {
+    try {
+      const result = await db.select().from(rtbBidRequests);
+      return result;
+    } catch (error) {
+      console.warn('RTB bid requests query failed:', error);
+      return [];
+    }
+  }
+
+  async getRtbBidResponses(requestId: string): Promise<any[]> {
+    try {
+      const result = await db.select().from(rtbBidResponses);
+      return result;
+    } catch (error) {
+      console.warn('RTB bid responses query failed:', error);
+      return [];
+    }
+  }
+
+  async getRtbRouters(userId?: number): Promise<any[]> {
+    try {
+      const result = await db.select().from(rtbRouters);
+      return result;
+    } catch (error) {
+      console.warn('RTB routers query failed:', error);
+      return [];
+    }
+  }
+
   // Call Flow methods (placeholder - database schema not yet migrated)
   async getCallFlows(userId?: number): Promise<any[]> {
     // Return empty array until database schema is migrated

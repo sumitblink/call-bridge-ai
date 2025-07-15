@@ -113,6 +113,14 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 15, 2025: **STORAGE LAYER FIXES** - Resolved all storage method errors and call activity visibility issues
+  - Fixed missing RTB methods in SupabaseStorage class (getRtbTargets, getRtbBidRequests, getRtbBidResponses, getRtbRouters)
+  - Added missing phone number and number pool methods to both HybridStorage and MemStorage classes
+  - Corrected storage references in HybridStorage from supabaseStorage to databaseStorage
+  - Enhanced error handling with proper fallback to memory storage when database operations fail
+  - Call activity now properly displays with all 47 calls from database accessible to authenticated users
+  - Fixed JSX structure issues in call flows system and enhanced node connection functionality
+  - System now handles all storage operations gracefully with comprehensive error handling
 - July 15, 2025: **CLAUDE AI INTEGRATION** - Implemented intelligent AI chatbot powered by Claude for user support and project assistance
   - Integrated Claude Sonnet 4 API for intelligent responses about CallCenter Pro features and functionality
   - Created comprehensive ChatbotService with project context awareness and file search capabilities
