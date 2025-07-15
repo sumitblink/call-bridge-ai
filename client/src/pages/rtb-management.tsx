@@ -143,10 +143,21 @@ const BidRequestsTable = ({ bidRequests, campaigns }: { bidRequests: RtbBidReque
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [bidResponses, setBidResponses] = useState<{[key: string]: RtbBidResponse[]}>({});
 
+  // Fetch RTB targets for name lookup
+  const { data: rtbTargets } = useQuery<RtbTarget[]>({
+    queryKey: ['/api/rtb/targets'],
+  });
+
   // Helper function to get campaign name
   const getCampaignName = (campaignId: number) => {
     const campaign = campaigns?.find(c => c.id === campaignId);
     return campaign ? campaign.name : `Campaign ${campaignId}`;
+  };
+
+  // Helper function to get target name
+  const getTargetName = (targetId: number) => {
+    const target = rtbTargets?.find(t => t.id === targetId);
+    return target ? target.name : `Target ${targetId}`;
   };
 
   const toggleRowExpansion = async (requestId: string, id: number) => {
@@ -260,7 +271,7 @@ const BidRequestsTable = ({ bidRequests, campaigns }: { bidRequests: RtbBidReque
                     </div>
                     <div>
                       <div className="font-medium text-muted-foreground">Winning Target</div>
-                      <div>{request.winningTargetId ? `Target ${request.winningTargetId}` : 'None'}</div>
+                      <div>{request.winningTargetId ? getTargetName(request.winningTargetId) : 'None'}</div>
                     </div>
                     <div>
                       <div className="font-medium text-muted-foreground">Total Duration</div>
@@ -289,7 +300,7 @@ const BidRequestsTable = ({ bidRequests, campaigns }: { bidRequests: RtbBidReque
                             <div className="grid grid-cols-6 gap-4 text-sm">
                               <div>
                                 <div className="font-medium">
-                                  Target {response.rtbTargetId}
+                                  {getTargetName(response.rtbTargetId)}
                                   {response.isWinningBid && (
                                     <Badge variant="default" className="ml-2 text-xs">WINNER</Badge>
                                   )}
