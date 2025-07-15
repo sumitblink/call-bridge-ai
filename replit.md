@@ -118,7 +118,11 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
   - Added new RTB system tab to in-app help documentation with detailed explanations
   - Updated main documentation with security section highlighting multi-tenancy improvements
   - Added RTB analytics enhancements and recent improvements section
-  - Updated both in-app help and external documentation to reflect current system state
+  - **TWILIO INTEGRATION UPDATE**: Updated documentation to reflect managed Twilio service
+    - Users no longer need to create or configure Twilio accounts
+    - Phone numbers are provisioned and managed automatically by the system
+    - All webhooks and voice configurations are handled internally
+    - Updated both in-app help and main documentation to reflect managed service model
 - July 15, 2025: **CRITICAL SECURITY FIX** - Resolved multi-tenancy vulnerability and implemented comprehensive user-scoped data filtering
   - Fixed critical security issue where users could access other accounts' campaigns, buyers, RTB targets, and calls
   - Added proper authentication requirements (`requireAuth`) to all sensitive endpoints

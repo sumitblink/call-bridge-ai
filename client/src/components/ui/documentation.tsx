@@ -97,8 +97,8 @@ export function Documentation({ trigger, className }: DocumentationProps) {
                     <div className="flex items-start gap-3">
                       <Badge variant="secondary" className="mt-1">4</Badge>
                       <div>
-                        <h4 className="font-medium">Configure Twilio</h4>
-                        <p className="text-sm text-gray-600">Set webhook URL in Twilio Console to connect calls.</p>
+                        <h4 className="font-medium">Start Receiving Calls</h4>
+                        <p className="text-sm text-gray-600">Twilio integration is managed automatically. Your campaigns are ready to receive calls.</p>
                       </div>
                     </div>
                   </div>
@@ -218,37 +218,46 @@ export function Documentation({ trigger, className }: DocumentationProps) {
                     <Phone className="h-5 w-5" />
                     Twilio Integration
                   </CardTitle>
-                  <CardDescription>Connect your Twilio account for call routing</CardDescription>
+                  <CardDescription>Managed voice communications - no setup required</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h4 className="font-medium mb-2">Webhook Configuration</h4>
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-medium">Voice Webhook URL:</p>
-                      <code className="text-sm">https://your-domain.replit.app/api/webhooks/voice</code>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded-lg mt-2">
-                      <p className="text-sm font-medium">Status Callback URL:</p>
-                      <code className="text-sm">https://your-domain.replit.app/api/webhooks/call-status</code>
-                    </div>
+                    <h4 className="font-medium mb-2">Managed Service</h4>
+                    <ul className="text-sm space-y-1 text-gray-600">
+                      <li>• Twilio integration is fully managed by the system</li>
+                      <li>• No need to create or configure your own Twilio account</li>
+                      <li>• Phone numbers are provisioned and managed automatically</li>
+                      <li>• All webhooks and voice configurations are handled automatically</li>
+                    </ul>
                   </div>
                   
                   <div>
-                    <h4 className="font-medium mb-2">Multiple Numbers Setup</h4>
+                    <h4 className="font-medium mb-2">How It Works</h4>
                     <ul className="text-sm space-y-1 text-gray-600">
-                      <li>• Create separate campaigns for each Twilio number</li>
-                      <li>• Use the same webhook URLs for all numbers</li>
-                      <li>• System automatically routes based on "To" number</li>
-                      <li>• Track calls separately by campaign/number</li>
+                      <li>• Create campaigns and assign phone numbers from available pool</li>
+                      <li>• System automatically configures voice routing</li>
+                      <li>• Calls are processed and routed to your buyers automatically</li>
+                      <li>• All call tracking and recording is managed seamlessly</li>
                     </ul>
                   </div>
 
                   <div>
-                    <h4 className="font-medium mb-2">Environment Variables</h4>
+                    <h4 className="font-medium mb-2">Phone Number Management</h4>
                     <ul className="text-sm space-y-1 text-gray-600">
-                      <li>• TWILIO_ACCOUNT_SID: Your account identifier</li>
-                      <li>• TWILIO_AUTH_TOKEN: Authentication token</li>
-                      <li>• TWILIO_PHONE_NUMBER: Primary phone number</li>
+                      <li>• Choose from available phone numbers in the system</li>
+                      <li>• Numbers are exclusive to your campaigns</li>
+                      <li>• Pool-based routing for dynamic number assignment</li>
+                      <li>• Geographic and toll-free numbers available</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">Features Included</h4>
+                    <ul className="text-sm space-y-1 text-gray-600">
+                      <li>• Call recording and transcription</li>
+                      <li>• Real-time call status tracking</li>
+                      <li>• Automatic failover and redundancy</li>
+                      <li>• Call analytics and reporting</li>
                     </ul>
                   </div>
                 </CardContent>
@@ -409,21 +418,21 @@ export function Documentation({ trigger, className }: DocumentationProps) {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button variant="outline" className="w-full justify-start" asChild>
-                    <a href="/MULTI_TWILIO_SETUP.md" target="_blank" rel="noopener noreferrer">
+                    <a href="/Documentation.md" target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4 mr-2" />
-                      Multi-Twilio Setup Guide
+                      Complete Documentation
                     </a>
                   </Button>
                   <Button variant="outline" className="w-full justify-start" asChild>
-                    <a href="https://www.twilio.com/docs" target="_blank" rel="noopener noreferrer">
+                    <a href="/apiDocumentation.md" target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4 mr-2" />
-                      Twilio Documentation
+                      API Documentation
                     </a>
                   </Button>
                   <Button variant="outline" className="w-full justify-start" asChild>
-                    <a href="/TWILIO_SETUP.md" target="_blank" rel="noopener noreferrer">
+                    <a href="/TESTING_GUIDE.md" target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4 mr-2" />
-                      Basic Twilio Setup
+                      Testing Guide
                     </a>
                   </Button>
                 </CardContent>

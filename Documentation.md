@@ -717,7 +717,7 @@ POST   /api/rtb/webhook/{id}       # RTB target webhook
 
 - Node.js 20 or higher
 - PostgreSQL 16 or higher
-- Twilio account with API credentials
+- Twilio integration is managed by the system
 - Supabase or Neon database (optional)
 
 ### Installation
@@ -759,33 +759,41 @@ npm run dev
 # Database
 DATABASE_URL=postgresql://user:password@host:port/database
 
-# Twilio
-TWILIO_ACCOUNT_SID=your_account_sid
-TWILIO_AUTH_TOKEN=your_auth_token
+# Twilio (Managed by System)
+TWILIO_ACCOUNT_SID=system_managed
+TWILIO_AUTH_TOKEN=system_managed
 
 # Session
 SESSION_SECRET=your_session_secret
 
-# Optional
-TWILIO_PHONE_NUMBER=your_twilio_phone_number
+# Note: Twilio credentials are managed by the system
+# Users do not need to configure these variables
 ```
 
-### Twilio Configuration
+### Twilio Integration
 
-1. **Account Setup**
-   - Create Twilio account
-   - Get Account SID and Auth Token
-   - Purchase phone numbers
+**Managed Service:**
+- Twilio integration is fully managed by the system
+- Users do not need to create or configure Twilio accounts
+- Phone numbers are provisioned and managed automatically
+- All webhooks and voice configurations are handled internally
 
-2. **Webhook Configuration**
-   - Set voice webhook URL in phone number configuration
-   - Configure status callback URLs
-   - Enable call recording (optional)
+**How It Works:**
+1. **Phone Number Assignment**
+   - Choose from available phone numbers in the system
+   - Numbers are assigned exclusively to your campaigns
+   - Pool-based routing for dynamic number assignment
 
-3. **Number Provisioning**
-   - Search available numbers
-   - Purchase numbers for campaigns
-   - Configure webhook URLs
+2. **Automatic Configuration**
+   - Voice routing is configured automatically
+   - Call tracking and recording managed seamlessly
+   - Status callbacks handled internally
+
+3. **Features Included**
+   - Call recording and transcription
+   - Real-time call status tracking
+   - Automatic failover and redundancy
+   - Geographic and toll-free number support
 
 ---
 
