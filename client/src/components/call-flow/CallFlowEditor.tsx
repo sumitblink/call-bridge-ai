@@ -19,7 +19,7 @@ interface CallFlowEditorProps {
 
 interface FlowNode {
   id: string;
-  type: 'start' | 'condition' | 'action' | 'end';
+  type: 'start' | 'condition' | 'action' | 'menu' | 'gather' | 'play' | 'hours' | 'router' | 'splitter' | 'pixel' | 'javascript' | 'end';
   x: number;
   y: number;
   data: {
@@ -72,6 +72,14 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   const nodeTypes = [
     { type: 'condition', label: 'Condition', icon: '🔀', color: 'bg-yellow-100 border-yellow-300' },
     { type: 'action', label: 'Action', icon: '⚡', color: 'bg-blue-100 border-blue-300' },
+    { type: 'menu', label: 'IVR Menu', icon: '📞', color: 'bg-purple-100 border-purple-300' },
+    { type: 'gather', label: 'Gather Input', icon: '🎤', color: 'bg-green-100 border-green-300' },
+    { type: 'play', label: 'Play Audio', icon: '🔊', color: 'bg-orange-100 border-orange-300' },
+    { type: 'hours', label: 'Business Hours', icon: '🕐', color: 'bg-indigo-100 border-indigo-300' },
+    { type: 'router', label: 'Advanced Router', icon: '🚀', color: 'bg-pink-100 border-pink-300' },
+    { type: 'splitter', label: 'Traffic Splitter', icon: '🔀', color: 'bg-teal-100 border-teal-300' },
+    { type: 'pixel', label: 'Tracking Pixel', icon: '📊', color: 'bg-cyan-100 border-cyan-300' },
+    { type: 'javascript', label: 'Custom Logic', icon: '⚙️', color: 'bg-gray-100 border-gray-300' },
     { type: 'end', label: 'End', icon: '🏁', color: 'bg-red-100 border-red-300' }
   ];
 
@@ -103,6 +111,78 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
           actionType: 'route',
           destination: 'buyer',
           buyerId: null
+        };
+      case 'menu':
+        return {
+          menuType: 'ivr',
+          welcomeMessage: 'Please press 1 for sales, 2 for support',
+          options: [
+            { key: '1', label: 'Sales', action: 'route' },
+            { key: '2', label: 'Support', action: 'route' }
+          ],
+          timeout: 10,
+          retries: 3
+        };
+      case 'gather':
+        return {
+          gatherType: 'digits',
+          prompt: 'Please enter your phone number',
+          numDigits: 10,
+          timeout: 5,
+          finishOnKey: '#'
+        };
+      case 'play':
+        return {
+          audioType: 'tts',
+          message: 'Please hold while we connect you',
+          audioUrl: '',
+          voice: 'alice',
+          language: 'en-US'
+        };
+      case 'hours':
+        return {
+          timezone: 'America/New_York',
+          businessHours: {
+            monday: { open: '09:00', close: '17:00', enabled: true },
+            tuesday: { open: '09:00', close: '17:00', enabled: true },
+            wednesday: { open: '09:00', close: '17:00', enabled: true },
+            thursday: { open: '09:00', close: '17:00', enabled: true },
+            friday: { open: '09:00', close: '17:00', enabled: true },
+            saturday: { open: '10:00', close: '16:00', enabled: false },
+            sunday: { open: '10:00', close: '16:00', enabled: false }
+          },
+          holidayHandling: 'closed'
+        };
+      case 'router':
+        return {
+          routingType: 'priority',
+          rtbEnabled: false,
+          capacityLimits: true,
+          failoverEnabled: true,
+          targets: []
+        };
+      case 'splitter':
+        return {
+          splitType: 'percentage',
+          targets: [
+            { name: 'Route A', percentage: 50, destination: '' },
+            { name: 'Route B', percentage: 50, destination: '' }
+          ]
+        };
+      case 'pixel':
+        return {
+          pixelType: 'postback',
+          url: 'https://example.com/postback',
+          method: 'POST',
+          parameters: [
+            { name: 'caller_id', value: '{caller_number}' },
+            { name: 'campaign_id', value: '{campaign_id}' }
+          ]
+        };
+      case 'javascript':
+        return {
+          code: '// Custom JavaScript logic\n// Available variables: caller, campaign, context\n\nreturn {\n  route: "default",\n  data: {}\n};',
+          timeout: 5000
         };
       case 'end':
         return {
@@ -225,18 +305,13 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
     let bgColor = 'bg-white';
     let borderColor = 'border-gray-300';
     
+    const nodeConfig = nodeTypes.find(nt => nt.type === node.type);
     if (node.type === 'start') {
       bgColor = 'bg-green-100';
       borderColor = 'border-green-300';
-    } else if (node.type === 'condition') {
-      bgColor = 'bg-yellow-100';
-      borderColor = 'border-yellow-300';
-    } else if (node.type === 'action') {
-      bgColor = 'bg-blue-100';
-      borderColor = 'border-blue-300';
-    } else if (node.type === 'end') {
-      bgColor = 'bg-red-100';
-      borderColor = 'border-red-300';
+    } else if (nodeConfig) {
+      bgColor = nodeConfig.color.split(' ')[0];
+      borderColor = nodeConfig.color.split(' ')[1];
     }
 
     return (
@@ -500,6 +575,366 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
                           <SelectItem value="rtb">RTB Auction</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                  )}
+
+                  {selectedNode.type === 'menu' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Welcome Message</Label>
+                        <Textarea
+                          value={selectedNode.data.config.welcomeMessage || ''}
+                          onChange={(e) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, welcomeMessage: e.target.value } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                          placeholder="Enter welcome message"
+                        />
+                      </div>
+                      <div>
+                        <Label>Timeout (seconds)</Label>
+                        <Input
+                          type="number"
+                          value={selectedNode.data.config.timeout || 10}
+                          onChange={(e) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, timeout: parseInt(e.target.value) } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedNode.type === 'gather' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Gather Type</Label>
+                        <Select 
+                          value={selectedNode.data.config.gatherType} 
+                          onValueChange={(value) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, gatherType: value } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="digits">Digits</SelectItem>
+                            <SelectItem value="speech">Speech</SelectItem>
+                            <SelectItem value="both">Both</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Prompt</Label>
+                        <Textarea
+                          value={selectedNode.data.config.prompt || ''}
+                          onChange={(e) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, prompt: e.target.value } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                          placeholder="Enter prompt message"
+                        />
+                      </div>
+                      <div>
+                        <Label>Number of Digits</Label>
+                        <Input
+                          type="number"
+                          value={selectedNode.data.config.numDigits || 10}
+                          onChange={(e) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, numDigits: parseInt(e.target.value) } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedNode.type === 'play' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Audio Type</Label>
+                        <Select 
+                          value={selectedNode.data.config.audioType} 
+                          onValueChange={(value) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, audioType: value } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="tts">Text-to-Speech</SelectItem>
+                            <SelectItem value="url">Audio URL</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {selectedNode.data.config.audioType === 'tts' ? (
+                        <div>
+                          <Label>Message</Label>
+                          <Textarea
+                            value={selectedNode.data.config.message || ''}
+                            onChange={(e) => {
+                              const updatedNodes = nodes.map(node =>
+                                node.id === selectedNode.id
+                                  ? { ...node, data: { ...node.data, config: { ...node.data.config, message: e.target.value } } }
+                                  : node
+                              );
+                              setNodes(updatedNodes);
+                            }}
+                            placeholder="Enter message to speak"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <Label>Audio URL</Label>
+                          <Input
+                            value={selectedNode.data.config.audioUrl || ''}
+                            onChange={(e) => {
+                              const updatedNodes = nodes.map(node =>
+                                node.id === selectedNode.id
+                                  ? { ...node, data: { ...node.data, config: { ...node.data.config, audioUrl: e.target.value } } }
+                                  : node
+                              );
+                              setNodes(updatedNodes);
+                            }}
+                            placeholder="https://example.com/audio.mp3"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {selectedNode.type === 'hours' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Timezone</Label>
+                        <Select 
+                          value={selectedNode.data.config.timezone} 
+                          onValueChange={(value) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, timezone: value } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                            <SelectItem value="America/Chicago">Central Time</SelectItem>
+                            <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                            <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Holiday Handling</Label>
+                        <Select 
+                          value={selectedNode.data.config.holidayHandling} 
+                          onValueChange={(value) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, holidayHandling: value } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="closed">Closed</SelectItem>
+                            <SelectItem value="open">Open</SelectItem>
+                            <SelectItem value="reduced">Reduced Hours</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedNode.type === 'router' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Routing Type</Label>
+                        <Select 
+                          value={selectedNode.data.config.routingType} 
+                          onValueChange={(value) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, routingType: value } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="priority">Priority Based</SelectItem>
+                            <SelectItem value="round-robin">Round Robin</SelectItem>
+                            <SelectItem value="capacity">Capacity Based</SelectItem>
+                            <SelectItem value="rtb">Real-Time Bidding</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="rtbEnabled"
+                          checked={selectedNode.data.config.rtbEnabled || false}
+                          onChange={(e) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, rtbEnabled: e.target.checked } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                        />
+                        <Label htmlFor="rtbEnabled">Enable RTB</Label>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedNode.type === 'splitter' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Split Type</Label>
+                        <Select 
+                          value={selectedNode.data.config.splitType} 
+                          onValueChange={(value) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, splitType: value } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="percentage">Percentage</SelectItem>
+                            <SelectItem value="weight">Weight Based</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Traffic Split</Label>
+                        <div className="text-sm text-gray-600">Route A: 50% | Route B: 50%</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedNode.type === 'pixel' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Pixel Type</Label>
+                        <Select 
+                          value={selectedNode.data.config.pixelType} 
+                          onValueChange={(value) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, pixelType: value } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="postback">Postback</SelectItem>
+                            <SelectItem value="pixel">Tracking Pixel</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>URL</Label>
+                        <Input
+                          value={selectedNode.data.config.url || ''}
+                          onChange={(e) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, url: e.target.value } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                          placeholder="https://example.com/postback"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedNode.type === 'javascript' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Custom JavaScript Code</Label>
+                        <Textarea
+                          value={selectedNode.data.config.code || ''}
+                          onChange={(e) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, code: e.target.value } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                          placeholder="// Your custom JavaScript code here"
+                          rows={8}
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label>Timeout (ms)</Label>
+                        <Input
+                          type="number"
+                          value={selectedNode.data.config.timeout || 5000}
+                          onChange={(e) => {
+                            const updatedNodes = nodes.map(node =>
+                              node.id === selectedNode.id
+                                ? { ...node, data: { ...node.data, config: { ...node.data.config, timeout: parseInt(e.target.value) } } }
+                                : node
+                            );
+                            setNodes(updatedNodes);
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
                 </CardContent>

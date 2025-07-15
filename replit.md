@@ -113,6 +113,20 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 15, 2025: **ADVANCED CALL FLOW SYSTEM** - Enhanced call flow editor with Ringba-style advanced node types and configurations
+  - Added 8 new node types: IVR Menu, Gather Input, Play Audio, Business Hours, Advanced Router, Traffic Splitter, Tracking Pixel, Custom Logic
+  - Implemented comprehensive configuration interfaces for each node type with specialized settings
+  - Enhanced node visual system with color-coded nodes and improved connection lines
+  - Added support for complex routing logic including RTB integration, time-based routing, and custom JavaScript
+  - IVR Menu nodes support multi-option interactive voice response with timeout and retry handling
+  - Gather Input nodes collect caller data (digits/speech) with customizable prompts and validation
+  - Play Audio nodes support both text-to-speech and audio URL playback with voice selection
+  - Business Hours nodes handle timezone-based routing with holiday management and schedule configuration
+  - Advanced Router nodes integrate with RTB system and support priority, round-robin, and capacity-based routing
+  - Traffic Splitter nodes enable A/B testing and percentage-based call distribution
+  - Tracking Pixel nodes support postback URLs and conversion tracking with parameter mapping
+  - Custom Logic nodes allow JavaScript execution for complex business rules and dynamic routing decisions
+  - All nodes feature rich configuration options similar to enterprise call routing platforms like Ringba
 - July 15, 2025: **STORAGE LAYER FIXES** - Resolved all storage method errors and call activity visibility issues
   - Fixed missing RTB methods in SupabaseStorage class (getRtbTargets, getRtbBidRequests, getRtbBidResponses, getRtbRouters)
   - Added missing phone number and number pool methods to both HybridStorage and MemStorage classes
