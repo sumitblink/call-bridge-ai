@@ -122,6 +122,9 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
   - All endpoints now properly filter data to only show resources belonging to the authenticated user
   - Created comprehensive security test suite to verify authentication and data isolation
   - System now properly enforces multi-tenant security across all user-accessible resources
+  - **REMOVED DANGEROUS DATABASE OPERATIONS** - Eliminated database clearing functionality from settings page and API endpoints
+  - Removed standalone "Website Tracking" page since DNI functionality is integrated within campaigns
+  - Simplified settings page to show only system information and status (no destructive operations)
 - July 14, 2025: Created comprehensive API documentation covering all system endpoints and integration methods
   - Added complete API reference with request/response examples for all major endpoints
   - Documented authentication flow, error handling, and rate limiting
