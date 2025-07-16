@@ -113,6 +113,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 16, 2025: **CRITICAL TwiML RESPONSE BUG FIXED** - Resolved "application error" issue during real phone calls
+  - Fixed pool webhook handler returning JSON-wrapped TwiML instead of raw XML content
+  - Updated webhook response extraction to properly extract `.twiml` property from FlowExecutionEngine response
+  - Both main webhook (`/api/webhooks/voice`) and pool webhook (`/api/webhooks/pool/{poolId}/voice`) now return proper TwiML XML
+  - Real phone calls from actual phone numbers (+12129200892) now process correctly without "application error"
+  - Call flow system now handles live calls seamlessly with proper Twilio webhook integration
+  - System architecture confirmed operational: visual flow editor → database storage → webhook detection → IVR execution → TwiML generation → phone call processing
 - July 16, 2025: **CALL FLOW SYSTEM FULLY OPERATIONAL** - Successfully completed Phase 2 IVR system integration with live webhook execution
   - RESOLVED: Fixed critical call flow detection bug preventing webhook execution of IVR flows
   - Fixed database field name mapping between schema (flowDefinition) and storage retrieval

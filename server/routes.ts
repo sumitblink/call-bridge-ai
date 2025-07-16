@@ -889,7 +889,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (flowResult.success && flowResult.twimlResponse) {
             console.log(`[Pool Webhook] Call flow executed successfully, returning TwiML`);
-            return res.type('text/xml').send(flowResult.twimlResponse);
+            // Extract the TwiML string from the response object
+            const twimlString = flowResult.twimlResponse.twiml || flowResult.twimlResponse;
+            return res.type('text/xml').send(twimlString);
           } else {
             console.error(`[Pool Webhook] Call flow execution failed: ${flowResult.error}`);
             // Fall through to traditional routing
