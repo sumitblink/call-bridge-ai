@@ -46,11 +46,20 @@ export async function handleIncomingCall(req: Request, res: Response) {
     if (!campaign) {
       console.error('[Webhook] No campaign found for number:', callData.To);
       
+      // List all available campaigns for debugging
+      const allCampaigns = await storage.getCampaigns(1); // Get campaigns for user 1
+      console.log('[Webhook] Available campaigns:', allCampaigns.map(c => ({
+        id: c.id,
+        name: c.name,
+        phoneNumber: c.phoneNumber,
+        poolId: c.poolId
+      })));
+      
       // Return TwiML to reject the call
       res.set('Content-Type', 'text/xml');
       res.send(`<?xml version="1.0" encoding="UTF-8"?>
         <Response>
-          <Say voice="alice">Sorry, this number is not configured. Goodbye.</Say>
+          <Say voice="alice">Sorry, this number is not configured. The number you called is ${callData.To}. Goodbye.</Say>
           <Hangup/>
         </Response>`);
       return;

@@ -166,10 +166,16 @@ export class TwiMLGenerator {
       finishOnKey: '#'
     });
 
-    gather.say(menuPrompt);
+    gather.say({
+      voice: 'alice',
+      language: 'en-US'
+    }, menuPrompt);
 
     // Handle timeout
-    twiml.say('We did not receive your selection.');
+    twiml.say({
+      voice: 'alice',
+      language: 'en-US'
+    }, 'We did not receive your selection. Please try again.');
     twiml.redirect(`${this.baseUrl}/api/flow/execute/${session.flowId}/node/${node.id}?sessionId=${session.sessionId}`);
 
     return { twiml: twiml.toString() };
@@ -199,10 +205,16 @@ export class TwiMLGenerator {
       finishOnKey: '#'
     });
 
-    gather.say(prompt);
+    gather.say({
+      voice: 'alice',
+      language: 'en-US'
+    }, prompt);
 
     // Handle timeout
-    twiml.say('We did not receive your input.');
+    twiml.say({
+      voice: 'alice',
+      language: 'en-US'
+    }, 'We did not receive your input. Please try again.');
     const nextConnection = flow.connections.find(conn => conn.source === node.id);
     if (nextConnection) {
       twiml.redirect(`${this.baseUrl}/api/flow/execute/${session.flowId}/node/${nextConnection.target}?sessionId=${session.sessionId}`);
