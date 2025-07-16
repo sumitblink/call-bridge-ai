@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { Save, X, Play, Settings, Plus, Trash2, Move, GitBranch, ZoomIn, ZoomOut } from 'lucide-react';
+import { Save, X, Play, Settings, Plus, Trash2, Move, GitBranch, ZoomIn, ZoomOut, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -260,6 +260,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
 
   const handleMouseDown = (e: React.MouseEvent, nodeId: string) => {
     if (e.button === 0) { // Left click
+      e.stopPropagation(); // Prevent canvas panning when clicking on nodes
       const rect = canvasRef.current?.getBoundingClientRect();
       if (rect) {
         const node = nodes.find(n => n.id === nodeId);
@@ -364,7 +365,8 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   };
 
   const handlePanStart = (e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.ctrlKey)) { // Middle mouse or Ctrl+Left mouse
+    // Allow panning with left mouse on canvas background
+    if (e.button === 0) { // Left mouse button
       e.preventDefault();
       setIsPanning(true);
       setPanStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
@@ -382,6 +384,11 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
 
   const handlePanEnd = () => {
     setIsPanning(false);
+  };
+
+  const handleResetView = () => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
   };
 
   const handleSave = () => {
@@ -473,6 +480,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             e.stopPropagation();
             handleStartConnection(node.id);
           }}
+          onMouseDown={(e) => e.stopPropagation()}
         />
         
         {/* Delete button */}
@@ -483,6 +491,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
               e.stopPropagation();
               handleDeleteNode(node.id);
             }}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             <Trash2 className="w-2.5 h-2.5" />
           </div>
@@ -565,6 +574,9 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             </span>
             <Button variant="ghost" size="sm" onClick={handleZoomIn} className="h-8 w-8 p-0">
               <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleResetView} className="h-8 w-8 p-0" title="Reset View">
+              <Home className="h-4 w-4" />
             </Button>
           </div>
           
@@ -1099,7 +1111,8 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
         <div className="flex-1 bg-gray-50 relative overflow-hidden">
           <div
             ref={canvasRef}
-            className="w-full h-full relative cursor-grab active:cursor-grabbing"
+            className="w-full h-full relative"
+            style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
             onMouseMove={(e) => {
               handleMouseMove(e);
               handlePanMove(e);
@@ -1108,7 +1121,16 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
               handleMouseUp(e);
               handlePanEnd();
             }}
-            onMouseDown={handlePanStart}
+            onMouseDown={(e) => {
+              // Only start panning if clicking on canvas background or grid
+              const target = e.target as HTMLElement;
+              if (target === canvasRef.current || 
+                  target === e.currentTarget || 
+                  target.classList.contains('grid-background') ||
+                  target.tagName === 'svg') {
+                handlePanStart(e);
+              }
+            }}
             onMouseLeave={(e) => {
               handleMouseUp(e);
               handlePanEnd();
@@ -1123,7 +1145,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
           >
             {/* Grid background */}
             <div 
-              className="absolute inset-0"
+              className="absolute inset-0 grid-background"
               style={{
                 backgroundImage: `
                   linear-gradient(to right, #e5e7eb 1px, transparent 1px),
