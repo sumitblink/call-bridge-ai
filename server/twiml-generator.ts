@@ -65,17 +65,21 @@ export class TwiMLGenerator {
   ): TwiMLResponse {
     const twiml = new twilio.twiml.VoiceResponse();
 
+    console.log(`[TwiML Generator] Processing node type: ${node.type}`);
     switch (node.type) {
       case 'start':
         return this.generateStartNodeTwiML(node, session, flow, twiml);
       
       case 'ivr_menu':
+      case 'menu':
+        console.log(`[TwiML Generator] Processing menu node with config:`, node.data.config);
         return this.generateIVRMenuTwiML(node, session, flow, twiml);
       
       case 'gather_input':
         return this.generateGatherInputTwiML(node, session, flow, twiml);
       
       case 'play_audio':
+      case 'play':
         return this.generatePlayAudioTwiML(node, session, flow, twiml);
       
       case 'business_hours':
@@ -112,19 +116,25 @@ export class TwiMLGenerator {
     flow: CallFlowDefinition,
     twiml: twilio.twiml.VoiceResponse
   ): TwiMLResponse {
-    const nextNodeId = node.connections[0];
-    if (!nextNodeId) {
+    // Find the next node by looking for connections from this node
+    const nextConnection = flow.connections.find(conn => conn.source === node.id);
+    if (!nextConnection) {
       twiml.say('No call flow configured.');
       twiml.hangup();
       return { twiml: twiml.toString() };
     }
 
-    // For start nodes, redirect immediately to next node
-    twiml.redirect(`${this.baseUrl}/api/flow/execute/${session.flowId}/node/${nextNodeId}?sessionId=${session.sessionId}`);
-    
-    return {
-      twiml: twiml.toString()
-    };
+    // Find the next node in the flow
+    const nextNode = flow.nodes.find(n => n.id === nextConnection.target);
+    if (!nextNode) {
+      twiml.say('Call flow configuration error.');
+      twiml.hangup();
+      return { twiml: twiml.toString() };
+    }
+
+    // For start nodes, execute the next node directly
+    console.log(`[TwiML Generator] Start node redirecting to: ${nextNode.type} (${nextNode.id})`);
+    return this.generateNodeTwiML(nextNode, session, flow);
   }
 
   /**

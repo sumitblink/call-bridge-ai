@@ -861,6 +861,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let winningBidAmount = null;
       let winningTargetId = null;
       
+      // Check if there's an active call flow for this campaign
+      console.log(`[Pool Webhook] Checking for active call flows for campaign ${campaign.id}, user ${campaign.userId}`);
+      const callFlows = await storage.getCallFlows(campaign.userId);
+      console.log(`[Pool Webhook] Found ${callFlows.length} total call flows for user ${campaign.userId}`);
+      
+      const activeFlow = callFlows.find(flow => 
+        flow.campaignId === campaign.id && 
+        flow.status === 'active' && 
+        flow.isActive === true
+      );
+      
+      if (activeFlow) {
+        console.log(`[Pool Webhook] Found active call flow: ${activeFlow.name} (ID: ${activeFlow.id})`);
+        
+        try {
+          // Import and use the Flow Execution Engine
+          const { FlowExecutionEngine } = await import('./flow-execution-engine');
+          
+          // Start flow execution
+          const flowResult = await FlowExecutionEngine.startFlowExecution(
+            activeFlow.id,
+            CallSid,
+            fromNumber,
+            campaign.id
+          );
+          
+          if (flowResult.success && flowResult.twimlResponse) {
+            console.log(`[Pool Webhook] Call flow executed successfully, returning TwiML`);
+            return res.type('text/xml').send(flowResult.twimlResponse);
+          } else {
+            console.error(`[Pool Webhook] Call flow execution failed: ${flowResult.error}`);
+            // Fall through to traditional routing
+          }
+          
+        } catch (flowError) {
+          console.error(`[Pool Webhook] Call flow execution error:`, flowError);
+          // Fall through to traditional routing
+        }
+      } else {
+        console.log(`[Pool Webhook] No active call flow found for campaign ${campaign.id}`);
+        if (callFlows.length > 0) {
+          console.log(`[Pool Webhook] Available flows:`, callFlows.map(f => `${f.name} (ID: ${f.id}, campaign: ${f.campaignId}, status: ${f.status}, active: ${f.isActive})`));
+        }
+      }
+      
       // Check if RTB is enabled for this campaign
       if (campaign.enableRtb && campaign.rtbRouterId) {
         try {
@@ -4670,7 +4715,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!callFlow || callFlow.userId !== userId) {
         return res.status(404).json({ error: 'Call flow not found' });
       }
-      const updatedCallFlow = await storage.updateCallFlow(parseInt(req.params.id), { status: req.body.status });
+      
+      // Update both status and is_active fields
+      const newStatus = req.body.status;
+      const isActive = newStatus === 'active';
+      
+      const updatedCallFlow = await storage.updateCallFlow(parseInt(req.params.id), { 
+        status: newStatus,
+        isActive: isActive
+      });
+      
       res.json(updatedCallFlow);
     } catch (error) {
       console.error('Error updating call flow status:', error);

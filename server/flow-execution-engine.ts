@@ -51,6 +51,27 @@ export class FlowExecutionEngine {
         };
       }
 
+      // Parse flow definition JSON
+      let flowDefinition: CallFlowDefinition;
+      try {
+        console.log('Raw flow data:', flow);
+        console.log('Flow definition type:', typeof flow.flowDefinition);
+        console.log('Flow definition raw:', flow.flowDefinition);
+        
+        flowDefinition = typeof flow.flowDefinition === 'string' 
+          ? JSON.parse(flow.flowDefinition) 
+          : flow.flowDefinition;
+          
+        console.log('Parsed flow definition:', flowDefinition);
+        console.log('Flow definition nodes:', flowDefinition.nodes);
+      } catch (parseError) {
+        console.error('Parse error:', parseError);
+        return {
+          success: false,
+          error: 'Invalid flow definition format'
+        };
+      }
+
       // Create new session
       const session: CallSession = {
         callId,
@@ -64,7 +85,7 @@ export class FlowExecutionEngine {
       };
 
       // Find start node
-      const startNode = flow.nodes.find(node => node.type === 'start');
+      const startNode = flowDefinition.nodes.find(node => node.type === 'start');
       if (!startNode) {
         return {
           success: false,
@@ -76,7 +97,7 @@ export class FlowExecutionEngine {
       this.activeSessions.set(session.sessionId, session);
 
       // Execute start node
-      const result = await this.executeNode(session, flow, startNode);
+      const result = await this.executeNode(session, flowDefinition, startNode);
       
       return {
         success: true,
@@ -234,13 +255,7 @@ export class FlowExecutionEngine {
       const twimlResponse = TwiMLGenerator.generateNodeTwiML(node, session, flow);
 
       // Handle special node types that need immediate processing
-      if (node.type === 'start' && twimlResponse.nextAction) {
-        // For start nodes, immediately redirect to next node
-        const nextNodeId = node.connections[0];
-        if (nextNodeId) {
-          return await this.continueFlowExecution(session.sessionId, nextNodeId);
-        }
-      }
+      // Start nodes are handled directly by the TwiML generator
 
       // Handle tracking pixel nodes
       if (node.type === 'tracking_pixel' || node.type === 'pixel') {
