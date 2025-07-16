@@ -426,13 +426,13 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
         {/* Delete button */}
         {node.id !== 'start' && (
           <div
-            className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full cursor-pointer flex items-center justify-center text-xs hover:bg-red-600"
+            className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full cursor-pointer flex items-center justify-center hover:bg-red-600"
             onClick={(e) => {
               e.stopPropagation();
               handleDeleteNode(node.id);
             }}
           >
-            ×
+            <Trash2 className="w-2.5 h-2.5" />
           </div>
         )}
       </div>
@@ -1055,31 +1055,16 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
               <defs>
                 <marker
                   id="arrowhead"
-                  markerWidth="10"
-                  markerHeight="7"
-                  refX="9"
-                  refY="3.5"
+                  markerWidth="8"
+                  markerHeight="5.6"
+                  refX="7.2"
+                  refY="2.8"
                   orient="auto"
                 >
                   <polygon
-                    points="0 0, 10 3.5, 0 7"
+                    points="0 0, 8 2.8, 0 5.6"
                     fill="#3b82f6"
                   />
-                </marker>
-              </defs>
-              {connections.map(renderConnection)}
-            </svg>
-            <svg className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
-              <defs>
-                <marker
-                  id="arrowhead"
-                  markerWidth="10"
-                  markerHeight="7"
-                  refX="9"
-                  refY="3.5"
-                  orient="auto"
-                >
-                  <polygon points="0 0, 10 3.5, 0 7" fill="#6b7280" />
                 </marker>
               </defs>
               {connections.map(renderConnection)}
