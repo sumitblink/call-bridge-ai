@@ -332,6 +332,17 @@ export class SupabaseStorage implements IStorage {
     return result[0];
   }
 
+  async updateCall(id: number, updates: Partial<InsertCall>): Promise<Call | undefined> {
+    const result = await db.update(calls)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(calls.id, id))
+      .returning();
+    return result[0];
+  }
+
   // Call Logs
   async getCallLogs(callId: number): Promise<CallLog[]> {
     return await db.select().from(callLogs)
