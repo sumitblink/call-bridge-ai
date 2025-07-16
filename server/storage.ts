@@ -60,6 +60,7 @@ export interface IStorage {
   
   // Campaign-Buyer Relations
   getCampaignBuyers(campaignId: number): Promise<Buyer[]>;
+  getBuyerCampaignAssignments(buyerId: number): Promise<Campaign[]>;
   addBuyerToCampaign(campaignId: number, buyerId: number, priority?: number): Promise<CampaignBuyer>;
   removeBuyerFromCampaign(campaignId: number, buyerId: number): Promise<boolean>;
   
@@ -626,7 +627,21 @@ export class MemStorage implements IStorage {
   }
 
   async deleteBuyer(id: number): Promise<boolean> {
-    // First delete all campaign-buyer relationships
+    // First check if there are any calls referencing this buyer
+    const callsToUpdate: Call[] = [];
+    for (const call of this.calls.values()) {
+      if (call.buyerId === id) {
+        callsToUpdate.push(call);
+      }
+    }
+    
+    // Set buyer_id to null for existing calls (soft delete)
+    for (const call of callsToUpdate) {
+      const updatedCall = { ...call, buyerId: null };
+      this.calls.set(call.id, updatedCall);
+    }
+    
+    // Delete campaign-buyer relationships
     const keysToDelete = [];
     for (const [key, relationship] of this.campaignBuyers.entries()) {
       if (relationship.buyerId === id) {
@@ -635,7 +650,7 @@ export class MemStorage implements IStorage {
     }
     keysToDelete.forEach(key => this.campaignBuyers.delete(key));
     
-    // Then delete the buyer
+    // Delete the buyer
     return this.buyers.delete(id);
   }
 
@@ -656,6 +671,24 @@ export class MemStorage implements IStorage {
       }
     }
     return buyers;
+  }
+
+  async getBuyerCampaignAssignments(buyerId: number): Promise<Campaign[]> {
+    const campaignBuyerEntries: CampaignBuyer[] = [];
+    for (const cb of this.campaignBuyers.values()) {
+      if (cb.buyerId === buyerId) {
+        campaignBuyerEntries.push(cb);
+      }
+    }
+    
+    const campaigns: Campaign[] = [];
+    for (const cb of campaignBuyerEntries) {
+      const campaign = this.campaigns.get(cb.campaignId);
+      if (campaign) {
+        campaigns.push(campaign);
+      }
+    }
+    return campaigns;
   }
 
   async addBuyerToCampaign(campaignId: number, buyerId: number, priority = 1): Promise<CampaignBuyer> {

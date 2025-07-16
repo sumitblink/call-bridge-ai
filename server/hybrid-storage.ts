@@ -222,6 +222,13 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async getBuyerCampaignAssignments(buyerId: number): Promise<Campaign[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getBuyerCampaignAssignments(buyerId),
+      () => this.memStorage.getBuyerCampaignAssignments(buyerId)
+    );
+  }
+
   async addBuyerToCampaign(campaignId: number, buyerId: number, priority = 1): Promise<CampaignBuyer> {
     return this.executeOperation(
       () => this.databaseStorage.addBuyerToCampaign(campaignId, buyerId, priority),
