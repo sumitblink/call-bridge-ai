@@ -67,6 +67,8 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
+  const [editingConnectionLabel, setEditingConnectionLabel] = useState<string>('');
   const { toast } = useToast();
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -322,6 +324,28 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
     setConnections(connections.filter(c => c.id !== connectionId));
   };
 
+  const handleStartConnectionLabelEdit = (connection: FlowConnection) => {
+    setEditingConnectionId(connection.id);
+    setEditingConnectionLabel(connection.label || '');
+  };
+
+  const handleFinishConnectionLabelEdit = () => {
+    if (editingConnectionId) {
+      setConnections(connections.map(conn => 
+        conn.id === editingConnectionId 
+          ? { ...conn, label: editingConnectionLabel }
+          : conn
+      ));
+      setEditingConnectionId(null);
+      setEditingConnectionLabel('');
+    }
+  };
+
+  const handleCancelConnectionLabelEdit = () => {
+    setEditingConnectionId(null);
+    setEditingConnectionLabel('');
+  };
+
   const handleStartLabelEdit = (node: FlowNode) => {
     setEditingNodeId(node.id);
     setEditingLabel(node.data.label);
@@ -527,14 +551,34 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
           markerEnd="url(#arrowhead)"
           className="drop-shadow-sm"
         />
-        {connection.label && (
+        {editingConnectionId === connection.id ? (
+          <foreignObject x={midX - 50} y={midY - 35} width="100" height="20">
+            <input
+              type="text"
+              value={editingConnectionLabel}
+              onChange={(e) => setEditingConnectionLabel(e.target.value)}
+              onBlur={handleFinishConnectionLabelEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleFinishConnectionLabelEdit();
+                } else if (e.key === 'Escape') {
+                  handleCancelConnectionLabelEdit();
+                }
+              }}
+              className="text-xs border border-blue-300 rounded px-1 py-0.5 bg-white text-center w-full"
+              autoFocus
+              onFocus={(e) => e.target.select()}
+            />
+          </foreignObject>
+        ) : (
           <text
             x={midX}
             y={midY - 25}
             textAnchor="middle"
-            className="text-xs fill-blue-600 font-medium bg-white px-2 py-1 rounded"
+            className="text-xs fill-blue-600 font-medium cursor-pointer hover:fill-blue-800"
+            onClick={() => handleStartConnectionLabelEdit(connection)}
           >
-            {connection.label}
+            {connection.label || 'Click to edit'}
           </text>
         )}
         <circle
