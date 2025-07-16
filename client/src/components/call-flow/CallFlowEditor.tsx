@@ -1645,90 +1645,232 @@ function NodeConfigurationDialog({ node, onSave, onCancel }: {
 
       case 'splitter':
         return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="splitType">Split Type</Label>
-              <Select
-                value={config.splitType || 'percentage'}
-                onValueChange={(value) => updateConfig('splitType', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="percentage">Percentage</SelectItem>
-                  <SelectItem value="weight">Weight Based</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basic">Basic</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            </TabsList>
             
-            <div>
-              <Label>Split Targets</Label>
-              <div className="space-y-2">
-                {(config.targets || []).map((target: any, index: number) => (
-                  <div key={index} className="flex gap-2 items-center">
-                    <Input
-                      placeholder="Route Name"
-                      value={target.name || ''}
-                      onChange={(e) => {
-                        const newTargets = [...(config.targets || [])];
-                        newTargets[index] = { ...target, name: e.target.value };
-                        updateConfig('targets', newTargets);
-                      }}
-                    />
-                    <Input
-                      placeholder="Percentage"
-                      type="number"
-                      value={target.percentage || 50}
-                      onChange={(e) => {
-                        const newTargets = [...(config.targets || [])];
-                        newTargets[index] = { ...target, percentage: parseInt(e.target.value) };
-                        updateConfig('targets', newTargets);
-                      }}
-                      className="w-24"
-                    />
-                    <Input
-                      placeholder="Destination"
-                      value={target.destination || ''}
-                      onChange={(e) => {
-                        const newTargets = [...(config.targets || [])];
-                        newTargets[index] = { ...target, destination: e.target.value };
-                        updateConfig('targets', newTargets);
-                      }}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const newTargets = (config.targets || []).filter((_, i) => i !== index);
-                        updateConfig('targets', newTargets);
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const newTargets = [...(config.targets || []), { name: '', percentage: 50, destination: '' }];
-                    updateConfig('targets', newTargets);
-                  }}
+            <TabsContent value="basic" className="space-y-4">
+              <div>
+                <Label htmlFor="strategy">Distribution Strategy</Label>
+                <Select
+                  value={config.strategy || 'percentage'}
+                  onValueChange={(value) => updateConfig('strategy', value)}
                 >
-                  Add Target
-                </Button>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percentage">Percentage Distribution</SelectItem>
+                    <SelectItem value="weighted">Weighted Distribution</SelectItem>
+                    <SelectItem value="time_based">Time-based Rules</SelectItem>
+                    <SelectItem value="round_robin">Round Robin</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
+              
+              <div>
+                <Label>Split Configuration</Label>
+                <div className="space-y-2">
+                  {(config.splits || []).map((split: any, index: number) => (
+                    <div key={index} className="p-3 border rounded-lg space-y-2">
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          placeholder="Split Name"
+                          value={split.name || ''}
+                          onChange={(e) => {
+                            const newSplits = [...(config.splits || [])];
+                            newSplits[index] = { ...split, name: e.target.value };
+                            updateConfig('splits', newSplits);
+                          }}
+                        />
+                        <Input
+                          placeholder={config.strategy === 'weighted' ? 'Weight' : 'Percentage'}
+                          type="number"
+                          value={config.strategy === 'weighted' ? (split.weight || 1) : (split.percentage || 0)}
+                          onChange={(e) => {
+                            const newSplits = [...(config.splits || [])];
+                            const fieldName = config.strategy === 'weighted' ? 'weight' : 'percentage';
+                            newSplits[index] = { ...split, [fieldName]: parseFloat(e.target.value) };
+                            updateConfig('splits', newSplits);
+                          }}
+                          className="w-24"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newSplits = (config.splits || []).filter((_, i) => i !== index);
+                            updateConfig('splits', newSplits);
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      
+                      {config.strategy === 'time_based' && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs">Hour Range</Label>
+                            <div className="flex gap-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="23"
+                                placeholder="Start"
+                                value={split.timeRules?.hourRange?.[0] || ''}
+                                onChange={(e) => {
+                                  const newSplits = [...(config.splits || [])];
+                                  newSplits[index] = { 
+                                    ...split, 
+                                    timeRules: { 
+                                      ...split.timeRules, 
+                                      hourRange: [parseInt(e.target.value), split.timeRules?.hourRange?.[1] || 23] 
+                                    } 
+                                  };
+                                  updateConfig('splits', newSplits);
+                                }}
+                                className="w-16"
+                              />
+                              <Input
+                                type="number"
+                                min="0"
+                                max="23"
+                                placeholder="End"
+                                value={split.timeRules?.hourRange?.[1] || ''}
+                                onChange={(e) => {
+                                  const newSplits = [...(config.splits || [])];
+                                  newSplits[index] = { 
+                                    ...split, 
+                                    timeRules: { 
+                                      ...split.timeRules, 
+                                      hourRange: [split.timeRules?.hourRange?.[0] || 0, parseInt(e.target.value)] 
+                                    } 
+                                  };
+                                  updateConfig('splits', newSplits);
+                                }}
+                                className="w-16"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-xs">Days of Week</Label>
+                            <Input
+                              placeholder="0,1,2,3,4,5,6"
+                              value={split.timeRules?.daysOfWeek?.join(',') || ''}
+                              onChange={(e) => {
+                                const newSplits = [...(config.splits || [])];
+                                newSplits[index] = { 
+                                  ...split, 
+                                  timeRules: { 
+                                    ...split.timeRules, 
+                                    daysOfWeek: e.target.value.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d))
+                                  } 
+                                };
+                                updateConfig('splits', newSplits);
+                              }}
+                              className="text-sm"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const newSplits = [...(config.splits || []), { 
+                        name: '', 
+                        percentage: 0, 
+                        weight: 1,
+                        nodeId: '',
+                        timeRules: {}
+                      }];
+                      updateConfig('splits', newSplits);
+                    }}
+                  >
+                    Add Split
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
             
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="randomization"
-                checked={config.randomization || false}
-                onCheckedChange={(checked) => updateConfig('randomization', checked)}
-              />
-              <Label htmlFor="randomization">Enable randomization</Label>
-            </div>
-          </div>
+            <TabsContent value="advanced" className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="enableFailover"
+                  checked={config.enableFailover || false}
+                  onCheckedChange={(checked) => updateConfig('enableFailover', checked)}
+                />
+                <Label htmlFor="enableFailover">Enable failover to backup splits</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="enableTracking"
+                  checked={config.enableTracking !== false}
+                  onCheckedChange={(checked) => updateConfig('enableTracking', checked)}
+                />
+                <Label htmlFor="enableTracking">Enable split tracking</Label>
+              </div>
+              
+              <div>
+                <Label htmlFor="resetInterval">Reset Interval (minutes)</Label>
+                <Input
+                  id="resetInterval"
+                  type="number"
+                  value={config.resetInterval || 60}
+                  onChange={(e) => updateConfig('resetInterval', parseInt(e.target.value))}
+                  placeholder="60"
+                />
+                <div className="text-sm text-gray-600 mt-1">
+                  How often to reset round-robin counters and weighted distribution
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="analytics" className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="enableAnalytics"
+                  checked={config.enableAnalytics !== false}
+                  onCheckedChange={(checked) => updateConfig('enableAnalytics', checked)}
+                />
+                <Label htmlFor="enableAnalytics">Enable detailed analytics</Label>
+              </div>
+              
+              <div>
+                <Label htmlFor="analyticsEndpoint">Analytics Endpoint</Label>
+                <Input
+                  id="analyticsEndpoint"
+                  value={config.analyticsEndpoint || ''}
+                  onChange={(e) => updateConfig('analyticsEndpoint', e.target.value)}
+                  placeholder="https://analytics.example.com/track"
+                />
+              </div>
+              
+              <div>
+                <Label>Tracked Events</Label>
+                <div className="space-y-2">
+                  {['split_assignment', 'split_success', 'split_failure', 'split_timeout'].map((event) => (
+                    <div key={event} className="flex items-center space-x-2">
+                      <Switch
+                        id={event}
+                        checked={config.trackedEvents?.[event] !== false}
+                        onCheckedChange={(checked) => updateConfig('trackedEvents', {
+                          ...config.trackedEvents,
+                          [event]: checked
+                        })}
+                      />
+                      <Label htmlFor={event} className="text-sm">{event.replace(/_/g, ' ')}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         );
 
       case 'pixel':

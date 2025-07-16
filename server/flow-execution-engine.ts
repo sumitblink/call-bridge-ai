@@ -215,7 +215,7 @@ export class FlowExecutionEngine {
   }
 
   /**
-   * Execute a specific node
+   * Execute a specific node (Enhanced Phase 3)
    */
   private static async executeNode(
     session: CallSession,
@@ -227,12 +227,26 @@ export class FlowExecutionEngine {
       // Update session
       this.activeSessions.set(session.sessionId, session);
 
+      // Execute tracking integration for this node
+      await this.executeTrackingIntegration(node, session, flow);
+
       // Generate TwiML for node
       const twimlResponse = TwiMLGenerator.generateNodeTwiML(node, session, flow);
 
       // Handle special node types that need immediate processing
       if (node.type === 'start' && twimlResponse.nextAction) {
         // For start nodes, immediately redirect to next node
+        const nextNodeId = node.connections[0];
+        if (nextNodeId) {
+          return await this.continueFlowExecution(session.sessionId, nextNodeId);
+        }
+      }
+
+      // Handle tracking pixel nodes
+      if (node.type === 'tracking_pixel' || node.type === 'pixel') {
+        await this.executeTrackingPixel(node, session, flow);
+        
+        // Continue to next node automatically
         const nextNodeId = node.connections[0];
         if (nextNodeId) {
           return await this.continueFlowExecution(session.sessionId, nextNodeId);
@@ -250,6 +264,183 @@ export class FlowExecutionEngine {
         success: false,
         error: error.message || 'Failed to execute node'
       };
+    }
+  }
+
+  /**
+   * Execute tracking integration for analytics and pixel systems
+   */
+  private static async executeTrackingIntegration(
+    node: FlowNode,
+    session: CallSession,
+    flow: CallFlowDefinition
+  ): Promise<void> {
+    try {
+      const config = node.data.config || {};
+      const trackingEnabled = config.trackingEnabled !== false;
+      
+      if (!trackingEnabled) return;
+
+      // Build tracking event data
+      const trackingEvent = {
+        sessionId: session.sessionId,
+        flowId: flow.id,
+        nodeId: node.id,
+        nodeType: node.type,
+        campaignId: session.campaignId,
+        phoneNumber: session.phoneNumber,
+        callerNumber: session.callerNumber,
+        timestamp: new Date().toISOString(),
+        nodeData: node.data,
+        sessionData: session.collectedData || {}
+      };
+
+      // Send to existing analytics system
+      await this.sendToAnalyticsSystem(trackingEvent);
+
+      // Execute custom tracking pixels if configured
+      if (config.customPixels && config.customPixels.length > 0) {
+        await this.executeCustomPixels(config.customPixels, trackingEvent);
+      }
+
+    } catch (error) {
+      console.error('Tracking integration error:', error);
+      // Don't fail the call flow for tracking errors
+    }
+  }
+
+  /**
+   * Execute tracking pixel node
+   */
+  private static async executeTrackingPixel(
+    node: FlowNode,
+    session: CallSession,
+    flow: CallFlowDefinition
+  ): Promise<void> {
+    try {
+      const config = node.data.config || {};
+      const pixelUrl = config.pixelUrl || config.url;
+      
+      if (!pixelUrl) {
+        console.warn('Tracking pixel node has no URL configured');
+        return;
+      }
+
+      // Build pixel parameters
+      const pixelParams = this.buildPixelParameters(config, session, flow);
+      
+      // Fire tracking pixel
+      await this.fireTrackingPixel(pixelUrl, pixelParams);
+
+    } catch (error) {
+      console.error('Tracking pixel execution error:', error);
+      // Don't fail the call flow for tracking pixel errors
+    }
+  }
+
+  /**
+   * Send tracking event to analytics system
+   */
+  private static async sendToAnalyticsSystem(trackingEvent: any): Promise<void> {
+    try {
+      // This would integrate with your existing analytics system
+      // For now, we'll log it and store in a tracking table
+      console.log('Analytics Event:', JSON.stringify(trackingEvent, null, 2));
+      
+      // Store in database for reporting
+      // await db.insert(trackingEvents).values(trackingEvent);
+      
+    } catch (error) {
+      console.error('Analytics system error:', error);
+    }
+  }
+
+  /**
+   * Execute custom tracking pixels
+   */
+  private static async executeCustomPixels(pixels: any[], trackingEvent: any): Promise<void> {
+    for (const pixel of pixels) {
+      try {
+        if (!pixel.url || !pixel.enabled) continue;
+        
+        const pixelParams = this.buildPixelParameters(pixel, trackingEvent);
+        await this.fireTrackingPixel(pixel.url, pixelParams);
+        
+      } catch (error) {
+        console.error('Custom pixel error:', error);
+      }
+    }
+  }
+
+  /**
+   * Build pixel parameters from configuration and session data
+   */
+  private static buildPixelParameters(config: any, session: CallSession, flow: CallFlowDefinition): any {
+    const baseParams = {
+      session_id: session.sessionId,
+      flow_id: flow.id,
+      campaign_id: session.campaignId,
+      phone_number: session.phoneNumber,
+      caller_number: session.callerNumber,
+      timestamp: Date.now()
+    };
+
+    // Add custom parameters from config
+    const customParams = config.parameters || {};
+    
+    // Replace template variables in custom parameters
+    const processedParams = {};
+    for (const [key, value] of Object.entries(customParams)) {
+      if (typeof value === 'string') {
+        processedParams[key] = this.replaceTemplateVariables(value, session, flow);
+      } else {
+        processedParams[key] = value;
+      }
+    }
+
+    return { ...baseParams, ...processedParams };
+  }
+
+  /**
+   * Replace template variables in pixel parameters
+   */
+  private static replaceTemplateVariables(template: string, session: CallSession, flow: CallFlowDefinition): string {
+    return template
+      .replace(/\{session_id\}/g, session.sessionId)
+      .replace(/\{flow_id\}/g, flow.id?.toString() || '')
+      .replace(/\{campaign_id\}/g, session.campaignId?.toString() || '')
+      .replace(/\{phone_number\}/g, session.phoneNumber || '')
+      .replace(/\{caller_number\}/g, session.callerNumber || '')
+      .replace(/\{timestamp\}/g, Date.now().toString())
+      .replace(/\{flow_name\}/g, flow.name || '');
+  }
+
+  /**
+   * Fire tracking pixel by making HTTP request
+   */
+  private static async fireTrackingPixel(url: string, params: any): Promise<void> {
+    try {
+      const fetch = (await import('node-fetch')).default;
+      
+      // Build query string
+      const queryString = new URLSearchParams(params).toString();
+      const pixelUrl = `${url}${url.includes('?') ? '&' : '?'}${queryString}`;
+      
+      // Fire pixel (GET request)
+      const response = await fetch(pixelUrl, {
+        method: 'GET',
+        timeout: 5000, // 5 second timeout
+        headers: {
+          'User-Agent': 'CallCenter-Pro-Tracking/1.0'
+        }
+      });
+
+      if (!response.ok) {
+        console.warn(`Tracking pixel failed: ${response.status} ${response.statusText}`);
+      }
+
+    } catch (error) {
+      console.error('Tracking pixel request error:', error);
     }
   }
 
@@ -379,54 +570,162 @@ export class FlowExecutionEngine {
   }
 
   /**
-   * Determine next node for traffic splitter
+   * Determine next node for traffic splitter (Enhanced Phase 3)
    */
   private static determineTrafficSplitterNextNode(node: FlowNode): string | null {
     const config = node.data.config || {};
     const splits = config.splits || [];
+    const strategy = config.strategy || 'percentage';
     
     if (splits.length === 0) {
       return node.connections[0] || null;
     }
 
-    // Select path based on percentage
+    let selectedSplit;
+    
+    switch (strategy) {
+      case 'percentage':
+        selectedSplit = this.selectBySplitPercentage(splits);
+        break;
+      case 'weighted':
+        selectedSplit = this.selectByWeightedDistribution(splits);
+        break;
+      case 'time_based':
+        selectedSplit = this.selectByTimeBasedRules(splits);
+        break;
+      case 'round_robin':
+        selectedSplit = this.selectByRoundRobin(splits, node.id);
+        break;
+      default:
+        selectedSplit = this.selectBySplitPercentage(splits);
+    }
+
+    return selectedSplit?.nodeId || node.connections[0] || null;
+  }
+
+  /**
+   * Select split by percentage distribution
+   */
+  private static selectBySplitPercentage(splits: any[]): any {
     const random = Math.random() * 100;
     let cumulativePercentage = 0;
     
     for (const split of splits) {
       cumulativePercentage += split.percentage;
       if (random <= cumulativePercentage) {
-        return split.nodeId || node.connections[0];
+        return split;
       }
     }
-
-    return node.connections[0] || null;
+    
+    return splits[0];
   }
 
   /**
-   * Check if current time is within business hours
+   * Select split by weighted distribution (considering performance)
+   */
+  private static selectByWeightedDistribution(splits: any[]): any {
+    const totalWeight = splits.reduce((sum, split) => sum + (split.weight || 1), 0);
+    const random = Math.random() * totalWeight;
+    let cumulativeWeight = 0;
+    
+    for (const split of splits) {
+      cumulativeWeight += split.weight || 1;
+      if (random <= cumulativeWeight) {
+        return split;
+      }
+    }
+    
+    return splits[0];
+  }
+
+  /**
+   * Select split by time-based rules
+   */
+  private static selectByTimeBasedRules(splits: any[]): any {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentDay = now.getDay();
+    
+    // Find splits that match current time conditions
+    const matchingSplits = splits.filter(split => {
+      const timeRules = split.timeRules || {};
+      
+      // Check hour range
+      if (timeRules.hourRange) {
+        const [startHour, endHour] = timeRules.hourRange;
+        if (currentHour < startHour || currentHour > endHour) {
+          return false;
+        }
+      }
+      
+      // Check day of week
+      if (timeRules.daysOfWeek && timeRules.daysOfWeek.length > 0) {
+        if (!timeRules.daysOfWeek.includes(currentDay)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+    
+    if (matchingSplits.length === 0) {
+      return splits[0];
+    }
+    
+    return this.selectBySplitPercentage(matchingSplits);
+  }
+
+  /**
+   * Select split by round-robin distribution
+   */
+  private static selectByRoundRobin(splits: any[], nodeId: string): any {
+    // Simple round-robin based on current time
+    const index = Math.floor(Date.now() / 1000) % splits.length;
+    return splits[index];
+  }
+
+  /**
+   * Check if current time is within business hours (Enhanced Phase 3)
    */
   private static checkBusinessHours(config: any): boolean {
     const timezone = config.timezone || 'America/New_York';
     const businessHours = config.businessHours || {};
+    const holidays = config.holidays || [];
     
     const now = new Date();
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const currentDay = dayNames[now.getDay()];
+    
+    // Check for holidays first
+    const currentDateStr = now.toISOString().split('T')[0];
+    if (holidays.some(holiday => holiday.date === currentDateStr && holiday.enabled)) {
+      return false;
+    }
     
     const dayConfig = businessHours[currentDay];
     if (!dayConfig || !dayConfig.enabled) {
       return false;
     }
 
-    const currentTime = now.toLocaleTimeString('en-US', { 
-      hour12: false, 
-      hour: '2-digit', 
-      minute: '2-digit',
-      timeZone: timezone 
-    });
+    try {
+      // Use timezone-aware time conversion
+      const currentTime = new Date().toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit',
+        timeZone: timezone 
+      });
 
-    return currentTime >= dayConfig.open && currentTime <= dayConfig.close;
+      // Handle multiple time ranges per day (lunch breaks, etc.)
+      const timeRanges = dayConfig.timeRanges || [{ open: dayConfig.open, close: dayConfig.close }];
+      
+      return timeRanges.some(range => {
+        return currentTime >= range.open && currentTime <= range.close;
+      });
+    } catch (error) {
+      console.error('Business hours check error:', error);
+      return false;
+    }
   }
 
   /**
