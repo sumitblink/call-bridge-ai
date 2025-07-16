@@ -2269,6 +2269,203 @@ function NodeConfigurationDialog({ node, onSave, onCancel }: {
           </div>
         );
 
+      case 'action':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="actionType">Action Type</Label>
+              <Select value={config.actionType || 'route'} onValueChange={(value) => updateConfig('actionType', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select action type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="route">Route to Buyer</SelectItem>
+                  <SelectItem value="hangup">Hangup</SelectItem>
+                  <SelectItem value="transfer">Transfer Call</SelectItem>
+                  <SelectItem value="voicemail">Send to Voicemail</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {config.actionType === 'route' && (
+              <div>
+                <Label htmlFor="destination">Destination</Label>
+                <Select value={config.destination || 'buyer'} onValueChange={(value) => updateConfig('destination', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select destination" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="buyer">Buyer</SelectItem>
+                    <SelectItem value="external">External Number</SelectItem>
+                    <SelectItem value="queue">Queue</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {config.actionType === 'route' && config.destination === 'buyer' && (
+              <div>
+                <Label htmlFor="buyerId">Buyer ID</Label>
+                <Input
+                  id="buyerId"
+                  type="number"
+                  value={config.buyerId || ''}
+                  onChange={(e) => updateConfig('buyerId', parseInt(e.target.value))}
+                  placeholder="Enter buyer ID"
+                />
+              </div>
+            )}
+            
+            {config.actionType === 'route' && config.destination === 'external' && (
+              <div>
+                <Label htmlFor="externalNumber">External Number</Label>
+                <Input
+                  id="externalNumber"
+                  value={config.externalNumber || ''}
+                  onChange={(e) => updateConfig('externalNumber', e.target.value)}
+                  placeholder="+1234567890"
+                />
+              </div>
+            )}
+            
+            {config.actionType === 'transfer' && (
+              <div>
+                <Label htmlFor="transferNumber">Transfer Number</Label>
+                <Input
+                  id="transferNumber"
+                  value={config.transferNumber || ''}
+                  onChange={(e) => updateConfig('transferNumber', e.target.value)}
+                  placeholder="+1234567890"
+                />
+              </div>
+            )}
+            
+            {config.actionType === 'hangup' && (
+              <div>
+                <Label htmlFor="hangupMessage">Hangup Message</Label>
+                <Textarea
+                  id="hangupMessage"
+                  value={config.hangupMessage || ''}
+                  onChange={(e) => updateConfig('hangupMessage', e.target.value)}
+                  placeholder="Thank you for calling. Goodbye!"
+                  rows={3}
+                />
+              </div>
+            )}
+            
+            {config.actionType === 'voicemail' && (
+              <div>
+                <Label htmlFor="voicemailMessage">Voicemail Message</Label>
+                <Textarea
+                  id="voicemailMessage"
+                  value={config.voicemailMessage || ''}
+                  onChange={(e) => updateConfig('voicemailMessage', e.target.value)}
+                  placeholder="Please leave a message after the tone"
+                  rows={3}
+                />
+              </div>
+            )}
+          </div>
+        );
+
+      case 'condition':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="conditionType">Condition Type</Label>
+              <Select value={config.conditionType || 'caller_id'} onValueChange={(value) => updateConfig('conditionType', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select condition type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="caller_id">Caller ID</SelectItem>
+                  <SelectItem value="time">Time Based</SelectItem>
+                  <SelectItem value="custom">Custom Rule</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {config.conditionType === 'caller_id' && (
+              <div>
+                <Label htmlFor="callerIdRule">Caller ID Rule</Label>
+                <Input
+                  id="callerIdRule"
+                  value={config.callerIdRule || ''}
+                  onChange={(e) => updateConfig('callerIdRule', e.target.value)}
+                  placeholder="e.g., starts with +1800"
+                />
+              </div>
+            )}
+            
+            {config.conditionType === 'time' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={config.startTime || ''}
+                    onChange={(e) => updateConfig('startTime', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="endTime">End Time</Label>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    value={config.endTime || ''}
+                    onChange={(e) => updateConfig('endTime', e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+            
+            {config.conditionType === 'custom' && (
+              <div>
+                <Label htmlFor="customRule">Custom Rule</Label>
+                <Textarea
+                  id="customRule"
+                  value={config.customRule || ''}
+                  onChange={(e) => updateConfig('customRule', e.target.value)}
+                  placeholder="Enter custom JavaScript condition"
+                  rows={4}
+                />
+              </div>
+            )}
+          </div>
+        );
+
+      case 'end':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="endType">End Type</Label>
+              <Select value={config.endType || 'hangup'} onValueChange={(value) => updateConfig('endType', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select end type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hangup">Hangup</SelectItem>
+                  <SelectItem value="message">Play Message & Hangup</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {config.endType === 'message' && (
+              <div>
+                <Label htmlFor="message">End Message</Label>
+                <Textarea
+                  id="message"
+                  value={config.message || ''}
+                  onChange={(e) => updateConfig('message', e.target.value)}
+                  placeholder="Thank you for calling"
+                  rows={3}
+                />
+              </div>
+            )}
+          </div>
+        );
+
       default:
         return (
           <div className="space-y-4">
