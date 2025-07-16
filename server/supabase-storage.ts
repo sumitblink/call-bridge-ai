@@ -54,6 +54,9 @@ import {
   type InsertRtbBidRequest,
   type RtbBidResponse,
   type InsertRtbBidResponse,
+  feedback,
+  type Feedback,
+  type InsertFeedback,
 } from '@shared/schema';
 import type { IStorage } from './storage';
 
@@ -877,6 +880,30 @@ export class SupabaseStorage implements IStorage {
   async deleteCallFlow(id: number): Promise<boolean> {
     // Return true until database schema is migrated
     return true;
+  }
+
+  // Feedback methods
+  async createFeedback(feedbackData: InsertFeedback): Promise<Feedback> {
+    const result = await db.insert(feedback).values(feedbackData).returning();
+    return result[0];
+  }
+
+  async getFeedbackHistory(userId: number): Promise<Feedback[]> {
+    const result = await db
+      .select()
+      .from(feedback)
+      .where(eq(feedback.userId, userId))
+      .orderBy(desc(feedback.timestamp));
+    return result;
+  }
+
+  async getAllFeedback(userId: number): Promise<Feedback[]> {
+    const result = await db
+      .select()
+      .from(feedback)
+      .where(eq(feedback.userId, userId))
+      .orderBy(desc(feedback.timestamp));
+    return result;
   }
 }
 
