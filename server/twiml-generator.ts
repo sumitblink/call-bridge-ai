@@ -119,12 +119,11 @@ export class TwiMLGenerator {
       return { twiml: twiml.toString() };
     }
 
+    // For start nodes, redirect immediately to next node
+    twiml.redirect(`${this.baseUrl}/api/flow/execute/${session.flowId}/node/${nextNodeId}?sessionId=${session.sessionId}`);
+    
     return {
-      twiml: twiml.toString(),
-      nextAction: {
-        url: `${this.baseUrl}/api/flow/execute/${session.flowId}/node/${nextNodeId}?sessionId=${session.sessionId}`,
-        method: 'POST'
-      }
+      twiml: twiml.toString()
     };
   }
 
