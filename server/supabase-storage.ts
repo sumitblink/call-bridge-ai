@@ -24,6 +24,7 @@ import {
   rtbRouterAssignments,
   rtbBidRequests,
   rtbBidResponses,
+  callFlows,
   type Campaign, 
   type InsertCampaign, 
   type Agent, 
@@ -57,6 +58,8 @@ import {
   feedback,
   type Feedback,
   type InsertFeedback,
+  type CallFlow,
+  type InsertCallFlow,
 } from '@shared/schema';
 import type { IStorage } from './storage';
 
