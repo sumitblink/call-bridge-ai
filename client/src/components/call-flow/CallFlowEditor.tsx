@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { Save, X, Play, Settings, Plus, Trash2, Move, GitBranch, ZoomIn, ZoomOut, Home } from 'lucide-react';
+import { Save, X, Play, Settings, Plus, Trash2, Move, GitBranch, ZoomIn, ZoomOut, Home, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -81,17 +82,17 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   }, [flow]);
 
   const nodeTypes = [
-    { type: 'condition', label: 'Condition', icon: '🔀', color: 'bg-yellow-100 border-yellow-300' },
-    { type: 'action', label: 'Action', icon: '⚡', color: 'bg-blue-100 border-blue-300' },
-    { type: 'menu', label: 'IVR Menu', icon: '📞', color: 'bg-purple-100 border-purple-300' },
-    { type: 'gather', label: 'Gather Input', icon: '🎤', color: 'bg-green-100 border-green-300' },
-    { type: 'play', label: 'Play Audio', icon: '🔊', color: 'bg-orange-100 border-orange-300' },
-    { type: 'hours', label: 'Business Hours', icon: '🕐', color: 'bg-indigo-100 border-indigo-300' },
-    { type: 'router', label: 'Advanced Router', icon: '🚀', color: 'bg-pink-100 border-pink-300' },
-    { type: 'splitter', label: 'Traffic Splitter', icon: '🔀', color: 'bg-teal-100 border-teal-300' },
-    { type: 'pixel', label: 'Tracking Pixel', icon: '📊', color: 'bg-cyan-100 border-cyan-300' },
-    { type: 'javascript', label: 'Custom Logic', icon: '⚙️', color: 'bg-gray-100 border-gray-300' },
-    { type: 'end', label: 'End', icon: '🏁', color: 'bg-red-100 border-red-300' }
+    { type: 'condition', label: 'Condition', icon: '🔀', color: 'bg-yellow-100 border-yellow-300', description: 'Routes calls based on conditions like caller ID, time, or custom rules' },
+    { type: 'action', label: 'Action', icon: '⚡', color: 'bg-blue-100 border-blue-300', description: 'Performs actions like routing to a buyer or triggering events' },
+    { type: 'menu', label: 'IVR Menu', icon: '📞', color: 'bg-purple-100 border-purple-300', description: 'Interactive voice menu where callers can press keys to navigate options' },
+    { type: 'gather', label: 'Gather Input', icon: '🎤', color: 'bg-green-100 border-green-300', description: 'Collects caller input like phone numbers, account numbers, or voice responses' },
+    { type: 'play', label: 'Play Audio', icon: '🔊', color: 'bg-orange-100 border-orange-300', description: 'Plays audio messages or announcements using text-to-speech or audio files' },
+    { type: 'hours', label: 'Business Hours', icon: '🕐', color: 'bg-indigo-100 border-indigo-300', description: 'Routes calls based on time of day, business hours, and holiday schedules' },
+    { type: 'router', label: 'Advanced Router', icon: '🚀', color: 'bg-pink-100 border-pink-300', description: 'Routes calls to buyers using priority, capacity limits, and RTB bidding systems' },
+    { type: 'splitter', label: 'Traffic Splitter', icon: '🔀', color: 'bg-teal-100 border-teal-300', description: 'Splits incoming traffic between multiple paths for A/B testing or load balancing' },
+    { type: 'pixel', label: 'Tracking Pixel', icon: '📊', color: 'bg-cyan-100 border-cyan-300', description: 'Fires tracking pixels and postback URLs for analytics and conversion tracking' },
+    { type: 'javascript', label: 'Custom Logic', icon: '⚙️', color: 'bg-gray-100 border-gray-300', description: 'Executes custom JavaScript code for complex business logic and dynamic routing' },
+    { type: 'end', label: 'End', icon: '🏁', color: 'bg-red-100 border-red-300', description: 'Ends the call flow with a goodbye message or hangup action' }
   ];
 
   const handleAddNode = (type: string) => {
@@ -641,21 +642,43 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             {/* Add Nodes */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Add Nodes</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Add Nodes</CardTitle>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          <Info className="h-4 w-4 text-gray-500" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Hover over nodes to see what each one does</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 gap-2">
-                  {nodeTypes.map((nodeType) => (
-                    <Button
-                      key={nodeType.type}
-                      variant="outline"
-                      onClick={() => handleAddNode(nodeType.type)}
-                      className="justify-start"
-                    >
-                      <span className="mr-2">{nodeType.icon}</span>
-                      {nodeType.label}
-                    </Button>
-                  ))}
+                  <TooltipProvider>
+                    {nodeTypes.map((nodeType) => (
+                      <Tooltip key={nodeType.type}>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleAddNode(nodeType.type)}
+                            className="justify-start"
+                          >
+                            <span className="mr-2">{nodeType.icon}</span>
+                            {nodeType.label}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-64">
+                          <p>{nodeType.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </TooltipProvider>
                 </div>
               </CardContent>
             </Card>
