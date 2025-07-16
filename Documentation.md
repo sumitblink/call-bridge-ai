@@ -10,13 +10,15 @@
 6. [Number Pool Management](#number-pool-management)
 7. [Dynamic Number Insertion (DNI)](#dynamic-number-insertion-dni)
 8. [Real-Time Bidding (RTB) System](#real-time-bidding-rtb-system)
-9. [Twilio Integration](#twilio-integration)
-10. [API Documentation](#api-documentation)
-11. [Database Schema](#database-schema)
-12. [Security and Multi-Tenancy](#security-and-multi-tenancy)
-13. [Setup and Configuration](#setup-and-configuration)
-14. [Testing Guide](#testing-guide)
-15. [Troubleshooting](#troubleshooting)
+9. [Advanced Call Flow System](#advanced-call-flow-system)
+10. [Twilio Integration](#twilio-integration)
+11. [API Documentation](#api-documentation)
+12. [Database Schema](#database-schema)
+13. [Security and Multi-Tenancy](#security-and-multi-tenancy)
+14. [Setup and Configuration](#setup-and-configuration)
+15. [Testing Guide](#testing-guide)
+16. [Troubleshooting](#troubleshooting)
+17. [Recent Updates](#recent-updates)
 
 ---
 
@@ -30,6 +32,7 @@ CallCenter Pro is a production-ready, enterprise-grade call center management pl
 - **Campaign Management**: Create and manage call campaigns with multiple routing strategies
 - **Dynamic Number Insertion (DNI)**: Track campaign performance with dynamic phone number assignment
 - **Real-Time Bidding (RTB)**: Enterprise-level auction system for call distribution with live analytics
+- **Advanced Call Flow System**: Visual flow builder with IVR, business hours, and traffic splitting
 - **Number Pool Management**: Exclusive number assignment with conflict prevention
 - **Twilio Integration**: Full voice communication capabilities with webhooks
 - **Analytics & Reporting**: Comprehensive performance tracking with target name resolution
@@ -499,6 +502,211 @@ The system supports multiple response formats through configurable JSONPath expr
 
 ---
 
+## Advanced Call Flow System
+
+### Overview
+
+The Advanced Call Flow System is a comprehensive visual flow builder that enables sophisticated call routing with enterprise-level features. This system supports complex Interactive Voice Response (IVR) scenarios, business hours management, traffic splitting, and comprehensive tracking integration.
+
+### Key Features
+
+**✓ Phase 1: Core Flow Management**
+- Visual flow builder with drag-and-drop interface
+- 8 specialized node types for different call scenarios
+- Real-time flow execution with TwiML generation
+- Session management for multi-step interactions
+
+**✓ Phase 2: Live IVR Integration**
+- Complete webhook-to-TwiML pipeline
+- Live call flow execution with Twilio
+- Session persistence across IVR interactions
+- Response processing for user input
+
+**✓ Phase 3: Advanced Enterprise Features**
+- Enhanced business hours with holiday support
+- Advanced traffic splitting with 4 distribution strategies
+- Comprehensive tracking integration with pixel firing
+- Production-ready advanced routing capabilities
+
+### Node Types
+
+#### 1. Start Node
+- Entry point for all call flows
+- Configurable with tracking pixels
+- Custom session initialization
+
+#### 2. IVR Menu Node
+- Interactive voice response with multiple options
+- DTMF input handling
+- Timeout and retry logic
+- Invalid input handling
+
+#### 3. Gather Input Node
+- Collect caller information (digits or speech)
+- Validation patterns with regex support
+- Configurable timeout and retry attempts
+- Custom prompts and error messages
+
+#### 4. Play Audio Node
+- Text-to-speech or audio URL playback
+- Voice selection and speed control
+- Loop and repeat options
+- Dynamic content with variables
+
+#### 5. Business Hours Node (Enhanced Phase 3)
+- Timezone-aware time calculations
+- Holiday support with date-based exclusions
+- Multiple time ranges per day (lunch breaks)
+- Complex schedule management
+- Fallback routing for closed hours
+
+#### 6. Advanced Router Node
+- Priority-based routing with capacity limits
+- Round-robin distribution
+- RTB integration for auction-based routing
+- Failover and backup routing
+
+#### 7. Traffic Splitter Node (Enhanced Phase 3)
+- **Percentage Distribution**: Simple percentage-based splits
+- **Weighted Distribution**: Performance-based routing with weights
+- **Time-based Rules**: Hour ranges and day-of-week filters
+- **Round Robin**: Equal distribution across targets
+- Failover support and analytics tracking
+
+#### 8. Tracking Pixel Node (Enhanced Phase 3)
+- Pixel firing with template variables
+- Analytics events for comprehensive tracking
+- Custom parameter mapping
+- HTTP timeout and error handling
+
+### Phase 3 Advanced Features
+
+#### Enhanced Business Hours Logic
+```javascript
+// Business hours configuration
+{
+  timezone: 'America/New_York',
+  businessHours: {
+    monday: {
+      enabled: true,
+      timeRanges: [
+        { open: '09:00', close: '12:00' },  // Morning
+        { open: '13:00', close: '17:00' }   // Afternoon
+      ]
+    }
+  },
+  holidays: [
+    { date: '2025-12-25', enabled: true, name: 'Christmas' },
+    { date: '2025-01-01', enabled: true, name: 'New Year' }
+  ]
+}
+```
+
+#### Advanced Traffic Splitting
+```javascript
+// Weighted distribution example
+{
+  strategy: 'weighted',
+  splits: [
+    { name: 'Premium Route', weight: 3, nodeId: 'premium' },
+    { name: 'Standard Route', weight: 2, nodeId: 'standard' },
+    { name: 'Budget Route', weight: 1, nodeId: 'budget' }
+  ],
+  enableFailover: true,
+  enableAnalytics: true
+}
+```
+
+#### Comprehensive Tracking Integration
+```javascript
+// Tracking pixel configuration
+{
+  pixelUrl: 'https://analytics.example.com/track',
+  parameters: {
+    campaign_id: '{campaign_id}',
+    caller_number: '{caller_number}',
+    session_id: '{session_id}',
+    flow_id: '{flow_id}',
+    timestamp: '{timestamp}'
+  },
+  customPixels: [
+    {
+      name: 'Conversion Pixel',
+      url: 'https://conversion.example.com/pixel',
+      parameters: { event: 'call_start', value: '1.00' }
+    }
+  ]
+}
+```
+
+### Flow Configuration Interface
+
+The system provides tabbed configuration interfaces for complex node settings:
+
+- **Basic Tab**: Core functionality and primary settings
+- **Advanced Tab**: Complex routing rules and failover options
+- **Analytics Tab**: Tracking configuration and event selection
+- **Validation Tab**: Input validation and error handling
+- **Holidays Tab**: Holiday management and special schedules
+
+### Flow Execution Engine
+
+The Flow Execution Engine manages call flow state and coordinates between nodes:
+
+1. **Session Management**: Tracks call state across multiple interactions
+2. **Node Execution**: Processes each node type with specialized logic
+3. **Response Processing**: Handles user input from gather operations
+4. **Tracking Integration**: Fires pixels and analytics events
+5. **Error Handling**: Manages failures and fallback scenarios
+
+### TwiML Generation
+
+The system generates production-ready TwiML for various scenarios:
+
+```xml
+<!-- IVR Menu Example -->
+<Response>
+  <Gather input="dtmf" timeout="10" numDigits="1">
+    <Say>Press 1 for Sales, 2 for Support, or 3 for Billing</Say>
+  </Gather>
+  <Redirect>/api/flow/timeout</Redirect>
+</Response>
+
+<!-- Business Hours Example -->
+<Response>
+  <Say>We are currently closed. Please call back during business hours.</Say>
+  <Hangup/>
+</Response>
+
+<!-- Traffic Splitting Example -->
+<Response>
+  <Dial timeout="30">
+    <Number>+1800555PREMIUM</Number>
+  </Dial>
+</Response>
+```
+
+### Analytics and Tracking
+
+The system provides comprehensive analytics for call flow performance:
+
+- **Node Performance**: Execution times and success rates
+- **Split Analytics**: Distribution effectiveness and performance
+- **Pixel Tracking**: Conversion events and attribution
+- **Session Analytics**: Flow completion rates and drop-off points
+- **Business Hours Analytics**: Call volume patterns and peak times
+
+### Integration with Campaign System
+
+Call flows integrate seamlessly with the campaign management system:
+
+- **Campaign Assignment**: Flows can be assigned to specific campaigns
+- **Automatic Execution**: Flows execute when campaigns have active flows
+- **Fallback Routing**: Traditional buyer routing when no flow is active
+- **Performance Tracking**: Flow metrics integrated with campaign analytics
+
+---
+
 ## Twilio Integration
 
 ### Webhook Configuration
@@ -814,6 +1022,179 @@ Test API endpoints and database operations:
 ```bash
 npm run test:integration
 ```
+
+### Phase Testing
+
+The system includes comprehensive test scripts for each development phase:
+
+**Phase 1 Testing:**
+```bash
+node test-flow-execution.js
+```
+
+**Phase 2 Testing:**
+```bash
+node test-phase2-integration.js
+node test-live-ivr.js
+```
+
+**Phase 3 Testing:**
+```bash
+node test-phase3-advanced-features.js
+```
+
+### RTB Testing
+
+Test real-time bidding functionality:
+
+```bash
+node test-advanced-rtb-system.js
+```
+
+### Security Testing
+
+Validate multi-tenancy and security fixes:
+
+```bash
+node test-security-fixes.js
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Database Connection Issues:**
+- Check `DATABASE_URL` environment variable
+- Verify database server is running
+- Ensure proper network connectivity
+
+**Call Routing Problems:**
+- Verify campaign status is active
+- Check buyer configuration and capacity
+- Review call logs for routing decisions
+
+**RTB Auction Failures:**
+- Validate RTB target endpoints
+- Check bid timeout settings
+- Review bid request/response logs
+
+**Call Flow Execution Issues:**
+- Verify flow definition is valid
+- Check node configurations
+- Review session tracking logs
+
+### Debug Mode
+
+Enable debug logging:
+
+```bash
+DEBUG=* npm run dev
+```
+
+### Support Resources
+
+- **Documentation**: Complete system documentation
+- **Test Scripts**: Comprehensive testing suite
+- **Error Logs**: Detailed error tracking
+- **Performance Monitoring**: Real-time system metrics
+
+---
+
+## Recent Updates
+
+### July 16, 2025 - Phase 3 Complete: Advanced Features Implemented
+
+**✓ Enhanced Business Hours Logic**
+- Holiday support with date-based exclusions
+- Multiple time ranges per day (lunch breaks, complex schedules)
+- Timezone-aware calculations for global operations
+- Holiday management with custom schedules
+
+**✓ Advanced Traffic Splitting**
+- 4 distribution strategies: percentage, weighted, time-based rules, round-robin
+- Weighted distribution considers performance factors and success rates
+- Time-based rules with hour ranges and day-of-week filters
+- Failover support and detailed analytics tracking
+
+**✓ Comprehensive Tracking Integration**
+- Pixel firing with template variables ({campaign_id}, {session_id}, {timestamp})
+- Analytics events for all node executions and flow interactions
+- Custom pixel arrays for multiple tracking systems
+- HTTP timeout and error handling for reliable tracking
+
+**✓ Enhanced User Interface**
+- Tabbed configuration interfaces for complex node settings
+- Real-time preview of distribution strategies
+- Advanced time-based rule builders
+- Analytics configuration with event selection
+
+**✓ Production-Ready Features**
+- All Phase 3 features validated through comprehensive test suites
+- Enterprise-level routing capabilities matching platforms like Ringba
+- Complex business scenarios supported with sophisticated routing logic
+- Comprehensive tracking integration for call attribution
+
+### July 16, 2025 - Phase 2 Complete: Database Integration Resolved
+
+**✓ Call Flow Database Integration**
+- Fixed database table creation for call_flows with proper schema
+- Resolved PostgreSQL persistence issues
+- Database methods properly implemented with error handling
+- Call flow CRUD operations fully operational
+
+**✓ Live IVR Integration**
+- Complete webhook-to-TwiML pipeline for real-time IVR execution
+- Session management with UUID tracking for call state persistence
+- Response processing pipeline for DTMF input and speech recognition
+- Production-ready system supporting complete IVR experiences
+
+### July 15, 2025 - Advanced Features and Security
+
+**✓ Claude AI Integration**
+- Intelligent AI chatbot powered by Claude Sonnet 4
+- Project context awareness and file search capabilities
+- Contextual answers about system features and functionality
+
+**✓ Critical Security Fixes**
+- Multi-tenancy vulnerability resolved
+- User-scoped data filtering implemented
+- Authentication requirements added to all sensitive endpoints
+- Comprehensive security test suite created
+
+**✓ RTB System Enhancements**
+- External destination routing for winning bidders
+- RTB target architectural simplification
+- Advanced RTB analytics with target name resolution
+- Enterprise-level RTB ID system with crypto-secure identifiers
+
+### System Status
+
+**Current Version**: Production-ready with Phase 3 complete
+**Database**: PostgreSQL with 47 calls and 13 feedback records
+**Security**: Multi-tenant with user-scoped data access
+**Authentication**: Session-based (username: sumit, password: demo1)
+**Features**: All enterprise-level routing capabilities implemented
+
+The system now provides enterprise-grade call center management with sophisticated routing logic, comprehensive tracking integration, and production-ready advanced features matching industry-leading platforms.
+
+---
+
+## Conclusion
+
+CallCenter Pro represents a complete, enterprise-grade call center management solution with advanced routing capabilities, comprehensive tracking integration, and production-ready features. The system has been developed through three major phases:
+
+**Phase 1**: Core flow management and TwiML generation
+**Phase 2**: Live IVR integration with database persistence
+**Phase 3**: Advanced enterprise features with business hours, traffic splitting, and tracking
+
+The platform is ready for production deployment with sophisticated routing logic, comprehensive analytics, and enterprise-level security. All features have been thoroughly tested and validated through comprehensive test suites.
+
+For additional support, consult the testing scripts, API documentation, and troubleshooting sections provided in this documentation.
+**Features**: All enterprise-level routing capabilities implemented
+
+The system now provides enterprise-grade call center management with sophisticated routing logic, comprehensive tracking integration, and production-ready advanced features matching industry-leading platforms.
 
 ### End-to-End Testing
 
