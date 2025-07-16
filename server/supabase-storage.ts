@@ -853,7 +853,7 @@ export class SupabaseStorage implements IStorage {
   // Call Flow methods - PostgreSQL implementation
   async getCallFlows(userId?: number): Promise<any[]> {
     try {
-      let query = this.db.select().from(callFlows);
+      let query = db.select().from(callFlows);
       
       if (userId) {
         query = query.where(eq(callFlows.userId, userId));
@@ -869,7 +869,7 @@ export class SupabaseStorage implements IStorage {
 
   async getCallFlow(id: number): Promise<any | undefined> {
     try {
-      const result = await this.db
+      const result = await db
         .select()
         .from(callFlows)
         .where(eq(callFlows.id, id))
@@ -884,7 +884,7 @@ export class SupabaseStorage implements IStorage {
 
   async createCallFlow(flow: any): Promise<any> {
     try {
-      const result = await this.db
+      const result = await db
         .insert(callFlows)
         .values(flow)
         .returning();
@@ -898,7 +898,7 @@ export class SupabaseStorage implements IStorage {
 
   async updateCallFlow(id: number, updates: any): Promise<any | undefined> {
     try {
-      const result = await this.db
+      const result = await db
         .update(callFlows)
         .set(updates)
         .where(eq(callFlows.id, id))
@@ -913,7 +913,7 @@ export class SupabaseStorage implements IStorage {
 
   async deleteCallFlow(id: number): Promise<boolean> {
     try {
-      const result = await this.db
+      const result = await db
         .delete(callFlows)
         .where(eq(callFlows.id, id))
         .returning();
