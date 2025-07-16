@@ -673,7 +673,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
                             {nodeType.label}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-64">
+                        <TooltipContent side="right" className="max-w-64">
                           <p>{nodeType.description}</p>
                         </TooltipContent>
                       </Tooltip>
