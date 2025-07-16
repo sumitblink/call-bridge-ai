@@ -224,14 +224,14 @@ class HybridStorage implements IStorage {
 
   async addBuyerToCampaign(campaignId: number, buyerId: number, priority = 1): Promise<CampaignBuyer> {
     return this.executeOperation(
-      () => this.supabaseStorage.addBuyerToCampaign(campaignId, buyerId, priority),
+      () => this.databaseStorage.addBuyerToCampaign(campaignId, buyerId, priority),
       () => this.memStorage.addBuyerToCampaign(campaignId, buyerId, priority)
     );
   }
 
   async removeBuyerFromCampaign(campaignId: number, buyerId: number): Promise<boolean> {
     return this.executeOperation(
-      () => this.supabaseStorage.removeBuyerFromCampaign(campaignId, buyerId),
+      () => this.databaseStorage.removeBuyerFromCampaign(campaignId, buyerId),
       () => this.memStorage.removeBuyerFromCampaign(campaignId, buyerId)
     );
   }
@@ -239,14 +239,14 @@ class HybridStorage implements IStorage {
   // Call Routing & Ping/Post
   async pingBuyersForCall(campaignId: number, callData: any): Promise<Buyer[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.pingBuyersForCall(campaignId, callData),
+      () => this.databaseStorage.pingBuyersForCall(campaignId, callData),
       () => this.memStorage.pingBuyersForCall(campaignId, callData)
     );
   }
 
   async postCallToBuyer(buyerId: number, callData: any): Promise<boolean> {
     return this.executeOperation(
-      () => this.supabaseStorage.postCallToBuyer(buyerId, callData),
+      () => this.databaseStorage.postCallToBuyer(buyerId, callData),
       () => this.memStorage.postCallToBuyer(buyerId, callData)
     );
   }
@@ -254,35 +254,35 @@ class HybridStorage implements IStorage {
   // Agents (backward compatibility)
   async getAgents(): Promise<Agent[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getAgents(),
+      () => this.databaseStorage.getAgents(),
       () => this.memStorage.getAgents()
     );
   }
 
   async getAgent(id: number): Promise<Agent | undefined> {
     return this.executeOperation(
-      () => this.supabaseStorage.getAgent(id),
+      () => this.databaseStorage.getAgent(id),
       () => this.memStorage.getAgent(id)
     );
   }
 
   async createAgent(agent: InsertAgent): Promise<Agent> {
     return this.executeOperation(
-      () => this.supabaseStorage.createAgent(agent),
+      () => this.databaseStorage.createAgent(agent),
       () => this.memStorage.createAgent(agent)
     );
   }
 
   async updateAgent(id: number, agent: Partial<InsertAgent>): Promise<Agent | undefined> {
     return this.executeOperation(
-      () => this.supabaseStorage.updateAgent(id, agent),
+      () => this.databaseStorage.updateAgent(id, agent),
       () => this.memStorage.updateAgent(id, agent)
     );
   }
 
   async deleteAgent(id: number): Promise<boolean> {
     return this.executeOperation(
-      () => this.supabaseStorage.deleteAgent(id),
+      () => this.databaseStorage.deleteAgent(id),
       () => this.memStorage.deleteAgent(id)
     );
   }
@@ -297,21 +297,21 @@ class HybridStorage implements IStorage {
 
   async getCallsByCampaign(campaignId: number): Promise<Call[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getCallsByCampaign(campaignId),
+      () => this.databaseStorage.getCallsByCampaign(campaignId),
       () => this.memStorage.getCallsByCampaign(campaignId)
     );
   }
 
   async createCall(call: InsertCall): Promise<Call> {
     return this.executeOperation(
-      () => this.supabaseStorage.createCall(call),
+      () => this.databaseStorage.createCall(call),
       () => this.memStorage.createCall(call)
     );
   }
 
   async updateCall(id: number, updates: Partial<InsertCall>): Promise<Call | undefined> {
     return this.executeOperation(
-      () => this.supabaseStorage.updateCall(id, updates),
+      () => this.databaseStorage.updateCall(id, updates),
       () => this.memStorage.updateCall(id, updates)
     );
   }
@@ -319,14 +319,14 @@ class HybridStorage implements IStorage {
   // Call Logs
   async getCallLogs(callId: number): Promise<CallLog[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getCallLogs(callId),
+      () => this.databaseStorage.getCallLogs(callId),
       () => this.memStorage.getCallLogs(callId)
     );
   }
 
   async createCallLog(log: InsertCallLog): Promise<CallLog> {
     return this.executeOperation(
-      () => this.supabaseStorage.createCallLog(log),
+      () => this.databaseStorage.createCallLog(log),
       () => this.memStorage.createCallLog(log)
     );
   }
@@ -341,7 +341,7 @@ class HybridStorage implements IStorage {
     avgResponseTime: number;
   }> {
     return this.executeOperation(
-      () => this.supabaseStorage.getStats(),
+      () => this.databaseStorage.getStats(),
       () => this.memStorage.getStats()
     );
   }
@@ -349,84 +349,84 @@ class HybridStorage implements IStorage {
   // Integrations
   async getUrlParameters(): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getUrlParameters(),
+      () => this.databaseStorage.getUrlParameters(),
       () => this.memStorage.getUrlParameters()
     );
   }
 
   async createUrlParameter(data: any): Promise<any> {
     return this.executeOperation(
-      () => this.supabaseStorage.createUrlParameter(data),
+      () => this.databaseStorage.createUrlParameter(data),
       () => this.memStorage.createUrlParameter(data)
     );
   }
 
   async getTrackingPixels(): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getTrackingPixels(),
+      () => this.databaseStorage.getTrackingPixels(),
       () => this.memStorage.getTrackingPixels()
     );
   }
 
   async createTrackingPixel(data: any): Promise<any> {
     return this.executeOperation(
-      () => this.supabaseStorage.createTrackingPixel(data),
+      () => this.databaseStorage.createTrackingPixel(data),
       () => this.memStorage.createTrackingPixel(data)
     );
   }
 
   async updateTrackingPixel(id: number, data: any): Promise<any> {
     return this.executeOperation(
-      () => this.supabaseStorage.updateTrackingPixel(id, data),
+      () => this.databaseStorage.updateTrackingPixel(id, data),
       () => this.memStorage.updateTrackingPixel(id, data)
     );
   }
 
   async deleteTrackingPixel(id: number): Promise<boolean> {
     return this.executeOperation(
-      () => this.supabaseStorage.deleteTrackingPixel(id),
+      () => this.databaseStorage.deleteTrackingPixel(id),
       () => this.memStorage.deleteTrackingPixel(id)
     );
   }
 
   async getWebhookConfigs(): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getWebhookConfigs(),
+      () => this.databaseStorage.getWebhookConfigs(),
       () => this.memStorage.getWebhookConfigs()
     );
   }
 
   async createWebhookConfig(data: any): Promise<any> {
     return this.executeOperation(
-      () => this.supabaseStorage.createWebhookConfig(data),
+      () => this.databaseStorage.createWebhookConfig(data),
       () => this.memStorage.createWebhookConfig(data)
     );
   }
 
   async getApiAuthentications(): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getApiAuthentications(),
+      () => this.databaseStorage.getApiAuthentications(),
       () => this.memStorage.getApiAuthentications()
     );
   }
 
   async createApiAuthentication(data: any): Promise<any> {
     return this.executeOperation(
-      () => this.supabaseStorage.createApiAuthentication(data),
+      () => this.databaseStorage.createApiAuthentication(data),
       () => this.memStorage.createApiAuthentication(data)
     );
   }
 
   async getPlatformIntegrations(): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getPlatformIntegrations(),
+      () => this.databaseStorage.getPlatformIntegrations(),
       () => this.memStorage.getPlatformIntegrations()
     );
   }
 
   async createPlatformIntegration(data: any): Promise<any> {
     return this.executeOperation(
-      () => this.supabaseStorage.createPlatformIntegration(data),
+      () => this.databaseStorage.createPlatformIntegration(data),
       () => this.memStorage.createPlatformIntegration(data)
     );
   }
@@ -434,56 +434,56 @@ class HybridStorage implements IStorage {
   // Publishers
   async getPublishers(): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getPublishers(),
+      () => this.databaseStorage.getPublishers(),
       () => this.memStorage.getPublishers()
     );
   }
 
   async getPublisher(id: number): Promise<any | undefined> {
     return this.executeOperation(
-      () => this.supabaseStorage.getPublisher(id),
+      () => this.databaseStorage.getPublisher(id),
       () => this.memStorage.getPublisher(id)
     );
   }
 
   async createPublisher(publisher: any): Promise<any> {
     return this.executeOperation(
-      () => this.supabaseStorage.createPublisher(publisher),
+      () => this.databaseStorage.createPublisher(publisher),
       () => this.memStorage.createPublisher(publisher)
     );
   }
 
   async updatePublisher(id: number, publisher: any): Promise<any | undefined> {
     return this.executeOperation(
-      () => this.supabaseStorage.updatePublisher(id, publisher),
+      () => this.databaseStorage.updatePublisher(id, publisher),
       () => this.memStorage.updatePublisher(id, publisher)
     );
   }
 
   async deletePublisher(id: number): Promise<boolean> {
     return this.executeOperation(
-      () => this.supabaseStorage.deletePublisher(id),
+      () => this.databaseStorage.deletePublisher(id),
       () => this.memStorage.deletePublisher(id)
     );
   }
 
   async getPublisherCampaigns(publisherId: number): Promise<any[]> {
     return this.executeOperation(
-      () => this.supabaseStorage.getPublisherCampaigns(publisherId),
+      () => this.databaseStorage.getPublisherCampaigns(publisherId),
       () => this.memStorage.getPublisherCampaigns(publisherId)
     );
   }
 
   async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any> {
     return this.executeOperation(
-      () => this.supabaseStorage.addPublisherToCampaign(publisherId, campaignId, customPayout),
+      () => this.databaseStorage.addPublisherToCampaign(publisherId, campaignId, customPayout),
       () => this.memStorage.addPublisherToCampaign(publisherId, campaignId, customPayout)
     );
   }
 
   async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
     return this.executeOperation(
-      () => this.supabaseStorage.removePublisherFromCampaign(publisherId, campaignId),
+      () => this.databaseStorage.removePublisherFromCampaign(publisherId, campaignId),
       () => this.memStorage.removePublisherFromCampaign(publisherId, campaignId)
     );
   }
