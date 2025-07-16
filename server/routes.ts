@@ -1117,6 +1117,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[Webhook RTB] Found campaign: ${campaign.name} (ID: ${campaign.id})`);
       console.log(`[Webhook RTB] RTB enabled: ${campaign.enableRtb}, RTB Router ID: ${campaign.rtbRouterId}`);
       
+      // Check if campaign has an active call flow first
+      console.log(`[Webhook RTB] Checking for call flows for user ${campaign.userId}`);
+      const callFlows = await storage.getCallFlows(campaign.userId);
+      console.log(`[Webhook RTB] Found ${callFlows.length} call flows:`, callFlows.map(f => ({id: f.id, name: f.name, campaignId: f.campaignId, isActive: f.isActive})));
+      
+      const activeFlow = callFlows.find(flow => {
+        if (flow.campaignId === campaign.id && flow.isActive) {
+          // Parse flow definition to check if it has nodes
+          try {
+            const flowDefData = flow.flowDefinition || flow.flow_definition;
+            const flowDefinition = typeof flowDefData === 'string' ? JSON.parse(flowDefData) : flowDefData;
+            const hasNodes = flowDefinition && flowDefinition.nodes && flowDefinition.nodes.length > 0;
+            return hasNodes;
+          } catch (e) {
+            console.log(`[Webhook RTB] Failed to parse flow definition for flow ${flow.id}:`, e);
+            return false;
+          }
+        }
+        return false;
+      });
+      console.log(`[Webhook RTB] Active flow for campaign ${campaign.id}:`, activeFlow ? {id: activeFlow.id, name: activeFlow.name} : 'None found');
+
+      if (activeFlow) {
+        console.log(`[Webhook RTB] Found active call flow: ${activeFlow.name} (ID: ${activeFlow.id})`);
+        
+        // Start flow execution
+        try {
+          const flowResult = await FlowExecutionEngine.startFlowExecution(
+            activeFlow.id,
+            CallSid,
+            fromNumber,
+            campaign.id
+          );
+
+          if (flowResult.success && flowResult.twimlResponse) {
+            console.log(`[Webhook RTB] Flow execution started successfully`);
+            return res.type('text/xml').send(flowResult.twimlResponse.twiml);
+          } else {
+            console.error(`[Webhook RTB] Flow execution failed: ${flowResult.error}`);
+            // Fall back to routing below
+          }
+        } catch (flowError) {
+          console.error(`[Webhook RTB] Flow execution error:`, flowError);
+          // Fall back to routing below
+        }
+      }
+      
       let routingMethod = 'traditional';
       let selectedBuyer = null;
       let routingData = {};
