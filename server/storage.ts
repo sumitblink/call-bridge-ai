@@ -148,6 +148,7 @@ export interface IStorage {
   // Campaign Pool Assignments
   getCampaignPools(campaignId: number): Promise<NumberPool[]>;
   getCampaignsByPool(poolId: number): Promise<Campaign[]>;
+  getCampaignByPoolId(poolId: number): Promise<Campaign | undefined>;
   assignPoolToCampaign(campaignId: number, poolId: number, priority?: number): Promise<CampaignPoolAssignment>;
   removePoolFromCampaign(campaignId: number, poolId: number): Promise<boolean>;
   
@@ -955,6 +956,94 @@ export class MemStorage implements IStorage {
 
   // Number Pools methods (placeholder for memory storage)
   async getNumberPools(userId?: number): Promise<any[]> {
+    return [];
+  }
+
+  async getNumberPool(id: number): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async createNumberPool(pool: any): Promise<any> {
+    return pool;
+  }
+
+  async updateNumberPool(id: number, pool: any): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async deleteNumberPool(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getPoolNumbers(poolId: number): Promise<any[]> {
+    return [];
+  }
+
+  async assignNumberToPool(poolId: number, phoneNumberId: number, priority?: number): Promise<any> {
+    return {};
+  }
+
+  async removeNumberFromPool(poolId: number, phoneNumberId: number): Promise<boolean> {
+    return false;
+  }
+
+  async getNumberPoolAssignments(phoneNumberId: number): Promise<any[]> {
+    return [];
+  }
+
+  async getPoolAssignedCount(poolId: number): Promise<number> {
+    return 0;
+  }
+
+  async getCampaignPools(campaignId: number): Promise<any[]> {
+    return [];
+  }
+
+  async getCampaignsByPool(poolId: number): Promise<Campaign[]> {
+    return [];
+  }
+
+  async getCampaignByPoolId(poolId: number): Promise<Campaign | undefined> {
+    return undefined;
+  }
+
+  async assignPoolToCampaign(campaignId: number, poolId: number, priority?: number): Promise<any> {
+    return {};
+  }
+
+  async removePoolFromCampaign(campaignId: number, poolId: number): Promise<boolean> {
+    return false;
+  }
+
+  async getPhoneNumber(id: number): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async createPhoneNumber(phoneNumber: any): Promise<any> {
+    return phoneNumber;
+  }
+
+  async updatePhoneNumber(id: number, phoneNumber: any): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async deletePhoneNumber(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getPhoneNumberByNumber(phoneNumber: string): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async assignPhoneNumberToCampaign(phoneNumberId: number, campaignId: number): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async unassignPhoneNumberFromCampaign(phoneNumberId: number): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async getUnassignedPhoneNumbers(userId?: number): Promise<any[]> {
     return [];
   }
 

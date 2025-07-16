@@ -793,6 +793,15 @@ export class SupabaseStorage implements IStorage {
     return result;
   }
 
+  async getCampaignByPoolId(poolId: number): Promise<Campaign | undefined> {
+    const result = await db
+      .select()
+      .from(campaigns)
+      .where(eq(campaigns.poolId, poolId))
+      .limit(1);
+    return result[0];
+  }
+
   async assignPoolToCampaign(campaignId: number, poolId: number, priority?: number): Promise<CampaignPoolAssignment> {
     const result = await db.insert(campaignPoolAssignments)
       .values({ campaignId, poolId, priority: priority || 1 })

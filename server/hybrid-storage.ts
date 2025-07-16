@@ -518,6 +518,34 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async getPhoneNumber(id: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getPhoneNumber(id),
+      () => this.memStorage.getPhoneNumber(id)
+    );
+  }
+
+  async createPhoneNumber(phoneNumber: any): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.createPhoneNumber(phoneNumber),
+      () => this.memStorage.createPhoneNumber(phoneNumber)
+    );
+  }
+
+  async updatePhoneNumber(id: number, phoneNumber: any): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.updatePhoneNumber(id, phoneNumber),
+      () => this.memStorage.updatePhoneNumber(id, phoneNumber)
+    );
+  }
+
+  async deletePhoneNumber(id: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.deletePhoneNumber(id),
+      () => this.memStorage.deletePhoneNumber(id)
+    );
+  }
+
   // Number Pools
   async getNumberPools(userId?: number): Promise<any[]> {
     return this.executeOperation(
@@ -526,10 +554,52 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async getNumberPool(id: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getNumberPool(id),
+      () => this.memStorage.getNumberPool(id)
+    );
+  }
+
+  async getPoolNumbers(poolId: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getPoolNumbers(poolId),
+      () => this.memStorage.getPoolNumbers(poolId)
+    );
+  }
+
+  async createNumberPool(pool: any): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.createNumberPool(pool),
+      () => this.memStorage.createNumberPool(pool)
+    );
+  }
+
+  async updateNumberPool(id: number, pool: any): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.updateNumberPool(id, pool),
+      () => this.memStorage.updateNumberPool(id, pool)
+    );
+  }
+
+  async deleteNumberPool(id: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.deleteNumberPool(id),
+      () => this.memStorage.deleteNumberPool(id)
+    );
+  }
+
   async getCampaignsByPool(poolId: number): Promise<Campaign[]> {
     return this.executeOperation(
       () => this.databaseStorage.getCampaignsByPool(poolId),
       () => this.memStorage.getCampaignsByPool(poolId)
+    );
+  }
+
+  async getCampaignByPoolId(poolId: number): Promise<Campaign | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getCampaignByPoolId(poolId),
+      () => this.memStorage.getCampaignByPoolId(poolId)
     );
   }
 
