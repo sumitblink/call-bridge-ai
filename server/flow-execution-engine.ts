@@ -139,8 +139,11 @@ export class FlowExecutionEngine {
         };
       }
 
+      // Parse flow definition (handle both string and object formats)
+      const flowDefinition = typeof flow.flowDefinition === 'string' ? JSON.parse(flow.flowDefinition) : flow.flowDefinition;
+      
       // Find target node
-      const targetNode = flow.nodes.find(node => node.id === nodeId);
+      const targetNode = flowDefinition.nodes.find(node => node.id === nodeId);
       if (!targetNode) {
         return {
           success: false,
@@ -155,7 +158,7 @@ export class FlowExecutionEngine {
       }
 
       // Execute node
-      const result = await this.executeNode(session, flow, targetNode, incomingData);
+      const result = await this.executeNode(session, flowDefinition, targetNode, incomingData);
       
       return {
         success: true,
@@ -197,8 +200,11 @@ export class FlowExecutionEngine {
         };
       }
 
+      // Parse flow definition (handle both string and object formats)
+      const flowDefinition = typeof flow.flowDefinition === 'string' ? JSON.parse(flow.flowDefinition) : flow.flowDefinition;
+      
       // Find current node
-      const currentNode = flow.nodes.find(node => node.id === nodeId);
+      const currentNode = flowDefinition.nodes.find(node => node.id === nodeId);
       if (!currentNode) {
         return {
           success: false,
@@ -213,7 +219,7 @@ export class FlowExecutionEngine {
       session.collectedData = { ...session.collectedData, ...processedResponse.collectedData };
 
       // Determine next node
-      const nextNodeId = this.determineNextNode(currentNode, processedResponse, flow);
+      const nextNodeId = this.determineNextNode(currentNode, processedResponse, flowDefinition);
       
       if (!nextNodeId) {
         // End of flow
@@ -465,9 +471,11 @@ export class FlowExecutionEngine {
   private static processNodeResponse(node: FlowNode, response: any): any {
     switch (node.type) {
       case 'ivr_menu':
+      case 'menu':  // Visual flow editor uses 'menu' type
         return this.processIVRResponse(node, response);
       
       case 'gather_input':
+      case 'gather':  // Visual flow editor uses 'gather' type
         return this.processGatherResponse(node, response);
       
       default:
@@ -480,7 +488,7 @@ export class FlowExecutionEngine {
    */
   private static processIVRResponse(node: FlowNode, response: any): any {
     const config = node.data.config || {};
-    const menuOptions = config.menuOptions || [];
+    const menuOptions = config.options || config.menuOptions || [];  // Visual flow editor uses 'options'
     const selectedKey = response.Digits || response.SpeechResult;
 
     // Find matching menu option
@@ -525,27 +533,30 @@ export class FlowExecutionEngine {
   private static determineNextNode(currentNode: FlowNode, processedResponse: any, flow: CallFlowDefinition): string | null {
     switch (currentNode.type) {
       case 'ivr_menu':
-        return this.determineIVRNextNode(currentNode, processedResponse);
+      case 'menu':  // Visual flow editor uses 'menu' type
+        return this.determineIVRNextNode(currentNode, processedResponse, flow);
       
       case 'gather_input':
-        return this.determineGatherNextNode(currentNode, processedResponse);
+      case 'gather':  // Visual flow editor uses 'gather' type
+        return this.determineGatherNextNode(currentNode, processedResponse, flow);
       
       case 'business_hours':
-        return this.determineBusinessHoursNextNode(currentNode);
+        return this.determineBusinessHoursNextNode(currentNode, flow);
       
       case 'traffic_splitter':
         return this.determineTrafficSplitterNextNode(currentNode);
       
       default:
-        // Default behavior: go to first connected node
-        return currentNode.connections[0] || null;
+        // Default behavior: go to first connected node using flow connections
+        const nextConnection = flow.connections.find(conn => conn.source === currentNode.id);
+        return nextConnection ? nextConnection.target : null;
     }
   }
 
   /**
    * Determine next node for IVR menu
    */
-  private static determineIVRNextNode(node: FlowNode, processedResponse: any): string | null {
+  private static determineIVRNextNode(node: FlowNode, processedResponse: any, flow: CallFlowDefinition): string | null {
     if (!processedResponse.isValid) {
       // Invalid selection - retry current node or go to error path
       return node.id; // Retry current node
@@ -556,32 +567,40 @@ export class FlowExecutionEngine {
       return selectedOption.targetNodeId;
     }
 
-    // Default to first connection
-    return node.connections[0] || null;
+    // Default to first connection using flow connections
+    const nextConnection = flow.connections.find(conn => conn.source === node.id);
+    return nextConnection ? nextConnection.target : null;
   }
 
   /**
    * Determine next node for gather input
    */
-  private static determineGatherNextNode(node: FlowNode, processedResponse: any): string | null {
+  private static determineGatherNextNode(node: FlowNode, processedResponse: any, flow: CallFlowDefinition): string | null {
     if (!processedResponse.isValid) {
       // No input received - go to timeout path or retry
-      return node.connections[1] || node.connections[0] || null;
+      const connections = flow.connections.filter(conn => conn.source === node.id);
+      return connections[1] ? connections[1].target : (connections[0] ? connections[0].target : null);
     }
 
     // Valid input - continue to next node
-    return node.connections[0] || null;
+    const nextConnection = flow.connections.find(conn => conn.source === node.id);
+    return nextConnection ? nextConnection.target : null;
   }
 
   /**
    * Determine next node for business hours
    */
-  private static determineBusinessHoursNextNode(node: FlowNode): string | null {
+  private static determineBusinessHoursNextNode(node: FlowNode, flow: CallFlowDefinition): string | null {
     const config = node.data.config || {};
     const isBusinessHours = this.checkBusinessHours(config);
     
+    // Find connections for this node
+    const connections = flow.connections.filter(conn => conn.source === node.id);
+    
     // connections[0] = business hours path, connections[1] = after hours path
-    return isBusinessHours ? node.connections[0] : node.connections[1];
+    return isBusinessHours ? 
+      (connections[0] ? connections[0].target : null) : 
+      (connections[1] ? connections[1].target : (connections[0] ? connections[0].target : null));
   }
 
   /**

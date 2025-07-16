@@ -203,9 +203,9 @@ export class TwiMLGenerator {
 
     // Handle timeout
     twiml.say('We did not receive your input.');
-    const nextNodeId = node.connections[0];
-    if (nextNodeId) {
-      twiml.redirect(`${this.baseUrl}/api/flow/execute/${session.flowId}/node/${nextNodeId}?sessionId=${session.sessionId}`);
+    const nextConnection = flow.connections.find(conn => conn.source === node.id);
+    if (nextConnection) {
+      twiml.redirect(`${this.baseUrl}/api/flow/execute/${session.flowId}/node/${nextConnection.target}?sessionId=${session.sessionId}`);
     } else {
       twiml.hangup();
     }
@@ -238,10 +238,10 @@ export class TwiMLGenerator {
       }, message);
     }
 
-    // Move to next node
-    const nextNodeId = node.connections[0];
-    if (nextNodeId) {
-      twiml.redirect(`${this.baseUrl}/api/flow/execute/${session.flowId}/node/${nextNodeId}?sessionId=${session.sessionId}`);
+    // Move to next node using flow connections
+    const nextConnection = flow.connections.find(conn => conn.source === node.id);
+    if (nextConnection) {
+      twiml.redirect(`${this.baseUrl}/api/flow/execute/${session.flowId}/node/${nextConnection.target}?sessionId=${session.sessionId}`);
     } else {
       twiml.hangup();
     }
@@ -271,7 +271,10 @@ export class TwiMLGenerator {
     };
 
     const isBusinessHours = this.checkBusinessHours(businessHours, timezone);
-    const nextNodeId = isBusinessHours ? node.connections[0] : node.connections[1];
+    const connections = flow.connections.filter(conn => conn.source === node.id);
+    const nextNodeId = isBusinessHours ? 
+      (connections[0] ? connections[0].target : null) : 
+      (connections[1] ? connections[1].target : (connections[0] ? connections[0].target : null));
 
     if (!nextNodeId) {
       const message = isBusinessHours ? 
@@ -369,7 +372,8 @@ export class TwiMLGenerator {
       }
     }
 
-    const nextNodeId = selectedPath.nodeId || node.connections[0];
+    const nextConnection = flow.connections.find(conn => conn.source === node.id);
+    const nextNodeId = selectedPath.nodeId || (nextConnection ? nextConnection.target : null);
     if (!nextNodeId) {
       twiml.hangup();
       return { twiml: twiml.toString() };
@@ -403,7 +407,8 @@ export class TwiMLGenerator {
     }
 
     // Continue to next node
-    const nextNodeId = node.connections[0];
+    const nextConnection = flow.connections.find(conn => conn.source === node.id);
+    const nextNodeId = nextConnection ? nextConnection.target : null;
     if (nextNodeId) {
       return {
         twiml: twiml.toString(),
@@ -433,7 +438,8 @@ export class TwiMLGenerator {
     try {
       // Execute custom JavaScript logic
       const result = this.executeCustomScript(customScript, session, node);
-      const nextNodeId = result.nextNodeId || node.connections[0];
+      const nextConnection = flow.connections.find(conn => conn.source === node.id);
+      const nextNodeId = result.nextNodeId || (nextConnection ? nextConnection.target : null);
 
       if (result.twimlActions) {
         // Apply custom TwiML actions
