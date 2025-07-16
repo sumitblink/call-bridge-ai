@@ -847,40 +847,82 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
-  // Call Flow methods (placeholder - database schema not yet migrated)
+  // Call Flow methods - PostgreSQL implementation
   async getCallFlows(userId?: number): Promise<any[]> {
-    // Return empty array until database schema is migrated
-    return [];
+    try {
+      let query = this.db.select().from(callFlows);
+      
+      if (userId) {
+        query = query.where(eq(callFlows.userId, userId));
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Error fetching call flows:', error);
+      // Return empty array if database error occurs
+      return [];
+    }
   }
 
   async getCallFlow(id: number): Promise<any | undefined> {
-    // Return undefined until database schema is migrated
-    return undefined;
+    try {
+      const result = await this.db
+        .select()
+        .from(callFlows)
+        .where(eq(callFlows.id, id))
+        .limit(1);
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching call flow:', error);
+      return undefined;
+    }
   }
 
   async createCallFlow(flow: any): Promise<any> {
-    // Return mock flow until database schema is migrated
-    return {
-      id: Date.now(),
-      ...flow,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    try {
+      const result = await this.db
+        .insert(callFlows)
+        .values(flow)
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating call flow:', error);
+      throw error;
+    }
   }
 
-  async updateCallFlow(id: number, flow: any): Promise<any | undefined> {
-    // Return updated flow until database schema is migrated
-    return {
-      id,
-      ...flow,
-      updatedAt: new Date()
-    };
+  async updateCallFlow(id: number, updates: any): Promise<any | undefined> {
+    try {
+      const result = await this.db
+        .update(callFlows)
+        .set(updates)
+        .where(eq(callFlows.id, id))
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error updating call flow:', error);
+      return undefined;
+    }
   }
 
   async deleteCallFlow(id: number): Promise<boolean> {
-    // Return true until database schema is migrated
-    return true;
+    try {
+      const result = await this.db
+        .delete(callFlows)
+        .where(eq(callFlows.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting call flow:', error);
+      return false;
+    }
   }
+
+
 
   // Feedback methods
   async createFeedback(feedbackData: InsertFeedback): Promise<Feedback> {

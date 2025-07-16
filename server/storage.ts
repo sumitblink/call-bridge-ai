@@ -975,39 +975,52 @@ export class MemStorage implements IStorage {
     return [];
   }
 
-  // Call Flow methods (placeholder for memory storage)
+  // Call Flow methods - In-memory storage implementation
+  private callFlows: any[] = [];
+
   async getCallFlows(userId?: number): Promise<any[]> {
-    // For memory storage, return empty array as we don't persist call flows
-    return [];
+    // Filter by userId if provided
+    if (userId) {
+      return this.callFlows.filter(flow => flow.userId === userId);
+    }
+    return this.callFlows;
   }
 
   async getCallFlow(id: number): Promise<any | undefined> {
-    // For memory storage, return undefined as we don't persist call flows
-    return undefined;
+    return this.callFlows.find(flow => flow.id === id);
   }
 
   async createCallFlow(flow: any): Promise<any> {
-    // For memory storage, return the flow with an ID
-    return {
+    const newFlow = {
       id: Date.now(),
       ...flow,
       createdAt: new Date(),
       updatedAt: new Date()
     };
+    this.callFlows.push(newFlow);
+    return newFlow;
   }
 
-  async updateCallFlow(id: number, flow: any): Promise<any | undefined> {
-    // For memory storage, return the updated flow
-    return {
-      id,
-      ...flow,
-      updatedAt: new Date()
-    };
+  async updateCallFlow(id: number, updates: any): Promise<any | undefined> {
+    const index = this.callFlows.findIndex(flow => flow.id === id);
+    if (index !== -1) {
+      this.callFlows[index] = {
+        ...this.callFlows[index],
+        ...updates,
+        updatedAt: new Date()
+      };
+      return this.callFlows[index];
+    }
+    return undefined;
   }
 
   async deleteCallFlow(id: number): Promise<boolean> {
-    // For memory storage, return true as if deleted
-    return true;
+    const index = this.callFlows.findIndex(flow => flow.id === id);
+    if (index !== -1) {
+      this.callFlows.splice(index, 1);
+      return true;
+    }
+    return false;
   }
 }
 
