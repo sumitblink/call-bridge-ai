@@ -526,6 +526,13 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async getCampaignsByPool(poolId: number): Promise<Campaign[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getCampaignsByPool(poolId),
+      () => this.memStorage.getCampaignsByPool(poolId)
+    );
+  }
+
   // RTB methods - add missing methods
   async getRtbTargets(userId?: number): Promise<any[]> {
     return this.executeOperation(

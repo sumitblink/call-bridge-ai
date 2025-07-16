@@ -65,7 +65,12 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
     queryKey: ["/api/number-pools", "available", campaignId],
     queryFn: async () => {
       const response = await fetch(`/api/number-pools?available=true&excludeCampaign=${campaignId}`);
-      return response.json();
+      if (!response.ok) {
+        console.error('Error fetching number pools:', response.status, response.statusText);
+        return [];
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -321,7 +326,7 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="none">No pool selected</SelectItem>
-                            {numberPools.map((pool: any) => (
+                            {Array.isArray(numberPools) && numberPools.map((pool: any) => (
                               <SelectItem key={pool.id} value={pool.id.toString()}>
                                 {pool.name} ({pool.poolSize} numbers)
                               </SelectItem>
