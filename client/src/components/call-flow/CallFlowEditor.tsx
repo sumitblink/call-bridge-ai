@@ -60,6 +60,8 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   const [connectionSource, setConnectionSource] = useState<string | null>(null);
   const [draggedNode, setDraggedNode] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState<string>('');
   const { toast } = useToast();
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -200,6 +202,11 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   };
 
   const handleNodeClick = (node: FlowNode) => {
+    // Cancel any ongoing label editing
+    if (editingNodeId) {
+      handleFinishLabelEdit();
+    }
+    
     if (isConnecting && connectionSource && connectionSource !== node.id) {
       // Create connection
       const newConnection: FlowConnection = {
@@ -299,6 +306,32 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
     setConnections(connections.filter(c => c.id !== connectionId));
   };
 
+  const handleStartLabelEdit = (node: FlowNode) => {
+    setEditingNodeId(node.id);
+    setEditingLabel(node.data.label);
+  };
+
+  const handleLabelChange = (value: string) => {
+    setEditingLabel(value);
+  };
+
+  const handleFinishLabelEdit = () => {
+    if (editingNodeId && editingLabel.trim()) {
+      setNodes(nodes.map(node => 
+        node.id === editingNodeId 
+          ? { ...node, data: { ...node.data, label: editingLabel.trim() } }
+          : node
+      ));
+    }
+    setEditingNodeId(null);
+    setEditingLabel('');
+  };
+
+  const handleCancelLabelEdit = () => {
+    setEditingNodeId(null);
+    setEditingLabel('');
+  };
+
   const handleSave = () => {
     if (!name) {
       toast({
@@ -351,7 +384,34 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
         onClick={() => handleNodeClick(node)}
         onDoubleClick={() => handleNodeDoubleClick(node)}
       >
-        <div className="text-sm font-medium">{node.data.label}</div>
+        {editingNodeId === node.id ? (
+          <input
+            type="text"
+            value={editingLabel}
+            onChange={(e) => handleLabelChange(e.target.value)}
+            onBlur={handleFinishLabelEdit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleFinishLabelEdit();
+              } else if (e.key === 'Escape') {
+                handleCancelLabelEdit();
+              }
+            }}
+            className="text-sm font-medium bg-transparent border-none outline-none text-center w-full"
+            autoFocus
+            onFocus={(e) => e.target.select()}
+          />
+        ) : (
+          <div 
+            className="text-sm font-medium cursor-pointer hover:bg-black/5 rounded px-1 py-0.5"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStartLabelEdit(node);
+            }}
+          >
+            {node.data.label}
+          </div>
+        )}
         <div className="text-xs text-gray-500 mt-1">{node.type}</div>
         
         {/* Connection handle */}
@@ -978,6 +1038,12 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
+            onClick={(e) => {
+              // Cancel editing if clicking on canvas (not on a node)
+              if (e.target === canvasRef.current && editingNodeId) {
+                handleFinishLabelEdit();
+              }
+            }}
           >
             {/* Grid background */}
             <div className="absolute inset-0 opacity-20" style={{
