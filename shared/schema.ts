@@ -686,6 +686,7 @@ export const callFlows = pgTable("call_flows", {
   
   // Flow Status & Settings
   status: varchar("status", { length: 50 }).default("draft").notNull(), // draft, active, paused, archived
+  isActive: boolean("is_active").default(false).notNull(),
   isTemplate: boolean("is_template").default(false).notNull(),
   templateCategory: varchar("template_category", { length: 100 }),
   

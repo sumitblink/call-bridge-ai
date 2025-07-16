@@ -312,8 +312,9 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
     const flowData = {
       name,
       description,
-      campaignId: campaignId ? parseInt(campaignId) : null,
+      campaignId: campaignId && campaignId !== 'none' ? parseInt(campaignId) : null,
       status: 'draft',
+      isActive: false,
       flowDefinition: {
         nodes,
         connections

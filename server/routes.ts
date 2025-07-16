@@ -10,6 +10,8 @@ import { DNIService, type DNIRequest } from "./dni-service";
 import { TwilioTrunkService } from "./twilio-trunk-service";
 import { NumberProvisioningService } from "./number-provisioning";
 import { CallTrackingService } from "./call-tracking-service";
+import { FlowExecutionEngine } from "./flow-execution-engine";
+import { TwiMLGenerator } from "./twiml-generator";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { 
@@ -4673,6 +4675,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating call flow status:', error);
       res.status(500).json({ error: 'Failed to update call flow status' });
+    }
+  });
+
+  // Flow Execution API endpoints
+  app.post('/api/flow/start/:flowId', async (req: any, res) => {
+    try {
+      const flowId = parseInt(req.params.flowId);
+      const { callId, callerNumber, campaignId } = req.body;
+
+      if (!callId || !callerNumber) {
+        return res.status(400).json({ error: 'callId and callerNumber are required' });
+      }
+
+      const result = await FlowExecutionEngine.startFlowExecution(
+        flowId,
+        callId,
+        callerNumber,
+        campaignId
+      );
+
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      res.set('Content-Type', 'application/xml');
+      res.send(result.twimlResponse?.twiml || '<Response><Hangup/></Response>');
+    } catch (error) {
+      console.error('Error starting flow execution:', error);
+      res.status(500).set('Content-Type', 'application/xml').send('<Response><Hangup/></Response>');
+    }
+  });
+
+  app.post('/api/flow/execute/:flowId/node/:nodeId', async (req: any, res) => {
+    try {
+      const flowId = parseInt(req.params.flowId);
+      const nodeId = req.params.nodeId;
+      const sessionId = req.query.sessionId;
+
+      if (!sessionId) {
+        return res.status(400).json({ error: 'sessionId is required' });
+      }
+
+      const result = await FlowExecutionEngine.continueFlowExecution(
+        sessionId,
+        nodeId,
+        req.body
+      );
+
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      res.set('Content-Type', 'application/xml');
+      res.send(result.twimlResponse?.twiml || '<Response><Hangup/></Response>');
+    } catch (error) {
+      console.error('Error executing flow node:', error);
+      res.status(500).set('Content-Type', 'application/xml').send('<Response><Hangup/></Response>');
+    }
+  });
+
+  app.post('/api/flow/execute/:flowId/node/:nodeId/response', async (req: any, res) => {
+    try {
+      const flowId = parseInt(req.params.flowId);
+      const nodeId = req.params.nodeId;
+      const sessionId = req.query.sessionId;
+
+      if (!sessionId) {
+        return res.status(400).json({ error: 'sessionId is required' });
+      }
+
+      const result = await FlowExecutionEngine.handleNodeResponse(
+        sessionId,
+        nodeId,
+        req.body
+      );
+
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      res.set('Content-Type', 'application/xml');
+      res.send(result.twimlResponse?.twiml || '<Response><Hangup/></Response>');
+    } catch (error) {
+      console.error('Error handling node response:', error);
+      res.status(500).set('Content-Type', 'application/xml').send('<Response><Hangup/></Response>');
+    }
+  });
+
+  // Flow debugging endpoints
+  app.get('/api/flow/debug/sessions', requireAuth, async (req: any, res) => {
+    try {
+      const sessions = FlowExecutionEngine.getActiveSessions();
+      res.json(sessions);
+    } catch (error) {
+      console.error('Error fetching active sessions:', error);
+      res.status(500).json({ error: 'Failed to fetch active sessions' });
+    }
+  });
+
+  app.get('/api/flow/debug/session/:sessionId', requireAuth, async (req: any, res) => {
+    try {
+      const sessionId = req.params.sessionId;
+      const session = FlowExecutionEngine.getActiveSession(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+
+      res.json(session);
+    } catch (error) {
+      console.error('Error fetching session:', error);
+      res.status(500).json({ error: 'Failed to fetch session' });
     }
   });
 

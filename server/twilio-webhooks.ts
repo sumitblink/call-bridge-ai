@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { storage } from './storage';
+import { storage } from './hybrid-storage';
 import { CallRouter } from './call-routing';
 import { twilioService } from './twilio-service';
+import { FlowExecutionEngine } from './flow-execution-engine';
 
 export interface TwilioCallRequest {
   CallSid: string;
@@ -57,7 +58,38 @@ export async function handleIncomingCall(req: Request, res: Response) {
 
     console.log('[Webhook] Found campaign:', campaign.name, 'ID:', campaign.id);
 
-    // Use call router to select best buyer
+    // Check if campaign has an active call flow
+    const callFlows = await storage.getCallFlows(campaign.userId);
+    const activeFlow = callFlows.find(flow => 
+      flow.campaignId === campaign.id && 
+      flow.isActive && 
+      flow.nodes && 
+      flow.nodes.length > 0
+    );
+
+    if (activeFlow) {
+      console.log('[Webhook] Found active call flow:', activeFlow.name, 'ID:', activeFlow.id);
+      
+      // Start flow execution
+      const flowResult = await FlowExecutionEngine.startFlowExecution(
+        activeFlow.id,
+        callData.CallSid,
+        callData.From,
+        campaign.id
+      );
+
+      if (flowResult.success && flowResult.twimlResponse) {
+        console.log('[Webhook] Flow execution started successfully');
+        res.set('Content-Type', 'text/xml');
+        res.send(flowResult.twimlResponse.twiml);
+        return;
+      } else {
+        console.error('[Webhook] Flow execution failed:', flowResult.error);
+        // Fall back to traditional routing
+      }
+    }
+
+    // Use call router to select best buyer (fallback when no active flow)
     console.log('[Webhook] Starting buyer selection for campaign ID:', campaign.id);
     const routingResult = await CallRouter.selectBuyer(campaign.id, callData.From);
     console.log('[Webhook] Routing result:', routingResult);
