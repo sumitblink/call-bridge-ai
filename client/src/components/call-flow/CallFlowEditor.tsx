@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { Save, X, Play, Settings, Plus, Trash2, Move, GitBranch } from 'lucide-react';
+import { Save, X, Play, Settings, Plus, Trash2, Move, GitBranch, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,6 +62,10 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState<string>('');
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const { toast } = useToast();
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -91,11 +95,15 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   ];
 
   const handleAddNode = (type: string) => {
+    // Position new nodes relative to current zoom and pan
+    const baseX = (300 - panOffset.x) / zoomLevel;
+    const baseY = (200 - panOffset.y) / zoomLevel;
+    
     const newNode: FlowNode = {
       id: `node-${Date.now()}`,
       type: type as FlowNode['type'],
-      x: 300,
-      y: 200,
+      x: Math.max(0, baseX),
+      y: Math.max(0, baseY),
       data: { 
         label: `New ${type}`, 
         config: getDefaultConfig(type) 
@@ -257,9 +265,12 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
         const node = nodes.find(n => n.id === nodeId);
         if (node) {
           setDraggedNode(nodeId);
+          // Account for zoom and pan transformations
+          const adjustedX = (e.clientX - rect.left - panOffset.x) / zoomLevel;
+          const adjustedY = (e.clientY - rect.top - panOffset.y) / zoomLevel;
           setDragOffset({
-            x: e.clientX - rect.left - node.x,
-            y: e.clientY - rect.top - node.y
+            x: adjustedX - node.x,
+            y: adjustedY - node.y
           });
         }
       }
@@ -270,8 +281,11 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
     if (draggedNode) {
       const rect = canvasRef.current?.getBoundingClientRect();
       if (rect) {
-        const newX = e.clientX - rect.left - dragOffset.x;
-        const newY = e.clientY - rect.top - dragOffset.y;
+        // Account for zoom and pan transformations
+        const adjustedX = (e.clientX - rect.left - panOffset.x) / zoomLevel;
+        const adjustedY = (e.clientY - rect.top - panOffset.y) / zoomLevel;
+        const newX = adjustedX - dragOffset.x;
+        const newY = adjustedY - dragOffset.y;
         
         setNodes(nodes.map(node => 
           node.id === draggedNode 
@@ -330,6 +344,44 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   const handleCancelLabelEdit = () => {
     setEditingNodeId(null);
     setEditingLabel('');
+  };
+
+  // Zoom and Pan handlers
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.2, 2));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.2, 0.5));
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setZoomLevel(prev => Math.max(0.5, Math.min(2, prev + delta)));
+    }
+  };
+
+  const handlePanStart = (e: React.MouseEvent) => {
+    if (e.button === 1 || (e.button === 0 && e.ctrlKey)) { // Middle mouse or Ctrl+Left mouse
+      e.preventDefault();
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+    }
+  };
+
+  const handlePanMove = (e: React.MouseEvent) => {
+    if (isPanning) {
+      setPanOffset({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      });
+    }
+  };
+
+  const handlePanEnd = () => {
+    setIsPanning(false);
   };
 
   const handleSave = () => {
@@ -503,6 +555,19 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {/* Zoom Controls */}
+          <div className="flex items-center gap-1 border rounded-lg p-1">
+            <Button variant="ghost" size="sm" onClick={handleZoomOut} className="h-8 w-8 p-0">
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium px-2 min-w-[50px] text-center">
+              {Math.round(zoomLevel * 100)}%
+            </span>
+            <Button variant="ghost" size="sm" onClick={handleZoomIn} className="h-8 w-8 p-0">
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </div>
+          
           <Button variant="outline" className="flex items-center gap-2">
             <Play className="h-4 w-4" />
             Test Flow
@@ -1034,10 +1099,21 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
         <div className="flex-1 bg-gray-50 relative overflow-hidden">
           <div
             ref={canvasRef}
-            className="w-full h-full relative"
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
+            className="w-full h-full relative cursor-grab active:cursor-grabbing"
+            onMouseMove={(e) => {
+              handleMouseMove(e);
+              handlePanMove(e);
+            }}
+            onMouseUp={(e) => {
+              handleMouseUp(e);
+              handlePanEnd();
+            }}
+            onMouseDown={handlePanStart}
+            onMouseLeave={(e) => {
+              handleMouseUp(e);
+              handlePanEnd();
+            }}
+            onWheel={handleWheel}
             onClick={(e) => {
               // Cancel editing if clicking on canvas (not on a node)
               if (e.target === canvasRef.current && editingNodeId) {
@@ -1046,12 +1122,30 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             }}
           >
             {/* Grid background */}
-            <div className="absolute inset-0 opacity-20" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ddd' fill-opacity='0.4' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1'/%3E%3C/g%3E%3C/svg%3E")`,
-            }} />
+            <div 
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `
+                  linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                  linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
+                `,
+                backgroundSize: `${20 * zoomLevel}px ${20 * zoomLevel}px`,
+                backgroundPosition: `${panOffset.x}px ${panOffset.y}px`,
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: '0 0',
+                opacity: 0.6
+              }}
+            />
             
             {/* SVG for connections */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
+            <svg 
+              className="absolute inset-0 w-full h-full pointer-events-none" 
+              style={{ 
+                zIndex: 1,
+                transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
+                transformOrigin: '0 0'
+              }}
+            >
               <defs>
                 <marker
                   id="arrowhead"
@@ -1071,7 +1165,14 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             </svg>
             
             {/* Nodes */}
-            <div className="relative" style={{ zIndex: 2 }}>
+            <div 
+              className="relative" 
+              style={{ 
+                zIndex: 2,
+                transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
+                transformOrigin: '0 0'
+              }}
+            >
               {nodes.map(renderNode)}
             </div>
             
