@@ -546,10 +546,11 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
         <path
           d={pathData}
           stroke="#3b82f6"
-          strokeWidth="3"
+          strokeWidth="4"
           fill="none"
           markerEnd="url(#arrowhead)"
-          className="drop-shadow-sm"
+          className="drop-shadow-md"
+          style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
         />
         {editingConnectionId === connection.id ? (
           <foreignObject x={midX - 50} y={midY - 35} width="100" height="20">
@@ -571,15 +572,29 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             />
           </foreignObject>
         ) : (
-          <text
-            x={midX}
-            y={midY - 25}
-            textAnchor="middle"
-            className="text-xs fill-blue-600 font-medium cursor-pointer hover:fill-blue-800"
-            onClick={() => handleStartConnectionLabelEdit(connection)}
-          >
-            {connection.label || 'Click to edit'}
-          </text>
+          <g onClick={() => handleStartConnectionLabelEdit(connection)}>
+            {/* Background rectangle for better visibility */}
+            <rect
+              x={midX - 45}
+              y={midY - 35}
+              width="90"
+              height="20"
+              fill="white"
+              stroke="#3b82f6"
+              strokeWidth="1"
+              rx="4"
+              className="cursor-pointer hover:fill-blue-50"
+            />
+            <text
+              x={midX}
+              y={midY - 22}
+              textAnchor="middle"
+              className="text-xs fill-blue-600 font-medium cursor-pointer hover:fill-blue-800"
+              style={{ pointerEvents: 'none' }}
+            >
+              {connection.label || 'Click to edit'}
+            </text>
+          </g>
         )}
         <circle
           cx={midX}
@@ -1230,7 +1245,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             <svg 
               className="absolute inset-0 w-full h-full pointer-events-none" 
               style={{ 
-                zIndex: 1,
+                zIndex: 5,
                 transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
                 transformOrigin: '0 0'
               }}
@@ -1257,7 +1272,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             <div 
               className="relative" 
               style={{ 
-                zIndex: 2,
+                zIndex: 10,
                 transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
                 transformOrigin: '0 0'
               }}
