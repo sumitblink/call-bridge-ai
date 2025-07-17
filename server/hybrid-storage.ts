@@ -625,6 +625,13 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async getRtbBidRequest(requestId: string): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getRtbBidRequest(requestId),
+      () => this.memStorage.getRtbBidRequest ? this.memStorage.getRtbBidRequest(requestId) : undefined
+    );
+  }
+
   async getRtbBidResponses(requestId: string): Promise<any[]> {
     return this.executeOperation(
       () => this.databaseStorage.getRtbBidResponses(requestId),
@@ -636,6 +643,13 @@ class HybridStorage implements IStorage {
     return this.executeOperation(
       () => this.databaseStorage.getRtbRouters(userId),
       () => this.memStorage.getRtbRouters(userId)
+    );
+  }
+
+  async getRtbRouterAssignments(routerId: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getRtbRouterAssignments(routerId),
+      () => this.memStorage.getRtbRouterAssignments ? this.memStorage.getRtbRouterAssignments(routerId) : []
     );
   }
 
