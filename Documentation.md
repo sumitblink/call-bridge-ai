@@ -14,11 +14,12 @@
 10. [Twilio Integration](#twilio-integration)
 11. [API Documentation](#api-documentation)
 12. [Database Schema](#database-schema)
-13. [Security and Multi-Tenancy](#security-and-multi-tenancy)
-14. [Setup and Configuration](#setup-and-configuration)
-15. [Testing Guide](#testing-guide)
-16. [Troubleshooting](#troubleshooting)
-17. [Recent Updates](#recent-updates)
+13. [AI Help System](#ai-help-system)
+14. [Security and Multi-Tenancy](#security-and-multi-tenancy)
+15. [Setup and Configuration](#setup-and-configuration)
+16. [Testing Guide](#testing-guide)
+17. [Troubleshooting](#troubleshooting)
+18. [Recent Updates](#recent-updates)
 
 ---
 
@@ -37,6 +38,7 @@ CallCenter Pro is a production-ready, enterprise-grade call center management pl
 - **Twilio Integration**: Full voice communication capabilities with webhooks
 - **Analytics & Reporting**: Comprehensive performance tracking with target name resolution
 - **Multi-Tenant Security**: Complete user isolation with secure data access controls
+- **AI-Powered Help System**: Claude-powered chatbot with project-specific knowledge and code search
 - **Enterprise Features**: Production-ready with comprehensive security testing
 
 ### Target Users
@@ -1005,6 +1007,76 @@ SESSION_SECRET=your_session_secret
 
 ---
 
+## AI Help System
+
+### Overview
+
+The AI Help System is a Claude-powered intelligent assistant integrated into the CallCenter Pro platform. It provides context-aware support and answers user questions about system features, functionality, and troubleshooting.
+
+### Key Features
+
+**Project-Specific Knowledge:**
+- Comprehensive understanding of CallCenter Pro features and capabilities
+- Real-time access to current system documentation and code
+- Context-aware responses based on actual implementation
+- Dynamic search through project files and configurations
+
+**Intelligent Assistance:**
+- Campaign management guidance
+- RTB system explanations
+- Call routing troubleshooting
+- Feature usage instructions
+- Technical problem resolution
+
+### How It Works
+
+**Knowledge Sources:**
+1. **Documentation Files** - Reads current `Documentation.md` and `replit.md` files
+2. **Code Search** - Searches through actual project code for specific implementations
+3. **System Context** - Understands current project state and recent changes
+4. **User Interactions** - Learns from conversation history to provide better responses
+
+**Update Mechanism:**
+- Knowledge updates automatically when documentation files are modified
+- Code search provides real-time access to current implementations
+- System stays current with project changes and new features
+- Conversation history stored for continuous improvement
+
+### Usage
+
+**Accessing the Assistant:**
+1. Navigate to the Help section in the main navigation
+2. Type your question in the chat interface
+3. Receive context-aware responses about your specific system
+
+**Best Practices:**
+- Ask specific questions about features you're using
+- Mention error messages or issues you're experiencing
+- Request guidance on complex configurations
+- Use it for troubleshooting call routing or RTB issues
+
+**Response Quality:**
+- Provides accurate information based on actual code and documentation
+- Uses simple, non-technical language suitable for business users
+- Includes relevant examples and step-by-step instructions
+- Fallback responses available if Claude API is unavailable
+
+### Technical Implementation
+
+**Architecture:**
+- ChatbotService handles conversation processing
+- File search capabilities for code analysis
+- Project context injection for accurate responses
+- Session management for conversation continuity
+
+**Integration:**
+- Powered by Claude Sonnet 4 for intelligent responses
+- Integrated with project documentation system
+- Connected to conversation storage for feedback
+- Supports both technical and business user questions
+
+---
+
 ## Testing Guide
 
 ### Unit Testing
@@ -1103,6 +1175,27 @@ DEBUG=* npm run dev
 ---
 
 ## Recent Updates
+
+### July 17, 2025 - Call Flow Editor Enhancements
+
+**✓ Enhanced Configuration Dialogs**
+- Added comprehensive configuration dialogs for Action, Condition, and End node types
+- Action nodes now support Route to Buyer, Hangup, Transfer Call, and Send to Voicemail with dynamic form fields
+- Condition nodes support caller ID rules, time-based routing, and custom JavaScript conditions
+- End nodes support hangup and message playback configurations
+- All configuration dialogs provide proper form validation and user feedback
+
+**✓ Interactive Connection Editing**
+- Implemented inline connection label editing with "Click to edit" prompts
+- Added keyboard support (Enter to save, Escape to cancel)
+- Connection labels now show helpful prompts when empty
+- Fixed node configuration dialog opening issues for all node types
+
+**✓ Professional Interface Standards**
+- Enhanced professional interface standards matching enterprise routing management systems
+- Improved user experience with intuitive editing workflows
+- All node types now have proper configuration capabilities
+- Fixed UI consistency issues across all configuration dialogs
 
 ### July 16, 2025 - Phase 3 Complete: Advanced Features Implemented
 

@@ -113,6 +113,15 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 17, 2025: **CALL FLOW EDITOR ENHANCEMENTS** - Enhanced user experience with professional configuration dialogs and interactive editing
+  - Added comprehensive configuration dialogs for Action, Condition, and End node types
+  - Action nodes now support Route to Buyer, Hangup, Transfer Call, and Send to Voicemail with dynamic form fields
+  - Condition nodes support caller ID rules, time-based routing, and custom JavaScript conditions
+  - End nodes support hangup and message playback configurations
+  - Implemented inline connection label editing with "Click to edit" prompts and keyboard support
+  - Fixed node configuration dialog opening issues for all node types
+  - Enhanced professional interface standards matching Ringba's routing management system
+  - All configuration dialogs now provide proper form validation and user feedback
 - July 16, 2025: **CRITICAL TwiML RESPONSE BUG FIXED** - Resolved "application error" issue during real phone calls
   - Fixed pool webhook handler returning JSON-wrapped TwiML instead of raw XML content
   - Updated webhook response extraction to properly extract `.twiml` property from FlowExecutionEngine response
