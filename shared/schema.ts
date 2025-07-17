@@ -872,6 +872,19 @@ export const rtbTargets = pgTable("rtb_targets", {
   maxBidAmount: decimal("max_bid_amount", { precision: 10, scale: 2 }).default("100.00").notNull(),
   currency: varchar("currency", { length: 3 }).default("USD").notNull(),
   
+  // Phase 1: Advanced Bidding Features
+  bidStrategy: varchar("bid_strategy", { length: 50 }).default("fixed").notNull(), // fixed, percentage, dynamic, auto
+  bidFloor: decimal("bid_floor", { precision: 10, scale: 2 }), // minimum acceptable bid
+  bidCeiling: decimal("bid_ceiling", { precision: 10, scale: 2 }), // maximum bid limit
+  geoBidMultipliers: json("geo_bid_multipliers"), // {CA: 1.5, NY: 1.3, TX: 1.1}
+  performanceBidAdjustment: boolean("performance_bid_adjustment").default(false).notNull(),
+  
+  // Auto-bidding settings
+  targetConversionRate: decimal("target_conversion_rate", { precision: 5, scale: 2 }), // 0.00 to 100.00
+  maxCostPerAcquisition: decimal("max_cost_per_acquisition", { precision: 10, scale: 2 }),
+  bidAdjustmentFrequency: integer("bid_adjustment_frequency").default(3600).notNull(), // seconds
+  enableAutoBidding: boolean("enable_auto_bidding").default(false).notNull(),
+  
   // Advanced Response Parsing Fields
   bidAmountPath: varchar("bid_amount_path", { length: 255 }),
   destinationNumberPath: varchar("destination_number_path", { length: 255 }),
@@ -1052,6 +1065,17 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
   minBidAmount: z.number().min(0).optional(),
   maxBidAmount: z.number().min(0).optional(),
   currency: z.string().length(3).optional(),
+  
+  // Phase 1: Advanced Bidding Features validation
+  bidStrategy: z.enum(["fixed", "percentage", "dynamic", "auto"]).optional(),
+  bidFloor: z.number().min(0).optional(),
+  bidCeiling: z.number().min(0).optional(),
+  geoBidMultipliers: z.record(z.string(), z.number().min(0.1).max(10)).optional(),
+  performanceBidAdjustment: z.boolean().optional(),
+  targetConversionRate: z.number().min(0).max(100).optional(),
+  maxCostPerAcquisition: z.number().min(0).optional(),
+  bidAdjustmentFrequency: z.number().min(300).max(86400).optional(),
+  enableAutoBidding: z.boolean().optional(),
 });
 
 export const insertRtbRouterSchema = createInsertSchema(rtbRouters).omit({

@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { EnhancedRTBTargetDialog } from "@/components/rtb/EnhancedRTBTargetDialog";
+import { Phase1AdvancedBiddingDialog } from "@/components/rtb/Phase1AdvancedBiddingDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -54,6 +55,17 @@ const rtbTargetSchema = z.object({
   minBidAmount: z.number().min(0, "Minimum bid cannot be negative"),
   maxBidAmount: z.number().min(0, "Maximum bid cannot be negative"),
   currency: z.string().length(3, "Currency must be 3 characters"),
+  
+  // Phase 1: Advanced Bidding Features
+  bidStrategy: z.enum(["fixed", "percentage", "dynamic", "auto"]).optional(),
+  bidFloor: z.number().min(0, "Bid floor cannot be negative").optional(),
+  bidCeiling: z.number().min(0, "Bid ceiling cannot be negative").optional(),
+  geoBidMultipliers: z.record(z.string(), z.number().min(0.1).max(10)).optional(),
+  performanceBidAdjustment: z.boolean().optional(),
+  targetConversionRate: z.number().min(0, "Conversion rate cannot be negative").max(100, "Conversion rate cannot exceed 100%").optional(),
+  maxCostPerAcquisition: z.number().min(0, "Cost per acquisition cannot be negative").optional(),
+  bidAdjustmentFrequency: z.number().min(300, "Frequency must be at least 300 seconds").max(86400, "Frequency cannot exceed 86400 seconds").optional(),
+  enableAutoBidding: z.boolean().optional(),
 });
 
 type RtbRouter = {
@@ -96,6 +108,17 @@ type RtbTarget = {
   wonCalls: number;
   createdAt: string;
   updatedAt: string;
+  
+  // Phase 1: Advanced Bidding Features
+  bidStrategy?: string;
+  bidFloor?: number;
+  bidCeiling?: number;
+  geoBidMultipliers?: Record<string, number>;
+  performanceBidAdjustment?: boolean;
+  targetConversionRate?: number;
+  maxCostPerAcquisition?: number;
+  bidAdjustmentFrequency?: number;
+  enableAutoBidding?: boolean;
 };
 
 type RtbBidRequest = {
@@ -914,6 +937,8 @@ const RTBTargetsTab = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState<RtbTarget | null>(null);
   const [testingTarget, setTestingTarget] = useState<RtbTarget | null>(null);
+  const [advancedBiddingTarget, setAdvancedBiddingTarget] = useState<RtbTarget | null>(null);
+  const [isAdvancedBiddingDialogOpen, setIsAdvancedBiddingDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -960,6 +985,29 @@ const RTBTargetsTab = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
       setEditingTarget(null);
       toast({ title: "Success", description: "RTB target updated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const advancedBiddingMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await fetch(`/api/rtb/targets/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update advanced bidding configuration');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
+      setAdvancedBiddingTarget(null);
+      setIsAdvancedBiddingDialogOpen(false);
+      toast({ title: "Success", description: "Advanced bidding configuration updated successfully" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -1126,6 +1174,15 @@ const RTBTargetsTab = () => {
     }
   };
 
+  const handleAdvancedBiddingSave = (data: any) => {
+    if (advancedBiddingTarget) {
+      advancedBiddingMutation.mutate({ 
+        id: advancedBiddingTarget.id, 
+        data 
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -1180,6 +1237,13 @@ const RTBTargetsTab = () => {
         }}
         onSubmit={onSubmit}
         editingTarget={editingTarget}
+      />
+
+      <Phase1AdvancedBiddingDialog
+        open={isAdvancedBiddingDialogOpen}
+        onOpenChange={setIsAdvancedBiddingDialogOpen}
+        target={advancedBiddingTarget}
+        onSave={handleAdvancedBiddingSave}
       />
 
       <Card>
@@ -1257,6 +1321,19 @@ const RTBTargetsTab = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setAdvancedBiddingTarget(target);
+                              setIsAdvancedBiddingDialogOpen(true);
+                            }}
+                            className="h-8 px-2"
+                            title="Advanced Bidding Configuration"
+                          >
+                            <TrendingUp className="w-4 h-4 mr-1" />
+                            Advanced
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
