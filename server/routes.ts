@@ -916,9 +916,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Import RTB service and conduct bidding
           const { RTBService } = await import('./rtb-service');
           
-          // Prepare bid request for RTB
+          // Prepare bid request for RTB (use CallSid to ensure same call gets same request ID)
           const bidRequest = {
-            requestId: `pool_${poolId}_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+            requestId: `pool_${poolId}_${CallSid}`,
             campaignId: campaign.id,
             campaignRtbId: campaign.rtbId || undefined, // Use RTB ID for external bid requests
             callerId: fromNumber,
@@ -1181,9 +1181,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Import RTB service and conduct bidding
           const { RTBService } = await import('./rtb-service');
           
-          // Prepare bid request for RTB
+          // Prepare bid request for RTB (use CallSid to ensure same call gets same request ID)
           const bidRequest = {
-            requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+            requestId: `req_${CallSid}`,
             campaignId: campaign.id,
             campaignRtbId: campaign.rtbId || undefined, // Use RTB ID for external bid requests
             callerId: fromNumber,

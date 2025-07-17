@@ -1310,6 +1310,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(rtbBidRequests);
   }
 
+  async getRtbBidRequest(requestId: string): Promise<RtbBidRequest | undefined> {
+    const [request] = await db.select().from(rtbBidRequests).where(eq(rtbBidRequests.requestId, requestId));
+    return request || undefined;
+  }
+
   async createRtbBidRequest(request: InsertRtbBidRequest): Promise<RtbBidRequest> {
     const [newRequest] = await db.insert(rtbBidRequests).values(request).returning();
     return newRequest;
