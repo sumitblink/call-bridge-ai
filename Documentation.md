@@ -508,78 +508,243 @@ The system supports multiple response formats through configurable JSONPath expr
 
 ### Overview
 
-The Advanced Call Flow System is a comprehensive visual flow builder that enables sophisticated call routing with enterprise-level features. This system supports complex Interactive Voice Response (IVR) scenarios, business hours management, traffic splitting, and comprehensive tracking integration.
+The Advanced Call Flow System is a comprehensive visual flow builder that enables sophisticated call routing with enterprise-level features. Located at `/call-flows`, this system provides a professional interface for creating complex Interactive Voice Response (IVR) scenarios, business hours management, traffic splitting, and comprehensive tracking integration.
 
-### Key Features
+### Access and Usage
 
-**✓ Phase 1: Core Flow Management**
-- Visual flow builder with drag-and-drop interface
-- 8 specialized node types for different call scenarios
+**Navigation:** Access through the sidebar menu "Call Flows" or direct URL `/call-flows`
+
+**Interface Features:**
+- Visual drag-and-drop flow builder with professional grid layout
+- Real-time connection editing with inline label modification
+- Comprehensive node configuration dialogs
+- Zoom and pan controls for large flow management
+- Professional dark theme matching enterprise standards
+- Export/import functionality for flow templates
+
+### Key System Capabilities
+
+**✓ Visual Flow Builder**
+- Professional drag-and-drop interface with snap-to-grid functionality
+- 11 specialized node types for different call routing scenarios
 - Real-time flow execution with TwiML generation
 - Session management for multi-step interactions
+- Connection labels with inline editing capabilities
 
-**✓ Phase 2: Live IVR Integration**
-- Complete webhook-to-TwiML pipeline
-- Live call flow execution with Twilio
+**✓ Live IVR Integration**
+- Complete webhook-to-TwiML pipeline for real-time call processing
+- Live call flow execution with Twilio voice integration
 - Session persistence across IVR interactions
-- Response processing for user input
+- Response processing for DTMF input and speech recognition
 
-**✓ Phase 3: Advanced Enterprise Features**
-- Enhanced business hours with holiday support
+**✓ Enterprise-Level Features**
+- Enhanced business hours with holiday support and timezone awareness
 - Advanced traffic splitting with 4 distribution strategies
 - Comprehensive tracking integration with pixel firing
-- Production-ready advanced routing capabilities
+- Production-ready advanced routing capabilities matching platforms like Ringba
 
-### Node Types
+### Complete Node Reference
 
 #### 1. Start Node
-- Entry point for all call flows
-- Configurable with tracking pixels
-- Custom session initialization
+**Purpose:** Entry point for all call flows
+**Icon:** Play button (green circle)
+**Configuration:** No configuration required - automatically created
+**Functionality:**
+- Initializes call session with unique UUID
+- Triggers analytics events for call flow start
+- Provides entry point for webhook processing
 
 #### 2. IVR Menu Node
-- Interactive voice response with multiple options
-- DTMF input handling
-- Timeout and retry logic
-- Invalid input handling
+**Purpose:** Interactive voice response with multiple menu options
+**Icon:** Menu bars
+**Configuration Options:**
+- **Basic Settings:**
+  - Welcome Message: Custom greeting text (e.g., "Press 1 for sales, 2 for support")
+  - Timeout: Wait time in seconds (default: 10)
+  - Max Retries: Number of retry attempts (default: 3)
+- **Menu Options:**
+  - Key: DTMF digit (1-9, 0, *, #)
+  - Label: Description of option
+  - Action: Route to specific destination
+- **Advanced Settings:**
+  - Invalid input handling
+  - Timeout behavior configuration
+  - Voice settings and language options
 
 #### 3. Gather Input Node
-- Collect caller information (digits or speech)
-- Validation patterns with regex support
-- Configurable timeout and retry attempts
-- Custom prompts and error messages
+**Purpose:** Collect caller information (digits or speech)
+**Icon:** Microphone
+**Configuration Options:**
+- **Input Settings:**
+  - Input Type: Digits, Speech, or Both
+  - Expected Length: Minimum/maximum characters
+  - Validation Pattern: Regular expression for validation
+- **Prompts:**
+  - Initial Prompt: "Please enter your phone number"
+  - Retry Prompt: "Invalid input, please try again"
+  - Error Prompt: "Maximum attempts reached"
+- **Advanced Settings:**
+  - Timeout configuration
+  - Speech recognition settings
+  - Input termination characters
 
 #### 4. Play Audio Node
-- Text-to-speech or audio URL playback
-- Voice selection and speed control
-- Loop and repeat options
-- Dynamic content with variables
+**Purpose:** Text-to-speech or audio URL playback
+**Icon:** Speaker
+**Configuration Options:**
+- **Content Settings:**
+  - Message Type: Text-to-Speech or Audio URL
+  - Text Content: Custom message text
+  - Audio URL: Direct link to audio file
+- **Voice Settings:**
+  - Voice Selection: Choose from available TTS voices
+  - Speed Control: Playback speed adjustment
+  - Language: Voice language selection
+- **Advanced Options:**
+  - Loop settings and repeat options
+  - Dynamic content with session variables
 
-#### 5. Business Hours Node (Enhanced Phase 3)
-- Timezone-aware time calculations
-- Holiday support with date-based exclusions
-- Multiple time ranges per day (lunch breaks)
-- Complex schedule management
-- Fallback routing for closed hours
+#### 5. Business Hours Node
+**Purpose:** Route calls based on business hours and schedules
+**Icon:** Clock
+**Configuration Options:**
+- **Schedule Settings:**
+  - Timezone: Geographic timezone (e.g., America/New_York)
+  - Business Hours: Monday-Sunday time ranges
+  - Multiple Time Ranges: Support for lunch breaks
+- **Holiday Management:**
+  - Holiday Dates: Specific dates to exclude
+  - Holiday Names: Custom holiday descriptions
+  - Holiday Behavior: Override or follow regular schedule
+- **Routing Options:**
+  - Open Hours Action: Route destination when open
+  - Closed Hours Action: Route destination when closed
+  - Holiday Action: Special holiday routing
 
 #### 6. Advanced Router Node
-- Priority-based routing with capacity limits
-- Round-robin distribution
-- RTB integration for auction-based routing
-- Failover and backup routing
+**Purpose:** Intelligent call routing with multiple strategies
+**Icon:** Network diagram
+**Configuration Options:**
+- **Routing Strategy:**
+  - Priority-based: Route by buyer priority levels
+  - Round-robin: Equal distribution across buyers
+  - Capacity-based: Route based on available capacity
+  - RTB Integration: Auction-based routing
+- **Buyer Selection:**
+  - Available Buyers: List of configured buyers
+  - Priority Levels: Custom priority assignments
+  - Capacity Limits: Maximum concurrent calls
+- **Fallback Settings:**
+  - Backup routing when primary fails
+  - Overflow handling for capacity limits
 
-#### 7. Traffic Splitter Node (Enhanced Phase 3)
-- **Percentage Distribution**: Simple percentage-based splits
-- **Weighted Distribution**: Performance-based routing with weights
-- **Time-based Rules**: Hour ranges and day-of-week filters
-- **Round Robin**: Equal distribution across targets
-- Failover support and analytics tracking
+#### 7. Traffic Splitter Node
+**Purpose:** Distribute calls across multiple destinations
+**Icon:** Branching arrows
+**Configuration Options:**
+- **Distribution Strategy:**
+  - Percentage: Simple percentage-based splits (e.g., 60/40)
+  - Weighted: Performance-based routing with weights
+  - Time-based: Hour ranges and day-of-week filters
+  - Round Robin: Equal distribution across targets
+- **Split Configuration:**
+  - Destination Names: Custom names for each split
+  - Weight/Percentage: Distribution ratios
+  - Target Nodes: Destination node connections
+- **Advanced Features:**
+  - Failover support when destinations unavailable
+  - Analytics tracking for performance monitoring
 
-#### 8. Tracking Pixel Node (Enhanced Phase 3)
-- Pixel firing with template variables
-- Analytics events for comprehensive tracking
-- Custom parameter mapping
-- HTTP timeout and error handling
+#### 8. Tracking Pixel Node
+**Purpose:** Fire tracking pixels and analytics events
+**Icon:** Target/bullseye
+**Configuration Options:**
+- **Pixel Configuration:**
+  - Pixel URLs: Multiple tracking pixel endpoints
+  - HTTP Method: GET or POST requests
+  - Template Variables: {campaign_id}, {session_id}, {timestamp}
+- **Analytics Events:**
+  - Event Types: Custom event names
+  - Parameter Mapping: Custom parameter assignments
+  - Conversion Tracking: Revenue and conversion data
+- **Advanced Settings:**
+  - HTTP timeout configuration
+  - Error handling and retry logic
+
+#### 9. Action Node
+**Purpose:** Execute specific call actions
+**Icon:** Lightning bolt
+**Configuration Options:**
+- **Action Types:**
+  - Route to Buyer: Direct routing to specific buyer
+  - Hangup: End call with optional message
+  - Transfer Call: Transfer to external number
+  - Send to Voicemail: Route to voicemail system
+- **Route to Buyer Settings:**
+  - Destination: Buyer, External Number, or Queue
+  - Buyer ID: Specific buyer selection
+  - External Number: Direct phone number routing
+- **Transfer Settings:**
+  - Transfer Number: Destination phone number
+  - Transfer Type: Warm or cold transfer
+- **Voicemail Settings:**
+  - Voicemail Message: Custom greeting
+  - Recording Settings: Maximum length and format
+
+#### 10. Condition Node
+**Purpose:** Conditional routing based on call criteria
+**Icon:** Diamond shape
+**Configuration Options:**
+- **Condition Types:**
+  - Caller ID: Route based on calling number
+  - Time-based: Route based on time of day
+  - Custom Rule: JavaScript-based custom logic
+- **Caller ID Settings:**
+  - Caller ID Rule: Pattern matching (e.g., "starts with +1800")
+  - Action: Route based on match or no match
+- **Time-based Settings:**
+  - Start Time: Beginning of time range
+  - End Time: End of time range
+  - Days of Week: Specific days to apply rule
+- **Custom Rule Settings:**
+  - JavaScript Code: Custom condition logic
+  - Session Variables: Access to call session data
+
+#### 11. End Node
+**Purpose:** Terminate call flows
+**Icon:** Stop sign (red circle)
+**Configuration Options:**
+- **End Types:**
+  - Hangup: Simple call termination
+  - Play Message & Hangup: Play message then end call
+- **Message Settings:**
+  - End Message: Custom goodbye message
+  - Voice Settings: TTS voice selection
+  - Message Duration: Playback length
+
+### Connection Management
+
+**Connection Features:**
+- **Visual Connections:** Drag from node handles to create connections
+- **Connection Labels:** Click any connection to edit its label inline
+- **Keyboard Support:** Enter to save, Escape to cancel label editing
+- **Connection Types:** Support for conditional routing (Yes/No, Success/Fail)
+- **Connection Validation:** Prevents invalid connections between incompatible nodes
+
+### Flow Management Interface
+
+**Flow Operations:**
+- **Create Flow:** Build new call flows from scratch
+- **Edit Flow:** Modify existing flows with visual editor
+- **Test Flow:** Real-time testing with live phone calls
+- **Deploy Flow:** Activate flows for campaign assignment
+- **Template Management:** Save and reuse flow templates
+
+**Campaign Integration:**
+- **Flow Assignment:** Assign flows to specific campaigns
+- **Flow Priority:** Set flow execution priority over traditional routing
+- **Flow Analytics:** Track flow execution and performance metrics
+- **Flow Debugging:** Real-time execution logging and troubleshooting
 
 ### Phase 3 Advanced Features
 
@@ -658,6 +823,108 @@ The Flow Execution Engine manages call flow state and coordinates between nodes:
 1. **Session Management**: Tracks call state across multiple interactions
 2. **Node Execution**: Processes each node type with specialized logic
 3. **Response Processing**: Handles user input from gather operations
+4. **TwiML Generation**: Converts flow logic into Twilio-compatible XML
+5. **Analytics Integration**: Tracks execution metrics and performance
+
+### Technical Implementation
+
+**Core Components:**
+- **CallFlowEditor.tsx**: Visual flow builder with drag-and-drop interface
+- **FlowExecutionEngine**: Server-side flow processing and execution
+- **TwiMLGenerator**: Converts flow nodes to Twilio voice responses
+- **SessionManager**: Maintains state across multi-step interactions
+- **AnalyticsTracker**: Records flow execution metrics and events
+
+**Database Integration:**
+- **call_flows** table: Stores flow definitions and metadata
+- **call_logs** table: Tracks execution history and performance
+- **campaigns** table: Links flows to specific campaigns
+- **analytics_events** table: Detailed interaction tracking
+
+### Best Practices
+
+**Flow Design Guidelines:**
+1. **Start Simple**: Begin with basic flows and add complexity gradually
+2. **Test Thoroughly**: Use real phone numbers to test complete flows
+3. **Plan for Failures**: Include timeout handling and error recovery
+4. **Monitor Performance**: Track execution metrics and user behavior
+5. **Document Flows**: Use clear connection labels and node descriptions
+
+**Node Configuration Tips:**
+- **IVR Menus**: Keep options clear and limited (max 5-6 options)
+- **Timeouts**: Set appropriate timeouts for user response (10-15 seconds)
+- **Error Handling**: Provide clear error messages and retry logic
+- **Voice Quality**: Test TTS messages for clarity and pronunciation
+- **Business Hours**: Account for timezone differences and holidays
+
+**Performance Optimization:**
+- **Connection Efficiency**: Minimize complex nested flows
+- **Session Management**: Keep session data lightweight
+- **Tracking Balance**: Track essential metrics without overwhelming system
+- **Failover Planning**: Include backup routes for critical flows
+
+### Integration with Campaign System
+
+**Campaign Assignment:**
+1. Navigate to campaign details page
+2. Access "Call Flow" tab in campaign configuration
+3. Select active flow from dropdown menu
+4. Save campaign to activate flow-based routing
+
+**Flow Priority System:**
+- **High Priority**: Call flows take precedence over traditional routing
+- **Fallback Routing**: If no flow assigned, use traditional buyer routing
+- **Hybrid Approach**: Combine flow-based and traditional routing seamlessly
+
+**Real-time Execution:**
+- **Webhook Integration**: Flows execute automatically on incoming calls
+- **Session Continuity**: Maintains state across IVR interactions
+- **Analytics Tracking**: Real-time performance monitoring
+- **Error Recovery**: Automatic fallback to traditional routing on failures
+
+### Analytics and Reporting
+
+**Flow Performance Metrics:**
+- **Execution Count**: Number of times flow has been executed
+- **Completion Rate**: Percentage of flows completed successfully
+- **Average Duration**: Time spent in flow execution
+- **Drop-off Points**: Where users commonly exit flows
+- **Success Rate**: Percentage of flows achieving intended outcome
+
+**Real-time Monitoring:**
+- **Active Sessions**: Currently executing flows
+- **Response Times**: Node execution performance
+- **Error Rates**: Failed executions and timeout occurrences
+- **User Behavior**: Common paths and interaction patterns
+
+### Troubleshooting Guide
+
+**Common Issues:**
+1. **Flow Not Executing**: Check campaign assignment and flow activation
+2. **Node Configuration**: Verify all required fields are completed
+3. **Connection Issues**: Ensure proper node connections and labels
+4. **TwiML Errors**: Check node configurations for invalid parameters
+5. **Session Problems**: Verify session management and state persistence
+
+**Debugging Tools:**
+- **Flow Execution Logs**: Detailed execution traces in system logs
+- **TwiML Preview**: Visual preview of generated TwiML responses
+- **Session Inspector**: Real-time session data monitoring
+- **Analytics Dashboard**: Performance metrics and error tracking
+
+### Security Considerations
+
+**Multi-tenant Isolation:**
+- **Flow Ownership**: Flows are user-scoped with proper access controls
+- **Session Security**: Session data isolated per user account
+- **Configuration Privacy**: Node configurations not shared between users
+- **Audit Trail**: Complete logging of flow modifications and executions
+
+**Data Protection:**
+- **Sensitive Data**: PII handling in gather input nodes
+- **Encryption**: Session data encrypted in transit and at rest
+- **Access Logging**: Complete audit trail of flow access and modifications
+- **Compliance**: GDPR and CCPA compliance for call recording and data collection
 4. **Tracking Integration**: Fires pixels and analytics events
 5. **Error Handling**: Manages failures and fallback scenarios
 
