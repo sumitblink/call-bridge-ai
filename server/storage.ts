@@ -1101,6 +1101,10 @@ export class MemStorage implements IStorage {
     return [];
   }
 
+  async getRtbRouter(id: number): Promise<any | undefined> {
+    return undefined;
+  }
+
   async getRtbRouterAssignments(routerId: number): Promise<any[]> {
     return [];
   }

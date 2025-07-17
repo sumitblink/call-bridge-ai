@@ -904,6 +904,19 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
+  async getRtbRouter(id: number): Promise<any | undefined> {
+    try {
+      const results = await db
+        .select()
+        .from(rtbRouters)
+        .where(eq(rtbRouters.id, id));
+      return results[0];
+    } catch (error) {
+      console.error('Error fetching RTB router:', error);
+      return undefined;
+    }
+  }
+
   // Call Flow methods - PostgreSQL implementation
   async getCallFlows(userId?: number): Promise<any[]> {
     try {

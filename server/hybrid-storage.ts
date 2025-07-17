@@ -646,6 +646,13 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async getRtbRouter(id: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getRtbRouter(id),
+      () => this.memStorage.getRtbRouter ? this.memStorage.getRtbRouter(id) : undefined
+    );
+  }
+
   async getRtbRouterAssignments(routerId: number): Promise<any[]> {
     return this.executeOperation(
       () => this.databaseStorage.getRtbRouterAssignments(routerId),
