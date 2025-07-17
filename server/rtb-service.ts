@@ -273,17 +273,23 @@ export class RTBService {
       let winningBid: RtbBidResponse | undefined;
       if (validBids.length > 0) {
         winningBid = validBids.reduce((highest, current) => {
+          // Convert bid amounts to numbers for proper comparison
+          const currentBid = parseFloat(current.bidAmount.toString());
+          const highestBid = parseFloat(highest.bidAmount.toString());
+          
+          console.log(`[RTB Auction] Comparing bids: Target ${current.rtbTargetId} ($${currentBid}) vs Target ${highest.rtbTargetId} ($${highestBid})`);
+          
           // Higher bid amount wins
-          if (current.bidAmount > highest.bidAmount) {
-            console.log(`[RTB Auction] New highest bid: $${current.bidAmount} from target ${current.rtbTargetId} (${current.responseTimeMs}ms)`);
+          if (currentBid > highestBid) {
+            console.log(`[RTB Auction] New highest bid: $${currentBid} from target ${current.rtbTargetId} (${current.responseTimeMs}ms)`);
             return current;
           }
           
           // If bid amounts are equal, fastest response time wins
-          if (current.bidAmount === highest.bidAmount) {
+          if (currentBid === highestBid) {
             const winner = current.responseTimeMs < highest.responseTimeMs ? current : highest;
             if (winner.id === current.id) {
-              console.log(`[RTB Auction] Tie-breaker: $${current.bidAmount} tie, target ${current.rtbTargetId} wins with ${current.responseTimeMs}ms vs ${highest.responseTimeMs}ms`);
+              console.log(`[RTB Auction] Tie-breaker: $${currentBid} tie, target ${current.rtbTargetId} wins with ${current.responseTimeMs}ms vs ${highest.responseTimeMs}ms`);
             }
             return winner;
           }
