@@ -625,6 +625,13 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async clearRtbAuditData(): Promise<void> {
+    return this.executeOperation(
+      () => this.databaseStorage.clearRtbAuditData(),
+      () => this.memStorage.clearRtbAuditData()
+    );
+  }
+
   async getRtbBidRequests(campaignId?: number): Promise<any[]> {
     return this.executeOperation(
       () => this.databaseStorage.getRtbBidRequests(campaignId),
