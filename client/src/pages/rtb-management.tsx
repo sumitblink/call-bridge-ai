@@ -86,6 +86,42 @@ const rtbTargetSchema = z.object({
   geoTargetingMode: z.enum(["inclusive", "exclusive"], {
     errorMap: () => ({ message: "Geo targeting mode must be 'inclusive' or 'exclusive'" })
   }).optional(),
+  
+  // Phase 3: Advanced Filtering
+  qualityScoreThreshold: z.number().min(0, "Quality score must be between 0 and 100").max(100, "Quality score must be between 0 and 100").optional(),
+  enableCallerHistory: z.boolean().optional(),
+  callerHistoryDays: z.number().min(1, "History days must be at least 1").max(365, "History days cannot exceed 365").optional(),
+  maxCallsPerCaller: z.number().min(0, "Max calls per caller cannot be negative").optional(),
+  maxCallsPerCallerPeriod: z.enum(["day", "week", "month"], {
+    errorMap: () => ({ message: "Period must be 'day', 'week', or 'month'" })
+  }).optional(),
+  blockedCallerIds: z.array(z.string().min(10, "Caller ID must be at least 10 digits").max(15, "Caller ID cannot exceed 15 digits")).optional(),
+  enableTimeBasedFiltering: z.boolean().optional(),
+  allowedTimeRanges: z.array(z.object({
+    start: z.string().regex(/^\d{2}:\d{2}$/, "Time must be in HH:MM format"),
+    end: z.string().regex(/^\d{2}:\d{2}$/, "Time must be in HH:MM format"),
+    timezone: z.string().optional(),
+    days: z.array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"])).optional(),
+  })).optional(),
+  blockedTimeRanges: z.array(z.object({
+    start: z.string().regex(/^\d{2}:\d{2}$/, "Time must be in HH:MM format"),
+    end: z.string().regex(/^\d{2}:\d{2}$/, "Time must be in HH:MM format"),
+    timezone: z.string().optional(),
+    days: z.array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"])).optional(),
+  })).optional(),
+  enableCallDurationFiltering: z.boolean().optional(),
+  minCallDuration: z.number().min(0, "Min call duration cannot be negative").optional(),
+  maxCallDuration: z.number().min(0, "Max call duration cannot be negative").optional(),
+  enableDeviceTypeFiltering: z.boolean().optional(),
+  allowedDeviceTypes: z.array(z.enum(["mobile", "landline", "voip", "payphone", "blocked"])).optional(),
+  blockedDeviceTypes: z.array(z.enum(["mobile", "landline", "voip", "payphone", "blocked"])).optional(),
+  enableCustomFiltering: z.boolean().optional(),
+  customFilteringRules: z.array(z.object({
+    name: z.string().min(1, "Rule name is required"),
+    condition: z.string().min(1, "Condition is required"),
+    action: z.enum(["allow", "block", "adjust_bid"]),
+    value: z.any().optional(),
+  })).optional(),
 });
 
 type RtbRouter = {
@@ -156,6 +192,40 @@ type RtbTarget = {
   };
   enableGeoTargeting?: boolean;
   geoTargetingMode?: string;
+  
+  // Phase 3: Advanced Filtering
+  qualityScoreThreshold?: number;
+  enableCallerHistory?: boolean;
+  callerHistoryDays?: number;
+  maxCallsPerCaller?: number;
+  maxCallsPerCallerPeriod?: string;
+  blockedCallerIds?: string[];
+  enableTimeBasedFiltering?: boolean;
+  allowedTimeRanges?: Array<{
+    start: string;
+    end: string;
+    timezone?: string;
+    days?: string[];
+  }>;
+  blockedTimeRanges?: Array<{
+    start: string;
+    end: string;
+    timezone?: string;
+    days?: string[];
+  }>;
+  enableCallDurationFiltering?: boolean;
+  minCallDuration?: number;
+  maxCallDuration?: number;
+  enableDeviceTypeFiltering?: boolean;
+  allowedDeviceTypes?: string[];
+  blockedDeviceTypes?: string[];
+  enableCustomFiltering?: boolean;
+  customFilteringRules?: Array<{
+    name: string;
+    condition: string;
+    action: string;
+    value?: any;
+  }>;
 };
 
 type RtbBidRequest = {

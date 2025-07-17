@@ -897,6 +897,25 @@ export const rtbTargets = pgTable("rtb_targets", {
   enableGeoTargeting: boolean("enable_geo_targeting").default(false).notNull(),
   geoTargetingMode: varchar("geo_targeting_mode", { length: 20 }).default("inclusive").notNull(), // inclusive, exclusive
   
+  // Phase 3: Advanced Filtering
+  qualityScoreThreshold: integer("quality_score_threshold").default(0), // 0-100 minimum quality score
+  enableCallerHistory: boolean("enable_caller_history").default(false).notNull(),
+  callerHistoryDays: integer("caller_history_days").default(30), // days to look back
+  maxCallsPerCaller: integer("max_calls_per_caller").default(0), // 0 = unlimited
+  maxCallsPerCallerPeriod: varchar("max_calls_per_caller_period", { length: 10 }).default("day"), // day, week, month
+  blockedCallerIds: text("blocked_caller_ids").array(), // ['1234567890', '0987654321']
+  enableTimeBasedFiltering: boolean("enable_time_based_filtering").default(false).notNull(),
+  allowedTimeRanges: json("allowed_time_ranges"), // [{start: "09:00", end: "17:00", timezone: "EST", days: ["mon", "tue"]}]
+  blockedTimeRanges: json("blocked_time_ranges"), // [{start: "22:00", end: "06:00", timezone: "PST", days: ["sat", "sun"]}]
+  enableCallDurationFiltering: boolean("enable_call_duration_filtering").default(false).notNull(),
+  minCallDuration: integer("min_call_duration").default(0), // seconds
+  maxCallDuration: integer("max_call_duration").default(0), // seconds, 0 = unlimited
+  enableDeviceTypeFiltering: boolean("enable_device_type_filtering").default(false).notNull(),
+  allowedDeviceTypes: text("allowed_device_types").array(), // ['mobile', 'landline', 'voip']
+  blockedDeviceTypes: text("blocked_device_types").array(), // ['payphone', 'blocked']
+  enableCustomFiltering: boolean("enable_custom_filtering").default(false).notNull(),
+  customFilteringRules: json("custom_filtering_rules"), // Array of custom filter objects
+  
   // Advanced Response Parsing Fields
   bidAmountPath: varchar("bid_amount_path", { length: 255 }),
   destinationNumberPath: varchar("destination_number_path", { length: 255 }),
@@ -1105,6 +1124,40 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
   }).optional(),
   enableGeoTargeting: z.boolean().optional(),
   geoTargetingMode: z.enum(["inclusive", "exclusive"]).optional(),
+  
+  // Phase 3: Advanced Filtering validation
+  qualityScoreThreshold: z.number().min(0).max(100).optional(),
+  enableCallerHistory: z.boolean().optional(),
+  callerHistoryDays: z.number().min(1).max(365).optional(),
+  maxCallsPerCaller: z.number().min(0).optional(),
+  maxCallsPerCallerPeriod: z.enum(["day", "week", "month"]).optional(),
+  blockedCallerIds: z.array(z.string().min(10).max(15)).optional(),
+  enableTimeBasedFiltering: z.boolean().optional(),
+  allowedTimeRanges: z.array(z.object({
+    start: z.string().regex(/^\d{2}:\d{2}$/),
+    end: z.string().regex(/^\d{2}:\d{2}$/),
+    timezone: z.string().optional(),
+    days: z.array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"])).optional(),
+  })).optional(),
+  blockedTimeRanges: z.array(z.object({
+    start: z.string().regex(/^\d{2}:\d{2}$/),
+    end: z.string().regex(/^\d{2}:\d{2}$/),
+    timezone: z.string().optional(),
+    days: z.array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"])).optional(),
+  })).optional(),
+  enableCallDurationFiltering: z.boolean().optional(),
+  minCallDuration: z.number().min(0).optional(),
+  maxCallDuration: z.number().min(0).optional(),
+  enableDeviceTypeFiltering: z.boolean().optional(),
+  allowedDeviceTypes: z.array(z.enum(["mobile", "landline", "voip", "payphone", "blocked"])).optional(),
+  blockedDeviceTypes: z.array(z.enum(["mobile", "landline", "voip", "payphone", "blocked"])).optional(),
+  enableCustomFiltering: z.boolean().optional(),
+  customFilteringRules: z.array(z.object({
+    name: z.string(),
+    condition: z.string(),
+    action: z.enum(["allow", "block", "adjust_bid"]),
+    value: z.any().optional(),
+  })).optional(),
 });
 
 export const insertRtbRouterSchema = createInsertSchema(rtbRouters).omit({
