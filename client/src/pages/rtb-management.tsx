@@ -1684,6 +1684,15 @@ const RTBAnalyticsTab = () => {
           <CardDescription>
             Latest RTB auction activity with detailed bidding breakdown
           </CardDescription>
+          <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Tie-Breaking Logic</span>
+            </div>
+            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+              When multiple bids have the same amount, the target with the <strong>fastest response time</strong> wins the auction. This encourages efficient bidding infrastructure.
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           <BidRequestsTable bidRequests={bidRequests} campaigns={campaigns} />

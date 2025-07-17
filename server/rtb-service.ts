@@ -272,9 +272,24 @@ export class RTBService {
       // Select winning bid (highest valid bid)
       let winningBid: RtbBidResponse | undefined;
       if (validBids.length > 0) {
-        winningBid = validBids.reduce((highest, current) => 
-          current.bidAmount > highest.bidAmount ? current : highest
-        );
+        winningBid = validBids.reduce((highest, current) => {
+          // Higher bid amount wins
+          if (current.bidAmount > highest.bidAmount) {
+            console.log(`[RTB Auction] New highest bid: $${current.bidAmount} from target ${current.rtbTargetId} (${current.responseTimeMs}ms)`);
+            return current;
+          }
+          
+          // If bid amounts are equal, fastest response time wins
+          if (current.bidAmount === highest.bidAmount) {
+            const winner = current.responseTimeMs < highest.responseTimeMs ? current : highest;
+            if (winner.id === current.id) {
+              console.log(`[RTB Auction] Tie-breaker: $${current.bidAmount} tie, target ${current.rtbTargetId} wins with ${current.responseTimeMs}ms vs ${highest.responseTimeMs}ms`);
+            }
+            return winner;
+          }
+          
+          return highest;
+        });
 
         // Mark winner and update bid request
         await storage.updateRtbBidResponse(winningBid.id, { isWinningBid: true });
@@ -285,6 +300,15 @@ export class RTBService {
           biddingCompletedAt: new Date(),
           totalResponseTimeMs: totalResponseTime
         });
+
+        // Log final winner selection
+        console.log(`[RTB Auction] Winner selected: Target ${winningBid.rtbTargetId} with $${winningBid.bidAmount} bid (${winningBid.responseTimeMs}ms response time)`);
+        
+        // Check if there were any ties
+        const sameBidAmount = validBids.filter(bid => bid.bidAmount === winningBid.bidAmount);
+        if (sameBidAmount.length > 1) {
+          console.log(`[RTB Auction] ${sameBidAmount.length} targets tied at $${winningBid.bidAmount} - winner selected by fastest response time`);
+        }
       } else {
         // No valid bids received
         await storage.updateRtbBidRequest(bidRequest.requestId, {
