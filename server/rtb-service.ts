@@ -215,8 +215,34 @@ export class RTBService {
 
       const storedRequest = await storage.createRtbBidRequest(requestRecord);
 
-      // Send bid requests to all active targets in parallel
-      const targetPromises = activeAssignments.map(assignment => 
+      // Filter targets by geographic eligibility first
+      const eligibleTargets: typeof activeAssignments = [];
+      
+      for (const assignment of activeAssignments) {
+        try {
+          const target = await storage.getRtbTarget(assignment.rtbTargetId);
+          if (target && await this.validateGeographicTargeting(target, bidRequest)) {
+            eligibleTargets.push(assignment);
+          } else {
+            console.log(`[RTB] Target ${assignment.rtbTargetId} failed geographic validation`);
+          }
+        } catch (error) {
+          console.error(`[RTB] Error validating target ${assignment.rtbTargetId}:`, error);
+        }
+      }
+
+      if (eligibleTargets.length === 0) {
+        return {
+          success: false,
+          totalTargetsPinged: activeAssignments.length,
+          successfulResponses: 0,
+          totalResponseTime: 0,
+          error: 'No targets eligible after geographic filtering'
+        };
+      }
+
+      // Send bid requests to geographically eligible targets in parallel
+      const targetPromises = eligibleTargets.map(assignment => 
         this.sendBidRequest(assignment.rtbTargetId, bidRequest, router)
       );
 
@@ -592,5 +618,110 @@ export class RTBService {
         averageResponseTime: 0
       };
     }
+  }
+
+  /**
+   * Phase 2: Validate geographic targeting for RTB target
+   */
+  private async validateGeographicTargeting(target: any, bidRequest: any): Promise<boolean> {
+    if (!target.enableGeoTargeting) {
+      return true; // Geographic targeting disabled, allow all
+    }
+
+    const { geoTargetingMode } = target;
+    const isInclusive = geoTargetingMode === 'inclusive';
+    
+    // Extract caller location data (would come from Twilio or caller ID lookup)
+    const callerState = bidRequest.callerState;
+    const callerZipCode = bidRequest.callerZip;
+    const callerAreaCode = bidRequest.callerAreaCode;
+    const callerLat = bidRequest.callerLatitude;
+    const callerLng = bidRequest.callerLongitude;
+
+    // State-based targeting
+    if (target.allowedStates?.length > 0 && isInclusive) {
+      if (!callerState || !target.allowedStates.includes(callerState)) {
+        console.log(`[RTB] State ${callerState} not in allowed states for target ${target.id}`);
+        return false;
+      }
+    }
+    
+    if (target.blockedStates?.length > 0 && !isInclusive) {
+      if (callerState && target.blockedStates.includes(callerState)) {
+        console.log(`[RTB] State ${callerState} is blocked for target ${target.id}`);
+        return false;
+      }
+    }
+
+    // Zip code targeting
+    if (target.allowedZipCodes?.length > 0 && isInclusive) {
+      if (!callerZipCode || !target.allowedZipCodes.includes(callerZipCode)) {
+        console.log(`[RTB] Zip code ${callerZipCode} not in allowed zip codes for target ${target.id}`);
+        return false;
+      }
+    }
+    
+    if (target.blockedZipCodes?.length > 0 && !isInclusive) {
+      if (callerZipCode && target.blockedZipCodes.includes(callerZipCode)) {
+        console.log(`[RTB] Zip code ${callerZipCode} is blocked for target ${target.id}`);
+        return false;
+      }
+    }
+
+    // Area code targeting
+    if (target.allowedAreaCodes?.length > 0 && isInclusive) {
+      if (!callerAreaCode || !target.allowedAreaCodes.includes(callerAreaCode)) {
+        console.log(`[RTB] Area code ${callerAreaCode} not in allowed area codes for target ${target.id}`);
+        return false;
+      }
+    }
+    
+    if (target.blockedAreaCodes?.length > 0 && !isInclusive) {
+      if (callerAreaCode && target.blockedAreaCodes.includes(callerAreaCode)) {
+        console.log(`[RTB] Area code ${callerAreaCode} is blocked for target ${target.id}`);
+        return false;
+      }
+    }
+
+    // Radius-based targeting
+    if (target.geoRadius && target.geoCenter && callerLat && callerLng) {
+      const distance = this.calculateDistance(
+        callerLat,
+        callerLng,
+        target.geoCenter.lat,
+        target.geoCenter.lng
+      );
+      
+      if (isInclusive && distance > target.geoRadius) {
+        console.log(`[RTB] Caller outside ${target.geoRadius} mile radius for target ${target.id} (distance: ${distance.toFixed(2)} miles)`);
+        return false;
+      }
+      
+      if (!isInclusive && distance <= target.geoRadius) {
+        console.log(`[RTB] Caller inside blocked ${target.geoRadius} mile radius for target ${target.id} (distance: ${distance.toFixed(2)} miles)`);
+        return false;
+      }
+    }
+
+    console.log(`[RTB] Geographic targeting validation passed for target ${target.id}`);
+    return true;
+  }
+
+  /**
+   * Calculate distance between two points using Haversine formula
+   */
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 3959; // Earth's radius in miles
+    const dLat = this.toRadians(lat2 - lat1);
+    const dLon = this.toRadians(lon2 - lon1);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  private toRadians(degrees: number): number {
+    return degrees * (Math.PI / 180);
   }
 }

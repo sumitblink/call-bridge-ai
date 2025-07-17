@@ -885,6 +885,18 @@ export const rtbTargets = pgTable("rtb_targets", {
   bidAdjustmentFrequency: integer("bid_adjustment_frequency").default(3600).notNull(), // seconds
   enableAutoBidding: boolean("enable_auto_bidding").default(false).notNull(),
   
+  // Phase 2: Geographic Targeting
+  allowedStates: text("allowed_states").array(), // ['CA', 'NY', 'TX']
+  blockedStates: text("blocked_states").array(), // ['AL', 'AK']
+  allowedZipCodes: text("allowed_zip_codes").array(), // ['90210', '10001']
+  blockedZipCodes: text("blocked_zip_codes").array(), // ['12345', '67890']
+  allowedAreaCodes: text("allowed_area_codes").array(), // ['213', '310', '212']
+  blockedAreaCodes: text("blocked_area_codes").array(), // ['555', '999']
+  geoRadius: integer("geo_radius"), // mile radius for proximity targeting
+  geoCenter: json("geo_center"), // {lat: 40.7128, lng: -74.0060, city: "New York", state: "NY"}
+  enableGeoTargeting: boolean("enable_geo_targeting").default(false).notNull(),
+  geoTargetingMode: varchar("geo_targeting_mode", { length: 20 }).default("inclusive").notNull(), // inclusive, exclusive
+  
   // Advanced Response Parsing Fields
   bidAmountPath: varchar("bid_amount_path", { length: 255 }),
   destinationNumberPath: varchar("destination_number_path", { length: 255 }),
@@ -1076,6 +1088,23 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
   maxCostPerAcquisition: z.number().min(0).optional(),
   bidAdjustmentFrequency: z.number().min(300).max(86400).optional(),
   enableAutoBidding: z.boolean().optional(),
+  
+  // Phase 2: Geographic Targeting validation
+  allowedStates: z.array(z.string().length(2)).optional(),
+  blockedStates: z.array(z.string().length(2)).optional(),
+  allowedZipCodes: z.array(z.string().min(5).max(10)).optional(),
+  blockedZipCodes: z.array(z.string().min(5).max(10)).optional(),
+  allowedAreaCodes: z.array(z.string().length(3)).optional(),
+  blockedAreaCodes: z.array(z.string().length(3)).optional(),
+  geoRadius: z.number().min(1).max(1000).optional(),
+  geoCenter: z.object({
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    city: z.string().optional(),
+    state: z.string().length(2).optional(),
+  }).optional(),
+  enableGeoTargeting: z.boolean().optional(),
+  geoTargetingMode: z.enum(["inclusive", "exclusive"]).optional(),
 });
 
 export const insertRtbRouterSchema = createInsertSchema(rtbRouters).omit({

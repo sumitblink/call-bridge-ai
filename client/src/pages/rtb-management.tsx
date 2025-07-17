@@ -16,8 +16,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { EnhancedRTBTargetDialog } from "@/components/rtb/EnhancedRTBTargetDialog";
 import { Phase1AdvancedBiddingDialog } from "@/components/rtb/Phase1AdvancedBiddingDialog";
+import { Phase2GeographicTargetingDialog } from "@/components/rtb/Phase2GeographicTargetingDialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone } from "lucide-react";
+import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone, Globe } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -66,6 +67,25 @@ const rtbTargetSchema = z.object({
   maxCostPerAcquisition: z.number().min(0, "Cost per acquisition cannot be negative").optional(),
   bidAdjustmentFrequency: z.number().min(300, "Frequency must be at least 300 seconds").max(86400, "Frequency cannot exceed 86400 seconds").optional(),
   enableAutoBidding: z.boolean().optional(),
+  
+  // Phase 2: Geographic Targeting
+  allowedStates: z.array(z.string().length(2, "State codes must be 2 characters")).optional(),
+  blockedStates: z.array(z.string().length(2, "State codes must be 2 characters")).optional(),
+  allowedZipCodes: z.array(z.string().min(5, "Zip codes must be at least 5 characters").max(10, "Zip codes cannot exceed 10 characters")).optional(),
+  blockedZipCodes: z.array(z.string().min(5, "Zip codes must be at least 5 characters").max(10, "Zip codes cannot exceed 10 characters")).optional(),
+  allowedAreaCodes: z.array(z.string().length(3, "Area codes must be 3 characters")).optional(),
+  blockedAreaCodes: z.array(z.string().length(3, "Area codes must be 3 characters")).optional(),
+  geoRadius: z.number().min(1, "Geo radius must be at least 1 mile").max(1000, "Geo radius cannot exceed 1000 miles").optional(),
+  geoCenter: z.object({
+    lat: z.number().min(-90, "Latitude must be between -90 and 90").max(90, "Latitude must be between -90 and 90"),
+    lng: z.number().min(-180, "Longitude must be between -180 and 180").max(180, "Longitude must be between -180 and 180"),
+    city: z.string().optional(),
+    state: z.string().length(2, "State code must be 2 characters").optional(),
+  }).optional(),
+  enableGeoTargeting: z.boolean().optional(),
+  geoTargetingMode: z.enum(["inclusive", "exclusive"], {
+    errorMap: () => ({ message: "Geo targeting mode must be 'inclusive' or 'exclusive'" })
+  }).optional(),
 });
 
 type RtbRouter = {
@@ -119,6 +139,23 @@ type RtbTarget = {
   maxCostPerAcquisition?: number;
   bidAdjustmentFrequency?: number;
   enableAutoBidding?: boolean;
+  
+  // Phase 2: Geographic Targeting
+  allowedStates?: string[];
+  blockedStates?: string[];
+  allowedZipCodes?: string[];
+  blockedZipCodes?: string[];
+  allowedAreaCodes?: string[];
+  blockedAreaCodes?: string[];
+  geoRadius?: number;
+  geoCenter?: {
+    lat: number;
+    lng: number;
+    city?: string;
+    state?: string;
+  };
+  enableGeoTargeting?: boolean;
+  geoTargetingMode?: string;
 };
 
 type RtbBidRequest = {
@@ -939,6 +976,8 @@ const RTBTargetsTab = () => {
   const [testingTarget, setTestingTarget] = useState<RtbTarget | null>(null);
   const [advancedBiddingTarget, setAdvancedBiddingTarget] = useState<RtbTarget | null>(null);
   const [isAdvancedBiddingDialogOpen, setIsAdvancedBiddingDialogOpen] = useState(false);
+  const [geographicTargetingTarget, setGeographicTargetingTarget] = useState<RtbTarget | null>(null);
+  const [isGeographicTargetingDialogOpen, setIsGeographicTargetingDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -1183,6 +1222,35 @@ const RTBTargetsTab = () => {
     }
   };
 
+  const handleGeographicTargetingSave = (data: any) => {
+    if (geographicTargetingTarget) {
+      const mutationData = {
+        ...geographicTargetingTarget,
+        ...data,
+      };
+      
+      apiRequest(`/api/rtb/targets/${geographicTargetingTarget.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(mutationData),
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
+        toast({
+          title: "Success",
+          description: "Geographic targeting configuration saved successfully",
+        });
+        setIsGeographicTargetingDialogOpen(false);
+        setGeographicTargetingTarget(null);
+      }).catch(error => {
+        console.error('Error saving geographic targeting configuration:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save geographic targeting configuration",
+          variant: "destructive",
+        });
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -1244,6 +1312,13 @@ const RTBTargetsTab = () => {
         onOpenChange={setIsAdvancedBiddingDialogOpen}
         target={advancedBiddingTarget}
         onSave={handleAdvancedBiddingSave}
+      />
+
+      <Phase2GeographicTargetingDialog
+        open={isGeographicTargetingDialogOpen}
+        onOpenChange={setIsGeographicTargetingDialogOpen}
+        target={geographicTargetingTarget}
+        onSave={handleGeographicTargetingSave}
       />
 
       <Card>
@@ -1333,6 +1408,19 @@ const RTBTargetsTab = () => {
                           >
                             <TrendingUp className="w-4 h-4 mr-1" />
                             Advanced
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setGeographicTargetingTarget(target);
+                              setIsGeographicTargetingDialogOpen(true);
+                            }}
+                            className="h-8 px-2"
+                            title="Geographic Targeting Configuration"
+                          >
+                            <Globe className="w-4 h-4 mr-1" />
+                            Geographic
                           </Button>
                           <Button
                             variant="outline"
