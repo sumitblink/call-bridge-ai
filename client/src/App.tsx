@@ -67,7 +67,7 @@ function Router() {
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />
           <Route path="/twilio-test" component={TwilioTest} />
-          <Route path="/feedback" component={Feedback} />
+          <Route path="/help" component={Feedback} />
           <Route path="/queries" component={Queries} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />

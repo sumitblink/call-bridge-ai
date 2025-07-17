@@ -19,7 +19,7 @@ const navigation = [
   { name: "RTB Management", href: "/rtb-management", icon: Target, current: false },
   { name: "Call Flows", href: "/call-flows", icon: GitBranch, current: false },
   { name: "Integrations", href: "/integrations", icon: Zap, current: false },
-  { name: "Help & Q&A", href: "/feedback", icon: MessageCircle, current: false },
+  { name: "Help & Q&A", href: "/help", icon: MessageCircle, current: false },
   { name: "Settings", href: "/settings", icon: Settings, current: false },
 ];
 
