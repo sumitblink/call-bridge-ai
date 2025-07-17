@@ -61,6 +61,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   const [connectionSource, setConnectionSource] = useState<string | null>(null);
   const [draggedNode, setDraggedNode] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState<string>('');
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -269,6 +270,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
         const node = nodes.find(n => n.id === nodeId);
         if (node) {
           setDraggedNode(nodeId);
+          setIsDragging(true);
           // Account for zoom and pan transformations
           const adjustedX = (e.clientX - rect.left - panOffset.x) / zoomLevel;
           const adjustedY = (e.clientY - rect.top - panOffset.y) / zoomLevel;
@@ -303,6 +305,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   const handleMouseUp = () => {
     setDraggedNode(null);
     setDragOffset({ x: 0, y: 0 });
+    setIsDragging(false);
   };
 
   const handleDeleteNode = (nodeId: string) => {
@@ -460,11 +463,14 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
     return (
       <div
         key={node.id}
-        className={`absolute cursor-move border-2 rounded-lg p-3 min-w-[120px] text-center ${bgColor} ${borderColor} ${
+        className={`absolute cursor-move border-2 rounded-lg p-3 min-w-[120px] text-center select-none ${bgColor} ${borderColor} ${
           isSelected ? 'ring-2 ring-blue-500' : ''
         } ${isSource ? 'ring-2 ring-green-500' : ''}`}
         style={{ left: node.x, top: node.y }}
-        onMouseDown={(e) => handleMouseDown(e, node.id)}
+        onMouseDown={(e) => {
+          e.preventDefault(); // Prevent text selection
+          handleMouseDown(e, node.id);
+        }}
         onClick={() => handleNodeClick(node)}
         onDoubleClick={() => handleNodeDoubleClick(node)}
       >
@@ -1232,8 +1238,15 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
         <div className="flex-1 bg-gray-50 relative overflow-hidden">
           <div
             ref={canvasRef}
-            className="w-full h-full relative"
-            style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
+            className={`w-full h-full relative select-none ${
+              isDragging ? 'cursor-grabbing' : isPanning ? 'cursor-grabbing' : 'cursor-grab'
+            }`}
+            style={{ 
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              MozUserSelect: 'none',
+              msUserSelect: 'none'
+            }}
             onMouseMove={(e) => {
               handleMouseMove(e);
               handlePanMove(e);
