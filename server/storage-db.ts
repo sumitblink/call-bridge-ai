@@ -24,6 +24,8 @@ import {
   rtbBidRequests,
   rtbBidResponses,
   feedback,
+  visitorSessions,
+  conversionEvents,
   type User, 
   type InsertUser,
   type UpsertUser,
@@ -59,6 +61,10 @@ import {
   type InsertRtbBidResponse,
   type Feedback,
   type InsertFeedback,
+  type VisitorSession,
+  type InsertVisitorSession,
+  type ConversionEvent,
+  type InsertConversionEvent,
 } from '@shared/schema';
 import { db } from './db';
 import { eq, and, sql, inArray } from 'drizzle-orm';
@@ -1380,6 +1386,94 @@ export class DatabaseStorage implements IStorage {
     // For now, return all feedback for all users (admin view)
     // In production, you might want to add role-based access control
     return await db.select().from(feedback).orderBy(sql`${feedback.timestamp} DESC`);
+  }
+
+  // MVP Tracking methods
+  async createVisitorSession(session: InsertVisitorSession): Promise<VisitorSession> {
+    const [newSession] = await db.insert(visitorSessions).values(session).returning();
+    return newSession;
+  }
+
+  async getVisitorSession(sessionId: string): Promise<VisitorSession | undefined> {
+    const [session] = await db.select().from(visitorSessions).where(eq(visitorSessions.sessionId, sessionId));
+    return session;
+  }
+
+  async updateVisitorSession(sessionId: string, updates: Partial<InsertVisitorSession>): Promise<VisitorSession | undefined> {
+    const [updatedSession] = await db
+      .update(visitorSessions)
+      .set({ ...updates, lastActivity: new Date() })
+      .where(eq(visitorSessions.sessionId, sessionId))
+      .returning();
+    return updatedSession;
+  }
+
+  async createConversionEvent(event: InsertConversionEvent): Promise<ConversionEvent> {
+    const [newEvent] = await db.insert(conversionEvents).values(event).returning();
+    return newEvent;
+  }
+
+  async getConversionEvents(sessionId?: string, campaignId?: number): Promise<ConversionEvent[]> {
+    let query = db.select().from(conversionEvents);
+    
+    if (sessionId && campaignId) {
+      query = query.where(and(
+        eq(conversionEvents.sessionId, sessionId),
+        eq(conversionEvents.campaignId, campaignId)
+      ));
+    } else if (sessionId) {
+      query = query.where(eq(conversionEvents.sessionId, sessionId));
+    } else if (campaignId) {
+      query = query.where(eq(conversionEvents.campaignId, campaignId));
+    }
+    
+    return await query.orderBy(sql`${conversionEvents.createdAt} DESC`);
+  }
+
+  async getBasicTrackingStats(userId: number): Promise<{
+    totalSessions: number;
+    totalConversions: number;
+    conversionRate: number;
+    topSources: Array<{source: string; count: number}>;
+    recentConversions: ConversionEvent[];
+  }> {
+    // Get sessions for the user
+    const userSessions = await db
+      .select()
+      .from(visitorSessions)
+      .where(eq(visitorSessions.userId, userId));
+
+    // Get conversion events for the user's sessions
+    const sessionIds = userSessions.map(s => s.sessionId);
+    const userConversions = sessionIds.length > 0 
+      ? await db
+          .select()
+          .from(conversionEvents)
+          .where(inArray(conversionEvents.sessionId, sessionIds))
+          .orderBy(sql`${conversionEvents.createdAt} DESC`)
+      : [];
+
+    // Calculate top sources
+    const sourceCounts: Record<string, number> = {};
+    userSessions.forEach(session => {
+      const source = session.source || 'direct';
+      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+    });
+
+    const topSources = Object.entries(sourceCounts)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const recentConversions = userConversions.slice(0, 10);
+
+    return {
+      totalSessions: userSessions.length,
+      totalConversions: userConversions.length,
+      conversionRate: userSessions.length > 0 ? (userConversions.length / userSessions.length) * 100 : 0,
+      topSources,
+      recentConversions
+    };
   }
 }
 

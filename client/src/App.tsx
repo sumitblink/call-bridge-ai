@@ -23,6 +23,7 @@ import RTBManagement from "@/pages/rtb-management";
 import Feedback from "@/pages/feedback";
 import Queries from "@/pages/queries";
 import CallFlows from "@/pages/call-flows";
+import TrackingPage from "@/pages/tracking";
 
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
@@ -64,6 +65,7 @@ function Router() {
           <Route path="/phone-numbers" component={PhoneNumbers} />
           <Route path="/rtb-management" component={RTBManagement} />
           <Route path="/call-flows" component={CallFlows} />
+          <Route path="/tracking" component={TrackingPage} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />
           <Route path="/twilio-test" component={TwilioTest} />

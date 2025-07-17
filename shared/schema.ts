@@ -1287,6 +1287,84 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
 export type Feedback = typeof feedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 
+// MVP Tracking Tables
+export const visitorSessions = pgTable("visitor_sessions", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id", { length: 255 }).unique().notNull(),
+  userId: integer("user_id").references(() => users.id),
+  
+  // Session Info
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  referrer: text("referrer"),
+  
+  // Attribution Data
+  source: varchar("source", { length: 255 }), // google, facebook, direct
+  medium: varchar("medium", { length: 255 }), // organic, cpc, email, social
+  campaign: varchar("campaign", { length: 255 }), // campaign name
+  utmSource: varchar("utm_source", { length: 255 }),
+  utmMedium: varchar("utm_medium", { length: 255 }),
+  utmCampaign: varchar("utm_campaign", { length: 255 }),
+  utmTerm: varchar("utm_term", { length: 255 }),
+  utmContent: varchar("utm_content", { length: 255 }),
+  
+  // Landing Page
+  landingPage: text("landing_page"),
+  currentPage: text("current_page"),
+  
+  // Timestamps
+  firstVisit: timestamp("first_visit").defaultNow().notNull(),
+  lastActivity: timestamp("last_activity").defaultNow().notNull(),
+  
+  // Tracking State
+  isActive: boolean("is_active").default(true).notNull(),
+  hasConverted: boolean("has_converted").default(false).notNull(),
+});
+
+export const conversionEvents = pgTable("conversion_events", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id", { length: 255 }).references(() => visitorSessions.sessionId).notNull(),
+  campaignId: integer("campaign_id").references(() => campaigns.id),
+  callId: integer("call_id").references(() => calls.id),
+  
+  // Conversion Details
+  conversionType: varchar("conversion_type", { length: 50 }).default("call").notNull(), // call, form, chat
+  conversionValue: decimal("conversion_value", { precision: 10, scale: 2 }).default("0.00"),
+  currency: varchar("currency", { length: 3 }).default("USD").notNull(),
+  
+  // Call-specific data
+  callerNumber: varchar("caller_number", { length: 20 }),
+  duration: integer("duration"), // call duration in seconds
+  callStatus: varchar("call_status", { length: 50 }), // completed, missed, busy
+  
+  // Attribution
+  attributionModel: varchar("attribution_model", { length: 50 }).default("last_touch").notNull(),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  
+  // Pixel Data
+  pixelsFired: boolean("pixels_fired").default(false).notNull(),
+  pixelData: json("pixel_data"), // URLs and responses
+});
+
+// MVP Tracking Schemas
+export const insertVisitorSessionSchema = createInsertSchema(visitorSessions).omit({
+  id: true,
+  firstVisit: true,
+  lastActivity: true,
+});
+
+export const insertConversionEventSchema = createInsertSchema(conversionEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type VisitorSession = typeof visitorSessions.$inferSelect;
+export type InsertVisitorSession = z.infer<typeof insertVisitorSessionSchema>;
+export type ConversionEvent = typeof conversionEvents.$inferSelect;
+export type InsertConversionEvent = z.infer<typeof insertConversionEventSchema>;
+
 // Call Flow Schemas
 export const insertCallFlowSchema = createInsertSchema(callFlows).omit({
   id: true,
@@ -1356,6 +1434,30 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
   user: one(users, {
     fields: [feedback.userId],
     references: [users.id],
+  }),
+}));
+
+// MVP Tracking Relations
+export const visitorSessionsRelations = relations(visitorSessions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [visitorSessions.userId],
+    references: [users.id],
+  }),
+  conversionEvents: many(conversionEvents),
+}));
+
+export const conversionEventsRelations = relations(conversionEvents, ({ one }) => ({
+  session: one(visitorSessions, {
+    fields: [conversionEvents.sessionId],
+    references: [visitorSessions.sessionId],
+  }),
+  campaign: one(campaigns, {
+    fields: [conversionEvents.campaignId],
+    references: [campaigns.id],
+  }),
+  call: one(calls, {
+    fields: [conversionEvents.callId],
+    references: [calls.id],
   }),
 }));
 

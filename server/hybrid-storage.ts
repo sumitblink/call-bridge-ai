@@ -23,6 +23,10 @@ import {
   type InsertCallLog,
   type Feedback,
   type InsertFeedback,
+  type VisitorSession,
+  type InsertVisitorSession,
+  type ConversionEvent,
+  type InsertConversionEvent,
 } from '@shared/schema';
 import type { IStorage } from './storage';
 import { SupabaseStorage } from './supabase-storage';
@@ -707,6 +711,55 @@ class HybridStorage implements IStorage {
     return this.executeOperation(
       () => this.databaseStorage.deleteCallFlow(id),
       () => this.memStorage.deleteCallFlow(id)
+    );
+  }
+
+  // MVP Tracking methods
+  async createVisitorSession(session: InsertVisitorSession): Promise<VisitorSession> {
+    return this.executeOperation(
+      () => this.databaseStorage.createVisitorSession(session),
+      () => this.memStorage.createVisitorSession(session)
+    );
+  }
+
+  async getVisitorSession(sessionId: string): Promise<VisitorSession | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getVisitorSession(sessionId),
+      () => this.memStorage.getVisitorSession(sessionId)
+    );
+  }
+
+  async updateVisitorSession(sessionId: string, updates: Partial<InsertVisitorSession>): Promise<VisitorSession | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.updateVisitorSession(sessionId, updates),
+      () => this.memStorage.updateVisitorSession(sessionId, updates)
+    );
+  }
+
+  async createConversionEvent(event: InsertConversionEvent): Promise<ConversionEvent> {
+    return this.executeOperation(
+      () => this.databaseStorage.createConversionEvent(event),
+      () => this.memStorage.createConversionEvent(event)
+    );
+  }
+
+  async getConversionEvents(sessionId?: string, campaignId?: number): Promise<ConversionEvent[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getConversionEvents(sessionId, campaignId),
+      () => this.memStorage.getConversionEvents(sessionId, campaignId)
+    );
+  }
+
+  async getBasicTrackingStats(userId: number): Promise<{
+    totalSessions: number;
+    totalConversions: number;
+    conversionRate: number;
+    topSources: Array<{source: string; count: number}>;
+    recentConversions: ConversionEvent[];
+  }> {
+    return this.executeOperation(
+      () => this.databaseStorage.getBasicTrackingStats(userId),
+      () => this.memStorage.getBasicTrackingStats(userId)
     );
   }
 }

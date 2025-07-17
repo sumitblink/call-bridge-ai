@@ -4916,6 +4916,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  // MVP Tracking API routes
+  app.post('/api/tracking/session', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const sessionData = {
+        ...req.body,
+        userId
+      };
+      
+      const session = await storage.createVisitorSession(sessionData);
+      res.json(session);
+    } catch (error) {
+      console.error('Error creating visitor session:', error);
+      res.status(500).json({ error: 'Failed to create visitor session' });
+    }
+  });
+
+  app.get('/api/tracking/session/:sessionId', requireAuth, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const session = await storage.getVisitorSession(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      
+      res.json(session);
+    } catch (error) {
+      console.error('Error fetching visitor session:', error);
+      res.status(500).json({ error: 'Failed to fetch visitor session' });
+    }
+  });
+
+  app.patch('/api/tracking/session/:sessionId', requireAuth, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const updates = req.body;
+      
+      const session = await storage.updateVisitorSession(sessionId, updates);
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      
+      res.json(session);
+    } catch (error) {
+      console.error('Error updating visitor session:', error);
+      res.status(500).json({ error: 'Failed to update visitor session' });
+    }
+  });
+
+  app.post('/api/tracking/conversion', requireAuth, async (req, res) => {
+    try {
+      const conversionData = req.body;
+      const event = await storage.createConversionEvent(conversionData);
+      res.json(event);
+    } catch (error) {
+      console.error('Error creating conversion event:', error);
+      res.status(500).json({ error: 'Failed to create conversion event' });
+    }
+  });
+
+  app.get('/api/tracking/conversions', requireAuth, async (req, res) => {
+    try {
+      const { sessionId, campaignId } = req.query;
+      const events = await storage.getConversionEvents(
+        sessionId as string,
+        campaignId ? parseInt(campaignId as string) : undefined
+      );
+      res.json(events);
+    } catch (error) {
+      console.error('Error fetching conversion events:', error);
+      res.status(500).json({ error: 'Failed to fetch conversion events' });
+    }
+  });
+
+  app.get('/api/tracking/stats', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const stats = await storage.getBasicTrackingStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching tracking stats:', error);
+      res.status(500).json({ error: 'Failed to fetch tracking stats' });
+    }
+  });
+
   return httpServer;
 }
 

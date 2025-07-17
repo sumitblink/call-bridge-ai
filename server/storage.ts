@@ -33,6 +33,10 @@ import {
   type InsertFeedback,
   type CallFlow,
   type InsertCallFlow,
+  type VisitorSession,
+  type InsertVisitorSession,
+  type ConversionEvent,
+  type InsertConversionEvent,
 } from '@shared/schema';
 
 export interface IStorage {
@@ -197,6 +201,20 @@ export interface IStorage {
   createCallFlow(flow: any): Promise<any>;
   updateCallFlow(id: number, flow: any): Promise<any | undefined>;
   deleteCallFlow(id: number): Promise<boolean>;
+  
+  // MVP Tracking methods
+  createVisitorSession(session: InsertVisitorSession): Promise<VisitorSession>;
+  getVisitorSession(sessionId: string): Promise<VisitorSession | undefined>;
+  updateVisitorSession(sessionId: string, updates: Partial<InsertVisitorSession>): Promise<VisitorSession | undefined>;
+  createConversionEvent(event: InsertConversionEvent): Promise<ConversionEvent>;
+  getConversionEvents(sessionId?: string, campaignId?: number): Promise<ConversionEvent[]>;
+  getBasicTrackingStats(userId: number): Promise<{
+    totalSessions: number;
+    totalConversions: number;
+    conversionRate: number;
+    topSources: Array<{source: string; count: number}>;
+    recentConversions: ConversionEvent[];
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -1155,6 +1173,103 @@ export class MemStorage implements IStorage {
       return true;
     }
     return false;
+  }
+
+  // MVP Tracking methods - In-memory storage implementation
+  private visitorSessions: VisitorSession[] = [];
+  private conversionEvents: ConversionEvent[] = [];
+
+  async createVisitorSession(session: InsertVisitorSession): Promise<VisitorSession> {
+    const newSession: VisitorSession = {
+      id: Date.now(),
+      ...session,
+      firstVisit: new Date(),
+      lastActivity: new Date(),
+      isActive: true,
+      hasConverted: false
+    };
+    this.visitorSessions.push(newSession);
+    return newSession;
+  }
+
+  async getVisitorSession(sessionId: string): Promise<VisitorSession | undefined> {
+    return this.visitorSessions.find(session => session.sessionId === sessionId);
+  }
+
+  async updateVisitorSession(sessionId: string, updates: Partial<InsertVisitorSession>): Promise<VisitorSession | undefined> {
+    const index = this.visitorSessions.findIndex(session => session.sessionId === sessionId);
+    if (index !== -1) {
+      this.visitorSessions[index] = {
+        ...this.visitorSessions[index],
+        ...updates,
+        lastActivity: new Date()
+      };
+      return this.visitorSessions[index];
+    }
+    return undefined;
+  }
+
+  async createConversionEvent(event: InsertConversionEvent): Promise<ConversionEvent> {
+    const newEvent: ConversionEvent = {
+      id: Date.now(),
+      ...event,
+      createdAt: new Date(),
+      pixelsFired: false,
+      pixelData: null
+    };
+    this.conversionEvents.push(newEvent);
+    return newEvent;
+  }
+
+  async getConversionEvents(sessionId?: string, campaignId?: number): Promise<ConversionEvent[]> {
+    let events = this.conversionEvents;
+    
+    if (sessionId) {
+      events = events.filter(event => event.sessionId === sessionId);
+    }
+    
+    if (campaignId) {
+      events = events.filter(event => event.campaignId === campaignId);
+    }
+    
+    return events;
+  }
+
+  async getBasicTrackingStats(userId: number): Promise<{
+    totalSessions: number;
+    totalConversions: number;
+    conversionRate: number;
+    topSources: Array<{source: string; count: number}>;
+    recentConversions: ConversionEvent[];
+  }> {
+    const userSessions = this.visitorSessions.filter(session => session.userId === userId);
+    const userConversions = this.conversionEvents.filter(event => {
+      const session = this.visitorSessions.find(s => s.sessionId === event.sessionId);
+      return session?.userId === userId;
+    });
+
+    const sourceCounts: Record<string, number> = {};
+    userSessions.forEach(session => {
+      const source = session.source || 'direct';
+      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+    });
+
+    const topSources = Object.entries(sourceCounts)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const recentConversions = userConversions
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 10);
+
+    return {
+      totalSessions: userSessions.length,
+      totalConversions: userConversions.length,
+      conversionRate: userSessions.length > 0 ? (userConversions.length / userSessions.length) * 100 : 0,
+      topSources,
+      recentConversions
+    };
   }
 }
 
