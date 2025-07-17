@@ -553,7 +553,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
           style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
         />
         {editingConnectionId === connection.id ? (
-          <foreignObject x={midX - 60} y={midY - 35} width="120" height="20">
+          <foreignObject x={midX - 60} y={midY - 35} width="120" height="20" style={{ pointerEvents: 'auto' }}>
             <input
               type="text"
               value={editingConnectionLabel}
@@ -573,7 +573,13 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             />
           </foreignObject>
         ) : (
-          <g onClick={() => handleStartConnectionLabelEdit(connection)}>
+          <g 
+            style={{ pointerEvents: 'auto' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStartConnectionLabelEdit(connection);
+            }}
+          >
             {/* Background rectangle for better visibility - only show if there's a label */}
             {connection.label && (
               <rect
@@ -622,7 +628,11 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
           stroke="red"
           strokeWidth="2"
           className="cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
-          onClick={() => handleDeleteConnection(connection.id)}
+          style={{ pointerEvents: 'auto' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteConnection(connection.id);
+          }}
         />
         <text
           x={midX}
@@ -1272,11 +1282,12 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             
             {/* SVG for connections */}
             <svg 
-              className="absolute inset-0 w-full h-full pointer-events-none" 
+              className="absolute inset-0 w-full h-full" 
               style={{ 
                 zIndex: 5,
                 transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
-                transformOrigin: '0 0'
+                transformOrigin: '0 0',
+                pointerEvents: 'none'
               }}
             >
               <defs>
