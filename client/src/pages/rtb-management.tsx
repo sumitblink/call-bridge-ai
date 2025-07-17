@@ -17,6 +17,7 @@ import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { EnhancedRTBTargetDialog } from "@/components/rtb/EnhancedRTBTargetDialog";
 import { Phase1AdvancedBiddingDialog } from "@/components/rtb/Phase1AdvancedBiddingDialog";
 import { Phase2GeographicTargetingDialog } from "@/components/rtb/Phase2GeographicTargetingDialog";
+import Phase3AdvancedFilteringDialog from "@/components/rtb/Phase3AdvancedFilteringDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone, Globe } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -1048,6 +1049,8 @@ const RTBTargetsTab = () => {
   const [isAdvancedBiddingDialogOpen, setIsAdvancedBiddingDialogOpen] = useState(false);
   const [geographicTargetingTarget, setGeographicTargetingTarget] = useState<RtbTarget | null>(null);
   const [isGeographicTargetingDialogOpen, setIsGeographicTargetingDialogOpen] = useState(false);
+  const [advancedFilteringTarget, setAdvancedFilteringTarget] = useState<RtbTarget | null>(null);
+  const [isAdvancedFilteringDialogOpen, setIsAdvancedFilteringDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -1321,6 +1324,35 @@ const RTBTargetsTab = () => {
     }
   };
 
+  const handleAdvancedFilteringSave = (data: any) => {
+    if (advancedFilteringTarget) {
+      const mutationData = {
+        ...advancedFilteringTarget,
+        ...data,
+      };
+      
+      apiRequest(`/api/rtb/targets/${advancedFilteringTarget.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(mutationData),
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
+        toast({
+          title: "Success",
+          description: "Advanced filtering configuration saved successfully",
+        });
+        setIsAdvancedFilteringDialogOpen(false);
+        setAdvancedFilteringTarget(null);
+      }).catch(error => {
+        console.error('Error saving advanced filtering configuration:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save advanced filtering configuration",
+          variant: "destructive",
+        });
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -1389,6 +1421,13 @@ const RTBTargetsTab = () => {
         onOpenChange={setIsGeographicTargetingDialogOpen}
         target={geographicTargetingTarget}
         onSave={handleGeographicTargetingSave}
+      />
+      
+      <Phase3AdvancedFilteringDialog
+        isOpen={isAdvancedFilteringDialogOpen}
+        onClose={() => setIsAdvancedFilteringDialogOpen(false)}
+        onSave={handleAdvancedFilteringSave}
+        currentConfig={advancedFilteringTarget}
       />
 
       <Card>
@@ -1491,6 +1530,19 @@ const RTBTargetsTab = () => {
                           >
                             <Globe className="w-4 h-4 mr-1" />
                             Geographic
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setAdvancedFilteringTarget(target);
+                              setIsAdvancedFilteringDialogOpen(true);
+                            }}
+                            className="h-8 px-2"
+                            title="Advanced Filtering Configuration"
+                          >
+                            <Settings className="w-4 h-4 mr-1" />
+                            Filtering
                           </Button>
                           <Button
                             variant="outline"

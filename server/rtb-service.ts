@@ -221,7 +221,7 @@ export class RTBService {
       for (const assignment of activeAssignments) {
         try {
           const target = await storage.getRtbTarget(assignment.rtbTargetId);
-          if (target && await this.validateGeographicTargeting(target, bidRequest)) {
+          if (target && await RTBService.validateGeographicTargeting(target, bidRequest)) {
             eligibleTargets.push(assignment);
           } else {
             console.log(`[RTB] Target ${assignment.rtbTargetId} failed geographic validation`);
@@ -623,7 +623,7 @@ export class RTBService {
   /**
    * Phase 2: Validate geographic targeting for RTB target
    */
-  private async validateGeographicTargeting(target: any, bidRequest: any): Promise<boolean> {
+  private static async validateGeographicTargeting(target: any, bidRequest: any): Promise<boolean> {
     if (!target.enableGeoTargeting) {
       return true; // Geographic targeting disabled, allow all
     }
@@ -685,7 +685,7 @@ export class RTBService {
 
     // Radius-based targeting
     if (target.geoRadius && target.geoCenter && callerLat && callerLng) {
-      const distance = this.calculateDistance(
+      const distance = RTBService.calculateDistance(
         callerLat,
         callerLng,
         target.geoCenter.lat,
@@ -710,18 +710,18 @@ export class RTBService {
   /**
    * Calculate distance between two points using Haversine formula
    */
-  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  private static calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 3959; // Earth's radius in miles
-    const dLat = this.toRadians(lat2 - lat1);
-    const dLon = this.toRadians(lon2 - lon1);
+    const dLat = RTBService.toRadians(lat2 - lat1);
+    const dLon = RTBService.toRadians(lon2 - lon1);
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
+              Math.cos(RTBService.toRadians(lat1)) * Math.cos(RTBService.toRadians(lat2)) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
 
-  private toRadians(degrees: number): number {
+  private static toRadians(degrees: number): number {
     return degrees * (Math.PI / 180);
   }
 }
