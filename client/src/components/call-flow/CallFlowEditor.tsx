@@ -553,7 +553,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
           style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
         />
         {editingConnectionId === connection.id ? (
-          <foreignObject x={midX - 50} y={midY - 35} width="100" height="20">
+          <foreignObject x={midX - 60} y={midY - 35} width="120" height="20">
             <input
               type="text"
               value={editingConnectionLabel}
@@ -566,33 +566,51 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
                   handleCancelConnectionLabelEdit();
                 }
               }}
-              className="text-xs border border-blue-300 rounded px-1 py-0.5 bg-white text-center w-full"
+              className="text-xs border-2 border-blue-500 rounded px-2 py-1 bg-white text-center w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
               autoFocus
               onFocus={(e) => e.target.select()}
+              placeholder="Enter label or leave empty"
             />
           </foreignObject>
         ) : (
           <g onClick={() => handleStartConnectionLabelEdit(connection)}>
-            {/* Background rectangle for better visibility */}
+            {/* Background rectangle for better visibility - only show if there's a label */}
+            {connection.label && (
+              <rect
+                x={midX - (connection.label.length * 3 + 10)}
+                y={midY - 35}
+                width={connection.label.length * 6 + 20}
+                height="20"
+                fill="white"
+                stroke="#3b82f6"
+                strokeWidth="1"
+                rx="4"
+                className="cursor-pointer hover:fill-blue-50"
+              />
+            )}
+            {/* Clickable area - always present for editing */}
             <rect
-              x={midX - 45}
+              x={midX - 30}
               y={midY - 35}
-              width="90"
+              width="60"
               height="20"
-              fill="white"
-              stroke="#3b82f6"
-              strokeWidth="1"
-              rx="4"
-              className="cursor-pointer hover:fill-blue-50"
+              fill="transparent"
+              stroke="none"
+              className="cursor-pointer"
+              opacity="0"
             />
             <text
               x={midX}
               y={midY - 22}
               textAnchor="middle"
-              className="text-xs fill-blue-600 font-medium cursor-pointer hover:fill-blue-800"
+              className={`text-xs font-medium cursor-pointer hover:fill-blue-800 ${
+                connection.label 
+                  ? 'fill-blue-600' 
+                  : 'fill-gray-400 opacity-50'
+              }`}
               style={{ pointerEvents: 'none' }}
             >
-              {connection.label || 'Click to edit'}
+              {connection.label || '+'}
             </text>
           </g>
         )}
