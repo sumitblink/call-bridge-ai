@@ -4256,6 +4256,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear all RTB bid requests and responses for user
+  app.delete('/api/rtb/bid-requests/clear-all', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      console.log(`[Clear RTB Bid Requests] Starting cleanup for user ${userId}`);
+      
+      // Clear all RTB audit data (bid requests and responses)
+      await storage.clearRtbAuditData();
+      
+      console.log(`[Clear RTB Bid Requests] Successfully cleared all RTB bid requests and responses`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Successfully cleared all RTB bid requests and responses'
+      });
+    } catch (error) {
+      console.error('Error clearing RTB bid requests:', error);
+      res.status(500).json({ error: 'Failed to clear RTB bid requests' });
+    }
+  });
+
   // Clear all RTB targets for user
   app.delete('/api/rtb/targets/clear-all', requireAuth, async (req: any, res) => {
     try {

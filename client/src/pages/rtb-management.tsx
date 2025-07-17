@@ -1504,7 +1504,7 @@ const RTBOverviewTab = () => {
 };
 
 // RTB Analytics Component
-const RTBAnalyticsTab = () => {
+const RTBAnalyticsTab = ({ clearBidRequestsMutation }: { clearBidRequestsMutation: any }) => {
   const { data: bidRequests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ['/api/rtb/bid-requests'],
     refetchInterval: 30000, // Auto-refresh every 30 seconds
@@ -1680,10 +1680,24 @@ const RTBAnalyticsTab = () => {
       {/* Recent Bid Requests with Expandable Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Bid Requests</CardTitle>
-          <CardDescription>
-            Latest RTB auction activity with detailed bidding breakdown
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <CardTitle>Recent Bid Requests</CardTitle>
+              <CardDescription>
+                Latest RTB auction activity with detailed bidding breakdown
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => clearBidRequestsMutation.mutate()}
+              disabled={clearBidRequestsMutation.isPending}
+              className="flex items-center gap-2 text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="w-4 h-4" />
+              {clearBidRequestsMutation.isPending ? 'Clearing...' : 'Clear All'}
+            </Button>
+          </div>
           <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-blue-600" />
@@ -1731,6 +1745,35 @@ export default function RTBManagement() {
       toast({
         title: "Error Creating Sample Data",
         description: error.message || "Failed to create sample RTB data",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation for clearing bid requests
+  const clearBidRequestsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/rtb/bid-requests/clear-all', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to clear bid requests');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Bid Requests Cleared",
+        description: "Successfully cleared all RTB bid requests and responses",
+      });
+      // Invalidate all RTB queries to refresh the interface
+      queryClient.invalidateQueries({ queryKey: ['/api/rtb'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Clearing Bid Requests",
+        description: error.message || "Failed to clear RTB bid requests",
         variant: "destructive",
       });
     },
@@ -1789,7 +1832,7 @@ export default function RTBManagement() {
           </TabsContent>
           
           <TabsContent value="analytics">
-            <RTBAnalyticsTab />
+            <RTBAnalyticsTab clearBidRequestsMutation={clearBidRequestsMutation} />
           </TabsContent>
         </Tabs>
       </div>
