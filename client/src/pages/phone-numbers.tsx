@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +68,7 @@ export default function PhoneNumbersPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedCampaigns, setSelectedCampaigns] = useState<Record<string, string>>({});
   const [purchasingNumbers, setPurchasingNumbers] = useState<Set<string>>(new Set());
+  const [confirmPurchase, setConfirmPurchase] = useState<{ number: TwilioNumber; campaignId?: number } | null>(null);
 
   // Fetch phone numbers
   const { data: phoneNumbers = [], isLoading } = useQuery({
@@ -288,6 +290,15 @@ export default function PhoneNumbersPage() {
   };
 
   const handlePurchase = (number: TwilioNumber, campaignId?: number) => {
+    // Show confirmation dialog instead of immediately purchasing
+    setConfirmPurchase({ number, campaignId });
+  };
+
+  const confirmPurchaseAction = () => {
+    if (!confirmPurchase) return;
+    
+    const { number, campaignId } = confirmPurchase;
+    
     // Add this number to purchasing state
     setPurchasingNumbers(prev => new Set(prev).add(number.phoneNumber));
     
@@ -305,6 +316,8 @@ export default function PhoneNumbersPage() {
           newSet.delete(number.phoneNumber);
           return newSet;
         });
+        // Close confirmation dialog
+        setConfirmPurchase(null);
       }
     });
   };
@@ -1007,6 +1020,41 @@ export default function PhoneNumbersPage() {
 
         </Tabs>
       </div>
+
+      {/* Purchase Confirmation Dialog */}
+      <AlertDialog open={!!confirmPurchase} onOpenChange={(open) => !open && setConfirmPurchase(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Phone Number Purchase</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to purchase this phone number?
+              {confirmPurchase && (
+                <div className="mt-4 space-y-2">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="font-medium">Phone Number: {confirmPurchase.number.phoneNumber}</p>
+                    <p className="text-sm text-muted-foreground">Region: {confirmPurchase.number.region}</p>
+                    <p className="text-sm text-muted-foreground">Country: {confirmPurchase.number.isoCountry}</p>
+                    {confirmPurchase.campaignId && (
+                      <p className="text-sm text-muted-foreground">
+                        Campaign: {getCampaignName(confirmPurchase.campaignId)}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    This will charge your Twilio account and add the number to your phone number inventory.
+                  </p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPurchaseAction}>
+              {purchasingNumbers.has(confirmPurchase?.number.phoneNumber || '') ? 'Purchasing...' : 'Purchase Number'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }
