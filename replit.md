@@ -113,6 +113,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 17, 2025: **RTB DUPLICATE BIDDING FIXED** - Resolved critical issue causing multiple bid responses for single calls
+  - Fixed target ID mapping bug in RTB auction response processing (eligibleTargets vs activeAssignments mismatch)
+  - Added auction deduplication logic to prevent multiple auctions for the same request ID
+  - Enhanced logging to show when duplicate auctions are skipped
+  - RTB system now properly shows 3 bid responses (one per target) instead of 9 duplicate responses
+  - Auction process now runs cleanly with correct target-to-response mapping
+  - Fixed root cause of "each bidder bid twice" issue reported in RTB analytics interface
 - July 17, 2025: **PHASE 3 ADVANCED FILTERING COMPLETE** - Implemented comprehensive call quality management and advanced filtering system
   - Created Phase3AdvancedFilteringDialog with 5-tabbed interface (Call Quality, Caller History, Dynamic Filtering, Performance, Security)
   - Added call quality management with duration filtering, call type filtering, and quality thresholds

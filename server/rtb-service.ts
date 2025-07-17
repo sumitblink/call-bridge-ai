@@ -198,6 +198,19 @@ export class RTBService {
         };
       }
 
+      // Check if auction already exists for this request ID to prevent duplicates
+      const existingRequest = await storage.getRtbBidRequest(bidRequest.requestId);
+      if (existingRequest) {
+        console.log(`[RTB] Auction already exists for request ID: ${bidRequest.requestId}, skipping duplicate`);
+        return {
+          success: false,
+          totalTargetsPinged: 0,
+          successfulResponses: 0,
+          totalResponseTime: 0,
+          error: 'Auction already processed for this request'
+        };
+      }
+
       // Create bid request record
       const requestRecord: InsertRtbBidRequest = {
         requestId: bidRequest.requestId,
@@ -256,7 +269,7 @@ export class RTBService {
 
       for (let i = 0; i < results.length; i++) {
         const result = results[i];
-        const targetId = activeAssignments[i].rtbTargetId;
+        const targetId = eligibleTargets[i].rtbTargetId;
 
         if (result.status === 'fulfilled' && result.value) {
           const response: InsertRtbBidResponse = {
