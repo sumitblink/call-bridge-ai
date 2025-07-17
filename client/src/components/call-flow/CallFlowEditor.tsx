@@ -617,11 +617,22 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
         <circle
           cx={midX}
           cy={midY}
-          r="6"
-          fill="red"
-          className="cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
+          r="8"
+          fill="white"
+          stroke="red"
+          strokeWidth="2"
+          className="cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
           onClick={() => handleDeleteConnection(connection.id)}
         />
+        <text
+          x={midX}
+          y={midY + 1}
+          textAnchor="middle"
+          className="text-xs fill-red-500 font-bold cursor-pointer"
+          style={{ pointerEvents: 'none' }}
+        >
+          ×
+        </text>
       </g>
     );
   };
