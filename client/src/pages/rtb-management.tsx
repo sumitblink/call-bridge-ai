@@ -538,8 +538,8 @@ const RTBRoutersTab = () => {
     const assignmentMap: {[key: number]: {priority: number, active: boolean}} = {};
     routerAssignments.forEach((assignment: any) => {
       assignmentMap[assignment.rtbTargetId] = {
-        priority: assignment.priority,
-        active: assignment.isActive
+        priority: assignment.priority || 1,
+        active: assignment.isActive || false
       };
     });
     setTargetAssignments(assignmentMap);
@@ -753,8 +753,8 @@ const RTBRoutersTab = () => {
                             const currentAssignment = assignments.find(
                               (a: any) => a.rtbTargetId === target.id && a.rtbRouterId === editingRouter?.id
                             );
-                            const isAssigned = !!currentAssignment;
-                            const currentPriority = currentAssignment?.priority || 1;
+                            const isAssigned = !!currentAssignment || !!targetAssignments[target.id]?.active;
+                            const currentPriority = targetAssignments[target.id]?.priority || currentAssignment?.priority || 1;
                             
                             return (
                               <div key={target.id} className="flex items-center space-x-3 p-3 border rounded-lg">
@@ -781,21 +781,21 @@ const RTBRoutersTab = () => {
                                     Company: {target.companyName || 'Not specified'}
                                   </div>
                                 </div>
-                                {(isAssigned || targetAssignments[target.id]?.active) && (
+                                {isAssigned && (
                                   <div className="flex items-center space-x-2">
                                     <label className="text-xs text-muted-foreground">Priority:</label>
                                     <input
                                       type="number"
                                       min="1"
                                       max="99"
-                                      value={targetAssignments[target.id]?.priority || currentPriority}
+                                      value={currentPriority}
                                       onChange={(e) => {
                                         const priority = parseInt(e.target.value) || 1;
                                         setTargetAssignments(prev => ({
                                           ...prev,
                                           [target.id]: { 
                                             priority, 
-                                            active: prev[target.id]?.active || isAssigned 
+                                            active: true
                                           }
                                         }));
                                       }}
