@@ -24,6 +24,7 @@ import Feedback from "@/pages/feedback";
 import Queries from "@/pages/queries";
 import CallFlows from "@/pages/call-flows";
 import TrackingPage from "@/pages/tracking";
+import AdvancedAnalyticsPage from "@/pages/advanced-analytics";
 
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
@@ -66,6 +67,7 @@ function Router() {
           <Route path="/rtb-management" component={RTBManagement} />
           <Route path="/call-flows" component={CallFlows} />
           <Route path="/tracking" component={TrackingPage} />
+          <Route path="/analytics" component={AdvancedAnalyticsPage} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />
           <Route path="/twilio-test" component={TwilioTest} />

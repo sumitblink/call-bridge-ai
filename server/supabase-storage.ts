@@ -60,6 +60,12 @@ import {
   type InsertFeedback,
   type CallFlow,
   type InsertCallFlow,
+  visitorSessions,
+  conversionEvents,
+  type VisitorSession,
+  type InsertVisitorSession,
+  type ConversionEvent,
+  type InsertConversionEvent,
 } from '@shared/schema';
 import type { IStorage } from './storage';
 
@@ -1016,6 +1022,43 @@ export class SupabaseStorage implements IStorage {
       .where(eq(feedback.userId, userId))
       .orderBy(desc(feedback.timestamp));
     return result;
+  }
+
+  // MVP Tracking methods (delegated to DatabaseStorage)
+  async createVisitorSession(session: InsertVisitorSession): Promise<VisitorSession> {
+    const { storage } = await import('./storage-db');
+    return storage.createVisitorSession(session);
+  }
+
+  async getVisitorSession(sessionId: string): Promise<VisitorSession | undefined> {
+    const { storage } = await import('./storage-db');
+    return storage.getVisitorSession(sessionId);
+  }
+
+  async updateVisitorSession(sessionId: string, updates: Partial<InsertVisitorSession>): Promise<VisitorSession | undefined> {
+    const { storage } = await import('./storage-db');
+    return storage.updateVisitorSession(sessionId, updates);
+  }
+
+  async createConversionEvent(event: InsertConversionEvent): Promise<ConversionEvent> {
+    const { storage } = await import('./storage-db');
+    return storage.createConversionEvent(event);
+  }
+
+  async getConversionEvents(sessionId?: string, campaignId?: number): Promise<ConversionEvent[]> {
+    const { storage } = await import('./storage-db');
+    return storage.getConversionEvents(sessionId, campaignId);
+  }
+
+  async getBasicTrackingStats(userId: number): Promise<{
+    totalSessions: number;
+    totalConversions: number;
+    conversionRate: number;
+    topSources: Array<{source: string; count: number}>;
+    recentConversions: ConversionEvent[];
+  }> {
+    const { storage } = await import('./storage-db');
+    return storage.getBasicTrackingStats(userId);
   }
 }
 

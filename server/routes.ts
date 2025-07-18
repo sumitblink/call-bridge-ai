@@ -5003,6 +5003,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Advanced Analytics API endpoints
+  app.get('/api/analytics/attribution/:campaignId', requireAuth, async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const { attributionService } = await import('./attribution-service');
+      const report = await attributionService.generateAttributionReport(campaignId);
+      res.json(report);
+    } catch (error) {
+      console.error('Error fetching attribution report:', error);
+      res.status(500).json({ error: 'Failed to fetch attribution report' });
+    }
+  });
+
+  app.get('/api/analytics/traffic-sources', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { attributionService } = await import('./attribution-service');
+      const sources = await attributionService.analyzeTrafficSources(userId);
+      res.json(sources);
+    } catch (error) {
+      console.error('Error analyzing traffic sources:', error);
+      res.status(500).json({ error: 'Failed to analyze traffic sources' });
+    }
+  });
+
+  app.get('/api/analytics/landing-pages', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { attributionService } = await import('./attribution-service');
+      const pages = await attributionService.getLandingPageAnalytics(userId);
+      res.json(pages);
+    } catch (error) {
+      console.error('Error fetching landing page analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch landing page analytics' });
+    }
+  });
+
+  app.get('/api/analytics/optimizations', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { attributionService } = await import('./attribution-service');
+      const optimizations = await attributionService.optimizeTrafficSources(userId);
+      res.json(optimizations);
+    } catch (error) {
+      console.error('Error fetching optimization recommendations:', error);
+      res.status(500).json({ error: 'Failed to fetch optimization recommendations' });
+    }
+  });
+
+  app.get('/api/analytics/attribution-chain/:sessionId', requireAuth, async (req, res) => {
+    try {
+      const sessionId = req.params.sessionId;
+      const callId = req.query.callId ? parseInt(req.query.callId as string) : undefined;
+      const { attributionService } = await import('./attribution-service');
+      const chain = await attributionService.buildAttributionChain(sessionId, callId);
+      res.json(chain);
+    } catch (error) {
+      console.error('Error building attribution chain:', error);
+      res.status(500).json({ error: 'Failed to build attribution chain' });
+    }
+  });
+
   return httpServer;
 }
 
