@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   Eye, 
   Phone, 
@@ -13,7 +16,10 @@ import {
   CheckCircle,
   XCircle,
   BarChart3,
-  Activity
+  Activity,
+  Code,
+  Copy,
+  ExternalLink
 } from 'lucide-react';
 
 interface TrackingStats {
@@ -49,11 +55,58 @@ interface VisitorSession {
 
 export default function TrackingPage() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedCampaign, setSelectedCampaign] = useState<number | null>(null);
+  const [pixelCode, setPixelCode] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
 
   const { data: stats, isLoading: statsLoading } = useQuery<TrackingStats>({
     queryKey: ['/api/tracking/stats'],
     enabled: activeTab === 'overview'
   });
+
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ['/api/campaigns']
+  });
+
+  const generatePixelCode = async () => {
+    if (!selectedCampaign) return;
+    
+    setIsGenerating(true);
+    try {
+      const response = await apiRequest(`/api/tracking/pixel-code/${selectedCampaign}`, 'GET');
+      const data = await response.json();
+      setPixelCode(data.pixelCode);
+      toast({
+        title: "Pixel code generated",
+        description: "Copy and paste the code into your landing page.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate pixel code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied!",
+        description: "Pixel code copied to clipboard.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const { data: conversions, isLoading: conversionsLoading } = useQuery({
     queryKey: ['/api/tracking/conversions'],
@@ -119,8 +172,9 @@ export default function TrackingPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="pixel">Pixel Code</TabsTrigger>
           <TabsTrigger value="conversions">Conversions</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -237,6 +291,110 @@ export default function TrackingPage() {
               </div>
             </>
           )}
+        </TabsContent>
+
+        <TabsContent value="pixel" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Code className="w-5 h-5 mr-2" />
+                Tracking Pixel Code Generator
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Generate JavaScript tracking code for your landing pages to capture visitor sessions and attribution data.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Campaign Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Campaign
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <select 
+                      value={selectedCampaign || ''} 
+                      onChange={(e) => setSelectedCampaign(e.target.value ? parseInt(e.target.value) : null)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Choose a campaign...</option>
+                      {campaigns.map((campaign: any) => (
+                        <option key={campaign.id} value={campaign.id}>
+                          {campaign.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Button 
+                      onClick={generatePixelCode}
+                      disabled={!selectedCampaign || isGenerating}
+                      className="whitespace-nowrap"
+                    >
+                      {isGenerating ? 'Generating...' : 'Generate Code'}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Generated Code */}
+                {pixelCode && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Tracking Code</h4>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => copyToClipboard(pixelCode)}
+                      >
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy Code
+                      </Button>
+                    </div>
+                    
+                    <div className="bg-gray-50 p-4 rounded-md border overflow-x-auto">
+                      <pre className="text-sm text-gray-800 whitespace-pre-wrap">
+                        {pixelCode}
+                      </pre>
+                    </div>
+                    
+                    <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
+                      <h5 className="font-medium text-blue-900 mb-2 flex items-center">
+                        <ExternalLink className="w-4 h-4 mr-1" />
+                        Implementation Instructions
+                      </h5>
+                      <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
+                        <li>Copy the JavaScript code above</li>
+                        <li>Paste it before the closing <code className="bg-white px-1 rounded">&lt;/body&gt;</code> tag on your landing pages</li>
+                        <li>The code will automatically track visitor sessions and UTM parameters</li>
+                        <li>When visitors call your campaign phone number, conversions will be linked to their session</li>
+                        <li>Visit the Analytics dashboard to view attribution data</li>
+                      </ol>
+                    </div>
+                    
+                    <div className="bg-green-50 p-4 rounded-md border border-green-200">
+                      <h5 className="font-medium text-green-900 mb-2">What This Tracks</h5>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-green-800">
+                        <li>Visitor sessions and unique session IDs</li>
+                        <li>UTM parameters (source, medium, campaign, term, content)</li>
+                        <li>Referrer information and landing page URLs</li>
+                        <li>User agent and browser information</li>
+                        <li>Phone call conversions linked to visitor sessions</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Example Implementation */}
+                <div className="bg-gray-50 p-4 rounded-md border">
+                  <h5 className="font-medium mb-2">Example URL with UTM Parameters</h5>
+                  <code className="text-sm text-gray-700">
+                    https://yourwebsite.com/landing-page?utm_source=google&utm_medium=cpc&utm_campaign=insurance&utm_term=auto+insurance&utm_content=ad1
+                  </code>
+                  <p className="text-sm text-gray-600 mt-2">
+                    The tracking code will automatically capture these parameters and attribute any phone calls to this traffic source.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="conversions" className="mt-6">
