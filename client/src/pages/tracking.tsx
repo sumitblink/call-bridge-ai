@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -145,33 +146,36 @@ export default function TrackingPage() {
 
   if (statsLoading && activeTab === 'overview') {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Campaign Tracking & Analytics</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-              </CardContent>
-            </Card>
-          ))}
+      <Layout>
+        <div className="p-6">
+          <h1 className="text-2xl font-bold mb-6">Campaign Tracking & Analytics</h1>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <Layout>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Campaign Tracking & Analytics</h1>
         <Badge variant="outline" className="text-sm">
           <Activity className="w-4 h-4 mr-1" />
           Real-Time Tracking Active
         </Badge>
-      </div>
+        </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="pixel">Pixel Code</TabsTrigger>
@@ -430,7 +434,8 @@ export default function TrackingPage() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
-    </div>
+        </Tabs>
+      </div>
+    </Layout>
   );
 }
