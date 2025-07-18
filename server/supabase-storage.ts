@@ -1060,6 +1060,11 @@ export class SupabaseStorage implements IStorage {
     const { storage } = await import('./storage-db');
     return storage.getBasicTrackingStats(userId);
   }
+
+  async getCampaignPublishers(campaignId: number): Promise<any[]> {
+    const { storage } = await import('./storage-db');
+    return storage.getCampaignPublishers(campaignId);
+  }
 }
 
 export const storage = new SupabaseStorage();

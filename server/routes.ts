@@ -5040,12 +5040,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Pixel fired:', { campaign_id, session_id, trackingData });
       
       // Create or update visitor session
-      if (session_id && campaign_id) {
+      if (campaign_id) {
         const { trackingService } = await import('./tracking-service');
+        const { TrackingService } = await import('./tracking-service');
+        const trackingServiceInstance = new TrackingService();
         const userId = 1; // In production, derive from campaign or other means
         
-        await trackingService.createOrUpdateSession(
-          session_id as string,
+        // Generate session ID if not provided
+        const sessionId = session_id as string || trackingServiceInstance.generateSessionId();
+        
+        await trackingServiceInstance.createOrUpdateSession(
+          sessionId,
           userId,
           {
             campaign_id: campaign_id as string,
