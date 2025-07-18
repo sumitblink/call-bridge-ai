@@ -74,11 +74,11 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
   const [formData, setFormData] = useState({
     name: "",
     tagCode: "",
-    primaryNumberId: "",
+    primaryNumberId: "none",
     numberToReplace: "",
-    poolId: "",
+    poolId: "none",
     rotationStrategy: "round_robin",
-    publisherId: "",
+    publisherId: "none",
     captureUserData: false,
     sessionTimeout: 1800,
     stickyDuration: 86400
@@ -86,11 +86,11 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
   const [settingsData, setSettingsData] = useState({
     name: "",
     tagCode: "",
-    primaryNumberId: "",
+    primaryNumberId: "none",
     numberToReplace: "",
-    poolId: "",
+    poolId: "none",
     rotationStrategy: "round_robin",
-    publisherId: "",
+    publisherId: "none",
     captureUserData: false,
     sessionTimeout: 1800,
     stickyDuration: 86400
@@ -125,11 +125,11 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
       setFormData({
         name: "",
         tagCode: "",
-        primaryNumberId: "",
+        primaryNumberId: "none",
         numberToReplace: "",
-        poolId: "",
+        poolId: "none",
         rotationStrategy: "round_robin",
-        publisherId: "",
+        publisherId: "none",
         captureUserData: false,
         sessionTimeout: 1800,
         stickyDuration: 86400
@@ -217,9 +217,9 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
 
     createTagMutation.mutate({
       ...formData,
-      primaryNumberId: formData.primaryNumberId ? parseInt(formData.primaryNumberId) : undefined,
-      poolId: formData.poolId ? parseInt(formData.poolId) : undefined,
-      publisherId: formData.publisherId ? parseInt(formData.publisherId) : undefined,
+      primaryNumberId: formData.primaryNumberId && formData.primaryNumberId !== "none" ? parseInt(formData.primaryNumberId) : undefined,
+      poolId: formData.poolId && formData.poolId !== "none" ? parseInt(formData.poolId) : undefined,
+      publisherId: formData.publisherId && formData.publisherId !== "none" ? parseInt(formData.publisherId) : undefined,
     });
   };
 
@@ -239,9 +239,9 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
       tagId: selectedTag.id,
       data: {
         ...settingsData,
-        primaryNumberId: settingsData.primaryNumberId ? parseInt(settingsData.primaryNumberId) : undefined,
-        poolId: settingsData.poolId ? parseInt(settingsData.poolId) : undefined,
-        publisherId: settingsData.publisherId ? parseInt(settingsData.publisherId) : undefined,
+        primaryNumberId: settingsData.primaryNumberId && settingsData.primaryNumberId !== "none" ? parseInt(settingsData.primaryNumberId) : undefined,
+        poolId: settingsData.poolId && settingsData.poolId !== "none" ? parseInt(settingsData.poolId) : undefined,
+        publisherId: settingsData.publisherId && settingsData.publisherId !== "none" ? parseInt(settingsData.publisherId) : undefined,
       }
     });
   };
@@ -256,11 +256,11 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     setSettingsData({
       name: tag.name || "",
       tagCode: tag.tagCode || "",
-      primaryNumberId: tag.primaryNumberId?.toString() || "",
+      primaryNumberId: tag.primaryNumberId?.toString() || "none",
       numberToReplace: tag.numberToReplace || "",
-      poolId: tag.poolId?.toString() || "",
+      poolId: tag.poolId?.toString() || "none",
       rotationStrategy: tag.rotationStrategy || "round_robin",
-      publisherId: tag.publisherId?.toString() || "",
+      publisherId: tag.publisherId?.toString() || "none",
       captureUserData: tag.captureUserData || false,
       sessionTimeout: tag.sessionTimeout || 1800,
       stickyDuration: tag.stickyDuration || 86400
@@ -457,6 +457,7 @@ ${generateJavaScriptCode(tag)}`;
                       <SelectValue placeholder="Select Publisher Number" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">No primary number</SelectItem>
                       {phoneNumbers.map((number) => (
                         <SelectItem key={number.id} value={number.id.toString()}>
                           {number.friendlyName || number.phoneNumber}
@@ -487,6 +488,7 @@ ${generateJavaScriptCode(tag)}`;
                       <SelectValue placeholder="Select Number Pool" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">No pool</SelectItem>
                       {numberPools.map((pool) => (
                         <SelectItem key={pool.id} value={pool.id.toString()}>
                           {pool.name} ({pool.poolSize} numbers)
@@ -525,6 +527,7 @@ ${generateJavaScriptCode(tag)}`;
                     <SelectValue placeholder="Select Publisher" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">No publisher</SelectItem>
                     {publishers.map((publisher) => (
                       <SelectItem key={publisher.id} value={publisher.id.toString()}>
                         {publisher.name}
@@ -840,7 +843,7 @@ ${generateJavaScriptCode(tag)}`;
                     <SelectValue placeholder="Select phone number" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No primary number</SelectItem>
+                    <SelectItem value="none">No primary number</SelectItem>
                     {phoneNumbers.map((phone) => (
                       <SelectItem key={phone.id} value={phone.id.toString()}>
                         {phone.phoneNumber} - {phone.friendlyName}
@@ -871,7 +874,7 @@ ${generateJavaScriptCode(tag)}`;
                     <SelectValue placeholder="Select number pool" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No pool</SelectItem>
+                    <SelectItem value="none">No pool</SelectItem>
                     {numberPools.map((pool) => (
                       <SelectItem key={pool.id} value={pool.id.toString()}>
                         {pool.name} ({pool.poolSize} numbers)
@@ -910,7 +913,7 @@ ${generateJavaScriptCode(tag)}`;
                   <SelectValue placeholder="Select publisher" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No publisher</SelectItem>
+                  <SelectItem value="none">No publisher</SelectItem>
                   {publishers.map((publisher) => (
                     <SelectItem key={publisher.id} value={publisher.id.toString()}>
                       {publisher.name}
