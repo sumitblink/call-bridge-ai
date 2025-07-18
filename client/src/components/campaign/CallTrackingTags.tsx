@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -68,8 +69,21 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCodeDialogOpen, setIsCodeDialogOpen] = useState(false);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [selectedTag, setSelectedTag] = useState<CallTrackingTag | null>(null);
   const [formData, setFormData] = useState({
+    name: "",
+    tagCode: "",
+    primaryNumberId: "",
+    numberToReplace: "",
+    poolId: "",
+    rotationStrategy: "round_robin",
+    publisherId: "",
+    captureUserData: false,
+    sessionTimeout: 1800,
+    stickyDuration: 86400
+  });
+  const [settingsData, setSettingsData] = useState({
     name: "",
     tagCode: "",
     primaryNumberId: "",
@@ -153,6 +167,27 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     },
   });
 
+  // Update tracking tag mutation
+  const updateTagMutation = useMutation({
+    mutationFn: ({ tagId, data }: { tagId: number; data: any }) => 
+      apiRequest(`/api/tracking-tags/${tagId}`, "PUT", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}/tracking-tags`] });
+      setIsSettingsDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Tracking tag updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update tracking tag",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Generate tag code from name
   const generateTagCode = (name: string) => {
     return name
@@ -188,9 +223,49 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     });
   };
 
+  const handleSettingsSubmit = () => {
+    if (!selectedTag) return;
+
+    if (!settingsData.name || !settingsData.tagCode) {
+      toast({
+        title: "Validation Error",
+        description: "Tag name and code are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateTagMutation.mutate({
+      tagId: selectedTag.id,
+      data: {
+        ...settingsData,
+        primaryNumberId: settingsData.primaryNumberId ? parseInt(settingsData.primaryNumberId) : undefined,
+        poolId: settingsData.poolId ? parseInt(settingsData.poolId) : undefined,
+        publisherId: settingsData.publisherId ? parseInt(settingsData.publisherId) : undefined,
+      }
+    });
+  };
+
   const showCodeSnippets = (tag: CallTrackingTag) => {
     setSelectedTag(tag);
     setIsCodeDialogOpen(true);
+  };
+
+  const showSettings = (tag: CallTrackingTag) => {
+    setSelectedTag(tag);
+    setSettingsData({
+      name: tag.name || "",
+      tagCode: tag.tagCode || "",
+      primaryNumberId: tag.primaryNumberId?.toString() || "",
+      numberToReplace: tag.numberToReplace || "",
+      poolId: tag.poolId?.toString() || "",
+      rotationStrategy: tag.rotationStrategy || "round_robin",
+      publisherId: tag.publisherId?.toString() || "",
+      captureUserData: tag.captureUserData || false,
+      sessionTimeout: tag.sessionTimeout || 1800,
+      stickyDuration: tag.stickyDuration || 86400
+    });
+    setIsSettingsDialogOpen(true);
   };
 
   const copyToClipboard = (text: string) => {
@@ -603,7 +678,7 @@ ${generateJavaScriptCode(tag)}`;
                             <BarChart3 className="h-4 w-4 mr-2" />
                             Analytics
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => showSettings(tag)}>
                             <Settings className="h-4 w-4 mr-2" />
                             Settings
                           </DropdownMenuItem>
@@ -718,6 +793,183 @@ ${generateJavaScriptCode(tag)}`;
               </div>
             </TabsContent>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings Dialog */}
+      <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Edit Tracking Tag - {selectedTag?.name}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="settings-name">Tag Name *</Label>
+                <Input
+                  id="settings-name"
+                  value={settingsData.name}
+                  onChange={(e) => setSettingsData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Homepage Banner"
+                />
+              </div>
+              <div>
+                <Label htmlFor="settings-tagCode">Tag Code *</Label>
+                <Input
+                  id="settings-tagCode"
+                  value={settingsData.tagCode}
+                  onChange={(e) => setSettingsData(prev => ({ ...prev, tagCode: e.target.value }))}
+                  placeholder="e.g., homepage_banner"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="settings-primaryNumber">Primary Phone Number</Label>
+                <Select
+                  value={settingsData.primaryNumberId}
+                  onValueChange={(value) => setSettingsData(prev => ({ ...prev, primaryNumberId: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select phone number" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No primary number</SelectItem>
+                    {phoneNumbers.map((phone) => (
+                      <SelectItem key={phone.id} value={phone.id.toString()}>
+                        {phone.phoneNumber} - {phone.friendlyName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="settings-numberToReplace">Number to Replace</Label>
+                <Input
+                  id="settings-numberToReplace"
+                  value={settingsData.numberToReplace}
+                  onChange={(e) => setSettingsData(prev => ({ ...prev, numberToReplace: e.target.value }))}
+                  placeholder="e.g., (555) 123-4567"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="settings-pool">Number Pool</Label>
+                <Select
+                  value={settingsData.poolId}
+                  onValueChange={(value) => setSettingsData(prev => ({ ...prev, poolId: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select number pool" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No pool</SelectItem>
+                    {numberPools.map((pool) => (
+                      <SelectItem key={pool.id} value={pool.id.toString()}>
+                        {pool.name} ({pool.poolSize} numbers)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="settings-rotationStrategy">Rotation Strategy</Label>
+                <Select
+                  value={settingsData.rotationStrategy}
+                  onValueChange={(value) => setSettingsData(prev => ({ ...prev, rotationStrategy: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rotationStrategies.map((strategy) => (
+                      <SelectItem key={strategy.value} value={strategy.value}>
+                        {strategy.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="settings-publisher">Publisher</Label>
+              <Select
+                value={settingsData.publisherId}
+                onValueChange={(value) => setSettingsData(prev => ({ ...prev, publisherId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select publisher" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No publisher</SelectItem>
+                  {publishers.map((publisher) => (
+                    <SelectItem key={publisher.id} value={publisher.id.toString()}>
+                      {publisher.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="settings-captureUserData"
+                  checked={settingsData.captureUserData}
+                  onCheckedChange={(checked) => setSettingsData(prev => ({ ...prev, captureUserData: checked === true }))}
+                />
+                <Label htmlFor="settings-captureUserData">Capture User Data (UTM parameters, referrer, etc.)</Label>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="settings-sessionTimeout">Session Timeout (seconds)</Label>
+                  <Input
+                    id="settings-sessionTimeout"
+                    type="number"
+                    value={settingsData.sessionTimeout}
+                    onChange={(e) => setSettingsData(prev => ({ ...prev, sessionTimeout: parseInt(e.target.value) || 1800 }))}
+                    min="300"
+                    max="7200"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="settings-stickyDuration">Sticky Duration (seconds)</Label>
+                  <Input
+                    id="settings-stickyDuration"
+                    type="number"
+                    value={settingsData.stickyDuration}
+                    onChange={(e) => setSettingsData(prev => ({ ...prev, stickyDuration: parseInt(e.target.value) || 86400 }))}
+                    min="3600"
+                    max="2592000"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsSettingsDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSettingsSubmit}
+              disabled={updateTagMutation.isPending}
+            >
+              {updateTagMutation.isPending ? "Updating..." : "Update Tag"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
