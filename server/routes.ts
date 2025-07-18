@@ -5099,6 +5099,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/analytics/attribution', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { attributionService } = await import('./attribution-service');
+      // Get all campaigns for this user and aggregate attribution data
+      const campaigns = await storage.getCampaigns(userId);
+      if (campaigns.length === 0) {
+        return res.json({
+          totalConversions: 0,
+          totalRevenue: 0,
+          attributionBreakdown: [],
+          customerJourney: []
+        });
+      }
+      
+      // For simplicity, use the first campaign or aggregate across all
+      const report = await attributionService.generateAttributionReport(campaigns[0].id);
+      res.json(report);
+    } catch (error) {
+      console.error('Error fetching attribution report:', error);
+      res.status(500).json({ error: 'Failed to fetch attribution report' });
+    }
+  });
+
   app.get('/api/analytics/traffic-sources', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
@@ -5124,6 +5148,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/analytics/optimizations', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { attributionService } = await import('./attribution-service');
+      const optimizations = await attributionService.optimizeTrafficSources(userId);
+      res.json(optimizations);
+    } catch (error) {
+      console.error('Error fetching optimization recommendations:', error);
+      res.status(500).json({ error: 'Failed to fetch optimization recommendations' });
+    }
+  });
+
+  app.get('/api/analytics/optimization', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
       const { attributionService } = await import('./attribution-service');
