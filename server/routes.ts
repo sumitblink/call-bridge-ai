@@ -5003,6 +5003,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pixel code generation endpoint
+  app.get('/api/tracking/pixel-code/:campaignId', requireAuth, async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const userId = req.user?.id;
+      const { trackingService } = await import('./tracking-service');
+      const pixelCode = trackingService.generateTrackingCode(campaignId, userId);
+      res.json({ pixelCode });
+    } catch (error) {
+      console.error('Error generating pixel code:', error);
+      res.status(500).json({ error: 'Failed to generate pixel code' });
+    }
+  });
+
+  // Pixel image endpoint (transparent 1x1 pixel)
+  app.get('/api/tracking/pixel.gif', async (req, res) => {
+    try {
+      const { campaign_id, session_id, ...trackingData } = req.query;
+      
+      // Log the tracking data for debugging
+      console.log('Pixel fired:', { campaign_id, session_id, trackingData });
+      
+      // Create or update visitor session
+      if (session_id && campaign_id) {
+        const { trackingService } = await import('./tracking-service');
+        const userId = 1; // In production, derive from campaign or other means
+        
+        await trackingService.createOrUpdateSession(
+          session_id as string,
+          userId,
+          {
+            campaign_id: campaign_id as string,
+            landing_page: trackingData.landing_page as string,
+            referrer: trackingData.referrer as string,
+            user_agent: trackingData.user_agent as string,
+            ip_address: req.ip,
+            utm_source: trackingData.utm_source as string,
+            utm_medium: trackingData.utm_medium as string,
+            utm_campaign: trackingData.utm_campaign as string,
+            utm_term: trackingData.utm_term as string,
+            utm_content: trackingData.utm_content as string,
+            source: trackingData.source as string,
+            medium: trackingData.medium as string
+          }
+        );
+      }
+      
+      // Return transparent 1x1 pixel image
+      const pixel = Buffer.from([
+        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x21, 0xF9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2C, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x04, 0x01, 0x00, 0x3B
+      ]);
+      
+      res.set({
+        'Content-Type': 'image/gif',
+        'Content-Length': pixel.length,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
+      res.end(pixel);
+    } catch (error) {
+      console.error('Error processing pixel:', error);
+      res.status(500).end();
+    }
+  });
+
   // Advanced Analytics API endpoints
   app.get('/api/analytics/attribution/:campaignId', requireAuth, async (req, res) => {
     try {
