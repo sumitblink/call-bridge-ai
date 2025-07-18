@@ -66,6 +66,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Add CORS headers for tracking endpoints
+  app.use('/api/tracking', (req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+    } else {
+      next();
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {
     try {
@@ -4915,14 +4928,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
-  // MVP Tracking API routes
-  app.post('/api/tracking/session', requireAuth, async (req, res) => {
+  // MVP Tracking API routes (no auth required for external pixel tracking)
+  app.post('/api/tracking/session', async (req, res) => {
     try {
-      const userId = req.user?.id;
+      // For pixel tracking, we don't require authentication
+      // The campaignId in the request tells us which user's campaign this is for
       const sessionData = {
         ...req.body,
-        userId
+        // We'll set userId based on the campaign, not the current user
+        userId: req.body.userId || 1  // Default to user 1 for now
       };
       
       const session = await storage.createVisitorSession(sessionData);
@@ -4933,7 +4947,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/tracking/session/:sessionId', requireAuth, async (req, res) => {
+  app.get('/api/tracking/session/:sessionId', async (req, res) => {
     try {
       const { sessionId } = req.params;
       const session = await storage.getVisitorSession(sessionId);
@@ -4949,7 +4963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/tracking/session/:sessionId', requireAuth, async (req, res) => {
+  app.patch('/api/tracking/session/:sessionId', async (req, res) => {
     try {
       const { sessionId } = req.params;
       const updates = req.body;
@@ -4967,7 +4981,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/tracking/conversion', requireAuth, async (req, res) => {
+  app.post('/api/tracking/conversion', async (req, res) => {
     try {
       const conversionData = req.body;
       const event = await storage.createConversionEvent(conversionData);
@@ -5134,6 +5148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const httpServer = createServer(app);
   return httpServer;
 }
 

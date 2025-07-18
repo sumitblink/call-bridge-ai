@@ -167,7 +167,7 @@ export default function TrackingPage() {
         <h1 className="text-2xl font-bold">Campaign Tracking & Analytics</h1>
         <Badge variant="outline" className="text-sm">
           <Activity className="w-4 h-4 mr-1" />
-          MVP Tracking System
+          Real-Time Tracking Active
         </Badge>
       </div>
 
