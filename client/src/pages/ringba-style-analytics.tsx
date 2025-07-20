@@ -52,40 +52,17 @@ export default function RingbaStyleAnalytics() {
     staleTime: 30000,
   });
 
-  // Mock data matching Ringba's structure
-  const performanceData = [
-    { date: '2025-07-14', calls: 45, revenue: 2250, conversions: 32 },
-    { date: '2025-07-15', calls: 52, revenue: 2800, conversions: 38 },
-    { date: '2025-07-16', calls: 38, revenue: 1900, conversions: 25 },
-    { date: '2025-07-17', calls: 61, revenue: 3400, conversions: 44 },
-    { date: '2025-07-18', calls: 48, revenue: 2650, conversions: 35 },
-    { date: '2025-07-19', calls: 55, revenue: 3100, conversions: 41 },
-    { date: '2025-07-20', calls: 42, revenue: 2400, conversions: 29 }
-  ];
-
-  const trafficSourceData = [
-    { name: 'Google Ads', value: 45, revenue: 2250, calls: 89 },
-    { name: 'Facebook', value: 25, revenue: 1500, calls: 52 },
-    { name: 'LinkedIn', value: 15, revenue: 900, calls: 28 },
-    { name: 'Direct', value: 10, revenue: 600, calls: 18 },
-    { name: 'Other', value: 5, revenue: 300, calls: 13 }
-  ];
-
-  const recentCalls = [
-    { id: 'C001', campaign: 'Google Premium', source: 'google', duration: 245, outcome: 'connected', revenue: 75, timestamp: '2025-07-20 12:35:22', location: 'California', number: '+1555****789' },
-    { id: 'C002', campaign: 'Facebook CPC', source: 'facebook', duration: 0, outcome: 'abandoned', revenue: 0, timestamp: '2025-07-20 12:33:15', location: 'Texas', number: '+1555****456' },
-    { id: 'C003', campaign: 'LinkedIn Professional', source: 'linkedin', duration: 180, outcome: 'connected', revenue: 85, timestamp: '2025-07-20 12:31:08', location: 'New York', number: '+1555****123' },
-    { id: 'C004', campaign: 'Google Premium', source: 'google', duration: 320, outcome: 'connected', revenue: 95, timestamp: '2025-07-20 12:28:45', location: 'Florida', number: '+1555****321' },
-    { id: 'C005', campaign: 'Direct Campaign', source: 'direct', duration: 150, outcome: 'voicemail', revenue: 0, timestamp: '2025-07-20 12:25:33', location: 'Illinois', number: '+1555****654' }
-  ];
-
-  const metrics: PerformanceMetrics = {
-    totalCalls: 341,
-    connectedCalls: 244,
-    totalRevenue: 18750,
-    averageDuration: 195,
-    conversionRate: 71.5,
-    costPerCall: 12.50
+  // Use comprehensive analytics data from actual calls and sessions
+  const performanceData = analyticsData?.performanceTimeline || [];
+  const trafficSourceData = analyticsData?.trafficSources || [];
+  const recentCalls = analyticsData?.recentCalls || [];
+  const metrics: PerformanceMetrics = analyticsData?.performanceMetrics || {
+    totalCalls: 0,
+    connectedCalls: 0,
+    totalRevenue: 0,
+    averageDuration: 0,
+    conversionRate: 0,
+    costPerCall: 0
   };
 
   return (

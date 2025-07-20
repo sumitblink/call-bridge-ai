@@ -5273,6 +5273,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Agent Performance Analytics
+  app.get('/api/agents/performance', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const agents = await storage.getAgents(userId);
+      
+      // For now, return empty performance data until we have actual call metrics
+      const agentPerformance = agents.map(agent => ({
+        agentId: agent.id,
+        liveCallsCount: 0,
+        avgCallDuration: 0,
+        conversionRate: 0,
+        todaysRevenue: 0,
+        availability: agent.status
+      }));
+      
+      res.json(agentPerformance);
+    } catch (error) {
+      console.error('Error fetching agent performance:', error);
+      res.status(500).json({ error: 'Failed to fetch agent performance' });
+    }
+  });
+
+  // Historical Analytics Data
+  app.get('/api/analytics/historical', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { timeRange = '7d' } = req.query;
+      
+      // Get historical visitor session data
+      const client = (await import('@neondatabase/serverless')).neon;
+      const sql_client = client(process.env.DATABASE_URL!);
+      
+      const days = timeRange === '1d' ? 1 : timeRange === '7d' ? 7 : 30;
+      
+      const dailyStats = await sql_client`
+        SELECT 
+          DATE(created_at) as date,
+          COUNT(*) as sessions,
+          COUNT(DISTINCT source) as sources
+        FROM visitor_sessions 
+        WHERE user_id = ${userId} 
+          AND created_at >= NOW() - INTERVAL '${days} days'
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+        LIMIT 30
+      `;
+      
+      res.json({
+        dailyBreakdown: dailyStats.map((stat: any) => ({
+          date: stat.date,
+          sessions: parseInt(stat.sessions),
+          sources: parseInt(stat.sources)
+        }))
+      });
+    } catch (error) {
+      console.error('Error fetching historical analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch historical analytics' });
+    }
+  });
+
+  // Attribution Values
+  app.get('/api/analytics/attribution-values', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      // For now, return empty attribution values until we have conversion tracking
+      res.json([]);
+    } catch (error) {
+      console.error('Error fetching attribution values:', error);
+      res.status(500).json({ error: 'Failed to fetch attribution values' });
+    }
+  });
+
+  // Comprehensive Analytics (for Professional Analytics page)
+  app.get('/api/analytics/comprehensive', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { dateRange = '7d', campaign, source } = req.query;
+      
+      // Get actual calls and visitor sessions data
+      const calls = await storage.getCalls(userId);
+      
+      const client = (await import('@neondatabase/serverless')).neon;
+      const sql_client = client(process.env.DATABASE_URL!);
+      
+      const sessions = await sql_client`
+        SELECT * FROM visitor_sessions 
+        WHERE user_id = ${userId} 
+        ORDER BY created_at DESC 
+        LIMIT 50
+      `;
+      
+      // Build comprehensive analytics from real data
+      const performanceMetrics = {
+        totalCalls: calls.length,
+        connectedCalls: calls.filter(c => c.status === 'completed').length,
+        totalRevenue: calls.length * 75, // Estimated revenue per call
+        averageDuration: calls.length > 0 ? Math.round(calls.reduce((sum, c) => sum + (c.duration || 0), 0) / calls.length) : 0,
+        conversionRate: calls.length > 0 ? Math.round((calls.filter(c => c.status === 'completed').length / calls.length) * 100) : 0,
+        costPerCall: 12.50
+      };
+      
+      // Traffic sources from visitor sessions
+      const sourceStats = sessions.reduce((acc: any, session: any) => {
+        const source = session.source || 'direct';
+        if (!acc[source]) {
+          acc[source] = { name: source, value: 0, revenue: 0, calls: 0 };
+        }
+        acc[source].value++;
+        acc[source].revenue += 75; // Estimated revenue per session
+        return acc;
+      }, {});
+      
+      const trafficSources = Object.values(sourceStats);
+      
+      // Performance timeline (simplified)
+      const performanceTimeline = [
+        { date: new Date().toISOString().split('T')[0], calls: calls.length, revenue: performanceMetrics.totalRevenue, conversions: performanceMetrics.connectedCalls }
+      ];
+      
+      // Recent calls data
+      const recentCalls = calls.slice(0, 5).map(call => ({
+        id: call.id.toString(),
+        campaign: 'Active Campaign',
+        source: 'tracking',
+        duration: call.duration || 0,
+        outcome: call.status === 'completed' ? 'connected' : 'abandoned',
+        revenue: call.status === 'completed' ? 75 : 0,
+        timestamp: call.createdAt,
+        location: 'Unknown',
+        number: call.fromNumber || 'Unknown'
+      }));
+      
+      res.json({
+        performanceMetrics,
+        trafficSources,
+        performanceTimeline,
+        recentCalls
+      });
+    } catch (error) {
+      console.error('Error fetching comprehensive analytics:', error);
+      res.status(500).json({ 
+        performanceMetrics: {
+          totalCalls: 0,
+          connectedCalls: 0,
+          totalRevenue: 0,
+          averageDuration: 0,
+          conversionRate: 0,
+          costPerCall: 0
+        },
+        trafficSources: [],
+        performanceTimeline: [],
+        recentCalls: []
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

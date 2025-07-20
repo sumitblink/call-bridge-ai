@@ -68,23 +68,34 @@ export default function UsefulAnalytics() {
     .sort((a: any, b: any) => b.sessions - a.sessions)
     .slice(0, 6);
 
-  // Time-based analysis (simulated for demonstration)
-  const dailyStats = [
-    { date: 'Today', sessions: sessions.length, sources: Object.keys(sourceStats).length },
-    { date: 'Yesterday', sessions: Math.max(0, sessions.length - 1), sources: Math.max(1, Object.keys(sourceStats).length - 1) },
-    { date: '2 days ago', sessions: Math.max(0, sessions.length - 2), sources: Math.max(1, Object.keys(sourceStats).length - 1) }
+  // Time-based analysis from actual data
+  const { data: historicalData } = useQuery({
+    queryKey: ['/api/analytics/historical', timeRange],
+    staleTime: 60000,
+  });
+
+  const dailyStats = historicalData?.dailyBreakdown || [
+    { date: 'Today', sessions: sessions.length, sources: Object.keys(sourceStats).length }
   ];
 
-  // Attribution insights
-  const attributionData = sessions.map((session: any, index: number) => ({
-    id: index + 1,
-    source: session.source,
-    campaign: session.campaign,
-    medium: session.medium,
-    timestamp: session.timestamp,
-    potentialValue: Math.floor(Math.random() * 100) + 50, // Simulated value
-    conversionProbability: Math.floor(Math.random() * 40) + 20 // Simulated probability
-  }));
+  // Attribution insights from real session data
+  const { data: attributionMetrics } = useQuery({
+    queryKey: ['/api/analytics/attribution-values', timeRange],
+    staleTime: 60000,
+  });
+
+  const attributionData = sessions.map((session: any, index: number) => {
+    const metrics = attributionMetrics?.find((m: any) => m.sessionId === session.id);
+    return {
+      id: index + 1,
+      source: session.source,
+      campaign: session.campaign,
+      medium: session.medium,
+      timestamp: session.timestamp,
+      potentialValue: metrics?.potentialValue || 0,
+      conversionProbability: metrics?.conversionProbability || 0
+    };
+  });
 
   if (isLoading) {
     return (

@@ -247,15 +247,23 @@ export default function AgentsPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Real-time agent performance data
-  const agentPerformanceData = agents.map(agent => ({
-    ...agent,
-    liveCallsCount: Math.floor(Math.random() * 3),
-    avgCallDuration: 180 + Math.floor(Math.random() * 120),
-    conversionRate: 65 + Math.floor(Math.random() * 25),
-    todaysRevenue: 1200 + Math.floor(Math.random() * 800),
-    availability: Math.random() > 0.3 ? 'available' : 'busy'
-  }));
+  // Fetch actual agent performance data
+  const { data: agentPerformance } = useQuery({
+    queryKey: ['/api/agents/performance'],
+    staleTime: 30000,
+  });
+
+  const agentPerformanceData = agents.map(agent => {
+    const performance = agentPerformance?.find((p: any) => p.agentId === agent.id);
+    return {
+      ...agent,
+      liveCallsCount: performance?.liveCallsCount || 0,
+      avgCallDuration: performance?.avgCallDuration || 0,
+      conversionRate: performance?.conversionRate || 0,
+      todaysRevenue: performance?.todaysRevenue || 0,
+      availability: performance?.availability || 'offline'
+    };
+  });
 
   const totalLiveCalls = agentPerformanceData.reduce((sum, agent) => sum + agent.liveCallsCount, 0);
   const availableAgents = agentPerformanceData.filter(agent => agent.availability === 'available').length;
