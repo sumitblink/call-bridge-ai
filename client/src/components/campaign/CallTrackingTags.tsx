@@ -17,6 +17,25 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, MoreHorizontal, Code, Copy, Settings, BarChart3, Phone, Globe } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Helper function to format phone numbers consistently
+const formatPhoneNumber = (phoneNumber: string): string => {
+  if (!phoneNumber) return '';
+  
+  // Remove all non-digits
+  const digits = phoneNumber.replace(/\D/g, '');
+  
+  // Format as (XXX) XXX-XXXX for US numbers
+  if (digits.length === 11 && digits.startsWith('1')) {
+    const formatted = digits.slice(1);
+    return `(${formatted.slice(0, 3)}) ${formatted.slice(3, 6)}-${formatted.slice(6)}`;
+  } else if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  
+  // Return original if not standard US format
+  return phoneNumber;
+};
+
 interface CallTrackingTag {
   id: number;
   name: string;
@@ -460,7 +479,7 @@ ${generateJavaScriptCode(tag)}`;
                       <SelectItem value="none">No primary number</SelectItem>
                       {phoneNumbers.map((number) => (
                         <SelectItem key={number.id} value={number.id.toString()}>
-                          {number.friendlyName || number.phoneNumber}
+                          {number.friendlyName || formatPhoneNumber(number.phoneNumber)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -846,7 +865,7 @@ ${generateJavaScriptCode(tag)}`;
                     <SelectItem value="none">No primary number</SelectItem>
                     {phoneNumbers.map((phone) => (
                       <SelectItem key={phone.id} value={phone.id.toString()}>
-                        {phone.phoneNumber} - {phone.friendlyName}
+                        {phone.friendlyName || formatPhoneNumber(phone.phoneNumber)}
                       </SelectItem>
                     ))}
                   </SelectContent>
