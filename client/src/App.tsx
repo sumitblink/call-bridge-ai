@@ -16,12 +16,9 @@ import Calls from "@/pages/calls";
 import CallControl from "@/pages/call-control";
 import IVRSetup from "@/pages/ivr-setup";
 import Integrations from "@/pages/integrations";
-import WebhookTest from "@/pages/webhook-test";
-import TwilioTest from "@/pages/twilio-test";
 import PhoneNumbers from "@/pages/phone-numbers";
 import RTBManagement from "@/pages/rtb-management";
 import Feedback from "@/pages/feedback";
-import Queries from "@/pages/queries";
 import CallFlows from "@/pages/call-flows";
 
 import TrackingDashboard from "@/pages/tracking-dashboard";
@@ -75,10 +72,7 @@ function Router() {
           <Route path="/analytics" component={UsefulAnalytics} />
           <Route path="/ringba-analytics" component={RingbaStyleAnalytics} />
           <Route path="/integrations" component={Integrations} />
-          <Route path="/webhook-test" component={WebhookTest} />
-          <Route path="/twilio-test" component={TwilioTest} />
           <Route path="/help" component={Feedback} />
-          <Route path="/queries" component={Queries} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </>

@@ -1191,10 +1191,10 @@ export class DatabaseStorage implements IStorage {
         .delete(rtbBidRequests)
         .where(eq(rtbBidRequests.winningTargetId, id));
       
-      // Remove all router assignments for this target
+      // Remove all campaign assignments for this target (new architecture)
       await db
-        .delete(rtbRouterAssignments)
-        .where(eq(rtbRouterAssignments.rtbTargetId, id));
+        .delete(campaignRtbTargets)
+        .where(eq(campaignRtbTargets.rtbTargetId, id));
       
       // Finally delete the target itself
       const result = await db.delete(rtbTargets).where(eq(rtbTargets.id, id));
