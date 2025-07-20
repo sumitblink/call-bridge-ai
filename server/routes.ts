@@ -4198,19 +4198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const client = (await import('@neondatabase/serverless')).neon;
       const sql_client = client(process.env.DATABASE_URL!);
       
-      // Get real tracking sessions from DNI sessions and visitor sessions
-      const dniSessions = await sql_client`
-        SELECT 
-          session_id,
-          utm_source as source, utm_medium as medium, utm_campaign as campaign,
-          utm_source, utm_medium, utm_campaign, utm_content,
-          referrer, user_agent, '' as landing_page,
-          created_at as last_activity, true as is_active
-        FROM dni_sessions 
-        ORDER BY created_at DESC 
-        LIMIT 25
-      `;
-
+      // Get real tracking sessions from visitor sessions (DNI data is stored here)
       const visitorSessions = await sql_client`
         SELECT 
           session_id, source, medium, campaign,
@@ -4219,11 +4207,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         FROM visitor_sessions 
         WHERE user_id = ${userId} 
         ORDER BY last_activity DESC 
-        LIMIT 25
+        LIMIT 50
       `;
 
-      // Combine and deduplicate sessions
-      const allSessions = [...dniSessions, ...visitorSessions];
+      // Use visitor sessions (includes DNI data)
+      const allSessions = visitorSessions;
       
       // Transform sessions to UI format
       const transformedSessions = allSessions.map((session: any) => ({
