@@ -192,18 +192,14 @@ export default function UsefulAnalytics() {
           </Card>
         </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Traffic Sources Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {sourceChartData.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No traffic source data available
-                </div>
-              ) : (
+        {/* Charts - Only show when we have actual data */}
+        {sessions.length > 0 && sourceChartData.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Traffic Sources Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -222,46 +218,56 @@ export default function UsefulAnalytics() {
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
+            <Card>
+              <CardHeader>
+                <CardTitle>Session Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={dailyStats}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="sessions" fill="#3B82F6" name="Sessions" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
           <Card>
             <CardHeader>
-              <CardTitle>Session Activity</CardTitle>
+              <CardTitle>Analytics Data</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={dailyStats}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="sessions" fill="#3B82F6" name="Sessions" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Campaign Performance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Target className="h-5 w-5" />
-              <span>Campaign Performance Analysis</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {topCampaigns.length === 0 ? (
-              <div className="text-center py-8">
-                <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-lg font-medium mb-2">No campaign data</p>
-                <p className="text-muted-foreground">
-                  Start tracking campaigns with UTM parameters to see performance insights
+              <div className="text-center py-12">
+                <Activity className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Traffic Data Available</h3>
+                <p className="text-muted-foreground mb-4">
+                  Start generating traffic with UTM tracking to see analytics here.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Use the tracking dashboard to create pixel codes and start collecting visitor data.
                 </p>
               </div>
-            ) : (
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Campaign Performance */}
+        {sessions.length > 0 && topCampaigns.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Target className="h-5 w-5" />
+                <span>Campaign Performance Analysis</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -303,9 +309,9 @@ export default function UsefulAnalytics() {
                   ))}
                 </TableBody>
               </Table>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Attribution Insights */}
         <Card>
