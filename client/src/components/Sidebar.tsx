@@ -18,12 +18,15 @@ const navigation = [
   { name: "Agents", href: "/agents", icon: Users, current: false },
   { name: "RTB Management", href: "/rtb-management", icon: Target, current: false },
   { name: "Call Flows", href: "/call-flows", icon: GitBranch, current: false },
-  { name: "Tracking", href: "/tracking", icon: Activity, current: false },
-  { name: "Live Tracking", href: "/tracking-dashboard", icon: Activity, current: false },
-  { name: "Advanced Analytics", href: "/analytics", icon: TrendingUp, current: false },
   { name: "Integrations", href: "/integrations", icon: Zap, current: false },
   { name: "Help & Q&A", href: "/help", icon: MessageCircle, current: false },
   { name: "Settings", href: "/settings", icon: Settings, current: false },
+];
+
+const reportingNavigation = [
+  { name: "Live Tracking", href: "/tracking-dashboard", icon: Activity, current: false },
+  { name: "Traffic Analytics", href: "/analytics", icon: BarChart3, current: false },
+  { name: "Professional Analytics", href: "/ringba-analytics", icon: TrendingUp, current: false },
 ];
 
 export default function Sidebar() {
@@ -132,6 +135,45 @@ export default function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Reporting Section */}
+        <div className="pt-6 border-t border-gray-100">
+          {!isCollapsed && (
+            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Reporting
+            </div>
+          )}
+          {reportingNavigation.map((item) => {
+            const isActive = location === item.href;
+            const Icon = item.icon;
+            
+            return (
+              <Link 
+                key={item.name} 
+                href={item.href}
+                className={`
+                  flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer relative group
+                  ${isActive
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }
+                  ${isCollapsed ? 'justify-center' : ''}
+                `}
+                title={isCollapsed ? item.name : ''}
+              >
+                <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} ${isCollapsed ? '' : 'mr-3'}`} />
+                {!isCollapsed && item.name}
+                
+                {/* Tooltip for collapsed state */}
+                {isCollapsed && (
+                  <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                    {item.name}
+                  </div>
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
       {/* Help & Documentation */}
       <div className="px-4 py-2 border-t border-gray-200">
