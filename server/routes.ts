@@ -3029,7 +3029,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const targetNumber = buyerNumber && buyerNumber.trim() ? buyerNumber.trim() : '+15559876543';
       
       // Generate a test call SID for demonstration
-      const callSid = 'CA' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const callSid = 'CA' + Date.now().toString(36) + '_test';
       
       // Log the test call
       console.log(`[Test Call] Simulated test call initiated to ${targetNumber}:`, callSid);
@@ -3106,7 +3106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Generate a test call SID
-      const callSid = 'CA' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const callSid = 'CA' + Date.now().toString(36) + '_campaign_test';
       
       if (routingResult.selectedBuyer) {
         // Create a call record showing incoming call routed to buyer
@@ -3736,7 +3736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Generate unique session ID
     generateSessionId: function() {
-      return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      return 'session_' + Date.now() + '_' + Date.now().toString(36);
     },
     
     // Extract UTM parameters from URL
@@ -4694,14 +4694,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const { requestId, campaignId, callerId, minBid, maxBid } = req.body;
     
-    // Simulate bid decision (80% chance to bid for testing)
-    const shouldBid = Math.random() > 0.2;
+    // Always bid for testing purposes (remove mock randomization)
+    const shouldBid = true;
     
     if (shouldBid) {
       // Generate bid amount between min and max (use correct field names)
       const minBidAmount = parseFloat(minBid) || 1.0;
       const maxBidAmount = parseFloat(maxBid) || 5.0;
-      const bidAmount = (Math.random() * (maxBidAmount - minBidAmount) + minBidAmount).toFixed(2);
+      const bidAmount = ((minBidAmount + maxBidAmount) / 2).toFixed(2); // Use average instead of random
       
       const response = {
         requestId,

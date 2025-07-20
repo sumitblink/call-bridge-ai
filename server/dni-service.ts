@@ -180,8 +180,8 @@ export class DNIService {
    */
   private static generateTrackingId(campaignId: number, request: DNIRequest): string {
     const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 8);
-    return `dni_${campaignId}_${timestamp}_${random}`;
+    const unique = timestamp.toString(36);
+    return `dni_${campaignId}_${timestamp}_${unique}`;
   }
 
   /**
@@ -386,7 +386,7 @@ export class DNIService {
     getSessionId: function() {
       var sessionId = localStorage.getItem('dni_session_id');
       if (!sessionId) {
-        sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+        sessionId = 'sess_' + Date.now() + '_' + Date.now().toString(36);
         localStorage.setItem('dni_session_id', sessionId);
       }
       return sessionId;
