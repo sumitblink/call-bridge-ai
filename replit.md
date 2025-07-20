@@ -113,11 +113,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
-- July 20, 2025: **CONSOLIDATED REPORTING NAVIGATION** - Removed standalone tracking page and organized reporting features under unified "Reporting" sidebar section
-  - Removed `/tracking` page route and TrackingPage import completely
-  - Grouped Live Tracking, Traffic Analytics, and Professional Analytics under "Reporting" section in sidebar
-  - Enhanced navigation structure with separated reporting section for better user experience
-  - All tracking and analytics features now accessible through dedicated reporting category
+- July 20, 2025: **COLLAPSIBLE REPORTING NAVIGATION** - Enhanced reporting section with expand/collapse functionality for better sidebar organization
+  - Made "Reporting" section collapsible with chevron icons indicating expand/collapse state
+  - When expanded: shows Live Tracking, Traffic Analytics, and Professional Analytics as indented sub-items
+  - When collapsed sidebar: displays reporting items directly with tooltips
+  - Improved user experience with interactive reporting section that can be toggled open/closed
+  - Maintains navigation state between page visits for consistent user experience
 - July 20, 2025: **REBUILT TRACKING & ANALYTICS WITH REAL DATA** - Completely replaced placeholder/mock data with authentic tracking insights
   - Created new RealTrackingDashboard displaying actual DNI pixel test sessions from YouTube, LinkedIn, Facebook, Google
   - Built UsefulAnalytics page with interactive charts and meaningful campaign performance analysis from real visitor sessions

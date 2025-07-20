@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut, HelpCircle, Menu, X, Database, Target, MessageCircle, GitBranch, Activity, TrendingUp } from "lucide-react";
+import { Phone, BarChart3, BellRing, Users, PhoneCall, Settings, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut, HelpCircle, Menu, X, Database, Target, MessageCircle, GitBranch, Activity, TrendingUp, ChevronDown, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -35,6 +35,7 @@ export default function Sidebar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isReportingExpanded, setIsReportingExpanded] = useState(true);
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -139,11 +140,20 @@ export default function Sidebar() {
         {/* Reporting Section */}
         <div className="pt-6 border-t border-gray-100">
           {!isCollapsed && (
-            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Reporting
-            </div>
+            <button
+              onClick={() => setIsReportingExpanded(!isReportingExpanded)}
+              className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <span>Reporting</span>
+              {isReportingExpanded ? 
+                <ChevronDown className="h-4 w-4" /> : 
+                <ChevronRight className="h-4 w-4" />
+              }
+            </button>
           )}
-          {reportingNavigation.map((item) => {
+          
+          {/* Collapsed sidebar - show reporting items without grouping */}
+          {isCollapsed && reportingNavigation.map((item) => {
             const isActive = location === item.href;
             const Icon = item.icon;
             
@@ -157,19 +167,37 @@ export default function Sidebar() {
                     ? "text-blue-600 bg-blue-50"
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   }
-                  ${isCollapsed ? 'justify-center' : ''}
+                  justify-center
                 `}
-                title={isCollapsed ? item.name : ''}
+                title={item.name}
               >
-                <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} ${isCollapsed ? '' : 'mr-3'}`} />
-                {!isCollapsed && item.name}
-                
-                {/* Tooltip for collapsed state */}
-                {isCollapsed && (
-                  <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                    {item.name}
-                  </div>
-                )}
+                <Icon className="w-6 h-6" />
+                <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  {item.name}
+                </div>
+              </Link>
+            );
+          })}
+
+          {/* Expanded sidebar - show collapsible reporting items */}
+          {!isCollapsed && isReportingExpanded && reportingNavigation.map((item) => {
+            const isActive = location === item.href;
+            const Icon = item.icon;
+            
+            return (
+              <Link 
+                key={item.name} 
+                href={item.href}
+                className={`
+                  flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer relative group ml-3
+                  ${isActive
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }
+                `}
+              >
+                <Icon className="w-5 h-5 mr-3" />
+                {item.name}
               </Link>
             );
           })}
