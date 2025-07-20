@@ -26,6 +26,7 @@ import CallFlows from "@/pages/call-flows";
 import TrackingPage from "@/pages/tracking";
 import TrackingDashboard from "@/pages/tracking-dashboard";
 import AdvancedAnalyticsPage from "@/pages/advanced-analytics";
+import RingbaStyleAnalytics from "@/pages/ringba-style-analytics";
 
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
@@ -70,6 +71,7 @@ function Router() {
           <Route path="/tracking" component={TrackingPage} />
           <Route path="/tracking-dashboard" component={TrackingDashboard} />
           <Route path="/analytics" component={AdvancedAnalyticsPage} />
+          <Route path="/ringba-analytics" component={RingbaStyleAnalytics} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />
           <Route path="/twilio-test" component={TwilioTest} />
