@@ -5315,7 +5315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           COUNT(DISTINCT source) as sources
         FROM visitor_sessions 
         WHERE user_id = ${userId} 
-          AND first_visit >= NOW() - INTERVAL '${days} days'
+          AND first_visit >= CURRENT_DATE - ${days} * INTERVAL '1 day'
         GROUP BY DATE(first_visit)
         ORDER BY date DESC
         LIMIT 30

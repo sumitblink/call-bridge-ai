@@ -194,7 +194,6 @@ export class DNIService {
     request: DNIRequest
   ): Promise<void> {
     try {
-      // Store tracking session for attribution analysis
       console.log('DNI Tracking Session:', {
         trackingId,
         campaignId,
@@ -204,6 +203,42 @@ export class DNIService {
         campaign: request.campaign,
         sessionId: request.sessionId
       });
+
+      // Store visitor session in database for real-time tracking
+      const { neon } = await import('@neondatabase/serverless');
+      const sql = neon(process.env.DATABASE_URL!);
+      
+      // Get user ID from campaign (for now, use a default user ID)
+      const userId = 1; // TODO: Get actual user ID from campaign
+      
+      // Create unique session identifier that includes UTM source for differentiation
+      const uniqueSessionId = `${request.sessionId}_${request.source}`;
+      
+      const insertResult = await sql`
+        INSERT INTO visitor_sessions (
+          session_id, user_id, ip_address, user_agent, referrer,
+          source, medium, campaign, utm_source, utm_medium, utm_campaign, 
+          utm_term, utm_content, landing_page, current_page,
+          first_visit, last_activity, is_active, has_converted
+        ) VALUES (
+          ${uniqueSessionId}, ${userId}, ${request.ipAddress || '127.0.0.1'}, ${request.userAgent || 'unknown'}, ${request.referrer || ''},
+          ${request.source || ''}, ${request.medium || ''}, ${request.campaign || ''}, 
+          ${request.source || ''}, ${request.medium || ''}, ${request.campaign || ''},
+          ${request.term || null}, ${request.content || null}, ${request.customFields?.domain || 'unknown'}, ${request.customFields?.domain || 'unknown'},
+          NOW(), NOW(), true, false
+        )
+        ON CONFLICT (session_id) 
+        DO UPDATE SET
+          last_activity = NOW(),
+          utm_source = EXCLUDED.utm_source,
+          utm_medium = EXCLUDED.utm_medium, 
+          utm_campaign = EXCLUDED.utm_campaign,
+          source = EXCLUDED.source,
+          medium = EXCLUDED.medium,
+          campaign = EXCLUDED.campaign
+      `;
+      
+      console.log(`✅ DNI Session stored: ${uniqueSessionId} with UTM: ${request.source}/${request.medium}/${request.campaign}`);
     } catch (error) {
       console.error('Error storing tracking session:', error);
     }
