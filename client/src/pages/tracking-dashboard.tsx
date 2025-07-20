@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,34 +49,24 @@ interface TrackingData {
 }
 
 export default function TrackingDashboard() {
-  // Fetch live tracking data with event-driven refresh
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  // Fetch live tracking data with stable refresh
   const { data: trackingData, isLoading, error, refetch, isRefetching } = useQuery<TrackingData>({
-    queryKey: ['/api/tracking/live-sessions', refreshTrigger],
-    staleTime: 0, // Always consider data stale
-    gcTime: 0, // Don't cache results
+    queryKey: ['/api/tracking/live-sessions'],
+    staleTime: 4000, // Consider data fresh for 4 seconds
+    gcTime: 10000, // Keep in cache for 10 seconds
+    refetchInterval: 6000, // Refresh every 6 seconds (stable interval)
   });
 
-  // Auto-refresh after response is received (event-driven)
-  useEffect(() => {
-    if (!isLoading && !isRefetching && trackingData) {
-      const timer = setTimeout(() => {
-        setRefreshTrigger(prev => prev + 1);
-      }, 5000); // Wait 5 seconds after response before next request
-      
-      return () => clearTimeout(timer);
-    }
-  }, [trackingData, isLoading, isRefetching]);
-
-  const recentSessions = trackingData?.sessions || [];
-  const stats = trackingData?.stats || {
+  // Memoize data to prevent unnecessary re-renders
+  const recentSessions = useMemo(() => trackingData?.sessions || [], [trackingData?.sessions]);
+  const stats = useMemo(() => trackingData?.stats || {
     totalSessions: 0,
     activeSessions: 0,
     googleTraffic: 0,
     directTraffic: 0,
     facebookTraffic: 0,
     instagramTraffic: 0
-  };
+  }, [trackingData?.stats]);
 
   return (
     <Layout>
@@ -98,7 +88,7 @@ export default function TrackingDashboard() {
               {isLoading || isRefetching ? 'Refreshing...' : 'Live Tracking Active'}
             </Badge>
             <span className="text-sm text-muted-foreground">
-              Event-driven refresh
+              Refreshes every 6 seconds
             </span>
           </div>
         </div>
