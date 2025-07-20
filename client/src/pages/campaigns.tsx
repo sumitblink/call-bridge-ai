@@ -23,20 +23,15 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Campaign, InsertCampaign, Buyer } from "@shared/schema";
 import { DatabaseStatus } from "@/components/DatabaseStatus";
 
-// Schema for campaign form
+// Schema for campaign form (simplified RTB - no routers)
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
   country: z.string().min(1, "Country is required"),
   enableRtb: z.boolean().default(false),
-  rtbRouterId: z.number().optional(),
-}).refine((data) => {
-  if (data.enableRtb && !data.rtbRouterId) {
-    return false;
-  }
-  return true;
-}, {
-  message: "RTB Router is required when RTB is enabled",
-  path: ["rtbRouterId"],
+  // RTB configuration moved to campaign level
+  biddingTimeoutMs: z.number().min(1000).max(30000).optional(),
+  minBiddersRequired: z.number().min(1).max(10).optional(),
+  enablePredictiveRouting: z.boolean().optional(),
 });
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
@@ -129,7 +124,7 @@ function CampaignCard({ campaign, onDelete, onEdit }: {
               {campaign.enableRtb && (
                 <div className="flex items-center gap-1 text-sm text-purple-600">
                   <PhoneCall className="h-4 w-4" />
-                  RTB: Router ID {campaign.rtbRouterId}
+                  RTB: Direct Assignment
                 </div>
               )}
             </div>
@@ -179,13 +174,9 @@ function CampaignForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch RTB routers for the dropdown
-  const { data: rtbRouters = [] } = useQuery({
-    queryKey: ["/api/rtb/routers"],
-    queryFn: async () => {
-      const response = await fetch("/api/rtb/routers");
-      return response.json();
-    },
+  // Fetch RTB targets for campaign assignment (simplified architecture)
+  const { data: rtbTargets = [] } = useQuery({
+    queryKey: ["/api/rtb/targets"],
   });
 
   const form = useForm<CampaignFormData>({
@@ -194,7 +185,10 @@ function CampaignForm({
       name: campaign?.name || "",
       country: campaign?.geoTargeting?.[0] || "US", // Use existing geo targeting or default to US
       enableRtb: campaign?.enableRtb || false,
-      rtbRouterId: campaign?.rtbRouterId || undefined,
+      // RTB configuration at campaign level
+      biddingTimeoutMs: campaign?.biddingTimeoutMs || 3000,
+      minBiddersRequired: campaign?.minBiddersRequired || 1,
+      enablePredictiveRouting: campaign?.enablePredictiveRouting || false,
     },
   });
 
@@ -210,7 +204,10 @@ function CampaignForm({
         callCap: 100,
         userId: 1, // Default user ID for now
         enableRtb: data.enableRtb,
-        rtbRouterId: data.rtbRouterId,
+        // RTB configuration moved to campaign level
+        biddingTimeoutMs: data.biddingTimeoutMs,
+        minBiddersRequired: data.minBiddersRequired,
+        enablePredictiveRouting: data.enablePredictiveRouting,
       };
       console.log('Campaign data to send:', campaignData);
       
@@ -244,7 +241,10 @@ function CampaignForm({
         name: data.name,
         geoTargeting: [data.country],
         enableRtb: data.enableRtb,
-        rtbRouterId: data.rtbRouterId,
+        // RTB configuration moved to campaign level
+        biddingTimeoutMs: data.biddingTimeoutMs,
+        minBiddersRequired: data.minBiddersRequired,
+        enablePredictiveRouting: data.enablePredictiveRouting,
       };
       console.log('Campaign update data to send:', campaignData);
       
@@ -359,33 +359,82 @@ function CampaignForm({
           />
 
           {form.watch("enableRtb") && (
-            <FormField
-              control={form.control}
-              name="rtbRouterId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>RTB Router</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(parseInt(value))} 
-                    value={field.value?.toString()}
-                  >
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="biddingTimeoutMs"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bidding Timeout (ms)</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select RTB router" />
-                      </SelectTrigger>
+                      <Input
+                        type="number"
+                        min={1000}
+                        max={30000}
+                        placeholder="3000"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      {Array.isArray(rtbRouters) && rtbRouters.map((router: any) => (
-                        <SelectItem key={router.id} value={router.id.toString()}>
-                          {router.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <div className="text-xs text-muted-foreground">
+                      Maximum time to wait for bidder responses (1000-30000ms)
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="minBiddersRequired"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Minimum Bidders Required</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={10}
+                        placeholder="1"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                      />
+                    </FormControl>
+                    <div className="text-xs text-muted-foreground">
+                      Minimum number of active bidders required (1-10)
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="enablePredictiveRouting"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Predictive Routing</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Use AI to predict best bidder based on historical performance
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <div className="text-sm text-muted-foreground">
+                RTB targets can be assigned to this campaign after creation
+              </div>
+            </div>
           )}
         </div>
 

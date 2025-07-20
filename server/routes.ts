@@ -4433,37 +4433,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // RTB Router Assignments
-  app.get('/api/rtb/router-assignments', requireAuth, async (req: any, res) => {
+  // Campaign RTB Target Assignments (replaced router assignments)
+  app.get('/api/campaigns/:campaignId/rtb-targets', requireAuth, async (req: any, res) => {
     try {
-      const assignments = await storage.getRtbRouterAssignments();
+      const { campaignId } = req.params;
+      const assignments = await storage.getCampaignRtbTargets(parseInt(campaignId));
       res.json(assignments);
     } catch (error) {
-      console.error('Error fetching RTB router assignments:', error);
-      res.status(500).json({ error: 'Failed to fetch RTB router assignments' });
+      console.error('Error fetching campaign RTB targets:', error);
+      res.status(500).json({ error: 'Failed to fetch campaign RTB targets' });
     }
   });
 
-  // Update router target assignments
-  app.put('/api/rtb/routers/:id/assignments', requireAuth, async (req: any, res) => {
+  // Update campaign target assignments (direct assignment)
+  app.put('/api/campaigns/:campaignId/rtb-targets', requireAuth, async (req: any, res) => {
     try {
-      const { id } = req.params;
+      const { campaignId } = req.params;
       const { assignments } = req.body; // Array of {targetId, priority, isActive}
       
-      // First, remove existing assignments for this router
-      const existingAssignments = await storage.getRtbRouterAssignments(parseInt(id));
+      // First, remove existing assignments for this campaign
+      const existingAssignments = await storage.getCampaignRtbTargets(parseInt(campaignId));
       
       for (const assignment of existingAssignments) {
-        await storage.deleteRtbRouterAssignmentById(assignment.id);
+        await storage.deleteCampaignRtbTarget(parseInt(campaignId), assignment.rtbTargetId);
       }
       
       // Then add new assignments
       for (const assignment of assignments) {
         if (assignment.isActive) {
-          await storage.createRtbRouterAssignment({
-            rtbRouterId: parseInt(id),
+          await storage.createCampaignRtbTarget({
+            campaignId: parseInt(campaignId),
             rtbTargetId: assignment.targetId,
-            priority: assignment.priority,
+            priority: assignment.priority || 1,
             isActive: assignment.isActive,
           });
         }
@@ -4471,8 +4472,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ success: true });
     } catch (error) {
-      console.error('Error updating router assignments:', error);
-      res.status(500).json({ error: 'Failed to update router assignments' });
+      console.error('Error updating campaign RTB target assignments:', error);
+      res.status(500).json({ error: 'Failed to update campaign RTB target assignments' });
     }
   });
 
