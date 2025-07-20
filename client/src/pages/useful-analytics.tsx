@@ -209,6 +209,7 @@ export default function UsefulAnalytics() {
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
                     >
                       {sourceChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
