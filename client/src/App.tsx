@@ -25,7 +25,9 @@ import Queries from "@/pages/queries";
 import CallFlows from "@/pages/call-flows";
 import TrackingPage from "@/pages/tracking";
 import TrackingDashboard from "@/pages/tracking-dashboard";
+import RealTrackingDashboard from "@/pages/real-tracking-dashboard";
 import AdvancedAnalyticsPage from "@/pages/advanced-analytics";
+import UsefulAnalytics from "@/pages/useful-analytics";
 import RingbaStyleAnalytics from "@/pages/ringba-style-analytics";
 
 import Settings from "@/pages/settings";
@@ -69,8 +71,8 @@ function Router() {
           <Route path="/rtb-management" component={RTBManagement} />
           <Route path="/call-flows" component={CallFlows} />
           <Route path="/tracking" component={TrackingPage} />
-          <Route path="/tracking-dashboard" component={TrackingDashboard} />
-          <Route path="/analytics" component={AdvancedAnalyticsPage} />
+          <Route path="/tracking-dashboard" component={RealTrackingDashboard} />
+          <Route path="/analytics" component={UsefulAnalytics} />
           <Route path="/ringba-analytics" component={RingbaStyleAnalytics} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/webhook-test" component={WebhookTest} />
