@@ -5310,13 +5310,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const dailyStats = await sql_client`
         SELECT 
-          DATE(created_at) as date,
+          DATE(first_visit) as date,
           COUNT(*) as sessions,
           COUNT(DISTINCT source) as sources
         FROM visitor_sessions 
         WHERE user_id = ${userId} 
-          AND created_at >= NOW() - INTERVAL '${days} days'
-        GROUP BY DATE(created_at)
+          AND first_visit >= NOW() - INTERVAL '${days} days'
+        GROUP BY DATE(first_visit)
         ORDER BY date DESC
         LIMIT 30
       `;
@@ -5362,7 +5362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessions = await sql_client`
         SELECT * FROM visitor_sessions 
         WHERE user_id = ${userId} 
-        ORDER BY created_at DESC 
+        ORDER BY last_activity DESC 
         LIMIT 50
       `;
       
