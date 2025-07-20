@@ -313,40 +313,40 @@ export default function UsefulAnalytics() {
           </Card>
         )}
 
-        {/* Attribution Insights */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Activity className="h-5 w-5" />
-              <span>Attribution Insights</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Key Insights</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-blue-800 dark:text-blue-200">
-                      <strong>Top Performer:</strong> {sourceChartData.length > 0 ? sourceChartData[0].name : 'No data'} 
-                      {sourceChartData.length > 0 && ` (${sourceChartData[0].value} sessions)`}
-                    </p>
-                    <p className="text-blue-800 dark:text-blue-200">
-                      <strong>Active Sources:</strong> {Object.keys(sourceStats).length} different traffic sources
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-blue-800 dark:text-blue-200">
-                      <strong>Campaign Diversity:</strong> {Object.keys(campaignStats).length} unique campaigns
-                    </p>
-                    <p className="text-blue-800 dark:text-blue-200">
-                      <strong>Tracking Status:</strong> {sessions.length > 0 ? 'Active' : 'No recent activity'}
-                    </p>
+        {/* Attribution Insights - Only show when data exists */}
+        {sessions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Activity className="h-5 w-5" />
+                <span>Attribution Insights</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200">
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Key Insights</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-blue-800 dark:text-blue-200">
+                        <strong>Top Performer:</strong> {sourceChartData.length > 0 ? sourceChartData[0].name : 'No data'} 
+                        {sourceChartData.length > 0 && ` (${sourceChartData[0].value} sessions)`}
+                      </p>
+                      <p className="text-blue-800 dark:text-blue-200">
+                        <strong>Active Sources:</strong> {Object.keys(sourceStats).length} different traffic sources
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-blue-800 dark:text-blue-200">
+                        <strong>Campaign Diversity:</strong> {Object.keys(campaignStats).length} unique campaigns
+                      </p>
+                      <p className="text-blue-800 dark:text-blue-200">
+                        <strong>Tracking Status:</strong> Active tracking
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {sessions.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {sessions.slice(0, 3).map((session: any, index) => (
                     <div key={index} className="p-4 bg-muted/50 rounded-lg border">
@@ -360,26 +360,28 @@ export default function UsefulAnalytics() {
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Status */}
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              <div>
-                <p className="font-medium text-green-800">Analytics Active</p>
-                <p className="text-sm text-green-600">
-                  Tracking {sessions.length} sessions across {Object.keys(sourceStats).length} sources. 
-                  {sessions.length > 0 ? ' Latest: ' + sessions[0]?.source + ' campaign.' : ' No recent activity.'}
-                </p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Status - Only show when sessions exist */}
+        {sessions.length > 0 && (
+          <Card className="bg-green-50 border-green-200">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <div>
+                  <p className="font-medium text-green-800">Analytics Active</p>
+                  <p className="text-sm text-green-600">
+                    Tracking {sessions.length} sessions across {Object.keys(sourceStats).length} sources. 
+                    Latest: {sessions[0]?.source} campaign.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );
