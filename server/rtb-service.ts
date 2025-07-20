@@ -162,7 +162,7 @@ export class RTBService {
   ): Promise<AuctionResult> {
     try {
       // Validate that RTB is enabled for this campaign
-      if (!campaign.enableRtb || !campaign.rtbRouterId) {
+      if (!campaign.enableRtb) {
         return {
           success: false,
           totalTargetsPinged: 0,
@@ -172,29 +172,21 @@ export class RTBService {
         };
       }
 
-      // Get RTB router configuration
-      const router = await storage.getRtbRouter(campaign.rtbRouterId);
-      if (!router || !router.isActive) {
+      // Get active targets assigned directly to this campaign
+      const assignments = await storage.getCampaignRtbTargets(campaign.id);
+      const activeAssignments = assignments.filter(a => a.isActive !== false); // Include assignments where isActive is true or undefined
+
+      // Use campaign-level RTB configuration instead of router configuration
+      const minBiddersRequired = campaign.minBiddersRequired || 1;
+      const biddingTimeoutMs = campaign.biddingTimeoutMs || 3000;
+
+      if (activeAssignments.length < minBiddersRequired) {
         return {
           success: false,
           totalTargetsPinged: 0,
           successfulResponses: 0,
           totalResponseTime: 0,
-          error: 'RTB router not found or inactive'
-        };
-      }
-
-      // Get active targets assigned to this router
-      const assignments = await storage.getRtbRouterAssignments(router.id);
-      const activeAssignments = assignments.filter(a => a.isActive);
-
-      if (activeAssignments.length < router.minBiddersRequired) {
-        return {
-          success: false,
-          totalTargetsPinged: 0,
-          successfulResponses: 0,
-          totalResponseTime: 0,
-          error: `Insufficient active targets (${activeAssignments.length}), minimum required: ${router.minBiddersRequired}`
+          error: `Insufficient active targets (${activeAssignments.length}), minimum required: ${minBiddersRequired}`
         };
       }
 
@@ -211,17 +203,17 @@ export class RTBService {
         };
       }
 
-      // Create bid request record
+      // Create bid request record (no router needed now)
       const requestRecord: InsertRtbBidRequest = {
         requestId: bidRequest.requestId,
         campaignId: bidRequest.campaignId,
-        rtbRouterId: router.id,
+        rtbRouterId: null, // No router in direct assignment model
         callerId: bidRequest.callerId,
         callerState: bidRequest.callerState,
         callerZip: bidRequest.callerZip,
         callStartTime: bidRequest.callStartTime,
         tags: bidRequest.tags,
-        timeoutMs: bidRequest.timeoutMs || router.biddingTimeoutMs,
+        timeoutMs: bidRequest.timeoutMs || biddingTimeoutMs,
         totalTargetsPinged: activeAssignments.length,
         successfulResponses: 0
       };

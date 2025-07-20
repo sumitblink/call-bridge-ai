@@ -23,8 +23,8 @@ import {
   type InsertRtbTarget,
   type RtbRouter,
   type InsertRtbRouter,
-  type RtbRouterAssignment,
-  type InsertRtbRouterAssignment,
+  type CampaignRtbTarget,
+  type InsertCampaignRtbTarget,
   type RtbBidRequest,
   type InsertRtbBidRequest,
   type RtbBidResponse,
@@ -171,10 +171,10 @@ export interface IStorage {
   updateRtbRouter(id: number, router: Partial<InsertRtbRouter>): Promise<RtbRouter | undefined>;
   deleteRtbRouter(id: number): Promise<boolean>;
   
-  // RTB Router Assignments
-  getRtbRouterAssignments(routerId: number): Promise<RtbRouterAssignment[]>;
-  createRtbRouterAssignment(assignment: InsertRtbRouterAssignment): Promise<RtbRouterAssignment>;
-  deleteRtbRouterAssignment(routerId: number, targetId: number): Promise<boolean>;
+  // Campaign RTB Target Assignments (replaces router assignments)
+  getCampaignRtbTargets(campaignId: number): Promise<CampaignRtbTarget[]>;
+  createCampaignRtbTarget(assignment: InsertCampaignRtbTarget): Promise<CampaignRtbTarget>;
+  deleteCampaignRtbTarget(campaignId: number, targetId: number): Promise<boolean>;
   
   // RTB Bid Requests
   getRtbBidRequests(campaignId?: number): Promise<RtbBidRequest[]>;

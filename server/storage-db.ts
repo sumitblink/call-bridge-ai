@@ -20,7 +20,7 @@ import {
   dniSnippets,
   rtbTargets,
   rtbRouters,
-  rtbRouterAssignments,
+  campaignRtbTargets,
   rtbBidRequests,
   rtbBidResponses,
   feedback,
@@ -53,8 +53,8 @@ import {
   type InsertRtbTarget,
   type RtbRouter,
   type InsertRtbRouter,
-  type RtbRouterAssignment,
-  type InsertRtbRouterAssignment,
+  type CampaignRtbTarget,
+  type InsertCampaignRtbTarget,
   type RtbBidRequest,
   type InsertRtbBidRequest,
   type RtbBidResponse,
@@ -1268,8 +1268,7 @@ export class DatabaseStorage implements IStorage {
         .delete(rtbBidRequests)
         .where(eq(rtbBidRequests.rtbRouterId, id));
       
-      // Delete all assignments for this router
-      await db.delete(rtbRouterAssignments).where(eq(rtbRouterAssignments.rtbRouterId, id));
+      // Note: RTB Router assignments are no longer used - campaigns now directly assign targets
       
       // Finally delete the router itself
       const result = await db.delete(rtbRouters).where(eq(rtbRouters.id, id));
@@ -1280,30 +1279,24 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // RTB Router Assignments
-  async getRtbRouterAssignments(routerId?: number): Promise<RtbRouterAssignment[]> {
-    if (routerId) {
-      return await db.select().from(rtbRouterAssignments).where(eq(rtbRouterAssignments.rtbRouterId, routerId));
-    }
-    return await db.select().from(rtbRouterAssignments);
+  // Campaign RTB Target Assignments (replaces router assignments)
+  async getCampaignRtbTargets(campaignId: number): Promise<CampaignRtbTarget[]> {
+    return await db
+      .select()
+      .from(campaignRtbTargets)
+      .where(eq(campaignRtbTargets.campaignId, campaignId));
   }
 
-  async deleteRtbRouterAssignmentById(id: number): Promise<boolean> {
-    const result = await db.delete(rtbRouterAssignments).where(eq(rtbRouterAssignments.id, id));
-    return result.rowCount > 0;
-  }
-
-  async createRtbRouterAssignment(assignment: InsertRtbRouterAssignment): Promise<RtbRouterAssignment> {
-    const [newAssignment] = await db.insert(rtbRouterAssignments).values(assignment).returning();
+  async createCampaignRtbTarget(assignment: InsertCampaignRtbTarget): Promise<CampaignRtbTarget> {
+    const [newAssignment] = await db.insert(campaignRtbTargets).values(assignment).returning();
     return newAssignment;
   }
 
-  async deleteRtbRouterAssignment(routerId: number, targetId: number): Promise<boolean> {
-    const result = await db
-      .delete(rtbRouterAssignments)
+  async deleteCampaignRtbTarget(campaignId: number, targetId: number): Promise<boolean> {
+    const result = await db.delete(campaignRtbTargets)
       .where(and(
-        eq(rtbRouterAssignments.rtbRouterId, routerId),
-        eq(rtbRouterAssignments.rtbTargetId, targetId)
+        eq(campaignRtbTargets.campaignId, campaignId),
+        eq(campaignRtbTargets.rtbTargetId, targetId)
       ));
     return result.rowCount > 0;
   }

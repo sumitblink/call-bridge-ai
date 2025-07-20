@@ -671,10 +671,24 @@ class HybridStorage implements IStorage {
     );
   }
 
-  async getRtbRouterAssignments(routerId: number): Promise<any[]> {
+  async getCampaignRtbTargets(campaignId: number): Promise<any[]> {
     return this.executeOperation(
-      () => this.databaseStorage.getRtbRouterAssignments(routerId),
-      () => this.memStorage.getRtbRouterAssignments ? this.memStorage.getRtbRouterAssignments(routerId) : []
+      () => this.databaseStorage.getCampaignRtbTargets(campaignId),
+      () => this.memStorage.getCampaignRtbTargets ? this.memStorage.getCampaignRtbTargets(campaignId) : []
+    );
+  }
+
+  async createCampaignRtbTarget(assignment: any): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.createCampaignRtbTarget(assignment),
+      () => this.memStorage.createCampaignRtbTarget ? this.memStorage.createCampaignRtbTarget(assignment) : assignment
+    );
+  }
+
+  async deleteCampaignRtbTarget(campaignId: number, targetId: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.deleteCampaignRtbTarget(campaignId, targetId),
+      () => this.memStorage.deleteCampaignRtbTarget ? this.memStorage.deleteCampaignRtbTarget(campaignId, targetId) : true
     );
   }
 

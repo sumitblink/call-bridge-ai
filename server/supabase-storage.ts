@@ -21,7 +21,7 @@ import {
   campaignPoolAssignments,
   rtbTargets,
   rtbRouters,
-  rtbRouterAssignments,
+  campaignRtbTargets,
   rtbBidRequests,
   rtbBidResponses,
   callFlows,

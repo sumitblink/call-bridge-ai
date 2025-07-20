@@ -74,10 +74,15 @@ export const campaigns = pgTable("campaigns", {
   integrationSettings: json("integration_settings"), // platform-specific configs
   urlParameters: json("url_parameters"), // tracking parameters
   
-  // RTB Integration
-  rtbRouterId: integer("rtb_router_id"), // References rtb_routers.id, foreign key added later
+  // RTB Integration - Direct Target Assignment
   enableRtb: boolean("enable_rtb").default(false).notNull(),
   rtbId: varchar("rtb_id", { length: 32 }).unique(), // 32-character hexadecimal ID for external RTB operations
+  
+  // RTB Configuration (moved from routers)
+  biddingTimeoutMs: integer("bidding_timeout_ms").default(3000),
+  minBiddersRequired: integer("min_bidders_required").default(1),
+  enablePredictiveRouting: boolean("enable_predictive_routing").default(false),
+  revenueType: varchar("revenue_type", { length: 50 }).default("per_call"), // per_call, per_minute, cpa, cpl
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -974,9 +979,10 @@ export const rtbRouters = pgTable("rtb_routers", {
   index("idx_rtb_routers_active").on(table.isActive),
 ]);
 
-export const rtbRouterAssignments = pgTable("rtb_router_assignments", {
+// Direct Campaign-RTB Target Assignment (replaces router assignments)
+export const campaignRtbTargets = pgTable("campaign_rtb_targets", {
   id: serial("id").primaryKey(),
-  rtbRouterId: integer("rtb_router_id").references(() => rtbRouters.id).notNull(),
+  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
   rtbTargetId: integer("rtb_target_id").references(() => rtbTargets.id).notNull(),
   
   // Assignment Configuration
@@ -985,11 +991,11 @@ export const rtbRouterAssignments = pgTable("rtb_router_assignments", {
   isActive: boolean("is_active").default(true).notNull(),
   assignedAt: timestamp("assigned_at").defaultNow().notNull(),
 }, (table) => [
-  index("idx_rtb_assignments_router").on(table.rtbRouterId),
-  index("idx_rtb_assignments_target").on(table.rtbTargetId),
-  index("idx_rtb_assignments_active").on(table.isActive),
+  index("idx_campaign_rtb_targets_campaign").on(table.campaignId),
+  index("idx_campaign_rtb_targets_target").on(table.rtbTargetId),
+  index("idx_campaign_rtb_targets_active").on(table.isActive),
   // Unique constraint to prevent duplicate assignments
-  index("unique_router_target").on(table.rtbRouterId, table.rtbTargetId),
+  index("unique_campaign_target").on(table.campaignId, table.rtbTargetId),
 ]);
 
 export const rtbBidRequests = pgTable("rtb_bid_requests", {
@@ -1172,13 +1178,7 @@ export const insertRtbRouterSchema = createInsertSchema(rtbRouters).omit({
   revenueType: z.enum(["per_call", "per_minute", "cpa", "cpl"]).optional(),
 });
 
-export const insertRtbRouterAssignmentSchema = createInsertSchema(rtbRouterAssignments).omit({
-  id: true,
-  assignedAt: true,
-}).extend({
-  priority: z.number().min(1).max(10).optional(),
-  weight: z.number().min(1).max(1000).optional(),
-});
+// RTB Router Assignments removed - replaced with direct campaign-target assignments
 
 export const insertRtbBidRequestSchema = createInsertSchema(rtbBidRequests).omit({
   id: true,
@@ -1208,8 +1208,7 @@ export type InsertRtbTarget = z.infer<typeof insertRtbTargetSchema>;
 export type RtbRouter = typeof rtbRouters.$inferSelect;
 export type InsertRtbRouter = z.infer<typeof insertRtbRouterSchema>;
 
-export type RtbRouterAssignment = typeof rtbRouterAssignments.$inferSelect;
-export type InsertRtbRouterAssignment = z.infer<typeof insertRtbRouterAssignmentSchema>;
+// RtbRouterAssignment types removed - replaced with CampaignRtbTarget
 
 export type RtbBidRequest = typeof rtbBidRequests.$inferSelect;
 export type InsertRtbBidRequest = z.infer<typeof insertRtbBidRequestSchema>;
@@ -1217,12 +1216,36 @@ export type InsertRtbBidRequest = z.infer<typeof insertRtbBidRequestSchema>;
 export type RtbBidResponse = typeof rtbBidResponses.$inferSelect;
 export type InsertRtbBidResponse = z.infer<typeof insertRtbBidResponseSchema>;
 
+export const insertCampaignRtbTargetSchema = createInsertSchema(campaignRtbTargets).omit({
+  id: true,
+  assignedAt: true,
+});
+
+export type CampaignRtbTarget = typeof campaignRtbTargets.$inferSelect;
+export type InsertCampaignRtbTarget = z.infer<typeof insertCampaignRtbTargetSchema>;
+
 // Database relations
 export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   user: one(users, {
     fields: [campaigns.userId],
     references: [users.id],
   }),
+  campaignBuyers: many(campaignBuyers),
+  calls: many(calls),
+  agents: many(agentCampaigns),
+  phoneNumber: one(phoneNumbers, {
+    fields: [campaigns.phoneNumber],
+    references: [phoneNumbers.phoneNumber],
+  }),
+  pool: one(numberPools, {
+    fields: [campaigns.poolId],
+    references: [numberPools.id],
+  }),
+  callFlows: many(callFlows),
+  publisherCampaigns: many(publisherCampaigns),
+  dniSessions: many(dniSessions),
+  visitorSessions: many(visitorSessions),
+  rtbTargets: many(campaignRtbTargets),
   callTrackingTags: many(callTrackingTags),
 }));
 
@@ -1426,7 +1449,7 @@ export const rtbTargetsRelations = relations(rtbTargets, ({ one, many }) => ({
     fields: [rtbTargets.userId],
     references: [users.id],
   }),
-  routerAssignments: many(rtbRouterAssignments),
+  campaignAssignments: many(campaignRtbTargets),
   bidResponses: many(rtbBidResponses),
 }));
 
@@ -1514,18 +1537,17 @@ export const rtbRoutersRelations = relations(rtbRouters, ({ one, many }) => ({
     fields: [rtbRouters.userId],
     references: [users.id],
   }),
-  routerAssignments: many(rtbRouterAssignments),
   bidRequests: many(rtbBidRequests),
-  campaigns: many(campaigns),
 }));
 
-export const rtbRouterAssignmentsRelations = relations(rtbRouterAssignments, ({ one }) => ({
-  rtbRouter: one(rtbRouters, {
-    fields: [rtbRouterAssignments.rtbRouterId],
-    references: [rtbRouters.id],
+// New direct campaign-target relations
+export const campaignRtbTargetsRelations = relations(campaignRtbTargets, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignRtbTargets.campaignId],
+    references: [campaigns.id],
   }),
   rtbTarget: one(rtbTargets, {
-    fields: [rtbRouterAssignments.rtbTargetId],
+    fields: [campaignRtbTargets.rtbTargetId],
     references: [rtbTargets.id],
   }),
 }));
