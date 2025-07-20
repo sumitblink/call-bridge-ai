@@ -113,6 +113,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 20, 2025: **EVENT-DRIVEN REFRESH SYSTEM** - Replaced fixed-interval auto-refresh with intelligent event-driven refresh system
+  - Changed from 3-second timed intervals to response-triggered refresh cycle
+  - Dashboard now waits for API response completion before scheduling next refresh (5-second delay after response)
+  - Added visual loading indicators showing "Refreshing..." status with spinning activity icon
+  - Improved user experience with responsive refresh timing based on actual data retrieval
+  - Fixed SQL column reference errors in tracking endpoint preventing data loading
+  - System now displays Instagram CPC "summer_sale", Facebook CPC, and Google traffic sessions with real-time stats
 - July 18, 2025: **MOCK DATA REMOVED FROM ANALYTICS** - Cleared all mock data from advanced analytics page, replaced with authentic API calls and proper loading states
   - Removed all mock data arrays (mockTrafficSources, mockLandingPages, mockAttributionReport, mockOptimizations)
   - Replaced with proper useQuery hooks for authentic data fetching from database

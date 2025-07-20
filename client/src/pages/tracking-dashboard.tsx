@@ -49,23 +49,24 @@ interface TrackingData {
 }
 
 export default function TrackingDashboard() {
-  // Fetch live tracking data from API with cache busting
-  const [refreshKey, setRefreshKey] = useState(0);
-  const { data: trackingData, isLoading, error, refetch } = useQuery<TrackingData>({
-    queryKey: ['/api/tracking/live-sessions', refreshKey],
-    refetchInterval: 3000, // Refresh every 3 seconds for faster updates
+  // Fetch live tracking data with event-driven refresh
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { data: trackingData, isLoading, error, refetch, isRefetching } = useQuery<TrackingData>({
+    queryKey: ['/api/tracking/live-sessions', refreshTrigger],
     staleTime: 0, // Always consider data stale
     gcTime: 0, // Don't cache results
   });
 
-  // Force refresh every 3 seconds with key change
+  // Auto-refresh after response is received (event-driven)
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRefreshKey(prev => prev + 1);
-      refetch();
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [refetch]);
+    if (!isLoading && !isRefetching && trackingData) {
+      const timer = setTimeout(() => {
+        setRefreshTrigger(prev => prev + 1);
+      }, 5000); // Wait 5 seconds after response before next request
+      
+      return () => clearTimeout(timer);
+    }
+  }, [trackingData, isLoading, isRefetching]);
 
   const recentSessions = trackingData?.sessions || [];
   const stats = trackingData?.stats || {
@@ -87,10 +88,19 @@ export default function TrackingDashboard() {
               Real-time tracking data from your landing pages
             </p>
           </div>
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            <Activity className="h-3 w-3 mr-1" />
-            Live Tracking Active
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className={`${
+              isLoading || isRefetching 
+                ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                : 'bg-green-50 text-green-700 border-green-200'
+            }`}>
+              <Activity className={`h-3 w-3 mr-1 ${isLoading || isRefetching ? 'animate-spin' : ''}`} />
+              {isLoading || isRefetching ? 'Refreshing...' : 'Live Tracking Active'}
+            </Badge>
+            <span className="text-sm text-muted-foreground">
+              Event-driven refresh
+            </span>
+          </div>
         </div>
 
         {/* Stats Cards */}
