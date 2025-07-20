@@ -4194,6 +4194,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get tracking stats from storage layer
       const basicStats = await storage.getBasicTrackingStats(userId);
       
+      // Get actual visitor sessions from database (raw query to bypass Drizzle issue)
+      const client = (await import('@neondatabase/serverless')).neon;
+      const sql_client = client(process.env.DATABASE_URL!);
+      
       // Get real tracking sessions from DNI sessions and visitor sessions
       const dniSessions = await sql_client`
         SELECT 
