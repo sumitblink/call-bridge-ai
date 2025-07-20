@@ -4185,6 +4185,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get live tracking sessions from visitor_sessions table
+  app.get('/api/tracking/live-sessions', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      // Get visitor sessions from database
+      const sessions = await db.query.visitorSessions.findMany({
+        where: eq(sql`visitor_sessions.user_id`, userId),
+        orderBy: [desc(sql`visitor_sessions.last_activity`)],
+        limit: 50
+      });
+      
+      // Transform database sessions to UI format
+      const transformedSessions = sessions.map(session => ({
+        id: session.sessionId,
+        tagCode: 'tracking_active',
+        campaignName: 'Live Campaign',
+        phoneNumber: 'Dynamic Assignment',
+        source: session.source || 'direct',
+        medium: session.medium || 'none',
+        campaign: session.campaign || '',
+        referrer: session.referrer || 'Direct',
+        userAgent: session.userAgent || 'Unknown',
+        timestamp: new Date(session.lastActivity).toLocaleTimeString(),
+        utmSource: session.utmSource,
+        utmMedium: session.utmMedium,
+        utmCampaign: session.utmCampaign,
+        landingPage: session.landingPage,
+        isActive: session.isActive
+      }));
+
+      res.json({
+        sessions: transformedSessions,
+        stats: {
+          totalSessions: sessions.length,
+          activeSessions: sessions.filter(s => s.isActive).length,
+          googleTraffic: sessions.filter(s => s.source === 'google').length,
+          directTraffic: sessions.filter(s => s.source === 'direct' || !s.source).length,
+          facebookTraffic: sessions.filter(s => s.source === 'facebook').length
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching live tracking sessions:', error);
+      res.status(500).json({ error: 'Failed to fetch live tracking sessions' });
+    }
+  });
+
   // RTB Routes
   
   // RTB Targets

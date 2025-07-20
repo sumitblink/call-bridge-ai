@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,54 +28,46 @@ interface TrackingSession {
   referrer: string;
   userAgent: string;
   timestamp: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  landingPage?: string;
+  isActive?: boolean;
+}
+
+interface TrackingData {
+  sessions: TrackingSession[];
+  stats: {
+    totalSessions: number;
+    activeSessions: number;
+    googleTraffic: number;
+    directTraffic: number;
+    facebookTraffic: number;
+  };
 }
 
 export default function TrackingDashboard() {
-  // Mock recent tracking data based on console logs
-  const recentSessions: TrackingSession[] = [
-    {
-      id: 'dni_20_1753003226029_crl1lf',
-      tagCode: 'first_campaign_page',
-      campaignName: 'My First Campaign',
-      phoneNumber: '(856) 529-0287',
-      source: 'google',
-      medium: 'cpc',
-      campaign: 'summer_sale',
-      referrer: 'http://127.0.0.1:5500/test.html',
-      userAgent: 'Chrome/138.0.0.0',
-      timestamp: '9:20:26 AM'
-    },
-    {
-      id: 'dni_20_1753003189681_4pnusm',
-      tagCode: 'first_campaign_page',
-      campaignName: 'My First Campaign',
-      phoneNumber: '(856) 474-3430',
-      source: 'direct',
-      medium: 'none',
-      campaign: '',
-      referrer: 'http://127.0.0.1:5500/test.html',
-      userAgent: 'Chrome/138.0.0.0',
-      timestamp: '9:19:49 AM'
-    },
-    {
-      id: 'dni_20_1753003186830_6zi5rf',
-      tagCode: 'first_campaign_page',
-      campaignName: 'My First Campaign',
-      phoneNumber: '(862) 420-9814',
-      source: 'direct',
-      medium: 'none',
-      campaign: '',
-      referrer: 'http://127.0.0.1:5500/test.html',
-      userAgent: 'Chrome/138.0.0.0',
-      timestamp: '9:19:46 AM'
-    }
-  ];
+  // Fetch live tracking data from API
+  const { data: trackingData, isLoading, error, refetch } = useQuery<TrackingData>({
+    queryKey: ['/api/tracking/live-sessions'],
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
 
-  const stats = {
-    totalSessions: recentSessions.length,
-    uniqueNumbers: new Set(recentSessions.map(s => s.phoneNumber)).size,
-    googleTraffic: recentSessions.filter(s => s.source === 'google').length,
-    directTraffic: recentSessions.filter(s => s.source === 'direct').length
+  // Auto-refresh every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetch();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [refetch]);
+
+  const recentSessions = trackingData?.sessions || [];
+  const stats = trackingData?.stats || {
+    totalSessions: 0,
+    activeSessions: 0,
+    googleTraffic: 0,
+    directTraffic: 0,
+    facebookTraffic: 0
   };
 
   return (
@@ -110,8 +102,8 @@ export default function TrackingDashboard() {
             <CardContent className="flex items-center p-6">
               <Phone className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm text-muted-foreground">Numbers Assigned</p>
-                <p className="text-2xl font-bold">{stats.uniqueNumbers}</p>
+                <p className="text-sm text-muted-foreground">Active Sessions</p>
+                <p className="text-2xl font-bold">{stats.activeSessions}</p>
               </div>
             </CardContent>
           </Card>
@@ -130,8 +122,8 @@ export default function TrackingDashboard() {
             <CardContent className="flex items-center p-6">
               <Globe className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
-                <p className="text-sm text-muted-foreground">Direct Traffic</p>
-                <p className="text-2xl font-bold">{stats.directTraffic}</p>
+                <p className="text-sm text-muted-foreground">Facebook Traffic</p>
+                <p className="text-2xl font-bold">{stats.facebookTraffic}</p>
               </div>
             </CardContent>
           </Card>
@@ -140,55 +132,81 @@ export default function TrackingDashboard() {
         {/* Recent Sessions */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Eye className="h-5 w-5 mr-2" />
-              Recent Tracking Sessions
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Eye className="h-5 w-5 mr-2" />
+                Live Tracking Sessions
+              </div>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                Auto-refresh: 10s
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Timestamp</TableHead>
-                  <TableHead>Tag Code</TableHead>
-                  <TableHead>Phone Number</TableHead>
-                  <TableHead>Traffic Source</TableHead>
-                  <TableHead>Campaign</TableHead>
-                  <TableHead>Referrer</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentSessions.map((session) => (
-                  <TableRow key={session.id}>
-                    <TableCell className="font-medium">
-                      {session.timestamp}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{session.tagCode}</Badge>
-                    </TableCell>
-                    <TableCell className="font-mono">
-                      {session.phoneNumber}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Badge variant={session.source === 'google' ? 'default' : 'secondary'}>
-                          {session.source}
-                        </Badge>
-                        {session.medium !== 'none' && (
-                          <Badge variant="outline">{session.medium}</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {session.campaign || <span className="text-muted-foreground">-</span>}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {session.referrer || <span className="text-muted-foreground">Direct</span>}
-                    </TableCell>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                <span className="ml-2">Loading tracking data...</span>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8 text-red-600">
+                <p>Error loading tracking data</p>
+                <button onClick={() => refetch()} className="mt-2 px-4 py-2 bg-blue-600 text-white rounded">
+                  Retry
+                </button>
+              </div>
+            ) : recentSessions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No tracking sessions found</p>
+                <p className="text-sm mt-1">Visit your landing pages to generate tracking data</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Traffic Source</TableHead>
+                    <TableHead>Campaign</TableHead>
+                    <TableHead>Landing Page</TableHead>
+                    <TableHead>Referrer</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {recentSessions.map((session) => (
+                    <TableRow key={session.id}>
+                      <TableCell className="font-medium">
+                        {session.timestamp}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={session.isActive ? 'default' : 'secondary'}>
+                          {session.isActive ? 'Active' : 'Ended'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-1">
+                          <Badge variant={session.source === 'google' ? 'default' : session.source === 'facebook' ? 'destructive' : 'secondary'}>
+                            {session.source}
+                          </Badge>
+                          {session.medium && session.medium !== 'none' && (
+                            <Badge variant="outline">{session.medium}</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {session.utmCampaign || session.campaign || <span className="text-muted-foreground">-</span>}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {session.landingPage || <span className="text-muted-foreground">Unknown</span>}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {session.referrer && session.referrer !== 'Direct' ? session.referrer : <span className="text-muted-foreground">Direct</span>}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
 
@@ -202,9 +220,16 @@ export default function TrackingDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Google CPC</span>
+                  <span>Google</span>
                 </div>
                 <span className="font-medium">{stats.googleTraffic} sessions</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                  <span>Facebook</span>
+                </div>
+                <span className="font-medium">{stats.facebookTraffic} sessions</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -223,16 +248,16 @@ export default function TrackingDashboard() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>(862) 420-9814</span>
-                  <span>1 assignment</span>
+                  <span>Total Sessions</span>
+                  <span>{stats.totalSessions}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>(856) 474-3430</span>
-                  <span>1 assignment</span>
+                  <span>Active Sessions</span>
+                  <span className="text-green-600">{stats.activeSessions}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>(856) 529-0287</span>
-                  <span>1 assignment</span>
+                  <span>Session Rate</span>
+                  <span>{stats.totalSessions > 0 ? ((stats.activeSessions / stats.totalSessions) * 100).toFixed(1) : 0}%</span>
                 </div>
               </div>
             </CardContent>
