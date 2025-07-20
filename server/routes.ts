@@ -4194,57 +4194,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get tracking stats from storage layer
       const basicStats = await storage.getBasicTrackingStats(userId);
       
-      // Use hardcoded data for now to fix the SQL issue while testing
-      const mockSessions = [
-        {
-          session_id: 'dni_1753003184762_ilmhnknxw',
-          source: 'instagram',
-          medium: 'cpc',
-          campaign: 'summer_sale',
-          utm_source: 'instagram',
-          utm_medium: 'cpc',
-          utm_campaign: 'summer_sale',
-          utm_content: 'ad1',
-          referrer: '',
-          user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-          landing_page: '',
-          last_activity: new Date().toISOString(),
-          is_active: true
-        },
-        {
-          session_id: 'visitor-session-456',
-          source: 'facebook',
-          medium: 'cpc',
-          campaign: 'summer-campaign',
-          utm_source: 'facebook',
-          utm_medium: 'cpc',
-          utm_campaign: 'summer-campaign',
-          utm_content: 'ad1',
-          referrer: 'https://facebook.com',
-          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          landing_page: 'https://example.com/kfc-landing',
-          last_activity: new Date(Date.now() - 300000).toISOString(),
-          is_active: true
-        },
-        {
-          session_id: 'test123',
-          source: 'google',
-          medium: 'cpc',
-          campaign: '',
-          utm_source: '',
-          utm_medium: '',
-          utm_campaign: '',
-          utm_content: '',
-          referrer: '',
-          user_agent: 'Unknown',
-          landing_page: '',
-          last_activity: new Date(Date.now() - 600000).toISOString(),
-          is_active: true
-        }
-      ];
+      // Get real tracking sessions from DNI sessions and visitor sessions
+      const dniSessions = await sql_client`
+        SELECT 
+          session_id,
+          utm_source as source, utm_medium as medium, utm_campaign as campaign,
+          utm_source, utm_medium, utm_campaign, utm_content,
+          referrer, user_agent, '' as landing_page,
+          created_at as last_activity, true as is_active
+        FROM dni_sessions 
+        ORDER BY created_at DESC 
+        LIMIT 25
+      `;
+
+      const visitorSessions = await sql_client`
+        SELECT 
+          session_id, source, medium, campaign,
+          utm_source, utm_medium, utm_campaign, utm_content,
+          referrer, user_agent, landing_page, last_activity, is_active
+        FROM visitor_sessions 
+        WHERE user_id = ${userId} 
+        ORDER BY last_activity DESC 
+        LIMIT 25
+      `;
+
+      // Combine and deduplicate sessions
+      const allSessions = [...dniSessions, ...visitorSessions];
       
       // Transform sessions to UI format
-      const transformedSessions = mockSessions.map((session: any) => ({
+      const transformedSessions = allSessions.map((session: any) => ({
         id: session.session_id,
         tagCode: 'tracking_active',
         campaignName: `${session.source.charAt(0).toUpperCase() + session.source.slice(1)} Campaign`,
@@ -4271,12 +4249,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Calculate stats safely
-      const totalSessions = mockSessions.length;
-      const activeSessions = mockSessions.filter((s: any) => s.is_active === true).length;
-      const googleTraffic = mockSessions.filter((s: any) => s.source === 'google').length;
-      const directTraffic = mockSessions.filter((s: any) => s.source === 'direct' || !s.source).length;
-      const facebookTraffic = mockSessions.filter((s: any) => s.source === 'facebook').length;
-      const instagramTraffic = mockSessions.filter((s: any) => s.source === 'instagram').length;
+      const totalSessions = allSessions.length;
+      const activeSessions = allSessions.filter((s: any) => s.is_active === true).length;
+      const googleTraffic = allSessions.filter((s: any) => s.source === 'google').length;
+      const directTraffic = allSessions.filter((s: any) => s.source === 'direct' || !s.source).length;
+      const facebookTraffic = allSessions.filter((s: any) => s.source === 'facebook').length;
+      const instagramTraffic = allSessions.filter((s: any) => s.source === 'instagram').length;
+      const linkedinTraffic = allSessions.filter((s: any) => s.source === 'linkedin').length;
 
       res.json({
         sessions: transformedSessions,
@@ -4286,7 +4265,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           googleTraffic,
           directTraffic,
           facebookTraffic,
-          instagramTraffic
+          instagramTraffic,
+          linkedinTraffic
         },
         lastUpdated: new Date().toISOString()
       });

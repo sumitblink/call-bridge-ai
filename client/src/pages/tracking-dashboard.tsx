@@ -65,7 +65,8 @@ export default function TrackingDashboard() {
     googleTraffic: 0,
     directTraffic: 0,
     facebookTraffic: 0,
-    instagramTraffic: 0
+    instagramTraffic: 0,
+    linkedinTraffic: 0
   }, [trackingData?.stats]);
 
   return (
@@ -94,7 +95,7 @@ export default function TrackingDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <Card>
             <CardContent className="flex items-center p-6">
               <Users className="h-8 w-8 text-blue-600" />
@@ -141,6 +142,16 @@ export default function TrackingDashboard() {
               <div className="ml-4">
                 <p className="text-sm text-muted-foreground">Instagram</p>
                 <p className="text-2xl font-bold">{stats.instagramTraffic}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="flex items-center p-6">
+              <Target className="h-8 w-8 text-blue-700" />
+              <div className="ml-4">
+                <p className="text-sm text-muted-foreground">LinkedIn</p>
+                <p className="text-2xl font-bold">{stats.linkedinTraffic}</p>
               </div>
             </CardContent>
           </Card>
