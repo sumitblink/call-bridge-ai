@@ -4198,10 +4198,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const client = (await import('@neondatabase/serverless')).neon;
       const sql_client = client(process.env.DATABASE_URL!);
       
+      // Get latest sessions including DNI tracking sessions
       const sessions = await sql_client`
-        SELECT * FROM visitor_sessions 
-        WHERE user_id = ${userId} 
-        ORDER BY last_activity DESC 
+        SELECT DISTINCT ON (session_id) * FROM (
+          SELECT 
+            session_id, user_id, ip_address, user_agent, referrer,
+            source, medium, campaign, utm_source, utm_medium, utm_campaign,
+            utm_term, utm_content, landing_page, current_page,
+            first_visit, last_activity, is_active, has_converted
+          FROM visitor_sessions 
+          WHERE user_id = ${userId}
+          
+          UNION ALL
+          
+          SELECT DISTINCT
+            session_id, 1 as user_id, ip_address, user_agent, referrer,
+            source, medium, campaign, source as utm_source, medium as utm_medium, 
+            campaign as utm_campaign, term as utm_term, content as utm_content,
+            landing_page, current_page, created_at as first_visit, 
+            updated_at as last_activity, TRUE as is_active, FALSE as has_converted
+          FROM dni_sessions 
+          WHERE user_id = ${userId} AND created_at > NOW() - INTERVAL '24 hours'
+        ) combined_sessions
+        ORDER BY session_id, last_activity DESC
         LIMIT 50
       `;
       
@@ -4224,6 +4243,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: session.is_active
       }));
 
+      // Add cache-busting headers to ensure fresh data
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache', 
+        'Expires': '0',
+        'ETag': `"${Date.now()}"` // Force fresh response with timestamp
+      });
+
       res.json({
         sessions: transformedSessions,
         stats: {
@@ -4231,8 +4258,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           activeSessions: sessions.filter((s: any) => s.is_active).length,
           googleTraffic: sessions.filter((s: any) => s.source === 'google').length,
           directTraffic: sessions.filter((s: any) => s.source === 'direct' || !s.source).length,
-          facebookTraffic: sessions.filter((s: any) => s.source === 'facebook').length
-        }
+          facebookTraffic: sessions.filter((s: any) => s.source === 'facebook').length,
+          instagramTraffic: sessions.filter((s: any) => s.source === 'instagram').length
+        },
+        lastUpdated: new Date().toISOString()
       });
     } catch (error) {
       console.error('Error fetching live tracking sessions:', error);

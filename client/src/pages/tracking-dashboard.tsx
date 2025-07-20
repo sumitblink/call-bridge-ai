@@ -43,21 +43,27 @@ interface TrackingData {
     googleTraffic: number;
     directTraffic: number;
     facebookTraffic: number;
+    instagramTraffic: number;
   };
+  lastUpdated?: string;
 }
 
 export default function TrackingDashboard() {
-  // Fetch live tracking data from API
+  // Fetch live tracking data from API with cache busting
+  const [refreshKey, setRefreshKey] = useState(0);
   const { data: trackingData, isLoading, error, refetch } = useQuery<TrackingData>({
-    queryKey: ['/api/tracking/live-sessions'],
-    refetchInterval: 10000, // Refresh every 10 seconds
+    queryKey: ['/api/tracking/live-sessions', refreshKey],
+    refetchInterval: 3000, // Refresh every 3 seconds for faster updates
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache results
   });
 
-  // Auto-refresh every 10 seconds
+  // Force refresh every 3 seconds with key change
   useEffect(() => {
     const interval = setInterval(() => {
+      setRefreshKey(prev => prev + 1);
       refetch();
-    }, 10000);
+    }, 3000);
     return () => clearInterval(interval);
   }, [refetch]);
 
@@ -67,7 +73,8 @@ export default function TrackingDashboard() {
     activeSessions: 0,
     googleTraffic: 0,
     directTraffic: 0,
-    facebookTraffic: 0
+    facebookTraffic: 0,
+    instagramTraffic: 0
   };
 
   return (
@@ -87,7 +94,7 @@ export default function TrackingDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="flex items-center p-6">
               <Users className="h-8 w-8 text-blue-600" />
@@ -100,7 +107,7 @@ export default function TrackingDashboard() {
 
           <Card>
             <CardContent className="flex items-center p-6">
-              <Phone className="h-8 w-8 text-green-600" />
+              <Activity className="h-8 w-8 text-green-600" />
               <div className="ml-4">
                 <p className="text-sm text-muted-foreground">Active Sessions</p>
                 <p className="text-2xl font-bold">{stats.activeSessions}</p>
@@ -112,7 +119,7 @@ export default function TrackingDashboard() {
             <CardContent className="flex items-center p-6">
               <Target className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm text-muted-foreground">Google Traffic</p>
+                <p className="text-sm text-muted-foreground">Google</p>
                 <p className="text-2xl font-bold">{stats.googleTraffic}</p>
               </div>
             </CardContent>
@@ -120,10 +127,20 @@ export default function TrackingDashboard() {
 
           <Card>
             <CardContent className="flex items-center p-6">
-              <Globe className="h-8 w-8 text-orange-600" />
+              <Globe className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm text-muted-foreground">Facebook Traffic</p>
+                <p className="text-sm text-muted-foreground">Facebook</p>
                 <p className="text-2xl font-bold">{stats.facebookTraffic}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="flex items-center p-6">
+              <Phone className="h-8 w-8 text-pink-600" />
+              <div className="ml-4">
+                <p className="text-sm text-muted-foreground">Instagram</p>
+                <p className="text-2xl font-bold">{stats.instagramTraffic}</p>
               </div>
             </CardContent>
           </Card>
