@@ -21,6 +21,7 @@ import {
   phoneNumbers,
   numberPools,
   publishers,
+  visitorSessions,
   insertCallTrackingTagSchema,
   CallTrackingTag,
   InsertCallTrackingTag 
@@ -4190,16 +4191,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user?.id;
       
-      // Get visitor sessions from database
-      const sessions = await db.query.visitorSessions.findMany({
-        where: eq(sql`visitor_sessions.user_id`, userId),
-        orderBy: [desc(sql`visitor_sessions.last_activity`)],
-        limit: 50
-      });
+      // Get tracking stats from storage layer
+      const basicStats = await storage.getBasicTrackingStats(userId);
+      
+      // Get actual visitor sessions from database (raw query to bypass Drizzle issue)
+      const client = (await import('@neondatabase/serverless')).neon;
+      const sql_client = client(process.env.DATABASE_URL!);
+      
+      const sessions = await sql_client`
+        SELECT * FROM visitor_sessions 
+        WHERE user_id = ${userId} 
+        ORDER BY last_activity DESC 
+        LIMIT 50
+      `;
       
       // Transform database sessions to UI format
-      const transformedSessions = sessions.map(session => ({
-        id: session.sessionId,
+      const transformedSessions = sessions.map((session: any) => ({
+        id: session.session_id,
         tagCode: 'tracking_active',
         campaignName: 'Live Campaign',
         phoneNumber: 'Dynamic Assignment',
@@ -4207,23 +4215,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         medium: session.medium || 'none',
         campaign: session.campaign || '',
         referrer: session.referrer || 'Direct',
-        userAgent: session.userAgent || 'Unknown',
-        timestamp: new Date(session.lastActivity).toLocaleTimeString(),
-        utmSource: session.utmSource,
-        utmMedium: session.utmMedium,
-        utmCampaign: session.utmCampaign,
-        landingPage: session.landingPage,
-        isActive: session.isActive
+        userAgent: session.user_agent || 'Unknown',
+        timestamp: new Date(session.last_activity).toLocaleTimeString(),
+        utmSource: session.utm_source,
+        utmMedium: session.utm_medium,
+        utmCampaign: session.utm_campaign,
+        landingPage: session.landing_page,
+        isActive: session.is_active
       }));
 
       res.json({
         sessions: transformedSessions,
         stats: {
-          totalSessions: sessions.length,
-          activeSessions: sessions.filter(s => s.isActive).length,
-          googleTraffic: sessions.filter(s => s.source === 'google').length,
-          directTraffic: sessions.filter(s => s.source === 'direct' || !s.source).length,
-          facebookTraffic: sessions.filter(s => s.source === 'facebook').length
+          totalSessions: sessions.length || basicStats.totalSessions,
+          activeSessions: sessions.filter((s: any) => s.is_active).length,
+          googleTraffic: sessions.filter((s: any) => s.source === 'google').length,
+          directTraffic: sessions.filter((s: any) => s.source === 'direct' || !s.source).length,
+          facebookTraffic: sessions.filter((s: any) => s.source === 'facebook').length
         }
       });
     } catch (error) {
