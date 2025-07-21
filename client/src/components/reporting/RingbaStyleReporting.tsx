@@ -739,7 +739,11 @@ export default function RingbaStyleReporting() {
     });
   };
 
-  // Use mock data if no real data available, otherwise use real data
+  // Use mock data for demonstration purposes (to test filtering functionality)
+  const rawCampaignSummaries: CampaignSummary[] = mockCampaignSummaries;
+
+  // Alternative: Real data processing (commented out for testing)
+  /*
   const rawCampaignSummaries: CampaignSummary[] = calls.length > 0 ? calls.reduce((acc, call) => {
     const campaignId = call.campaignId;
     let summary = acc.find(s => s.campaignId === campaignId);
@@ -820,6 +824,7 @@ export default function RingbaStyleReporting() {
 
     return acc;
   }, [] as CampaignSummary[]) : mockCampaignSummaries;
+  */
 
   // Apply filters to get final data
   const campaignSummaries = applyFilters(rawCampaignSummaries);
