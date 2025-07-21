@@ -4103,14 +4103,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Request body:', JSON.stringify(req.body, null, 2));
       console.log('Content-Type:', req.headers['content-type']);
       
-      // Domain-based validation for tracking security
-      const origin = req.headers.origin || req.headers.referer;
-      const userAgent = req.headers['user-agent'];
-      const requestIP = req.ip || req.connection.remoteAddress;
+      // Simple validation - just like Google Analytics or Facebook Pixel
+      const userAgent = req.headers['user-agent'] || '';
+      const origin = req.headers.origin || req.headers.referer || '';
       
-      // Basic security checks to prevent obvious spam/bot requests
-      if (!userAgent || userAgent.length < 10) {
-        console.log('DNI: Blocked suspicious request - invalid user agent');
+      // Basic bot filtering (block obvious automated requests)
+      const botPatterns = ['bot', 'crawler', 'spider', 'scraper'];
+      const isLikelyBot = botPatterns.some(pattern => 
+        userAgent.toLowerCase().includes(pattern)
+      );
+      
+      if (isLikelyBot) {
+        console.log('DNI: Filtered bot request:', userAgent);
         return res.status(400).json({
           phoneNumber: '',
           formattedNumber: '',
@@ -4119,22 +4123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Rate limiting per IP (simple in-memory implementation)
-      const rateLimitKey = `${requestIP}_${Date.now().toString().slice(0, -4)}`; // 10-second windows
-      global.trackingRequests = global.trackingRequests || new Map();
-      const requestCount = global.trackingRequests.get(rateLimitKey) || 0;
-      if (requestCount > 50) { // Max 50 requests per 10 seconds per IP
-        console.log('DNI: Rate limit exceeded for IP:', requestIP);
-        return res.status(429).json({
-          phoneNumber: '',
-          formattedNumber: '',
-          success: false,
-          error: 'Rate limit exceeded'
-        });
-      }
-      global.trackingRequests.set(rateLimitKey, requestCount + 1);
-      
-      console.log(`DNI: Processing tracking request from origin: ${origin}`);
+      console.log(`DNI: Processing tracking request from: ${origin}`);
       
       // Extract the request data properly
       const { tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId } = req.body;
@@ -4188,7 +4177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.options('/api/dni/*', (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-Requested-With');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     res.header('Access-Control-Max-Age', '86400'); // 24 hours
     res.sendStatus(200);
   });
