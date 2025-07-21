@@ -1734,12 +1734,8 @@ export default function RingbaStyleReporting() {
                               category
                             };
                             
-                            // Add tag if not already selected
-                            setSelectedTags(prev => {
-                              const exists = prev.some(t => t.column === column && t.tag === subcategory);
-                              if (exists) return prev;
-                              return [...prev, newTag];
-                            });
+                            // Replace any existing tags with the new single tag
+                            setSelectedTags([newTag]);
                             
                             // Auto-switch to the appropriate tab based on tag category
                             const tabMap: Record<string, string> = {
@@ -1910,7 +1906,7 @@ export default function RingbaStyleReporting() {
               activeTab={activeTab}
               selectedTags={selectedTags}
               onRemoveTag={(column, tag) => {
-                setSelectedTags(prev => prev.filter(t => !(t.column === column && t.tag === tag)));
+                setSelectedTags([]); // Clear all tags since only one is allowed
               }}
             />
           </div>
