@@ -657,6 +657,34 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async createRtbTarget(target: any): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.createRtbTarget(target),
+      () => this.memStorage.createRtbTarget(target)
+    );
+  }
+
+  async updateRtbTarget(id: number, target: any): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.updateRtbTarget(id, target),
+      () => this.memStorage.updateRtbTarget(id, target)
+    );
+  }
+
+  async deleteRtbTarget(id: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.deleteRtbTarget(id),
+      () => this.memStorage.deleteRtbTarget(id)
+    );
+  }
+
+  async getRtbTarget(id: number, userId?: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getRtbTarget(id, userId),
+      () => this.memStorage.getRtbTarget(id, userId)
+    );
+  }
+
   async clearRtbAuditData(): Promise<void> {
     return this.executeOperation(
       () => this.databaseStorage.clearRtbAuditData(),
