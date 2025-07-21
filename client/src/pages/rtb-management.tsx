@@ -87,7 +87,7 @@ export default function SimplifiedRTBManagementPage() {
   });
 
   // Fetch campaigns for bid request lookup
-  const { data: campaigns = [] } = useQuery({
+  const { data: campaigns = [] } = useQuery<any[]>({
     queryKey: ['/api/campaigns'],
   });
 
@@ -143,7 +143,7 @@ export default function SimplifiedRTBManagementPage() {
 
   // Helper function to get campaign name
   const getCampaignName = (campaignId: number) => {
-    const campaign = campaigns?.find(c => c.id === campaignId);
+    const campaign = campaigns?.find((c: any) => c.id === campaignId);
     return campaign ? campaign.name : `Campaign ${campaignId}`;
   };
 
@@ -486,8 +486,8 @@ export default function SimplifiedRTBManagementPage() {
         <EnhancedRTBTargetDialog 
           open={isTargetDialogOpen}
           onOpenChange={handleCloseTargetDialog}
-          target={editingTarget}
-          onSave={() => {
+          editingTarget={editingTarget}
+          onSubmit={async () => {
             queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
             handleCloseTargetDialog();
           }}
@@ -514,8 +514,8 @@ export default function SimplifiedRTBManagementPage() {
         />
 
         <Phase3AdvancedFilteringDialog
-          open={phase3DialogOpen}
-          onOpenChange={setPhase3DialogOpen}
+          isOpen={phase3DialogOpen}
+          onClose={() => setPhase3DialogOpen(false)}
           target={phase3Target}
           onSave={(data) => {
             // Handle Phase 3 save

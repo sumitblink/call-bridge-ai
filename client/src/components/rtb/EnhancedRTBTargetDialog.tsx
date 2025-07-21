@@ -264,6 +264,10 @@ export function EnhancedRTBTargetDialog({
         disableRecordings: data.disableRecordings,
         priorityBumpValue: data.priorityBump,
       });
+    } catch (error) {
+      console.error('RTB Target submission error:', error);
+      // Error handling is done by the parent component's mutation
+      // This catch prevents unhandled promise rejections
     } finally {
       setIsSubmitting(false);
     }
