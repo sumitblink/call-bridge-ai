@@ -4165,49 +4165,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return true; // Allow everything else - let legitimate marketing campaign names through
       };
 
-      // Campaign-based UTM whitelist validation (Ringba-style enterprise approach)
-      if (utmData.source && utmData.medium && utmData.campaign) {
-        console.log(`DNI: Validating UTM against campaign whitelist: ${utmData.source}/${utmData.medium}/${utmData.campaign}`);
-        
-        const client = (await import('@neondatabase/serverless')).neon;
-        const sql_client = client(process.env.DATABASE_URL!);
-        
-        // Check if UTM combination exists in authorized campaign UTM codes
-        const authorizedUtm = await sql_client`
-          SELECT c.id as campaign_id, c.name as campaign_name, u.id as utm_id
-          FROM campaign_utm_codes u
-          JOIN campaigns c ON u.campaign_id = c.id
-          WHERE u.utm_source = ${utmData.source}
-            AND u.utm_medium = ${utmData.medium}
-            AND u.utm_campaign = ${utmData.campaign}
-            AND u.is_active = true
-            AND c.status = 'active'
-          LIMIT 1
-        `;
-        
-        if (authorizedUtm.length === 0) {
-          console.log(`DNI: BLOCKED - UTM combination not found in campaign whitelist: ${utmData.source}/${utmData.medium}/${utmData.campaign}`);
+      // Validate all UTM parameters
+      for (const [key, value] of Object.entries(utmData)) {
+        if (value && !validateUTMParameter(value, key)) {
+          console.log(`DNI: Blocked request due to invalid UTM ${key}: "${value}"`);
           return res.status(400).json({
             phoneNumber: '',
             formattedNumber: '',
             campaignId: 0,
             campaignName: '',
             success: false,
-            error: 'Unauthorized UTM parameters - not found in campaign whitelist'
+            error: `Invalid tracking parameter: ${key}`
           });
         }
-        
-        // Update UTM usage statistics
-        await sql_client`
-          UPDATE campaign_utm_codes 
-          SET clicks = clicks + 1, last_used_at = NOW()
-          WHERE id = ${authorizedUtm[0].utm_id}
-        `;
-        
-        console.log(`DNI: ✅ AUTHORIZED - UTM validated against campaign: ${authorizedUtm[0].campaign_name} (ID: ${authorizedUtm[0].campaign_id})`);
-      } else {
-        // Allow requests without UTM parameters to pass through for backward compatibility
-        console.log('DNI: No UTM parameters provided - allowing request');
       }
       
       console.log(`DNI: Processing validated tracking request from: ${origin}`);
@@ -4269,141 +4239,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendStatus(200);
   });
 
-  // Campaign UTM Codes Management
-  app.get('/api/campaigns/:campaignId/utm-codes', requireAuth, async (req: any, res) => {
+  // API Keys Management
+  app.get('/api/api-keys', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
-      const campaignId = parseInt(req.params.campaignId);
       const client = (await import('@neondatabase/serverless')).neon;
       const sql_client = client(process.env.DATABASE_URL!);
       
-      const utmCodes = await sql_client`
-        SELECT * FROM campaign_utm_codes 
-        WHERE campaign_id = ${campaignId} AND user_id = ${userId}
+      const apiKeys = await sql_client`
+        SELECT id, key_value, key_name, is_active, created_at, last_used_at 
+        FROM api_keys 
+        WHERE user_id = ${userId} 
         ORDER BY created_at DESC
       `;
       
-      res.json(utmCodes);
+      res.json(apiKeys);
     } catch (error) {
-      console.error('Error fetching UTM codes:', error);
-      res.status(500).json({ error: 'Failed to fetch UTM codes' });
-    }
-  });
-
-  app.post('/api/campaigns/:campaignId/utm-codes', requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user?.id;
-      const campaignId = parseInt(req.params.campaignId);
-      const { utmSource, utmMedium, utmCampaign, utmContent, utmTerm, codeId, description } = req.body;
-      
-      const client = (await import('@neondatabase/serverless')).neon;
-      const sql_client = client(process.env.DATABASE_URL!);
-      
-      // Verify campaign ownership
-      const campaign = await sql_client`
-        SELECT id FROM campaigns WHERE id = ${campaignId} AND user_id = ${userId}
-      `;
-      
-      if (campaign.length === 0) {
-        return res.status(404).json({ error: 'Campaign not found' });
-      }
-      
-      // Check for duplicate UTM combination
-      const existing = await sql_client`
-        SELECT id FROM campaign_utm_codes 
-        WHERE campaign_id = ${campaignId} 
-          AND utm_source = ${utmSource}
-          AND utm_medium = ${utmMedium} 
-          AND utm_campaign = ${utmCampaign}
-      `;
-      
-      if (existing.length > 0) {
-        return res.status(400).json({ error: 'UTM combination already exists for this campaign' });
-      }
-      
-      const [newUtmCode] = await sql_client`
-        INSERT INTO campaign_utm_codes 
-        (user_id, campaign_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, code_id, description)
-        VALUES (${userId}, ${campaignId}, ${utmSource}, ${utmMedium}, ${utmCampaign}, ${utmContent || null}, ${utmTerm || null}, ${codeId}, ${description || null})
-        RETURNING *
-      `;
-      
-      res.json(newUtmCode);
-    } catch (error) {
-      console.error('Error creating UTM code:', error);
-      res.status(500).json({ error: 'Failed to create UTM code' });
-    }
-  });
-
-  app.delete('/api/campaigns/:campaignId/utm-codes/:utmCodeId', requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user?.id;
-      const campaignId = parseInt(req.params.campaignId);
-      const utmCodeId = parseInt(req.params.utmCodeId);
-      
-      const client = (await import('@neondatabase/serverless')).neon;
-      const sql_client = client(process.env.DATABASE_URL!);
-      
-      await sql_client`
-        DELETE FROM campaign_utm_codes 
-        WHERE id = ${utmCodeId} AND campaign_id = ${campaignId} AND user_id = ${userId}
-      `;
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error deleting UTM code:', error);
-      res.status(500).json({ error: 'Failed to delete UTM code' });
-    }
-  });
-
-  app.get('/api/campaigns/:campaignId/utm-urls', requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user?.id;
-      const campaignId = parseInt(req.params.campaignId);
-      const { baseUrl } = req.query;
-      
-      const client = (await import('@neondatabase/serverless')).neon;
-      const sql_client = client(process.env.DATABASE_URL!);
-      
-      const utmCodes = await sql_client`
-        SELECT * FROM campaign_utm_codes 
-        WHERE campaign_id = ${campaignId} AND user_id = ${userId} AND is_active = true
-        ORDER BY created_at DESC
-      `;
-      
-      const utmUrls = utmCodes.map(utm => {
-        const url = new URL(baseUrl || 'https://example.com');
-        url.searchParams.set('utm_source', utm.utm_source);
-        url.searchParams.set('utm_medium', utm.utm_medium);
-        url.searchParams.set('utm_campaign', utm.utm_campaign);
-        if (utm.utm_content) url.searchParams.set('utm_content', utm.utm_content);
-        if (utm.utm_term) url.searchParams.set('utm_term', utm.utm_term);
-        
-        return {
-          id: utm.id,
-          codeId: utm.code_id,
-          description: utm.description,
-          url: url.toString(),
-          utmParameters: {
-            source: utm.utm_source,
-            medium: utm.utm_medium,
-            campaign: utm.utm_campaign,
-            content: utm.utm_content,
-            term: utm.utm_term
-          },
-          stats: {
-            impressions: utm.impressions,
-            clicks: utm.clicks,
-            calls: utm.calls,
-            lastUsed: utm.last_used_at
-          }
-        };
-      });
-      
-      res.json(utmUrls);
-    } catch (error) {
-      console.error('Error generating UTM URLs:', error);
-      res.status(500).json({ error: 'Failed to generate UTM URLs' });
+      console.error('Error fetching API keys:', error);
+      res.status(500).json({ error: 'Failed to fetch API keys' });
     }
   });
 

@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Settings, Users, Phone, Globe, BarChart3, Zap, Target } from "lucide-react";
 import Layout from "@/components/Layout";
-import type { Campaign } from "@shared/schema";
 
 // Individual tab components
 import CampaignSettings from "@/components/campaign/CampaignSettings";
@@ -19,21 +18,20 @@ import CampaignPublishers from "@/components/campaign/CampaignPublishers";
 import CampaignAnalytics from "@/components/campaign/CampaignAnalytics";
 import { CampaignReadinessDashboard } from "@/components/campaign/CampaignReadinessDashboard";
 import { RTBTargetAssignment } from "@/components/campaign/RTBTargetAssignment";
-import UTMCodeManager from "@/components/campaign/UTMCodeManager";
 
 export default function CampaignDetail() {
   const { campaignId } = useParams();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("settings");
 
-  const { data: campaign, isLoading } = useQuery<Campaign>({
+  const { data: campaign, isLoading } = useQuery({
     queryKey: [`/api/campaigns/${campaignId}`],
     enabled: !!campaignId,
   });
 
   // Redirect to settings tab if currently viewing pools tab but routing type is not pool
   useEffect(() => {
-    if (campaign && activeTab === "pools" && campaign?.routingType !== "pool") {
+    if (campaign && activeTab === "pools" && campaign.routingType !== "pool") {
       setActiveTab("settings");
     }
   }, [campaign, activeTab]);
@@ -80,12 +78,12 @@ export default function CampaignDetail() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {campaign?.name}
+                {campaign.name}
               </h1>
               <div className="flex items-center space-x-2 mt-1">
-                <span className="text-sm text-gray-500">Campaign ID: {campaign?.id}</span>
-                <Badge variant={campaign?.status === "active" ? "default" : "secondary"}>
-                  {campaign?.status}
+                <span className="text-sm text-gray-500">Campaign ID: {campaign.id}</span>
+                <Badge variant={campaign.status === "active" ? "default" : "secondary"}>
+                  {campaign.status}
                 </Badge>
               </div>
             </div>
@@ -106,13 +104,13 @@ export default function CampaignDetail() {
 
         {/* Campaign Readiness Dashboard */}
         <CampaignReadinessDashboard 
-          campaignId={campaign?.id || 0} 
-          campaignStatus={campaign?.status || 'draft'}
+          campaignId={campaign.id} 
+          campaignStatus={campaign.status}
         />
 
         {/* Campaign Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${campaign?.enableRtb ? (campaign?.routingType === "pool" ? "grid-cols-7" : "grid-cols-6") : (campaign?.routingType === "pool" ? "grid-cols-6" : "grid-cols-5")}`}>
+          <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-7" : "grid-cols-6") : (campaign.routingType === "pool" ? "grid-cols-6" : "grid-cols-5")}`}>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
@@ -121,13 +119,13 @@ export default function CampaignDetail() {
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Buyers</span>
             </TabsTrigger>
-            {campaign?.routingType === "pool" && (
+            {campaign.routingType === "pool" && (
               <TabsTrigger value="pools" className="flex items-center space-x-2">
                 <Phone className="h-4 w-4" />
                 <span className="hidden sm:inline">Pools</span>
               </TabsTrigger>
             )}
-            {campaign?.enableRtb && (
+            {campaign.enableRtb && (
               <TabsTrigger value="rtb" className="flex items-center space-x-2">
                 <Target className="h-4 w-4" />
                 <span className="hidden sm:inline">RTB Targets</span>
@@ -148,37 +146,37 @@ export default function CampaignDetail() {
           </TabsList>
 
           <TabsContent value="settings">
-            <CampaignSettings campaignId={campaign?.id || 0} campaign={campaign} />
+            <CampaignSettings campaignId={campaign.id} campaign={campaign} />
           </TabsContent>
 
           <TabsContent value="buyers">
-            <CampaignBuyers campaignId={campaign?.id || 0} />
+            <CampaignBuyers campaignId={campaign.id} />
           </TabsContent>
 
-          {campaign?.routingType === "pool" && (
+          {campaign.routingType === "pool" && (
             <TabsContent value="pools">
               <CampaignPools campaign={campaign} />
             </TabsContent>
           )}
 
           <TabsContent value="tracking">
-            <CampaignTracking campaignId={campaign?.id || 0} campaign={campaign} />
+            <CampaignTracking campaignId={campaign.id} campaign={campaign} />
           </TabsContent>
 
           <TabsContent value="publishers">
-            <CampaignPublishers campaignId={campaign?.id || 0} />
+            <CampaignPublishers campaignId={campaign.id} />
           </TabsContent>
 
           <TabsContent value="analytics">
-            <CampaignAnalytics campaignId={campaign?.id || 0} campaign={campaign} />
+            <CampaignAnalytics campaignId={campaign.id} campaign={campaign} />
           </TabsContent>
 
-          {campaign?.enableRtb && (
+          {campaign.enableRtb && (
             <TabsContent value="rtb">
               <RTBTargetAssignment 
-                campaignId={campaign?.id || 0} 
-                campaignName={campaign?.name || ''}
-                isRtbEnabled={campaign?.enableRtb || false}
+                campaignId={campaign.id} 
+                campaignName={campaign.name}
+                isRtbEnabled={campaign.enableRtb}
               />
             </TabsContent>
           )}

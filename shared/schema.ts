@@ -222,38 +222,6 @@ export const agentCalls = pgTable("agent_calls", {
   disposition: varchar("disposition", { length: 100 }), // sale, no_sale, callback, busy, etc.
 });
 
-// Authorized UTM Parameters - Campaign-Generated Whitelist System
-export const campaignUtmCodes = pgTable("campaign_utm_codes", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
-  
-  // UTM Parameters (campaign-generated whitelist)
-  utmSource: varchar("utm_source", { length: 100 }).notNull(), // e.g., "facebook", "google"
-  utmMedium: varchar("utm_medium", { length: 100 }).notNull(), // e.g., "cpc", "social"
-  utmCampaign: varchar("utm_campaign", { length: 200 }).notNull(), // e.g., "summer_sale_2025"
-  utmContent: varchar("utm_content", { length: 200 }), // e.g., "banner_ad"
-  utmTerm: varchar("utm_term", { length: 200 }), // e.g., "social_media_ads"
-  
-  // Metadata
-  codeId: varchar("code_id", { length: 50 }).notNull(), // unique identifier like "fb_summer_001"
-  description: text("description"), // human-readable description
-  isActive: boolean("is_active").default(true).notNull(),
-  
-  // Usage Statistics
-  impressions: integer("impressions").default(0).notNull(),
-  clicks: integer("clicks").default(0).notNull(),
-  calls: integer("calls").default(0).notNull(),
-  lastUsedAt: timestamp("last_used_at"),
-  
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => [
-  // Ensure unique UTM combinations per campaign
-  index("idx_campaign_utm_unique").on(table.campaignId, table.utmSource, table.utmMedium, table.utmCampaign),
-  index("idx_utm_lookup").on(table.utmSource, table.utmMedium, table.utmCampaign, table.isActive)
-]);
-
 // Integration system tables
 export const urlParameters = pgTable("url_parameters", {
   id: serial("id").primaryKey(),
@@ -632,26 +600,6 @@ export type InsertNumberPoolAssignment = z.infer<typeof insertNumberPoolAssignme
 
 export type CampaignPoolAssignment = typeof campaignPoolAssignments.$inferSelect;
 export type InsertCampaignPoolAssignment = z.infer<typeof insertCampaignPoolAssignmentSchema>;
-
-// Campaign UTM Codes schemas
-export const insertCampaignUtmCodeSchema = createInsertSchema(campaignUtmCodes).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  impressions: true,
-  clicks: true,
-  calls: true,
-  lastUsedAt: true,
-}).extend({
-  userId: z.number().optional(),
-  utmSource: z.string().min(1, "UTM source is required"),
-  utmMedium: z.string().min(1, "UTM medium is required"),
-  utmCampaign: z.string().min(1, "UTM campaign name is required"),
-  codeId: z.string().min(1, "Code ID is required").regex(/^[a-zA-Z0-9_-]+$/, "Code ID must contain only letters, numbers, underscores, and hyphens"),
-});
-
-export type CampaignUtmCode = typeof campaignUtmCodes.$inferSelect;
-export type InsertCampaignUtmCode = z.infer<typeof insertCampaignUtmCodeSchema>;
 
 export const insertPhoneNumberSchema = createInsertSchema(phoneNumbers).omit({
   id: true,
