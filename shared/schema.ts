@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, json, index, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, json, index, primaryKey, uuid } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -28,7 +28,7 @@ export const users = pgTable("users", {
 });
 
 export const campaigns = pgTable("campaigns", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   userId: integer("user_id").references(() => users.id).notNull(),
   
   // General Info
@@ -106,7 +106,7 @@ export const buyers = pgTable("buyers", {
 });
 
 export const campaignBuyers = pgTable("campaign_buyers", {
-  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
+  campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   buyerId: integer("buyer_id").references(() => buyers.id).notNull(),
   priority: integer("priority").default(1),
   isActive: boolean("is_active").default(true),
@@ -117,7 +117,7 @@ export const campaignBuyers = pgTable("campaign_buyers", {
 
 export const calls = pgTable("calls", {
   id: serial("id").primaryKey(),
-  campaignId: integer("campaign_id").references(() => campaigns.id),
+  campaignId: uuid("campaign_id").references(() => campaigns.id),
   buyerId: integer("buyer_id").references(() => buyers.id),
   callSid: varchar("call_sid", { length: 100 }),
   fromNumber: varchar("from_number", { length: 20 }).notNull(),
@@ -189,7 +189,7 @@ export const agents = pgTable("agents", {
 export const agentCampaigns = pgTable("agent_campaigns", {
   id: serial("id").primaryKey(),
   agentId: integer("agent_id").references(() => agents.id).notNull(),
-  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
+  campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   priority: integer("priority").default(1).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -229,7 +229,7 @@ export const urlParameters = pgTable("url_parameters", {
   parameter: varchar("parameter", { length: 100 }).notNull(),
   description: text("description"),
   value: varchar("value", { length: 256 }).notNull(),
-  campaignId: integer("campaign_id").references(() => campaigns.id),
+  campaignId: uuid("campaign_id").references(() => campaigns.id),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -266,7 +266,7 @@ export const webhookConfigs = pgTable("webhook_configs", {
 export const callTrackingTags = pgTable("call_tracking_tags", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
+  campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   
   // Tag Configuration
   name: varchar("name", { length: 256 }).notNull(), // Tag Name
@@ -407,7 +407,7 @@ export const phoneNumbers = pgTable("phone_numbers", {
   voiceUrl: varchar("voice_url", { length: 512 }),
   voiceMethod: varchar("voice_method", { length: 10 }).default("POST"),
   statusCallback: varchar("status_callback", { length: 512 }),
-  campaignId: integer("campaign_id").references(() => campaigns.id),
+  campaignId: uuid("campaign_id").references(() => campaigns.id),
   isActive: boolean("is_active").default(true).notNull(),
   monthlyFee: decimal("monthly_fee", { precision: 10, scale: 4 }).default("1.0000"),
   purchaseDate: timestamp("purchase_date").defaultNow().notNull(),
@@ -447,7 +447,7 @@ export const numberPoolAssignments = pgTable("number_pool_assignments", {
 // Campaign Pool Assignments - Link pools to campaigns
 export const campaignPoolAssignments = pgTable("campaign_pool_assignments", {
   id: serial("id").primaryKey(),
-  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
+  campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   poolId: integer("pool_id").references(() => numberPools.id).notNull(),
   priority: integer("priority").default(1).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
@@ -669,7 +669,7 @@ export const publishers = pgTable('publishers', {
 export const publisherCampaigns = pgTable('publisher_campaigns', {
   id: serial('id').primaryKey(),
   publisherId: integer('publisher_id').references(() => publishers.id).notNull(),
-  campaignId: integer('campaign_id').references(() => campaigns.id).notNull(),
+  campaignId: uuid('campaign_id').references(() => campaigns.id).notNull(),
   customPayout: decimal('custom_payout', { precision: 10, scale: 2 }), // override default payout for this campaign
   isActive: boolean('is_active').default(true),
   createdAt: timestamp('created_at').defaultNow(),
@@ -679,7 +679,7 @@ export const publisherCampaigns = pgTable('publisher_campaigns', {
 export const callFlows = pgTable("call_flows", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  campaignId: integer("campaign_id").references(() => campaigns.id),
+  campaignId: uuid("campaign_id").references(() => campaigns.id),
   
   // Flow Configuration
   name: varchar("name", { length: 256 }).notNull(),
@@ -1347,7 +1347,7 @@ export const visitorSessions = pgTable("visitor_sessions", {
 export const conversionEvents = pgTable("conversion_events", {
   id: serial("id").primaryKey(),
   sessionId: varchar("session_id", { length: 255 }).references(() => visitorSessions.sessionId).notNull(),
-  campaignId: integer("campaign_id").references(() => campaigns.id),
+  campaignId: uuid("campaign_id").references(() => campaigns.id),
   callId: integer("call_id").references(() => calls.id),
   
   // Conversion Details
