@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   BarChart, 
   Bar, 
@@ -18,7 +20,10 @@ import {
   Download, 
   RefreshCw,
   Calendar,
-  ChevronDown
+  ChevronDown,
+  Settings,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
@@ -53,15 +58,173 @@ interface CallData {
   sub5?: string;
 }
 
+interface CampaignSummary {
+  campaignId: string;
+  campaignName: string;
+  publisher: string;
+  target: string;
+  buyer: string;
+  dialedNumbers: string[];
+  numberPool: string;
+  totalCalls: number;
+  incoming: number;
+  live: number;
+  completed: number;
+  ended: number;
+  connected: number;
+  paid: number;
+  converted: number;
+  noConnection: number;
+  blocked: number;
+  ivrHangup: number;
+  duplicate: number;
+  revenue: number;
+  payout: number;
+  profit: number;
+  margin: number;
+  conversionRate: number;
+  rpc: number;
+  tcl: number; // Total Call Length in seconds
+  acl: number; // Average Call Length in seconds
+  totalCost: number;
+  tags: string[];
+  lastCallDate: string;
+}
+
 export default function RingbaStyleReporting() {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [timeRange, setTimeRange] = useState("today");
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
+    campaign: true,
+    publisher: true,
+    target: true,
+    buyer: true,
+    dialedNumber: true,
+    numberPool: true,
+    date: true,
+    duplicate: true,
+    tags: true,
+    incoming: true,
+    live: true,
+    completed: true,
+    ended: true,
+    connected: true,
+    paid: true,
+    converted: true,
+    noConnection: true,
+    blocked: true,
+    ivrHangup: true,
+    rpc: true,
+    revenue: true,
+    payout: true,
+    profit: true,
+    margin: true,
+    conversionRate: true,
+    tcl: true,
+    acl: true,
+    totalCost: true
+  });
 
   // Fetch enhanced calls data
   const { data: calls = [], isLoading, refetch } = useQuery<CallData[]>({
     queryKey: ["/api/calls/enhanced"],
     refetchInterval: autoRefresh ? 30000 : false,
+  });
+
+  // Calculate campaign summaries from call data
+  const campaignSummaries: CampaignSummary[] = calls.reduce((acc, call) => {
+    const campaignId = call.campaignId;
+    let summary = acc.find(s => s.campaignId === campaignId);
+    
+    if (!summary) {
+      summary = {
+        campaignId,
+        campaignName: call.campaign?.name || 'Unknown Campaign',
+        publisher: '-',
+        target: 'Live',
+        buyer: call.buyer?.name || 'Unknown Buyer',
+        dialedNumbers: [],
+        numberPool: 'Pool',
+        totalCalls: 0,
+        incoming: 0,
+        live: 0,
+        completed: 0,
+        ended: 0,
+        connected: 0,
+        paid: 0,
+        converted: 0,
+        noConnection: 0,
+        blocked: 0,
+        ivrHangup: 0,
+        duplicate: 0,
+        revenue: 0,
+        payout: 0,
+        profit: 0,
+        margin: 0,
+        conversionRate: 0,
+        rpc: 0,
+        tcl: 0,
+        acl: 0,
+        totalCost: 0,
+        tags: [],
+        lastCallDate: call.createdAt
+      };
+      acc.push(summary);
+    }
+
+    // Update summary metrics
+    summary.totalCalls += 1;
+    summary.incoming += 1;
+    
+    if (call.status === 'in_progress') summary.live += 1;
+    if (call.status === 'completed') {
+      summary.completed += 1;
+      summary.connected += 1;
+    }
+    if (call.status === 'failed' || call.status === 'busy' || call.status === 'no_answer') {
+      summary.ended += 1;
+      summary.noConnection += 1;
+    }
+    
+    // Financial calculations
+    const revenue = Number(call.revenue) || 0;
+    const cost = Number(call.cost) || 0;
+    const profit = revenue - cost;
+    
+    summary.revenue += revenue;
+    summary.totalCost += cost;
+    summary.payout += cost;
+    summary.profit += profit;
+    summary.tcl += call.duration;
+    
+    // Track dialed numbers and tags
+    if (call.dialedNumber && !summary.dialedNumbers.includes(call.dialedNumber)) {
+      summary.dialedNumbers.push(call.dialedNumber);
+    }
+    if (call.sub1 && !summary.tags.includes(call.sub1)) {
+      summary.tags.push(call.sub1);
+    }
+    
+    // Update last call date if newer
+    if (new Date(call.createdAt) > new Date(summary.lastCallDate)) {
+      summary.lastCallDate = call.createdAt;
+    }
+
+    return acc;
+  }, [] as CampaignSummary[]);
+
+  // Calculate derived metrics for each summary
+  campaignSummaries.forEach(summary => {
+    if (summary.revenue > 0) {
+      summary.margin = (summary.profit / summary.revenue) * 100;
+    }
+    if (summary.connected > 0) {
+      summary.conversionRate = (summary.converted / summary.connected) * 100;
+      summary.rpc = summary.revenue / summary.connected;
+      summary.acl = summary.tcl / summary.connected;
+    }
   });
 
   // Calculate timeline data for chart (calls per hour)
@@ -128,6 +291,69 @@ export default function RingbaStyleReporting() {
         : [...prev, filterId]
     );
   };
+
+  const toggleColumn = (columnId: string) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnId]: !prev[columnId]
+    }));
+  };
+
+  const exportToCSV = () => {
+    const headers = [
+      'Campaign', 'Publisher', 'Target', 'Buyer', 'Dialed #', 'Number Pool', 'Date',
+      'Duplicate', 'Tags', 'Incoming', 'Live', 'Completed', 'Ended', 'Connected',
+      'Paid', 'Converted', 'No Connection', 'Blocked', 'IVR Hangup', 'RPC',
+      'Revenue', 'Payout', 'Profit', 'Margin', 'Conversion Rate', 'TCL', 'ACL', 'Total Cost'
+    ];
+    
+    const csvData = campaignSummaries.map(summary => [
+      summary.campaignName,
+      summary.publisher,
+      summary.target,
+      summary.buyer,
+      summary.dialedNumbers.join(';'),
+      summary.numberPool,
+      summary.lastCallDate,
+      summary.duplicate,
+      summary.tags.join(';'),
+      summary.incoming,
+      summary.live,
+      summary.completed,
+      summary.ended,
+      summary.connected,
+      summary.paid,
+      summary.converted,
+      summary.noConnection,
+      summary.blocked,
+      summary.ivrHangup,
+      formatCurrency(summary.rpc),
+      formatCurrency(summary.revenue),
+      formatCurrency(summary.payout),
+      formatCurrency(summary.profit),
+      `${summary.margin.toFixed(2)}%`,
+      `${summary.conversionRate.toFixed(2)}%`,
+      formatDuration(summary.tcl),
+      formatDuration(summary.acl),
+      formatCurrency(summary.totalCost)
+    ]);
+
+    const csv = [headers.join(','), ...csvData.map(row => row.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ringba-report-summary-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredSummaries = campaignSummaries.filter(summary => {
+    if (activeTab === 'connected' && summary.connected === 0) return false;
+    if (activeTab === 'converted' && summary.converted === 0) return false;
+    if (activeTab === 'blocked' && summary.blocked === 0) return false;
+    return true;
+  });
 
   return (
     <div className="space-y-1">
@@ -238,151 +464,203 @@ export default function RingbaStyleReporting() {
         </CardContent>
       </Card>
 
-      {/* Ringba-style Summary Section */}
+      {/* Report Summary Table with Tabs */}
       <Card className="mx-4">
         <CardContent className="p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Summary</h3>
-          
-          {/* Data Table - Ringba Style */}
-          <div className="rounded border">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Campaign</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Publisher</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Target</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Buyer</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Dialed #</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Number Pool</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Date</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Duplicate</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Tags</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Payout</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Revenue</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Profit</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Margin</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Connected</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Duration</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">TCL</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">ACL</TableHead>
-                  <TableHead className="text-xs font-medium text-gray-600 py-2">Total Cost</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={18} className="text-center py-8 text-sm text-gray-500">
-                      Loading...
-                    </TableCell>
-                  </TableRow>
-                ) : calls.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={18} className="text-center py-8 text-sm text-gray-500">
-                      No data available
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  calls.slice(0, 50).map((call) => (
-                    <TableRow key={call.id} className="hover:bg-gray-50">
-                      <TableCell className="text-xs py-2">
-                        <div className="text-blue-600 truncate max-w-24">
-                          {call.campaign?.name || 'Campaign'}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs py-2">-</TableCell>
-                      <TableCell className="text-xs py-2">Live</TableCell>
-                      <TableCell className="text-xs py-2">
-                        <div className="text-blue-600 truncate max-w-20">
-                          {call.buyer?.name || 'Buyer'}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs py-2 font-mono">
-                        {call.dialedNumber || call.toNumber}
-                      </TableCell>
-                      <TableCell className="text-xs py-2">Pool</TableCell>
-                      <TableCell className="text-xs py-2">
-                        {formatDistanceToNow(new Date(call.createdAt), { addSuffix: true })}
-                      </TableCell>
-                      <TableCell className="text-xs py-2">
-                        <Badge variant="outline" className="text-xs">
-                          Blocked
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs py-2">
-                        {call.sub1 && (
-                          <div className="flex gap-1">
-                            <Badge variant="secondary" className="text-xs px-1">
-                              {call.sub1}
-                            </Badge>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs py-2">-</TableCell>
-                      <TableCell className="text-xs py-2 text-green-600 font-medium">
-                        {formatCurrency(call.revenue || 0)}
-                      </TableCell>
-                      <TableCell className="text-xs py-2 text-green-600 font-medium">
-                        {formatCurrency(call.profit || 0)}
-                      </TableCell>
-                      <TableCell className="text-xs py-2">
-                        {call.revenue && parseFloat(call.revenue.toString()) > 0 
-                          ? `${((parseFloat(call.profit?.toString() || '0') / parseFloat(call.revenue.toString())) * 100).toFixed(1)}%`
-                          : '0%'}
-                      </TableCell>
-                      <TableCell className="text-xs py-2">
-                        <Badge className={getStatusBadge(call.status)} variant="secondary">
-                          {call.status === 'completed' ? 'Connected' : 'No Connect'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs py-2 font-mono">
-                        {formatDuration(call.duration)}
-                      </TableCell>
-                      <TableCell className="text-xs py-2">-</TableCell>
-                      <TableCell className="text-xs py-2">-</TableCell>
-                      <TableCell className="text-xs py-2 text-red-600">
-                        {formatCurrency(call.cost || 0)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-gray-700">Summary</h3>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs"
+                onClick={exportToCSV}
+              >
+                <Download className="h-3 w-3 mr-1" />
+                EXPORT CSV
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs"
+              >
+                <Settings className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
-          
-          {/* Export Button */}
-          <div className="flex justify-end mt-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-xs"
-              onClick={() => {
-                // Export functionality
-                const csv = calls.map(call => [
-                  call.campaign?.name || '',
-                  call.buyer?.name || '',
-                  call.dialedNumber || call.toNumber,
-                  call.createdAt,
-                  call.status,
-                  call.duration,
-                  call.revenue || 0,
-                  call.cost || 0,
-                  call.profit || 0
-                ].join(',')).join('\n');
-                
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `ringba-report-${new Date().toISOString().split('T')[0]}.csv`;
-                a.click();
-              }}
-            >
-              <Download className="h-3 w-3 mr-1" />
-              EXPORT CSV
-            </Button>
-          </div>
+
+          {/* Tabbed Interface */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5 h-8">
+              <TabsTrigger value="all" className="text-xs">All ({campaignSummaries.length})</TabsTrigger>
+              <TabsTrigger value="connected" className="text-xs">Connected ({campaignSummaries.filter(s => s.connected > 0).length})</TabsTrigger>
+              <TabsTrigger value="converted" className="text-xs">Converted ({campaignSummaries.filter(s => s.converted > 0).length})</TabsTrigger>
+              <TabsTrigger value="blocked" className="text-xs">Blocked ({campaignSummaries.filter(s => s.blocked > 0).length})</TabsTrigger>
+              <TabsTrigger value="revenue" className="text-xs">Revenue ({campaignSummaries.filter(s => s.revenue > 0).length})</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all" className="mt-4">
+              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
+            </TabsContent>
+            
+            <TabsContent value="connected" className="mt-4">
+              <ReportSummaryTable summaries={campaignSummaries.filter(s => s.connected > 0)} visibleColumns={visibleColumns} isLoading={isLoading} />
+            </TabsContent>
+            
+            <TabsContent value="converted" className="mt-4">
+              <ReportSummaryTable summaries={campaignSummaries.filter(s => s.converted > 0)} visibleColumns={visibleColumns} isLoading={isLoading} />
+            </TabsContent>
+            
+            <TabsContent value="blocked" className="mt-4">
+              <ReportSummaryTable summaries={campaignSummaries.filter(s => s.blocked > 0)} visibleColumns={visibleColumns} isLoading={isLoading} />
+            </TabsContent>
+            
+            <TabsContent value="revenue" className="mt-4">
+              <ReportSummaryTable summaries={campaignSummaries.filter(s => s.revenue > 0)} visibleColumns={visibleColumns} isLoading={isLoading} />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Report Summary Table Component
+interface ReportSummaryTableProps {
+  summaries: CampaignSummary[];
+  visibleColumns: Record<string, boolean>;
+  isLoading: boolean;
+}
+
+function ReportSummaryTable({ summaries, visibleColumns, isLoading }: ReportSummaryTableProps) {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount || 0);
+  };
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-8 text-sm text-gray-500">
+        Loading...
+      </div>
+    );
+  }
+
+  if (summaries.length === 0) {
+    return (
+      <div className="text-center py-8 text-sm text-gray-500">
+        No data available
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded border overflow-hidden">
+      <div className="overflow-x-auto max-h-96">
+        <Table>
+          <TableHeader className="sticky top-0 bg-gray-50 z-10">
+            <TableRow>
+              {visibleColumns.campaign && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Campaign</TableHead>}
+              {visibleColumns.publisher && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Publisher</TableHead>}
+              {visibleColumns.target && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Target</TableHead>}
+              {visibleColumns.buyer && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Buyer</TableHead>}
+              {visibleColumns.dialedNumber && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Dialed #</TableHead>}
+              {visibleColumns.numberPool && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Number Pool</TableHead>}
+              {visibleColumns.date && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Date</TableHead>}
+              {visibleColumns.duplicate && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Duplicate</TableHead>}
+              {visibleColumns.tags && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Tags</TableHead>}
+              {visibleColumns.incoming && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Incoming</TableHead>}
+              {visibleColumns.live && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Live</TableHead>}
+              {visibleColumns.completed && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Completed</TableHead>}
+              {visibleColumns.ended && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Ended</TableHead>}
+              {visibleColumns.connected && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Connected</TableHead>}
+              {visibleColumns.paid && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Paid</TableHead>}
+              {visibleColumns.converted && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Converted</TableHead>}
+              {visibleColumns.noConnection && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">No Connection</TableHead>}
+              {visibleColumns.blocked && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Blocked</TableHead>}
+              {visibleColumns.ivrHangup && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">IVR Hangup</TableHead>}
+              {visibleColumns.rpc && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">RPC</TableHead>}
+              {visibleColumns.revenue && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Revenue</TableHead>}
+              {visibleColumns.payout && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Payout</TableHead>}
+              {visibleColumns.profit && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Profit</TableHead>}
+              {visibleColumns.margin && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Margin</TableHead>}
+              {visibleColumns.conversionRate && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Conversion Rate</TableHead>}
+              {visibleColumns.tcl && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">TCL</TableHead>}
+              {visibleColumns.acl && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">ACL</TableHead>}
+              {visibleColumns.totalCost && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Total Cost</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {summaries.map((summary) => (
+              <TableRow key={summary.campaignId} className="hover:bg-gray-50">
+                {visibleColumns.campaign && (
+                  <TableCell className="text-xs py-1 px-2">
+                    <button className="text-blue-600 hover:underline text-left truncate max-w-24">
+                      {summary.campaignName}
+                    </button>
+                  </TableCell>
+                )}
+                {visibleColumns.publisher && <TableCell className="text-xs py-1 px-2">{summary.publisher}</TableCell>}
+                {visibleColumns.target && <TableCell className="text-xs py-1 px-2">{summary.target}</TableCell>}
+                {visibleColumns.buyer && <TableCell className="text-xs py-1 px-2 text-blue-600 truncate max-w-20">{summary.buyer}</TableCell>}
+                {visibleColumns.dialedNumber && (
+                  <TableCell className="text-xs py-1 px-2 font-mono">
+                    {summary.dialedNumbers.slice(0, 1).join(', ')}{summary.dialedNumbers.length > 1 && ` +${summary.dialedNumbers.length - 1}`}
+                  </TableCell>
+                )}
+                {visibleColumns.numberPool && <TableCell className="text-xs py-1 px-2">{summary.numberPool}</TableCell>}
+                {visibleColumns.date && <TableCell className="text-xs py-1 px-2">{formatDistanceToNow(new Date(summary.lastCallDate), { addSuffix: true })}</TableCell>}
+                {visibleColumns.duplicate && (
+                  <TableCell className="text-xs py-1 px-2">
+                    <Badge variant="outline" className="text-xs">
+                      {summary.duplicate}
+                    </Badge>
+                  </TableCell>
+                )}
+                {visibleColumns.tags && (
+                  <TableCell className="text-xs py-1 px-2">
+                    {summary.tags.slice(0, 2).map(tag => (
+                      <Badge key={tag} variant="secondary" className="text-xs px-1 mr-1">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {summary.tags.length > 2 && <span className="text-gray-500">+{summary.tags.length - 2}</span>}
+                  </TableCell>
+                )}
+                {visibleColumns.incoming && <TableCell className="text-xs py-1 px-2 text-center">{summary.incoming}</TableCell>}
+                {visibleColumns.live && <TableCell className="text-xs py-1 px-2 text-center">{summary.live}</TableCell>}
+                {visibleColumns.completed && <TableCell className="text-xs py-1 px-2 text-center">{summary.completed}</TableCell>}
+                {visibleColumns.ended && <TableCell className="text-xs py-1 px-2 text-center">{summary.ended}</TableCell>}
+                {visibleColumns.connected && <TableCell className="text-xs py-1 px-2 text-center text-green-600 font-medium">{summary.connected}</TableCell>}
+                {visibleColumns.paid && <TableCell className="text-xs py-1 px-2 text-center">{summary.paid}</TableCell>}
+                {visibleColumns.converted && <TableCell className="text-xs py-1 px-2 text-center text-green-600 font-medium">{summary.converted}</TableCell>}
+                {visibleColumns.noConnection && <TableCell className="text-xs py-1 px-2 text-center text-red-600">{summary.noConnection}</TableCell>}
+                {visibleColumns.blocked && <TableCell className="text-xs py-1 px-2 text-center text-orange-600">{summary.blocked}</TableCell>}
+                {visibleColumns.ivrHangup && <TableCell className="text-xs py-1 px-2 text-center">{summary.ivrHangup}</TableCell>}
+                {visibleColumns.rpc && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.rpc)}</TableCell>}
+                {visibleColumns.revenue && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.revenue)}</TableCell>}
+                {visibleColumns.payout && <TableCell className="text-xs py-1 px-2 text-red-600">{formatCurrency(summary.payout)}</TableCell>}
+                {visibleColumns.profit && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.profit)}</TableCell>}
+                {visibleColumns.margin && <TableCell className="text-xs py-1 px-2 font-medium">{summary.margin.toFixed(1)}%</TableCell>}
+                {visibleColumns.conversionRate && <TableCell className="text-xs py-1 px-2">{summary.conversionRate.toFixed(1)}%</TableCell>}
+                {visibleColumns.tcl && <TableCell className="text-xs py-1 px-2 font-mono">{formatDuration(summary.tcl)}</TableCell>}
+                {visibleColumns.acl && <TableCell className="text-xs py-1 px-2 font-mono">{formatDuration(summary.acl)}</TableCell>}
+                {visibleColumns.totalCost && <TableCell className="text-xs py-1 px-2 text-red-600">{formatCurrency(summary.totalCost)}</TableCell>}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
