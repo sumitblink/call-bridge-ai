@@ -91,11 +91,105 @@ interface CampaignSummary {
   lastCallDate: string;
 }
 
+interface FilterRule {
+  field: string;
+  operator: string;
+  value: string;
+}
+
+// Filter Dialog Component
+interface FilterDialogProps {
+  field: string;
+  onApply: (rule: FilterRule) => void;
+  onClose: () => void;
+}
+
+function FilterDialog({ field, onApply, onClose }: FilterDialogProps) {
+  const [operator, setOperator] = useState("contains");
+  const [value, setValue] = useState("");
+
+  const operators = [
+    { value: "contains", label: "Contains" },
+    { value: "doesNotContain", label: "Does Not Contain" },
+    { value: "beginsWith", label: "Begins With" },
+    { value: "doesNotBeginWith", label: "Does Not Begin With" },
+    { value: "equals", label: "Equals Single Value" },
+    { value: "doesNotEqual", label: "Does Not Equal Single Value" },
+    { value: "exists", label: "Exists" },
+    { value: "doesNotExist", label: "Does Not Exist" }
+  ];
+
+  const handleApply = () => {
+    if (value.trim() || operator === "exists" || operator === "doesNotExist") {
+      onApply({
+        field,
+        operator,
+        value: value.trim()
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-between items-center">
+        <h3 className="text-sm font-medium text-white">Filter: {field}</h3>
+        <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:text-gray-300">
+          ×
+        </Button>
+      </div>
+      
+      <div className="space-y-2">
+        <Select value={operator} onValueChange={setOperator}>
+          <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-700 border-gray-600">
+            {operators.map(op => (
+              <SelectItem key={op.value} value={op.value} className="text-white hover:bg-gray-600">
+                {op.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        {operator !== "exists" && operator !== "doesNotExist" && (
+          <Input
+            placeholder="Enter filter value"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+          />
+        )}
+      </div>
+      
+      <div className="flex gap-2">
+        <Button 
+          size="sm" 
+          onClick={handleApply}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          Apply Updated Filters
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onClose}
+          className="border-gray-600 text-white hover:bg-gray-700"
+        >
+          Clear Filters
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function RingbaStyleReporting() {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [timeRange, setTimeRange] = useState("today");
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [activeTab, setActiveTab] = useState("campaign");
+  const [filterRules, setFilterRules] = useState<FilterRule[]>([]);
+  const [showFilterDialog, setShowFilterDialog] = useState<string | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     campaign: true,
     publisher: true,
@@ -265,8 +359,68 @@ export default function RingbaStyleReporting() {
     }
   ];
 
+  // Apply filters to the data
+  const applyFilters = (data: CampaignSummary[]) => {
+    if (filterRules.length === 0) return data;
+    
+    return data.filter(summary => {
+      return filterRules.every(rule => {
+        let fieldValue = '';
+        switch (rule.field) {
+          case 'campaign':
+            fieldValue = summary.campaignName.toLowerCase();
+            break;
+          case 'publisher':
+            fieldValue = summary.publisher.toLowerCase();
+            break;
+          case 'target':
+            fieldValue = summary.target.toLowerCase();
+            break;
+          case 'buyer':
+            fieldValue = summary.buyer.toLowerCase();
+            break;
+          case 'numberPool':
+            fieldValue = summary.numberPool.toLowerCase();
+            break;
+          case 'dialedNumber':
+            fieldValue = summary.dialedNumbers.join(', ').toLowerCase();
+            break;
+          default:
+            return true;
+        }
+        
+        const filterValue = rule.value.toLowerCase();
+        
+        switch (rule.operator) {
+          case 'contains':
+            return fieldValue.includes(filterValue);
+          case 'doesNotContain':
+            return !fieldValue.includes(filterValue);
+          case 'beginsWith':
+            return fieldValue.startsWith(filterValue);
+          case 'doesNotBeginWith':
+            return !fieldValue.startsWith(filterValue);
+          case 'greaterThan':
+            return parseFloat(fieldValue) > parseFloat(filterValue);
+          case 'lessThan':
+            return parseFloat(fieldValue) < parseFloat(filterValue);
+          case 'equals':
+            return fieldValue === filterValue;
+          case 'doesNotEqual':
+            return fieldValue !== filterValue;
+          case 'exists':
+            return fieldValue.length > 0;
+          case 'doesNotExist':
+            return fieldValue.length === 0;
+          default:
+            return true;
+        }
+      });
+    });
+  };
+
   // Use mock data if no real data available, otherwise use real data
-  const campaignSummaries: CampaignSummary[] = calls.length > 0 ? calls.reduce((acc, call) => {
+  const rawCampaignSummaries: CampaignSummary[] = calls.length > 0 ? calls.reduce((acc, call) => {
     const campaignId = call.campaignId;
     let summary = acc.find(s => s.campaignId === campaignId);
     
@@ -346,6 +500,9 @@ export default function RingbaStyleReporting() {
 
     return acc;
   }, [] as CampaignSummary[]) : mockCampaignSummaries;
+
+  // Apply filters to get final data
+  const campaignSummaries = applyFilters(rawCampaignSummaries);
 
   // Calculate derived metrics for each summary
   campaignSummaries.forEach(summary => {
@@ -743,22 +900,150 @@ export default function RingbaStyleReporting() {
       </div>
 
       {/* Ringba-style Filter Buttons */}
-      <div className="bg-white border-b px-4 py-2">
+      <div className="bg-white border-b px-4 py-2 relative">
         <div className="flex items-center gap-1 flex-wrap">
-          {filterButtons.map((button) => (
-            <Button
-              key={button.id}
-              size="sm"
-              variant={activeFilters.includes(button.id) ? "default" : "outline"}
-              onClick={() => toggleFilter(button.id)}
-              className="h-7 px-2 text-xs font-medium"
-            >
-              {button.label}
-              <ChevronDown className="ml-1 h-3 w-3" />
-            </Button>
-          ))}
+          <Button
+            size="sm"
+            variant={activeTab === "campaign" ? "default" : "outline"}
+            onClick={() => {
+              setActiveTab("campaign");
+              setShowFilterDialog(showFilterDialog === "campaign" ? null : "campaign");
+            }}
+            className="h-7 px-2 text-xs font-medium"
+          >
+            Campaign
+            <ChevronDown className="ml-1 h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === "publisher" ? "default" : "outline"}
+            onClick={() => {
+              setActiveTab("publisher");
+              setShowFilterDialog(showFilterDialog === "publisher" ? null : "publisher");
+            }}
+            className="h-7 px-2 text-xs font-medium"
+          >
+            Publisher
+            <ChevronDown className="ml-1 h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === "target" ? "default" : "outline"}
+            onClick={() => {
+              setActiveTab("target");
+              setShowFilterDialog(showFilterDialog === "target" ? null : "target");
+            }}
+            className="h-7 px-2 text-xs font-medium"
+          >
+            Target
+            <ChevronDown className="ml-1 h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === "buyer" ? "default" : "outline"}
+            onClick={() => {
+              setActiveTab("buyer");
+              setShowFilterDialog(showFilterDialog === "buyer" ? null : "buyer");
+            }}
+            className="h-7 px-2 text-xs font-medium"
+          >
+            Buyer
+            <ChevronDown className="ml-1 h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === "dialedNumber" ? "default" : "outline"}
+            onClick={() => {
+              setActiveTab("dialedNumber");
+              setShowFilterDialog(showFilterDialog === "dialedNumber" ? null : "dialedNumber");
+            }}
+            className="h-7 px-2 text-xs font-medium"
+          >
+            Dialed#
+            <ChevronDown className="ml-1 h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === "numberPool" ? "default" : "outline"}
+            onClick={() => {
+              setActiveTab("numberPool");
+              setShowFilterDialog(showFilterDialog === "numberPool" ? null : "numberPool");
+            }}
+            className="h-7 px-2 text-xs font-medium"
+          >
+            Number Pool
+            <ChevronDown className="ml-1 h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === "date" ? "default" : "outline"}
+            onClick={() => setActiveTab("date")}
+            className="h-7 px-2 text-xs font-medium"
+          >
+            Date
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === "duplicate" ? "default" : "outline"}
+            onClick={() => setActiveTab("duplicate")}
+            className="h-7 px-2 text-xs font-medium"
+          >
+            Duplicate
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === "tags" ? "default" : "outline"}
+            onClick={() => setActiveTab("tags")}
+            className="h-7 px-2 text-xs font-medium"
+          >
+            Tags
+          </Button>
         </div>
+
+        {/* Filter Dialog */}
+        {showFilterDialog && (
+          <div className="absolute top-full left-0 mt-2 bg-gray-800 text-white rounded-lg shadow-lg p-4 z-50 min-w-80">
+            <FilterDialog 
+              field={showFilterDialog}
+              onApply={(rule) => {
+                setFilterRules(prev => {
+                  const filtered = prev.filter(r => r.field !== rule.field);
+                  return [...filtered, rule];
+                });
+                setShowFilterDialog(null);
+              }}
+              onClose={() => setShowFilterDialog(null)}
+            />
+          </div>
+        )}
       </div>
+
+      {/* Active Filters Display */}
+      {filterRules.length > 0 && (
+        <div className="bg-white border-b px-4 py-2">
+          <div className="flex flex-wrap gap-2">
+            {filterRules.map((rule, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {rule.field}: {rule.operator} "{rule.value}"
+                <button 
+                  onClick={() => setFilterRules(prev => prev.filter((_, i) => i !== index))}
+                  className="ml-2 text-gray-500 hover:text-gray-700"
+                >
+                  ×
+                </button>
+              </Badge>
+            ))}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setFilterRules([])}
+              className="h-6 px-2 text-xs"
+            >
+              Clear All Filters
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Ringba-style Timeline Chart */}
       <Card className="mx-4 mt-2">
