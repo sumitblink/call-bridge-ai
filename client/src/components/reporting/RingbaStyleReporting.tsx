@@ -1785,7 +1785,7 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab, s
   };
   // Define which columns to show for each tab
   const getColumnsForTab = (tab: string) => {
-    const baseColumns = ['incoming', 'live', 'completed', 'ended', 'connected', 'paid', 'converted', 'noConnection', 'blocked', 'ivrHangup', 'rpc', 'revenue', 'payout', 'profit', 'margin', 'conversionRate', 'tcl', 'acl', 'totalCost'];
+    const baseColumns = ['tags', 'incoming', 'live', 'completed', 'ended', 'connected', 'paid', 'converted', 'noConnection', 'blocked', 'ivrHangup', 'rpc', 'revenue', 'payout', 'profit', 'margin', 'conversionRate', 'tcl', 'acl', 'totalCost'];
     
     switch (tab) {
       case 'campaign':
@@ -1804,10 +1804,8 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab, s
         return ['date', ...baseColumns];
       case 'duplicate':
         return ['duplicate', ...baseColumns];
-      case 'tags':
-        return ['tags', ...baseColumns];
       default:
-        return ['campaign', 'publisher', 'target', 'buyer', 'dialedNumber', 'numberPool', 'date', 'duplicate', 'tags', ...baseColumns];
+        return ['campaign', 'publisher', 'target', 'buyer', 'dialedNumber', 'numberPool', 'date', 'duplicate', ...baseColumns];
     }
   };
 
