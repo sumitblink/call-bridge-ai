@@ -102,9 +102,10 @@ interface FilterDialogProps {
   field: string;
   onApply: (rule: FilterRule) => void;
   onClose: () => void;
+  onAutoSwitch?: (newTab: string, value: string) => void;
 }
 
-function FilterDialog({ field, onApply, onClose }: FilterDialogProps) {
+function FilterDialog({ field, onApply, onClose, onAutoSwitch }: FilterDialogProps) {
   const [operator, setOperator] = useState("contains");
   const [value, setValue] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
@@ -163,6 +164,35 @@ function FilterDialog({ field, onApply, onClose }: FilterDialogProps) {
     setValue(tagValue);
   };
 
+  // Intelligent tab auto-switching based on ID patterns
+  const detectIdTypeAndSwitchTab = (inputValue: string) => {
+    const upperValue = inputValue.toUpperCase();
+    
+    if (upperValue.startsWith('CAMP') || upperValue.includes('CAMP')) {
+      return 'campaign';
+    } else if (upperValue.startsWith('PUB') || upperValue.includes('PUB')) {
+      return 'publisher';  
+    } else if (upperValue.startsWith('BUY') || upperValue.includes('BUY')) {
+      return 'buyer';
+    } else if (upperValue.startsWith('TGT') || upperValue.includes('TGT')) {
+      return 'target';
+    } else if (upperValue.startsWith('POOL') || upperValue.includes('POOL')) {
+      return 'numberPool';
+    }
+    
+    return null; // No auto-switch needed
+  };
+
+  const handleValueChange = (newValue: string) => {
+    setValue(newValue);
+    
+    // Auto-switch tab if ID pattern detected
+    const suggestedTab = detectIdTypeAndSwitchTab(newValue);
+    if (suggestedTab && suggestedTab !== field && onAutoSwitch) {
+      onAutoSwitch(suggestedTab, newValue);
+    }
+  };
+
   const handleApply = () => {
     if (value.trim() || operator === "exists" || operator === "doesNotExist") {
       onApply({
@@ -202,7 +232,7 @@ function FilterDialog({ field, onApply, onClose }: FilterDialogProps) {
               <Input
                 placeholder="Enter filter value or select from tags below"
                 value={value}
-                onChange={(e) => setValue(e.target.value)}
+                onChange={(e) => handleValueChange(e.target.value)}
                 className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
               />
               
@@ -288,7 +318,7 @@ function FilterDialog({ field, onApply, onClose }: FilterDialogProps) {
           <Input
             placeholder="Enter filter value"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => handleValueChange(e.target.value)}
             className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
           />
         )}
@@ -354,6 +384,21 @@ export default function RingbaStyleReporting() {
     acl: true,
     totalCost: true
   });
+
+  // Auto-switching handler
+  const handleAutoSwitch = useCallback((newTab: string, value: string) => {
+    setActiveTab(newTab);
+    setShowFilterDialog(newTab);
+    // Auto-apply the filter with the detected value
+    setTimeout(() => {
+      const rule: FilterRule = {
+        field: newTab,
+        operator: 'contains',
+        value: value
+      };
+      setFilterRules(prev => [...prev.filter(r => r.field !== newTab), rule]);
+    }, 100);
+  }, []);
 
   // Fetch enhanced calls data
   const { data: calls = [], isLoading, refetch } = useQuery<CallData[]>({
@@ -1071,12 +1116,11 @@ export default function RingbaStyleReporting() {
             break;
           case 'Duplicate':
             if (tag.tag === 'Count') {
-              // Show duplicate count prominently
-              filteredSummary.duplicate = `${summary.duplicate} duplicates`;
+              // Keep numeric value but add visual indicator
+              // Note: We'll handle display formatting in the table rendering
             } else if (tag.tag === 'Status') {
-              // Show duplicate status
-              const status = summary.duplicate > 10 ? 'High' : summary.duplicate > 5 ? 'Medium' : summary.duplicate > 0 ? 'Low' : 'None';
-              filteredSummary.duplicate = `${summary.duplicate} (${status})`;
+              // Keep numeric value but add visual indicator 
+              // Note: We'll handle display formatting in the table rendering
             }
             break;
         }
@@ -1589,6 +1633,7 @@ export default function RingbaStyleReporting() {
                 setShowFilterDialog(null);
               }}
               onClose={() => setShowFilterDialog(null)}
+              onAutoSwitch={handleAutoSwitch}
             />
           </div>
         )}
