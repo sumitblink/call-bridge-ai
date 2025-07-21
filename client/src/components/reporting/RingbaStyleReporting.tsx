@@ -95,7 +95,7 @@ export default function RingbaStyleReporting() {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [timeRange, setTimeRange] = useState("today");
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("campaign");
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     campaign: true,
     publisher: true,
@@ -348,12 +348,8 @@ export default function RingbaStyleReporting() {
     URL.revokeObjectURL(url);
   };
 
-  const filteredSummaries = campaignSummaries.filter(summary => {
-    if (activeTab === 'connected' && summary.connected === 0) return false;
-    if (activeTab === 'converted' && summary.converted === 0) return false;
-    if (activeTab === 'blocked' && summary.blocked === 0) return false;
-    return true;
-  });
+  // Filter summaries based on active tab (no filtering for now, just group by tab type)
+  const filteredSummaries = campaignSummaries;
 
   return (
     <div className="space-y-1">
@@ -489,34 +485,54 @@ export default function RingbaStyleReporting() {
             </div>
           </div>
 
-          {/* Tabbed Interface */}
+          {/* Ringba-style Tabbed Interface */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 h-8">
-              <TabsTrigger value="all" className="text-xs">All ({campaignSummaries.length})</TabsTrigger>
-              <TabsTrigger value="connected" className="text-xs">Connected ({campaignSummaries.filter(s => s.connected > 0).length})</TabsTrigger>
-              <TabsTrigger value="converted" className="text-xs">Converted ({campaignSummaries.filter(s => s.converted > 0).length})</TabsTrigger>
-              <TabsTrigger value="blocked" className="text-xs">Blocked ({campaignSummaries.filter(s => s.blocked > 0).length})</TabsTrigger>
-              <TabsTrigger value="revenue" className="text-xs">Revenue ({campaignSummaries.filter(s => s.revenue > 0).length})</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-9 h-8 bg-gray-100">
+              <TabsTrigger value="campaign" className="text-xs px-2">Campaign</TabsTrigger>
+              <TabsTrigger value="publisher" className="text-xs px-2">Publisher</TabsTrigger>
+              <TabsTrigger value="target" className="text-xs px-2">Target</TabsTrigger>
+              <TabsTrigger value="buyer" className="text-xs px-2">Buyer</TabsTrigger>
+              <TabsTrigger value="dialed" className="text-xs px-2">Dialed #</TabsTrigger>
+              <TabsTrigger value="pool" className="text-xs px-2">Number Pool</TabsTrigger>
+              <TabsTrigger value="date" className="text-xs px-2">Date</TabsTrigger>
+              <TabsTrigger value="duplicate" className="text-xs px-2">Duplicate</TabsTrigger>
+              <TabsTrigger value="tags" className="text-xs px-2">Tags</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="all" className="mt-4">
+            <TabsContent value="campaign" className="mt-4">
               <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
             </TabsContent>
             
-            <TabsContent value="connected" className="mt-4">
-              <ReportSummaryTable summaries={campaignSummaries.filter(s => s.connected > 0)} visibleColumns={visibleColumns} isLoading={isLoading} />
+            <TabsContent value="publisher" className="mt-4">
+              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
             </TabsContent>
             
-            <TabsContent value="converted" className="mt-4">
-              <ReportSummaryTable summaries={campaignSummaries.filter(s => s.converted > 0)} visibleColumns={visibleColumns} isLoading={isLoading} />
+            <TabsContent value="target" className="mt-4">
+              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
             </TabsContent>
             
-            <TabsContent value="blocked" className="mt-4">
-              <ReportSummaryTable summaries={campaignSummaries.filter(s => s.blocked > 0)} visibleColumns={visibleColumns} isLoading={isLoading} />
+            <TabsContent value="buyer" className="mt-4">
+              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
             </TabsContent>
             
-            <TabsContent value="revenue" className="mt-4">
-              <ReportSummaryTable summaries={campaignSummaries.filter(s => s.revenue > 0)} visibleColumns={visibleColumns} isLoading={isLoading} />
+            <TabsContent value="dialed" className="mt-4">
+              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
+            </TabsContent>
+            
+            <TabsContent value="pool" className="mt-4">
+              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
+            </TabsContent>
+            
+            <TabsContent value="date" className="mt-4">
+              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
+            </TabsContent>
+            
+            <TabsContent value="duplicate" className="mt-4">
+              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
+            </TabsContent>
+            
+            <TabsContent value="tags" className="mt-4">
+              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
             </TabsContent>
           </Tabs>
         </CardContent>
