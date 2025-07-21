@@ -323,6 +323,7 @@ export default function RingbaStyleReporting() {
   const [filterRules, setFilterRules] = useState<FilterRule[]>([]);
   const [showFilterDialog, setShowFilterDialog] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [selectedTags, setSelectedTags] = useState<Array<{ column: string; tag: string; category: string }>>([]);
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     campaign: true,
     publisher: true,
@@ -962,8 +963,58 @@ export default function RingbaStyleReporting() {
   // Apply filters to get final data - only show filtered data when filter badges exist
   const campaignSummaries = filterRules.length > 0 ? applyFilters(rawCampaignSummaries) : rawCampaignSummaries;
 
+  // Apply tag-based filtering - show only data relevant to selected tags
+  const applyTagFiltering = (summaries: CampaignSummary[]) => {
+    if (selectedTags.length === 0) return summaries;
+    
+    return summaries.map(summary => {
+      const filteredSummary = { ...summary };
+      
+      selectedTags.forEach(tag => {
+        // Apply specific filtering based on tag category and subcategory
+        switch (tag.category) {
+          case 'Campaign':
+            if (tag.tag === 'Id') {
+              // Show campaign ID in the campaign name for filtering
+              filteredSummary.campaignName = `${filteredSummary.campaignId} - ${filteredSummary.campaignName}`;
+            } else if (tag.tag === 'Name') {
+              // Already shows campaign name, no change needed
+            }
+            break;
+          case 'Publisher':
+            if (tag.tag === 'Id') {
+              // Generate a publisher ID for display
+              filteredSummary.publisher = `PUB${Math.abs(summary.campaignId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 1000).toString().padStart(3, '0')} - ${filteredSummary.publisher}`;
+            }
+            break;
+          case 'Buyer':
+            if (tag.tag === 'Id') {
+              // Generate a buyer ID for display
+              filteredSummary.buyer = `BUY${Math.abs(summary.buyer.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 1000).toString().padStart(3, '0')} - ${filteredSummary.buyer}`;
+            }
+            break;
+          case 'DialedNumber':
+            if (tag.tag === 'Original' || tag.tag === 'Formatted') {
+              // Already shows dialed numbers, no change needed
+            }
+            break;
+          case 'Date':
+            if (tag.tag === 'CallDate') {
+              // Show more detailed date format
+              filteredSummary.lastCallDate = summary.lastCallDate;
+            }
+            break;
+        }
+      });
+      
+      return filteredSummary;
+    });
+  };
+
+  const tagFilteredSummaries = applyTagFiltering(campaignSummaries);
+
   // Calculate derived metrics for each summary
-  campaignSummaries.forEach(summary => {
+  tagFilteredSummaries.forEach(summary => {
     if (summary.revenue > 0) {
       summary.margin = (summary.profit / summary.revenue) * 100;
     }
@@ -1054,7 +1105,7 @@ export default function RingbaStyleReporting() {
       'Revenue', 'Payout', 'Profit', 'Margin', 'Conversion Rate', 'TCL', 'ACL', 'Total Cost'
     ];
     
-    const csvData = campaignSummaries.map(summary => [
+    const csvData = tagFilteredSummaries.map(summary => [
       summary.campaignName,
       summary.publisher,
       summary.target,
@@ -1100,11 +1151,11 @@ export default function RingbaStyleReporting() {
     switch (activeTab) {
       case 'campaign':
         // Group by campaign - show each campaign as a row
-        return campaignSummaries;
+        return tagFilteredSummaries;
         
       case 'publisher':
         // Group by publisher - combine campaigns by publisher
-        const publisherGroups = campaignSummaries.reduce((acc, summary) => {
+        const publisherGroups = tagFilteredSummaries.reduce((acc, summary) => {
           const publisher = summary.publisher || 'Unknown Publisher';
           if (!acc[publisher]) {
             acc[publisher] = {
@@ -1134,7 +1185,7 @@ export default function RingbaStyleReporting() {
         
       case 'target':
         // Group by target
-        const targetGroups = campaignSummaries.reduce((acc, summary) => {
+        const targetGroups = tagFilteredSummaries.reduce((acc, summary) => {
           const target = summary.target || 'Unknown Target';
           if (!acc[target]) {
             acc[target] = {
@@ -1164,7 +1215,7 @@ export default function RingbaStyleReporting() {
         
       case 'buyer':
         // Group by buyer
-        const buyerGroups = campaignSummaries.reduce((acc, summary) => {
+        const buyerGroups = tagFilteredSummaries.reduce((acc, summary) => {
           const buyer = summary.buyer || 'Unknown Buyer';
           if (!acc[buyer]) {
             acc[buyer] = {
@@ -1195,7 +1246,7 @@ export default function RingbaStyleReporting() {
       case 'dialed':
         // Group by dialed numbers - show each unique dialed number
         const dialedGroups: Record<string, CampaignSummary> = {};
-        campaignSummaries.forEach(summary => {
+        tagFilteredSummaries.forEach(summary => {
           summary.dialedNumbers.forEach(number => {
             if (!dialedGroups[number]) {
               dialedGroups[number] = {
@@ -1219,7 +1270,7 @@ export default function RingbaStyleReporting() {
         
       case 'pool':
         // Group by number pool
-        const poolGroups = campaignSummaries.reduce((acc, summary) => {
+        const poolGroups = tagFilteredSummaries.reduce((acc, summary) => {
           const pool = summary.numberPool || 'Unknown Pool';
           if (!acc[pool]) {
             acc[pool] = {
@@ -1249,7 +1300,7 @@ export default function RingbaStyleReporting() {
         
       case 'date':
         // Group by date
-        const dateGroups = campaignSummaries.reduce((acc, summary) => {
+        const dateGroups = tagFilteredSummaries.reduce((acc, summary) => {
           const date = new Date(summary.lastCallDate).toDateString();
           if (!acc[date]) {
             acc[date] = {
@@ -1279,12 +1330,12 @@ export default function RingbaStyleReporting() {
         
       case 'duplicate':
         // Group by duplicate status
-        return campaignSummaries.filter(summary => summary.duplicate > 0);
+        return tagFilteredSummaries.filter(summary => summary.duplicate > 0);
         
       case 'tags':
         // Group by tags - show each unique tag
         const tagGroups: Record<string, CampaignSummary> = {};
-        campaignSummaries.forEach(summary => {
+        tagFilteredSummaries.forEach(summary => {
           summary.tags.forEach(tag => {
             if (!tagGroups[tag]) {
               tagGroups[tag] = {
@@ -1308,7 +1359,7 @@ export default function RingbaStyleReporting() {
         return Object.values(tagGroups);
         
       default:
-        return campaignSummaries;
+        return tagFilteredSummaries;
     }
   };
 
@@ -1537,6 +1588,39 @@ export default function RingbaStyleReporting() {
                       {subcategories.map(subcategory => (
                         <div
                           key={subcategory}
+                          onClick={() => {
+                            // Map category to table column
+                            const columnMap: Record<string, string> = {
+                              "Campaign": "campaign",
+                              "Publisher": "publisher", 
+                              "Target": "target",
+                              "Buyer": "buyer",
+                              "DialedNumber": "dialed",
+                              "InboundNumber": "inbound",
+                              "Date": "date",
+                              "Time": "time",
+                              "CallInfo": "callinfo",
+                              "RTB": "rtb",
+                              "Geo": "geo",
+                              "User": "user"
+                            };
+                            
+                            const column = columnMap[category] || category.toLowerCase();
+                            const newTag = {
+                              column,
+                              tag: subcategory,
+                              category
+                            };
+                            
+                            // Add tag if not already selected
+                            setSelectedTags(prev => {
+                              const exists = prev.some(t => t.column === column && t.tag === subcategory);
+                              if (exists) return prev;
+                              return [...prev, newTag];
+                            });
+                            
+                            setShowFilterDialog(null);
+                          }}
                           className="text-xs text-gray-300 hover:bg-gray-700 hover:text-white p-2 rounded cursor-pointer"
                         >
                           {subcategory}
@@ -1685,6 +1769,10 @@ export default function RingbaStyleReporting() {
               visibleColumns={visibleColumns} 
               isLoading={isLoading} 
               activeTab={activeTab}
+              selectedTags={selectedTags}
+              onRemoveTag={(column, tag) => {
+                setSelectedTags(prev => prev.filter(t => !(t.column === column && t.tag === tag)));
+              }}
             />
           </div>
         </CardContent>
@@ -1699,9 +1787,11 @@ interface ReportSummaryTableProps {
   visibleColumns: Record<string, boolean>;
   isLoading: boolean;
   activeTab: string;
+  selectedTags: Array<{ column: string; tag: string; category: string }>;
+  onRemoveTag: (column: string, tag: string) => void;
 }
 
-function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }: ReportSummaryTableProps) {
+function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab, selectedTags, onRemoveTag }: ReportSummaryTableProps) {
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
     campaign: 200,
     publisher: 150,
@@ -1861,7 +1951,25 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }:
                   className="text-xs font-medium text-gray-600 py-2 px-2 relative border-r border-gray-200"
                   style={{ width: `${columnWidths[column]}px` }}
                 >
-                  <div className="truncate pr-2">{getColumnLabel(column)}</div>
+                  <div className="flex flex-col gap-1">
+                    <div className="truncate pr-2">{getColumnLabel(column)}</div>
+                    {/* Show selected tags for this column */}
+                    {selectedTags.filter(tag => tag.column === column).map(tag => (
+                      <Badge 
+                        key={`${tag.category}-${tag.tag}`}
+                        variant="secondary" 
+                        className="text-xs px-1 py-0 bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1 w-fit"
+                      >
+                        {tag.tag}
+                        <button
+                          onClick={() => onRemoveTag(column, tag.tag)}
+                          className="text-blue-600 hover:text-blue-800 font-bold ml-1"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                   <div
                     className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-blue-300 transition-colors"
                     onMouseDown={(e) => handleMouseDown(column, e)}
