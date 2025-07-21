@@ -4103,7 +4103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Request body:', JSON.stringify(req.body, null, 2));
       console.log('Content-Type:', req.headers['content-type']);
       
-      // Simple validation - just like Google Analytics or Facebook Pixel
+      // Ringba-style UTM parameter validation and spam prevention
       const userAgent = req.headers['user-agent'] || '';
       const origin = req.headers.origin || req.headers.referer || '';
       
@@ -4122,8 +4122,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: 'Invalid request'
         });
       }
+
+      // UTM parameter validation (Ringba-style quality control)
+      const utmData = {
+        source: req.body.utmSource,
+        medium: req.body.utmMedium,
+        campaign: req.body.utmCampaign,
+        content: req.body.utmContent,
+        term: req.body.utmTerm
+      };
+
+      // Validate UTM parameters for suspicious/garbage data (Ringba-style)
+      const validateUTMParameter = (value: string, paramType: string): boolean => {
+        if (!value) return true; // Allow empty values
+        
+        // Basic format validation
+        if (value.length < 1 || value.length > 100) return false;
+        
+        // Only block extremely obvious garbage - specific nonsense words
+        const explicitGarbageList = ['huihui', 'test', 'spam', 'garbage', 'fake', 'dummy', 'xxx', 'asdf', 'qwerty', '12345', 'hi', 'yo', 'hey', 'lol', 'hehe'];
+        
+        if (explicitGarbageList.includes(value.toLowerCase())) {
+          console.log(`DNI: Blocked explicit garbage ${paramType} parameter: "${value}"`);
+          return false;
+        }
+
+        // Pure number or special character validation
+        if (/^\d+$/.test(value) || /^[!@#$%^&*()]+$/.test(value)) {
+          console.log(`DNI: Blocked invalid format ${paramType} parameter: "${value}"`);
+          return false;
+        }
+
+        // Medium validation - auto-correct invalid mediums to "referral"
+        if (paramType === 'medium') {
+          const validMediums = ['organic', 'cpc', 'email', 'social', 'referral', 'direct', 'affiliate', 'display', 'video'];
+          if (!validMediums.includes(value.toLowerCase())) {
+            console.log(`DNI: Auto-correcting invalid medium "${value}" to "referral"`);
+            req.body.utmMedium = 'referral'; // Auto-correct to valid medium
+          }
+        }
+
+        return true; // Allow everything else - let legitimate marketing campaign names through
+      };
+
+      // Validate all UTM parameters
+      for (const [key, value] of Object.entries(utmData)) {
+        if (value && !validateUTMParameter(value, key)) {
+          console.log(`DNI: Blocked request due to invalid UTM ${key}: "${value}"`);
+          return res.status(400).json({
+            phoneNumber: '',
+            formattedNumber: '',
+            campaignId: 0,
+            campaignName: '',
+            success: false,
+            error: `Invalid tracking parameter: ${key}`
+          });
+        }
+      }
       
-      console.log(`DNI: Processing tracking request from: ${origin}`);
+      console.log(`DNI: Processing validated tracking request from: ${origin}`);
       
       // Extract the request data properly
       const { tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId } = req.body;
