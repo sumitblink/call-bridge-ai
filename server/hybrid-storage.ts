@@ -557,6 +557,34 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async getUnassignedPhoneNumbers(userId?: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getUnassignedPhoneNumbers(userId),
+      () => this.memStorage.getUnassignedPhoneNumbers(userId)
+    );
+  }
+
+  async getPhoneNumberByNumber(phoneNumber: string): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getPhoneNumberByNumber(phoneNumber),
+      () => this.memStorage.getPhoneNumberByNumber(phoneNumber)
+    );
+  }
+
+  async assignPhoneNumberToCampaign(phoneNumberId: number, campaignId: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.assignPhoneNumberToCampaign(phoneNumberId, campaignId),
+      () => this.memStorage.assignPhoneNumberToCampaign(phoneNumberId, campaignId)
+    );
+  }
+
+  async unassignPhoneNumberFromCampaign(phoneNumberId: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.unassignPhoneNumberFromCampaign(phoneNumberId),
+      () => this.memStorage.unassignPhoneNumberFromCampaign(phoneNumberId)
+    );
+  }
+
   // Number Pools
   async getNumberPools(userId?: number): Promise<any[]> {
     return this.executeOperation(
