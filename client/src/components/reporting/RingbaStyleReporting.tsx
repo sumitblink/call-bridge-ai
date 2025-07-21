@@ -107,6 +107,8 @@ interface FilterDialogProps {
 function FilterDialog({ field, onApply, onClose }: FilterDialogProps) {
   const [operator, setOperator] = useState("contains");
   const [value, setValue] = useState("");
+  const [selectedTag, setSelectedTag] = useState("");
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   const operators = [
     { value: "contains", label: "Contains" },
@@ -119,6 +121,48 @@ function FilterDialog({ field, onApply, onClose }: FilterDialogProps) {
     { value: "doesNotExist", label: "Does Not Exist" }
   ];
 
+  const tagCategories = {
+    "InboundNumber": ["Number", "Pool", "TrackingNumber", "Country", "State"],
+    "Date": ["CallDate", "CallTime", "Timezone", "DayOfWeek", "Month"],
+    "Time": ["StartTime", "EndTime", "Duration", "TimeOfDay", "BusinessHours"],
+    "User": ["UserId", "Username", "UserType", "Permissions", "LastLogin"],
+    "Publisher": ["Company", "Id", "Name", "SubId", "ReplacementNumber"],
+    "Campaign": ["Id", "Name", "TrackingId", "Status", "Type"],
+    "Geo": ["Country", "State", "City", "ZipCode", "Timezone"],
+    "CallLength": ["TotalDuration", "TalkTime", "RingTime", "HoldTime"],
+    "RTB": ["BidAmount", "Winner", "Participants", "AuctionId", "ResponseTime"],
+    "CallInfo": ["CallId", "Status", "Direction", "Quality", "Recording"],
+    "Display": ["Format", "Appearance", "Layout", "Theme"],
+    "Location": ["Address", "Coordinates", "Region", "AreaCode"],
+    "ConnectionInfo": ["Carrier", "Network", "Signal", "Protocol"],
+    "Technology": ["CodecUsed", "Platform", "Device", "Browser"],
+    "EndCall": ["Reason", "Duration", "Outcome", "Disposition"],
+    "Ivr": ["MenuSelection", "PromptPlayed", "UserInput", "Path"],
+    "PlacementInfo": ["Position", "Source", "Medium", "Content"],
+    "Conversion": ["Type", "Value", "Timestamp", "Attribution"],
+    "RequestInfo": ["Method", "Headers", "Parameters", "Response"],
+    "DialedNumber": ["Original", "Formatted", "E164", "Local"],
+    "Request": ["Id", "Type", "Status", "Timestamp"],
+    "Facebook": ["CampaignId", "AdSetId", "AdId", "PlacementId"],
+    "Redtrack CID": ["ClickId", "VisitorId", "ConversionId", "SessionId"],
+    "Redtrack CMPID": ["CampaignId", "OfferId", "AffiliateId", "SubId"],
+    "Zip Code": ["Primary", "Secondary", "Extended", "Delivery"],
+    "Integration": ["Type", "Provider", "Status", "Configuration"]
+  };
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
+
+  const selectTag = (category: string, subcategory: string) => {
+    const tagValue = `${category}.${subcategory}`;
+    setSelectedTag(tagValue);
+    setValue(tagValue);
+  };
+
   const handleApply = () => {
     if (value.trim() || operator === "exists" || operator === "doesNotExist") {
       onApply({
@@ -128,6 +172,94 @@ function FilterDialog({ field, onApply, onClose }: FilterDialogProps) {
       });
     }
   };
+
+  if (field === "tags") {
+    return (
+      <div className="space-y-3 w-96">
+        <div className="flex justify-between items-center">
+          <h3 className="text-sm font-medium text-white">Filter: Tags</h3>
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:text-gray-300">
+            ×
+          </Button>
+        </div>
+        
+        <div className="space-y-2">
+          <Select value={operator} onValueChange={setOperator}>
+            <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-700 border-gray-600">
+              {operators.map(op => (
+                <SelectItem key={op.value} value={op.value} className="text-white hover:bg-gray-600">
+                  {op.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {operator !== "exists" && operator !== "doesNotExist" && (
+            <div className="space-y-2">
+              <Input
+                placeholder="Enter filter value or select from tags below"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+              />
+              
+              <div className="max-h-64 overflow-y-auto bg-gray-800 border border-gray-600 rounded p-2">
+                <div className="text-xs text-gray-300 mb-2 font-medium">Search Breakdown Levels</div>
+                {Object.entries(tagCategories).map(([category, subcategories]) => (
+                  <div key={category} className="mb-1">
+                    <button
+                      onClick={() => toggleCategory(category)}
+                      className="flex items-center w-full text-left text-xs text-white hover:bg-gray-700 p-1 rounded"
+                    >
+                      <ChevronDown 
+                        className={`h-3 w-3 mr-1 transition-transform ${expandedCategories[category] ? 'rotate-180' : ''}`} 
+                      />
+                      {category}
+                    </button>
+                    
+                    {expandedCategories[category] && (
+                      <div className="ml-4 space-y-1">
+                        {subcategories.map(subcategory => (
+                          <button
+                            key={subcategory}
+                            onClick={() => selectTag(category, subcategory)}
+                            className="block w-full text-left text-xs text-gray-300 hover:bg-gray-700 hover:text-white p-1 rounded"
+                          >
+                            {subcategory}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex gap-2">
+          <Button 
+            size="sm" 
+            onClick={handleApply}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Apply Updated Filters
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onClose}
+            className="border-gray-500 text-gray-300 hover:bg-gray-600 hover:text-white"
+          >
+            Clear Filters
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -1318,10 +1450,14 @@ export default function RingbaStyleReporting() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setActiveTab("tags")}
+            onClick={() => {
+              setActiveTab("tags");
+              setShowFilterDialog(showFilterDialog === "tags" ? null : "tags");
+            }}
             className="h-7 px-2 text-xs font-medium"
           >
             Tags
+            <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
         </div>
 
