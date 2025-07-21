@@ -4091,17 +4091,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // DNI tracking endpoint for website integration (BEFORE auth middleware)
+  // DNI tracking endpoint for website integration (with API key authentication)
   app.post('/api/dni/track', async (req, res) => {
     // Additional CORS headers for DNI endpoint
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
     
     try {
       console.log('=== DNI Track Handler Called ===');
       console.log('Request body:', JSON.stringify(req.body, null, 2));
       console.log('Content-Type:', req.headers['content-type']);
+      
+      // Check for API key authentication to prevent garbage data injection
+      const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+      if (!apiKey) {
+        console.log('DNI: Missing API key - blocking unauthorized tracking request');
+        return res.status(401).json({
+          phoneNumber: '',
+          formattedNumber: '',
+          campaignId: 0,
+          campaignName: '',
+          trackingId: '',
+          success: false,
+          error: 'API key required for tracking'
+        });
+      }
+      
+      // Validate API key against database
+      const client = (await import('@neondatabase/serverless')).neon;
+      const sql_client = client(process.env.DATABASE_URL!);
+      const validApiKey = await sql_client`SELECT user_id FROM api_keys WHERE key_value = ${apiKey} AND is_active = true`;
+      if (validApiKey.length === 0) {
+        console.log('DNI: Invalid API key - blocking unauthorized tracking request');
+        return res.status(401).json({
+          phoneNumber: '',
+          formattedNumber: '',
+          campaignId: 0,
+          campaignName: '',
+          trackingId: '',
+          success: false,
+          error: 'Invalid API key'
+        });
+      }
+      
+      const authenticatedUserId = validApiKey[0].user_id;
+      console.log(`DNI: Authenticated request for user ${authenticatedUserId}`);
       
       // Extract the request data properly
       const { tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId } = req.body;
@@ -4155,9 +4190,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.options('/api/dni/*', (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-Requested-With');
     res.header('Access-Control-Max-Age', '86400'); // 24 hours
     res.sendStatus(200);
+  });
+
+  // API Keys Management
+  app.get('/api/api-keys', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const client = (await import('@neondatabase/serverless')).neon;
+      const sql_client = client(process.env.DATABASE_URL!);
+      
+      const apiKeys = await sql_client`
+        SELECT id, key_value, key_name, is_active, created_at, last_used_at 
+        FROM api_keys 
+        WHERE user_id = ${userId} 
+        ORDER BY created_at DESC
+      `;
+      
+      res.json(apiKeys);
+    } catch (error) {
+      console.error('Error fetching API keys:', error);
+      res.status(500).json({ error: 'Failed to fetch API keys' });
+    }
   });
 
   // Get tracking tag analytics

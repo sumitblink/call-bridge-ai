@@ -113,6 +113,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 20, 2025: **SECURE UTM TRACKING IMPLEMENTED** - Added API key authentication to prevent unauthorized tracking data injection and maintain analytics integrity
+  - **API Key Authentication**: DNI tracking endpoint now requires valid API key to prevent garbage UTM data injection
+  - **Database Security**: Created api_keys table with user-scoped authentication for external tracking requests
+  - **Data Validation**: Blocked unauthorized requests like "hi" as UTM source, ensuring only legitimate tracking data
+  - **CORS Security**: Enhanced CORS headers to support X-API-Key authentication while maintaining cross-origin compatibility
+  - **User API Keys**: Generated secure API keys (ccpro_*) for each user with management endpoint /api/api-keys
+  - **Analytics Protection**: UTM tracking now authenticated, preventing pollution of analytics with fake traffic sources
 - July 20, 2025: **ANALYTICS DATA INTEGRITY COMPLETE** - Enhanced analytics pages to display only when authentic data exists, eliminated all placeholder content
   - **Traffic Analytics**: Now only shows charts and sections when real session data is available
   - **Campaign Performance**: Only displays when genuine campaign tracking exists in database
