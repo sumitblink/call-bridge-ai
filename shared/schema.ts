@@ -170,6 +170,21 @@ export const calls = pgTable("calls", {
   ipAddress: varchar("ip_address", { length: 45 }),
   deviceType: varchar("device_type", { length: 50 }), // mobile, desktop, tablet
   
+  // Hierarchical sub-tags for advanced filtering (RedTrack-style)
+  sub1: varchar("sub1", { length: 255 }), // Product/service type
+  sub2: varchar("sub2", { length: 255 }), // Geographic region
+  sub3: varchar("sub3", { length: 255 }), // Device type 
+  sub4: varchar("sub4", { length: 255 }), // Time of day
+  sub5: varchar("sub5", { length: 255 }), // Lead quality/score
+  clickId: varchar("click_id", { length: 255 }), // Platform-specific click ID
+  userAgentParsed: json("user_agent_parsed"), // Parsed user agent data
+  sessionId: varchar("session_id", { length: 255 }), // Session tracking ID
+  adAccountId: varchar("ad_account_id", { length: 255 }), // Ad account identifier
+  keyword: varchar("keyword", { length: 255 }), // Search keyword
+  placement: varchar("placement", { length: 255 }), // Ad placement
+  adGroup: varchar("ad_group", { length: 255 }), // Ad group name
+  creativeId: varchar("creative_id", { length: 255 }), // Creative/ad ID
+  
   // Recording & Transcription
   recordingUrl: varchar("recording_url", { length: 512 }),
   recordingSid: varchar("recording_sid", { length: 100 }),

@@ -5578,6 +5578,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   const callsEnhancedRouter = (await import('./api/calls-enhanced')).default;
   app.use('/api/calls/enhanced', callsEnhancedRouter);
+  
+  const reportingRouter = (await import('./api/reporting')).default;
+  app.use('/api/reporting', reportingRouter);
 
   const httpServer = createServer(app);
   return httpServer;
