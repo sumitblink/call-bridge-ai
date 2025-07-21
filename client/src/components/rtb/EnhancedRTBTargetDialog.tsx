@@ -14,7 +14,8 @@ import { Slider } from "@/components/ui/slider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Settings, Globe, Clock, Shield, DollarSign, Target, TestTube, Phone, AlertTriangle } from "lucide-react";
+import { Settings, Globe, Clock, Shield, DollarSign, Target, TestTube, Phone, AlertTriangle, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const enhancedRTBTargetSchema = z.object({
   // Basic Configuration
@@ -269,8 +270,9 @@ export function EnhancedRTBTargetDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <TooltipProvider>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
@@ -309,7 +311,17 @@ export function EnhancedRTBTargetDialog({
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Name <span className="text-red-500">*</span></FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Name <span className="text-red-500">*</span>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Unique identifier for this RTB target. This name will appear in reports and analytics.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
                             <FormControl>
                               <Input placeholder="Enter target name" {...field} />
                             </FormControl>
@@ -323,7 +335,17 @@ export function EnhancedRTBTargetDialog({
                         name="subId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Sub ID</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Sub ID
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Optional secondary identifier for tracking or organization purposes.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
                             <FormControl>
                               <Input placeholder="Optional sub ID" {...field} />
                             </FormControl>
@@ -340,7 +362,17 @@ export function EnhancedRTBTargetDialog({
                         name="companyName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Company Name</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Company Name
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>The business or organization name that will receive RTB requests.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
                             <FormControl>
                               <Input placeholder="Company or organization name" {...field} />
                             </FormControl>
@@ -354,7 +386,17 @@ export function EnhancedRTBTargetDialog({
                         name="contactPerson"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Contact Person</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Contact Person
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Main contact person for this RTB target for technical or business communications.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
                             <FormControl>
                               <Input placeholder="Primary contact name" {...field} />
                             </FormControl>
@@ -368,7 +410,17 @@ export function EnhancedRTBTargetDialog({
                         name="contactEmail"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Contact Email</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Contact Email
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Email address for technical support, notifications, and billing issues.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
                             <FormControl>
                               <Input type="email" placeholder="contact@company.com" {...field} />
                             </FormControl>
@@ -382,7 +434,17 @@ export function EnhancedRTBTargetDialog({
                         name="contactPhone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Contact Phone</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Contact Phone
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Phone number for urgent technical issues or emergency contact.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
                             <FormControl>
                               <Input placeholder="+1-555-123-4567" {...field} />
                             </FormControl>
@@ -398,7 +460,17 @@ export function EnhancedRTBTargetDialog({
                         name="enableDynamicNumber"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Dynamic Number/SIP</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Dynamic Number/SIP
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Enable dynamic number insertion and SIP routing for advanced call handling.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
                             <FormControl>
                               <ToggleSwitch 
                                 checked={field.value}
@@ -416,7 +488,17 @@ export function EnhancedRTBTargetDialog({
                         name="rtbShareableTags"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>RTB Shareable Tags</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              RTB Shareable Tags
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Allow sharing of RTB tags and parameters with external bidding partners.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
                             <FormControl>
                               <ToggleSwitch 
                                 checked={field.value}
@@ -435,7 +517,17 @@ export function EnhancedRTBTargetDialog({
                       name="connectionTimeout"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Connection Timeout (ms)</FormLabel>
+                          <FormLabel className="flex items-center gap-2">
+                            Connection Timeout (ms)
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Maximum time to wait for bid response from this target (1000-30000ms). Lower values improve auction speed.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
@@ -523,7 +615,17 @@ Please add tags with numerical values only."
                           name="minBidAmount"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Min Bid Amount <span className="text-red-500">*</span></FormLabel>
+                              <FormLabel className="flex items-center gap-2">
+                                Min Bid Amount <span className="text-red-500">*</span>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Minimum bid amount this target will accept. Lower amounts may be automatically rejected.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </FormLabel>
                               <FormControl>
                                 <Input 
                                   type="number" 
@@ -547,7 +649,17 @@ Please add tags with numerical values only."
                           name="maxBidAmount"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Max Bid Amount <span className="text-red-500">*</span></FormLabel>
+                              <FormLabel className="flex items-center gap-2">
+                                Max Bid Amount <span className="text-red-500">*</span>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Maximum bid amount this target will submit. Higher values increase chances of winning auctions.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </FormLabel>
                               <FormControl>
                                 <Input 
                                   type="number" 
@@ -1227,7 +1339,8 @@ Please add tags with numerical values only."
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </TooltipProvider>
   );
 }

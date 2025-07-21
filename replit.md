@@ -113,6 +113,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 21, 2025: **RTB TARGET FORM TOOLTIPS ADDED** - Enhanced RTB Target creation forms with comprehensive information tooltips
+  - **Information Icons**: Added "i" icons with tooltips to all major form fields
+  - **User Guidance**: Helpful explanations for name, contact info, bid amounts, timeout settings, and configuration options
+  - **Professional UX**: Tooltips explain technical concepts in simple terms for better user understanding
+  - **Tooltip Provider**: Wrapped entire form in TooltipProvider for proper functionality
+  - **Enhanced Usability**: Users now understand each field's purpose and impact on RTB performance
 - July 21, 2025: **SETTINGS PAGE REMOVED** - Eliminated settings page per user request for cleaner system navigation
   - **File Cleanup**: Removed client/src/pages/settings.tsx completely
   - **Navigation Update**: Removed settings link from sidebar navigation menu
