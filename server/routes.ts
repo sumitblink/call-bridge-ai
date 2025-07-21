@@ -4537,7 +4537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/campaigns/:campaignId/rtb-targets', requireAuth, async (req: any, res) => {
     try {
       const { campaignId } = req.params;
-      const assignments = await storage.getCampaignRtbTargets(parseInt(campaignId));
+      const assignments = await storage.getCampaignRtbTargets(campaignId);
       res.json(assignments);
     } catch (error) {
       console.error('Error fetching campaign RTB targets:', error);
@@ -4552,20 +4552,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { assignments } = req.body; // Array of {targetId, priority, isActive}
       
       // First, remove existing assignments for this campaign
-      const existingAssignments = await storage.getCampaignRtbTargets(parseInt(campaignId));
+      const existingAssignments = await storage.getCampaignRtbTargets(campaignId);
       
       for (const assignment of existingAssignments) {
-        await storage.deleteCampaignRtbTarget(parseInt(campaignId), assignment.rtbTargetId);
+        await storage.removeCampaignRtbTarget(campaignId, assignment.rtbTargetId || assignment.id);
       }
       
       // Then add new assignments
       for (const assignment of assignments) {
         if (assignment.isActive) {
           await storage.createCampaignRtbTarget({
-            campaignId: parseInt(campaignId),
-            rtbTargetId: assignment.targetId,
-            priority: assignment.priority || 1,
-            isActive: assignment.isActive,
+            campaignId: campaignId,
+            rtbTargetId: assignment.targetId
           });
         }
       }
