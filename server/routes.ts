@@ -3890,7 +3890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const tags = await db.select().from(callTrackingTags)
         .where(and(
-          eq(callTrackingTags.campaignId, parseInt(campaignId)),
+          eq(callTrackingTags.campaignId, campaignId),
           eq(callTrackingTags.userId, userId),
           eq(callTrackingTags.isActive, true)
         ))
@@ -3941,7 +3941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tagData = {
         name: req.body.name,
         tagCode: req.body.tagCode,
-        campaignId: parseInt(campaignId),
+        campaignId: campaignId,
         userId: userId || 1,
         primaryNumberId: req.body.primaryNumberId || null,
         numberToReplace: req.body.numberToReplace || null,
