@@ -13,7 +13,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertBuyerSchema, type Buyer, type InsertBuyer } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Trash2, Edit2, Plus, Phone, Mail, Globe, TrendingUp } from "lucide-react";
+import { Trash2, Edit2, Plus, Phone, Mail, Globe, TrendingUp, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 
@@ -275,7 +276,20 @@ function BuyerForm({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Buyer Name <span className="text-red-500">*</span></FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Buyer Name <span className="text-red-500">*</span></FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Name of the buyer or lead partner<br/>
+                              This appears in call routing decisions</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormControl>
                       <Input {...field} placeholder="Enter buyer name" />
                     </FormControl>
@@ -336,7 +350,20 @@ function BuyerForm({
                 name="phoneNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone Number <span className="text-red-500">*</span></FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Phone Number <span className="text-red-500">*</span></FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Phone number where calls will be routed<br/>
+                              Include country code for international numbers</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormControl>
                       <Input 
                         placeholder="+1234567890"
@@ -373,7 +400,20 @@ function BuyerForm({
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Priority (1-10)</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Priority (1-10)</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Call routing priority (1=lowest, 10=highest)<br/>
+                              Higher priority buyers receive calls first</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormControl>
                       <Input 
                         {...field} 
@@ -397,7 +437,20 @@ function BuyerForm({
                 name="dailyCap"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Daily Cap</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Daily Cap</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Maximum calls per day for this buyer<br/>
+                              Prevents over-delivery and manages volume</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormControl>
                       <Input 
                         {...field} 

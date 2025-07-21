@@ -15,7 +15,8 @@ import { insertCampaignSchema, type Campaign, type InsertCampaign } from "@share
 import { apiRequest } from "@/lib/queryClient";
 import { useCampaignValidation } from "@/hooks/useCampaignValidation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { z } from "zod";
 
 const campaignFormSchema = insertCampaignSchema.extend({
@@ -174,7 +175,20 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Campaign Name</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormLabel>Campaign Name</FormLabel>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Name for your call campaign<br/>
+                                Used for tracking and organization</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <FormControl>
                         <Input placeholder="Enter campaign name" {...field} />
                       </FormControl>
@@ -188,7 +202,20 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormLabel>Status</FormLabel>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Campaign status controls call routing<br/>
+                                Active: accepting calls, Paused: disabled</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -371,7 +398,20 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                   name="callCap"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Daily Call Cap</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormLabel>Daily Call Cap</FormLabel>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Maximum calls per day for this campaign<br/>
+                                Helps control volume and costs</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <FormControl>
                         <Input 
                           type="number" 
@@ -391,12 +431,26 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Description</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Optional campaign description<br/>
+                              Helps explain the campaign purpose</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormControl>
                       <Textarea 
                         placeholder="Enter campaign description" 
                         className="min-h-[100px]"
-                        {...field} 
+                        {...field}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />

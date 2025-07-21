@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Copy, ExternalLink } from 'lucide-react';
+import { Copy, ExternalLink, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 
 interface CampaignUrlBuilderProps {
@@ -136,7 +137,20 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
 
         {/* Base URL */}
         <div>
-          <Label htmlFor="baseUrl">Website URL *</Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="baseUrl">Website URL *</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>The landing page URL where visitors will be directed<br/>
+                    Include full URL with https://</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Input
             id="baseUrl"
             value={baseUrl}
@@ -149,7 +163,20 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
         {/* UTM Parameters */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="utmSource">UTM Source *</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="utmSource">UTM Source *</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Where your traffic comes from (google, facebook, etc.)<br/>
+                      Used for attribution analysis</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Select value={utmSource} onValueChange={setUtmSource}>
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select traffic source" />
@@ -174,7 +201,20 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
           </div>
 
           <div>
-            <Label htmlFor="utmMedium">UTM Medium *</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="utmMedium">UTM Medium *</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Marketing medium (cpc, social, email, etc.)<br/>
+                      Describes how visitors reach your site</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Select value={utmMedium} onValueChange={setUtmMedium}>
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select medium" />
@@ -194,7 +234,20 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
           </div>
 
           <div>
-            <Label htmlFor="utmCampaign">UTM Campaign *</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="utmCampaign">UTM Campaign *</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Campaign identifier for tracking performance<br/>
+                      Usually matches your campaign name</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Input
               id="utmCampaign"
               value={utmCampaign}
@@ -205,7 +258,20 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
           </div>
 
           <div>
-            <Label htmlFor="utmContent">UTM Content</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="utmContent">UTM Content</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Specific ad creative or content variation<br/>
+                      Helps differentiate between different ads</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Input
               id="utmContent"
               value={utmContent}
@@ -216,7 +282,20 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
           </div>
 
           <div className="md:col-span-2">
-            <Label htmlFor="utmTerm">UTM Term</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="utmTerm">UTM Term</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Keywords or targeting terms (optional)<br/>
+                      Useful for paid search campaigns</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Input
               id="utmTerm"
               value={utmTerm}

@@ -14,7 +14,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, MoreHorizontal, Code, Copy, Settings, BarChart3, Phone, Globe } from "lucide-react";
+import { Plus, MoreHorizontal, Code, Copy, Settings, BarChart3, Phone, Globe, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Helper function to format phone numbers consistently
@@ -446,7 +447,20 @@ ${generateJavaScriptCode(tag)}`;
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Tag Name *</Label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Label htmlFor="name">Tag Name *</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>A descriptive name for this tracking tag<br/>
+                            Examples: "Homepage Banner", "Contact Form"</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <Input
                     id="name"
                     value={formData.name}
@@ -455,7 +469,20 @@ ${generateJavaScriptCode(tag)}`;
                   />
                 </div>
                 <div>
-                  <Label htmlFor="tagCode">Tag Code *</Label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Label htmlFor="tagCode">Tag Code *</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Unique code identifier for this tag<br/>
+                            Used in analytics and reporting</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <Input
                     id="tagCode"
                     value={formData.tagCode}
@@ -467,7 +494,20 @@ ${generateJavaScriptCode(tag)}`;
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="primaryNumber">Primary Number</Label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Label htmlFor="primaryNumber">Primary Number</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Default number to display when no pool is used<br/>
+                            This is your fallback tracking number</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <Select
                     value={formData.primaryNumberId}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, primaryNumberId: value }))}
@@ -486,7 +526,20 @@ ${generateJavaScriptCode(tag)}`;
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="numberToReplace">Number to Replace</Label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Label htmlFor="numberToReplace">Number to Replace</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Original number on your website to replace<br/>
+                            The tracking script will replace this number dynamically</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <Input
                     id="numberToReplace"
                     value={formData.numberToReplace}
