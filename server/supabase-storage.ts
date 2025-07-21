@@ -742,7 +742,13 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getUnassignedPhoneNumbers(userId?: number): Promise<any[]> {
-    const result = await db.select().from(phoneNumbers).where(eq(phoneNumbers.campaignId, null));
+    const conditions = [eq(phoneNumbers.campaignId, null)];
+    
+    if (userId) {
+      conditions.push(eq(phoneNumbers.userId, userId));
+    }
+    
+    const result = await db.select().from(phoneNumbers).where(and(...conditions));
     return result;
   }
 
