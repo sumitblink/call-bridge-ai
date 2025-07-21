@@ -740,6 +740,35 @@ interface ReportSummaryTableProps {
 }
 
 function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }: ReportSummaryTableProps) {
+  // Define which columns to show for each tab
+  const getColumnsForTab = (tab: string) => {
+    const baseColumns = ['incoming', 'live', 'completed', 'ended', 'connected', 'paid', 'converted', 'noConnection', 'blocked', 'ivrHangup', 'rpc', 'revenue', 'payout', 'profit', 'margin', 'conversionRate', 'tcl', 'acl', 'totalCost'];
+    
+    switch (tab) {
+      case 'campaign':
+        return ['campaign', 'publisher', 'target', 'buyer', 'dialedNumber', 'numberPool', 'date', 'duplicate', 'tags', ...baseColumns];
+      case 'publisher':
+        return ['publisher', 'date', 'tags', ...baseColumns];
+      case 'target':
+        return ['target', 'date', 'tags', ...baseColumns];
+      case 'buyer':
+        return ['buyer', 'date', 'tags', ...baseColumns];
+      case 'dialed':
+        return ['dialedNumber', 'campaign', 'buyer', 'date', 'tags', ...baseColumns];
+      case 'pool':
+        return ['numberPool', 'campaign', 'buyer', 'date', 'tags', ...baseColumns];
+      case 'date':
+        return ['date', 'campaign', 'buyer', 'tags', ...baseColumns];
+      case 'duplicate':
+        return ['campaign', 'duplicate', 'buyer', 'date', 'tags', ...baseColumns];
+      case 'tags':
+        return ['tags', 'campaign', 'buyer', 'date', ...baseColumns];
+      default:
+        return Object.keys(visibleColumns);
+    }
+  };
+
+  const activeColumns = getColumnsForTab(activeTab);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -777,64 +806,64 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }:
         <Table>
           <TableHeader className="sticky top-0 bg-gray-50 z-10">
             <TableRow>
-              {visibleColumns.campaign && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Campaign</TableHead>}
-              {visibleColumns.publisher && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Publisher</TableHead>}
-              {visibleColumns.target && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Target</TableHead>}
-              {visibleColumns.buyer && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Buyer</TableHead>}
-              {visibleColumns.dialedNumber && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Dialed #</TableHead>}
-              {visibleColumns.numberPool && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Number Pool</TableHead>}
-              {visibleColumns.date && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Date</TableHead>}
-              {visibleColumns.duplicate && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Duplicate</TableHead>}
-              {visibleColumns.tags && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Tags</TableHead>}
-              {visibleColumns.incoming && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Incoming</TableHead>}
-              {visibleColumns.live && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Live</TableHead>}
-              {visibleColumns.completed && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Completed</TableHead>}
-              {visibleColumns.ended && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Ended</TableHead>}
-              {visibleColumns.connected && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Connected</TableHead>}
-              {visibleColumns.paid && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Paid</TableHead>}
-              {visibleColumns.converted && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Converted</TableHead>}
-              {visibleColumns.noConnection && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">No Connection</TableHead>}
-              {visibleColumns.blocked && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Blocked</TableHead>}
-              {visibleColumns.ivrHangup && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">IVR Hangup</TableHead>}
-              {visibleColumns.rpc && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">RPC</TableHead>}
-              {visibleColumns.revenue && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Revenue</TableHead>}
-              {visibleColumns.payout && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Payout</TableHead>}
-              {visibleColumns.profit && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Profit</TableHead>}
-              {visibleColumns.margin && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Margin</TableHead>}
-              {visibleColumns.conversionRate && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Conversion Rate</TableHead>}
-              {visibleColumns.tcl && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">TCL</TableHead>}
-              {visibleColumns.acl && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">ACL</TableHead>}
-              {visibleColumns.totalCost && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Total Cost</TableHead>}
+              {activeColumns.includes('campaign') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Campaign</TableHead>}
+              {activeColumns.includes('publisher') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Publisher</TableHead>}
+              {activeColumns.includes('target') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Target</TableHead>}
+              {activeColumns.includes('buyer') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Buyer</TableHead>}
+              {activeColumns.includes('dialedNumber') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Dialed #</TableHead>}
+              {activeColumns.includes('numberPool') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Number Pool</TableHead>}
+              {activeColumns.includes('date') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Date</TableHead>}
+              {activeColumns.includes('duplicate') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Duplicate</TableHead>}
+              {activeColumns.includes('tags') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Tags</TableHead>}
+              {activeColumns.includes('incoming') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Incoming</TableHead>}
+              {activeColumns.includes('live') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Live</TableHead>}
+              {activeColumns.includes('completed') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Completed</TableHead>}
+              {activeColumns.includes('ended') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Ended</TableHead>}
+              {activeColumns.includes('connected') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Connected</TableHead>}
+              {activeColumns.includes('paid') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Paid</TableHead>}
+              {activeColumns.includes('converted') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Converted</TableHead>}
+              {activeColumns.includes('noConnection') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">No Connection</TableHead>}
+              {activeColumns.includes('blocked') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Blocked</TableHead>}
+              {activeColumns.includes('ivrHangup') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">IVR Hangup</TableHead>}
+              {activeColumns.includes('rpc') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">RPC</TableHead>}
+              {activeColumns.includes('revenue') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Revenue</TableHead>}
+              {activeColumns.includes('payout') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Payout</TableHead>}
+              {activeColumns.includes('profit') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Profit</TableHead>}
+              {activeColumns.includes('margin') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Margin</TableHead>}
+              {activeColumns.includes('conversionRate') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Conversion Rate</TableHead>}
+              {activeColumns.includes('tcl') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">TCL</TableHead>}
+              {activeColumns.includes('acl') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">ACL</TableHead>}
+              {activeColumns.includes('totalCost') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Total Cost</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {summaries.map((summary) => (
               <TableRow key={summary.campaignId} className="hover:bg-gray-50">
-                {visibleColumns.campaign && (
+                {activeColumns.includes('campaign') && (
                   <TableCell className="text-xs py-1 px-2">
                     <button className="text-blue-600 hover:underline text-left truncate max-w-24">
                       {summary.campaignName}
                     </button>
                   </TableCell>
                 )}
-                {visibleColumns.publisher && <TableCell className="text-xs py-1 px-2">{summary.publisher}</TableCell>}
-                {visibleColumns.target && <TableCell className="text-xs py-1 px-2">{summary.target}</TableCell>}
-                {visibleColumns.buyer && <TableCell className="text-xs py-1 px-2 text-blue-600 truncate max-w-20">{summary.buyer}</TableCell>}
-                {visibleColumns.dialedNumber && (
+                {activeColumns.includes('publisher') && <TableCell className="text-xs py-1 px-2">{summary.publisher}</TableCell>}
+                {activeColumns.includes('target') && <TableCell className="text-xs py-1 px-2">{summary.target}</TableCell>}
+                {activeColumns.includes('buyer') && <TableCell className="text-xs py-1 px-2 text-blue-600 truncate max-w-20">{summary.buyer}</TableCell>}
+                {activeColumns.includes('dialedNumber') && (
                   <TableCell className="text-xs py-1 px-2 font-mono">
                     {summary.dialedNumbers.slice(0, 1).join(', ')}{summary.dialedNumbers.length > 1 && ` +${summary.dialedNumbers.length - 1}`}
                   </TableCell>
                 )}
-                {visibleColumns.numberPool && <TableCell className="text-xs py-1 px-2">{summary.numberPool}</TableCell>}
-                {visibleColumns.date && <TableCell className="text-xs py-1 px-2">{formatDistanceToNow(new Date(summary.lastCallDate), { addSuffix: true })}</TableCell>}
-                {visibleColumns.duplicate && (
+                {activeColumns.includes('numberPool') && <TableCell className="text-xs py-1 px-2">{summary.numberPool}</TableCell>}
+                {activeColumns.includes('date') && <TableCell className="text-xs py-1 px-2">{formatDistanceToNow(new Date(summary.lastCallDate), { addSuffix: true })}</TableCell>}
+                {activeColumns.includes('duplicate') && (
                   <TableCell className="text-xs py-1 px-2">
                     <Badge variant="outline" className="text-xs">
                       {summary.duplicate}
                     </Badge>
                   </TableCell>
                 )}
-                {visibleColumns.tags && (
+                {activeColumns.includes('tags') && (
                   <TableCell className="text-xs py-1 px-2">
                     {summary.tags.slice(0, 2).map(tag => (
                       <Badge key={tag} variant="secondary" className="text-xs px-1 mr-1">
@@ -844,25 +873,25 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }:
                     {summary.tags.length > 2 && <span className="text-gray-500">+{summary.tags.length - 2}</span>}
                   </TableCell>
                 )}
-                {visibleColumns.incoming && <TableCell className="text-xs py-1 px-2 text-center">{summary.incoming}</TableCell>}
-                {visibleColumns.live && <TableCell className="text-xs py-1 px-2 text-center">{summary.live}</TableCell>}
-                {visibleColumns.completed && <TableCell className="text-xs py-1 px-2 text-center">{summary.completed}</TableCell>}
-                {visibleColumns.ended && <TableCell className="text-xs py-1 px-2 text-center">{summary.ended}</TableCell>}
-                {visibleColumns.connected && <TableCell className="text-xs py-1 px-2 text-center text-green-600 font-medium">{summary.connected}</TableCell>}
-                {visibleColumns.paid && <TableCell className="text-xs py-1 px-2 text-center">{summary.paid}</TableCell>}
-                {visibleColumns.converted && <TableCell className="text-xs py-1 px-2 text-center text-green-600 font-medium">{summary.converted}</TableCell>}
-                {visibleColumns.noConnection && <TableCell className="text-xs py-1 px-2 text-center text-red-600">{summary.noConnection}</TableCell>}
-                {visibleColumns.blocked && <TableCell className="text-xs py-1 px-2 text-center text-orange-600">{summary.blocked}</TableCell>}
-                {visibleColumns.ivrHangup && <TableCell className="text-xs py-1 px-2 text-center">{summary.ivrHangup}</TableCell>}
-                {visibleColumns.rpc && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.rpc)}</TableCell>}
-                {visibleColumns.revenue && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.revenue)}</TableCell>}
-                {visibleColumns.payout && <TableCell className="text-xs py-1 px-2 text-red-600">{formatCurrency(summary.payout)}</TableCell>}
-                {visibleColumns.profit && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.profit)}</TableCell>}
-                {visibleColumns.margin && <TableCell className="text-xs py-1 px-2 font-medium">{summary.margin.toFixed(1)}%</TableCell>}
-                {visibleColumns.conversionRate && <TableCell className="text-xs py-1 px-2">{summary.conversionRate.toFixed(1)}%</TableCell>}
-                {visibleColumns.tcl && <TableCell className="text-xs py-1 px-2 font-mono">{formatDuration(summary.tcl)}</TableCell>}
-                {visibleColumns.acl && <TableCell className="text-xs py-1 px-2 font-mono">{formatDuration(summary.acl)}</TableCell>}
-                {visibleColumns.totalCost && <TableCell className="text-xs py-1 px-2 text-red-600">{formatCurrency(summary.totalCost)}</TableCell>}
+                {activeColumns.includes('incoming') && <TableCell className="text-xs py-1 px-2 text-center">{summary.incoming}</TableCell>}
+                {activeColumns.includes('live') && <TableCell className="text-xs py-1 px-2 text-center">{summary.live}</TableCell>}
+                {activeColumns.includes('completed') && <TableCell className="text-xs py-1 px-2 text-center">{summary.completed}</TableCell>}
+                {activeColumns.includes('ended') && <TableCell className="text-xs py-1 px-2 text-center">{summary.ended}</TableCell>}
+                {activeColumns.includes('connected') && <TableCell className="text-xs py-1 px-2 text-center text-green-600 font-medium">{summary.connected}</TableCell>}
+                {activeColumns.includes('paid') && <TableCell className="text-xs py-1 px-2 text-center">{summary.paid}</TableCell>}
+                {activeColumns.includes('converted') && <TableCell className="text-xs py-1 px-2 text-center text-green-600 font-medium">{summary.converted}</TableCell>}
+                {activeColumns.includes('noConnection') && <TableCell className="text-xs py-1 px-2 text-center text-red-600">{summary.noConnection}</TableCell>}
+                {activeColumns.includes('blocked') && <TableCell className="text-xs py-1 px-2 text-center text-orange-600">{summary.blocked}</TableCell>}
+                {activeColumns.includes('ivrHangup') && <TableCell className="text-xs py-1 px-2 text-center">{summary.ivrHangup}</TableCell>}
+                {activeColumns.includes('rpc') && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.rpc)}</TableCell>}
+                {activeColumns.includes('revenue') && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.revenue)}</TableCell>}
+                {activeColumns.includes('payout') && <TableCell className="text-xs py-1 px-2 text-red-600">{formatCurrency(summary.payout)}</TableCell>}
+                {activeColumns.includes('profit') && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.profit)}</TableCell>}
+                {activeColumns.includes('margin') && <TableCell className="text-xs py-1 px-2 font-medium">{summary.margin.toFixed(1)}%</TableCell>}
+                {activeColumns.includes('conversionRate') && <TableCell className="text-xs py-1 px-2">{summary.conversionRate.toFixed(1)}%</TableCell>}
+                {activeColumns.includes('tcl') && <TableCell className="text-xs py-1 px-2 font-mono">{formatDuration(summary.tcl)}</TableCell>}
+                {activeColumns.includes('acl') && <TableCell className="text-xs py-1 px-2 font-mono">{formatDuration(summary.acl)}</TableCell>}
+                {activeColumns.includes('totalCost') && <TableCell className="text-xs py-1 px-2 text-red-600">{formatCurrency(summary.totalCost)}</TableCell>}
               </TableRow>
             ))}
           </TableBody>
