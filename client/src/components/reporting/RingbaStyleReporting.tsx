@@ -1448,17 +1448,6 @@ export default function RingbaStyleReporting() {
           >
             Duplicate
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setShowFilterDialog(showFilterDialog === "tags" ? null : "tags");
-            }}
-            className="h-7 px-2 text-xs font-medium"
-          >
-            Tags
-            <ChevronDown className="ml-1 h-3 w-3" />
-          </Button>
         </div>
 
         {/* Filter Dialog */}
@@ -1663,28 +1652,41 @@ export default function RingbaStyleReporting() {
           </div>
 
           {/* Ringba-style Tabbed Interface */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-8 h-8 bg-gray-100">
-              <TabsTrigger value="campaign" className="text-xs px-2">Campaign</TabsTrigger>
-              <TabsTrigger value="publisher" className="text-xs px-2">Publisher</TabsTrigger>
-              <TabsTrigger value="target" className="text-xs px-2">Target</TabsTrigger>
-              <TabsTrigger value="buyer" className="text-xs px-2">Buyer</TabsTrigger>
-              <TabsTrigger value="dialed" className="text-xs px-2">Dialed #</TabsTrigger>
-              <TabsTrigger value="pool" className="text-xs px-2">Number Pool</TabsTrigger>
-              <TabsTrigger value="date" className="text-xs px-2">Date</TabsTrigger>
-              <TabsTrigger value="duplicate" className="text-xs px-2">Duplicate</TabsTrigger>
-            </TabsList>
+          <div className="flex items-center gap-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
+              <TabsList className="grid w-full grid-cols-8 h-8 bg-gray-100">
+                <TabsTrigger value="campaign" className="text-xs px-2">Campaign</TabsTrigger>
+                <TabsTrigger value="publisher" className="text-xs px-2">Publisher</TabsTrigger>
+                <TabsTrigger value="target" className="text-xs px-2">Target</TabsTrigger>
+                <TabsTrigger value="buyer" className="text-xs px-2">Buyer</TabsTrigger>
+                <TabsTrigger value="dialed" className="text-xs px-2">Dialed #</TabsTrigger>
+                <TabsTrigger value="pool" className="text-xs px-2">Number Pool</TabsTrigger>
+                <TabsTrigger value="date" className="text-xs px-2">Date</TabsTrigger>
+                <TabsTrigger value="duplicate" className="text-xs px-2">Duplicate</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setShowFilterDialog(showFilterDialog === "tags" ? null : "tags");
+              }}
+              className="h-8 px-2 text-xs font-medium"
+            >
+              Tags
+              <ChevronDown className="ml-1 h-3 w-3" />
+            </Button>
+          </div>
 
-            {/* Single tab content that changes based on active tab */}
-            <div className="mt-4">
-              <ReportSummaryTable 
-                summaries={filteredSummaries} 
-                visibleColumns={visibleColumns} 
-                isLoading={isLoading} 
-                activeTab={activeTab}
-              />
-            </div>
-          </Tabs>
+          {/* Single tab content that changes based on active tab */}
+          <div className="mt-4">
+            <ReportSummaryTable 
+              summaries={filteredSummaries} 
+              visibleColumns={visibleColumns} 
+              isLoading={isLoading} 
+              activeTab={activeTab}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
