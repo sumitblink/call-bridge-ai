@@ -1358,7 +1358,7 @@ export default function RingbaStyleReporting() {
       </div>
 
       {/* Ringba-style Filter Buttons */}
-      <div className="bg-white border-b px-4 py-2 relative">
+      <div className="bg-white border-b px-4 py-2 relative overflow-visible">
         <div className="flex items-center gap-1 flex-wrap">
           <Button
             size="sm"
@@ -1452,7 +1452,6 @@ export default function RingbaStyleReporting() {
             size="sm"
             variant="outline"
             onClick={() => {
-              console.log("Tags button clicked, current showFilterDialog:", showFilterDialog);
               setActiveTab("tags");
               setShowFilterDialog(showFilterDialog === "tags" ? null : "tags");
             }}
@@ -1482,7 +1481,7 @@ export default function RingbaStyleReporting() {
 
         {/* Tags Dropdown */}
         {showFilterDialog === "tags" && (
-          <div className="absolute top-full right-0 mt-2 bg-gray-800 text-white rounded-lg shadow-lg p-4 z-[100] w-80">
+          <div className="fixed top-20 right-4 bg-gray-800 text-white rounded-lg shadow-2xl p-4 z-[100] w-80 max-h-96 overflow-hidden border border-gray-600 shadow-black/50">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-sm font-medium text-white">Tags</h3>
               <Button variant="ghost" size="sm" onClick={() => setShowFilterDialog(null)} className="text-white hover:text-gray-300">
