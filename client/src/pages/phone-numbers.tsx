@@ -14,7 +14,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Search, Trash2, Settings, Download, Plus, Users, Layers } from "lucide-react";
+import { Phone, Search, Trash2, Settings, Download, Plus, Users, Layers, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -493,7 +494,20 @@ export default function PhoneNumbersPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="country">Country</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="country">Country</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Select country to search for phone numbers<br/>
+                              Different countries have different regulations</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <Select value={searchParams.country} onValueChange={(value) => 
                       setSearchParams(prev => ({ ...prev, country: value }))
                     }>
@@ -508,7 +522,21 @@ export default function PhoneNumbersPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="numberType">Number Type</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="numberType">Number Type</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Local: Area code numbers (cheaper)<br/>
+                              Toll-Free: 1-800 numbers (professional)<br/>
+                              Mobile: Cell phone numbers</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <Select value={searchParams.numberType} onValueChange={(value) => 
                       setSearchParams(prev => ({ ...prev, numberType: value }))
                     }>
@@ -753,7 +781,20 @@ export default function PhoneNumbersPage() {
                   </DialogHeader>
                   <div className="space-y-6">
                     <div>
-                      <Label htmlFor="poolName">Pool Name</Label>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Label htmlFor="poolName">Pool Name</Label>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Give your pool a descriptive name to identify its purpose<br/>
+                                Examples: "Marketing Pool", "US East Coast Numbers"</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <Input 
                         id="poolName" 
                         placeholder="e.g., 'Marketing Campaign Pool' or 'US Local Numbers'" 
@@ -843,7 +884,20 @@ export default function PhoneNumbersPage() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="idleLimit">Idle Limit (seconds)</Label>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Label htmlFor="idleLimit">Idle Limit (seconds)</Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>How long a caller waits before being routed to next number<br/>
+                                  Default: 300 seconds (5 minutes)</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                         <Input 
                           id="idleLimit" 
                           type="number" 
@@ -852,7 +906,20 @@ export default function PhoneNumbersPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="closedBrowserDelay">Browser Delay (seconds)</Label>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Label htmlFor="closedBrowserDelay">Browser Delay (seconds)</Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Delay before switching numbers when browser closes<br/>
+                                  Default: 60 seconds</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                         <Input 
                           id="closedBrowserDelay" 
                           type="number" 
@@ -863,7 +930,20 @@ export default function PhoneNumbersPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="prefix">Number Prefix (optional)</Label>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Label htmlFor="prefix">Number Prefix (optional)</Label>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Add a prefix to display with pool numbers<br/>
+                                Used for organization, doesn't affect routing</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <Input 
                         id="prefix" 
                         placeholder="e.g., +1800, +1855" 

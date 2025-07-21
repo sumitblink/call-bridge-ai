@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users, Phone, Grid3X3, List, PhoneCall } from "lucide-react";
+import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users, Phone, Grid3X3, List, PhoneCall, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -292,7 +293,20 @@ function CampaignForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Campaign Name</FormLabel>
+              <div className="flex items-center gap-2">
+                <FormLabel>Campaign Name</FormLabel>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>A descriptive name for your campaign<br/>
+                        This helps identify the campaign purpose</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <FormControl>
                 <Input placeholder="Enter campaign name" {...field} />
               </FormControl>
@@ -306,7 +320,20 @@ function CampaignForm({
           name="country"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Country</FormLabel>
+              <div className="flex items-center gap-2">
+                <FormLabel>Country</FormLabel>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Target country for call routing<br/>
+                        Used for geo-targeting and compliance</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
@@ -343,7 +370,20 @@ function CampaignForm({
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
-                  <FormLabel className="text-base">Enable RTB</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <FormLabel className="text-base">Enable RTB</FormLabel>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Enable real-time bidding for premium call routing<br/>
+                            External partners can bid on calls automatically</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     Turn on real-time bidding for this campaign
                   </div>
@@ -365,7 +405,20 @@ function CampaignForm({
                 name="biddingTimeoutMs"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bidding Timeout (ms)</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Bidding Timeout (ms)</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>How long to wait for bidders to respond<br/>
+                              Default: 3000ms (3 seconds)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormControl>
                       <Input
                         type="number"
