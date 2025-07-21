@@ -826,8 +826,8 @@ export default function RingbaStyleReporting() {
   }, [] as CampaignSummary[]) : mockCampaignSummaries;
   */
 
-  // Apply filters to get final data
-  const campaignSummaries = applyFilters(rawCampaignSummaries);
+  // Apply filters to get final data - only show filtered data when filter badges exist
+  const campaignSummaries = filterRules.length > 0 ? applyFilters(rawCampaignSummaries) : rawCampaignSummaries;
 
   // Calculate derived metrics for each summary
   campaignSummaries.forEach(summary => {
@@ -1229,7 +1229,7 @@ export default function RingbaStyleReporting() {
         <div className="flex items-center gap-1 flex-wrap">
           <Button
             size="sm"
-            variant={activeTab === "campaign" ? "default" : "outline"}
+            variant="outline"
             onClick={() => {
               setActiveTab("campaign");
               setShowFilterDialog(showFilterDialog === "campaign" ? null : "campaign");
@@ -1241,7 +1241,7 @@ export default function RingbaStyleReporting() {
           </Button>
           <Button
             size="sm"
-            variant={activeTab === "publisher" ? "default" : "outline"}
+            variant="outline"
             onClick={() => {
               setActiveTab("publisher");
               setShowFilterDialog(showFilterDialog === "publisher" ? null : "publisher");
@@ -1253,7 +1253,7 @@ export default function RingbaStyleReporting() {
           </Button>
           <Button
             size="sm"
-            variant={activeTab === "target" ? "default" : "outline"}
+            variant="outline"
             onClick={() => {
               setActiveTab("target");
               setShowFilterDialog(showFilterDialog === "target" ? null : "target");
@@ -1265,7 +1265,7 @@ export default function RingbaStyleReporting() {
           </Button>
           <Button
             size="sm"
-            variant={activeTab === "buyer" ? "default" : "outline"}
+            variant="outline"
             onClick={() => {
               setActiveTab("buyer");
               setShowFilterDialog(showFilterDialog === "buyer" ? null : "buyer");
@@ -1277,7 +1277,7 @@ export default function RingbaStyleReporting() {
           </Button>
           <Button
             size="sm"
-            variant={activeTab === "dialedNumber" ? "default" : "outline"}
+            variant="outline"
             onClick={() => {
               setActiveTab("dialedNumber");
               setShowFilterDialog(showFilterDialog === "dialedNumber" ? null : "dialedNumber");
@@ -1289,7 +1289,7 @@ export default function RingbaStyleReporting() {
           </Button>
           <Button
             size="sm"
-            variant={activeTab === "numberPool" ? "default" : "outline"}
+            variant="outline"
             onClick={() => {
               setActiveTab("numberPool");
               setShowFilterDialog(showFilterDialog === "numberPool" ? null : "numberPool");
@@ -1301,7 +1301,7 @@ export default function RingbaStyleReporting() {
           </Button>
           <Button
             size="sm"
-            variant={activeTab === "date" ? "default" : "outline"}
+            variant="outline"
             onClick={() => setActiveTab("date")}
             className="h-7 px-2 text-xs font-medium"
           >
@@ -1309,7 +1309,7 @@ export default function RingbaStyleReporting() {
           </Button>
           <Button
             size="sm"
-            variant={activeTab === "duplicate" ? "default" : "outline"}
+            variant="outline"
             onClick={() => setActiveTab("duplicate")}
             className="h-7 px-2 text-xs font-medium"
           >
@@ -1317,7 +1317,7 @@ export default function RingbaStyleReporting() {
           </Button>
           <Button
             size="sm"
-            variant={activeTab === "tags" ? "default" : "outline"}
+            variant="outline"
             onClick={() => setActiveTab("tags")}
             className="h-7 px-2 text-xs font-medium"
           >
