@@ -322,6 +322,7 @@ export default function RingbaStyleReporting() {
   const [activeTab, setActiveTab] = useState("campaign");
   const [filterRules, setFilterRules] = useState<FilterRule[]>([]);
   const [showFilterDialog, setShowFilterDialog] = useState<string | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     campaign: true,
     publisher: true,
@@ -1462,7 +1463,7 @@ export default function RingbaStyleReporting() {
         </div>
 
         {/* Filter Dialog */}
-        {showFilterDialog && (
+        {showFilterDialog && showFilterDialog !== "tags" && (
           <div className="absolute top-full left-0 mt-2 bg-gray-800 text-white rounded-lg shadow-lg p-4 z-50 min-w-80">
             <FilterDialog 
               field={showFilterDialog}
@@ -1475,6 +1476,89 @@ export default function RingbaStyleReporting() {
               }}
               onClose={() => setShowFilterDialog(null)}
             />
+          </div>
+        )}
+
+        {/* Tags Dropdown */}
+        {showFilterDialog === "tags" && (
+          <div className="absolute top-full right-0 mt-2 bg-gray-800 text-white rounded-lg shadow-lg p-4 z-50 w-80">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-medium text-white">Tags</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowFilterDialog(null)} className="text-white hover:text-gray-300">
+                ×
+              </Button>
+            </div>
+            
+            <div className="mb-3">
+              <Input
+                placeholder="Search Breakdown Levels"
+                className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 text-xs h-8"
+              />
+            </div>
+
+            <div className="max-h-80 overflow-y-auto space-y-1">
+              <div className="text-xs text-gray-400 mb-2">Tags</div>
+              
+              {Object.entries({
+                "InboundNumber": ["Number", "Pool", "TrackingNumber", "Country", "State"],
+                "Date": ["CallDate", "CallTime", "Timezone", "DayOfWeek", "Month"],
+                "Time": ["StartTime", "EndTime", "Duration", "TimeOfDay", "BusinessHours"],
+                "User": ["UserId", "Username", "UserType", "Permissions", "LastLogin"],
+                "Publisher": ["Company", "Id", "Name", "SubId", "ReplacementNumber"],
+                "Campaign": ["Id", "Name", "TrackingId", "Status", "Type"],
+                "Geo": ["Country", "State", "City", "ZipCode", "Timezone"],
+                "CallLength": ["TotalDuration", "TalkTime", "RingTime", "HoldTime"],
+                "RTB": ["BidAmount", "Winner", "Participants", "AuctionId", "ResponseTime"],
+                "CallInfo": ["CallId", "Status", "Direction", "Quality", "Recording"],
+                "Display": ["Format", "Appearance", "Layout", "Theme"],
+                "Location": ["Address", "Coordinates", "Region", "AreaCode"],
+                "ConnectionInfo": ["Carrier", "Network", "Signal", "Protocol"],
+                "Technology": ["CodecUsed", "Platform", "Device", "Browser"],
+                "EndCall": ["Reason", "Duration", "Outcome", "Disposition"],
+                "Ivr": ["MenuSelection", "PromptPlayed", "UserInput", "Path"],
+                "PlacementInfo": ["Position", "Source", "Medium", "Content"],
+                "Conversion": ["Type", "Value", "Timestamp", "Attribution"],
+                "RequestInfo": ["Method", "Headers", "Parameters", "Response"],
+                "DialedNumber": ["Original", "Formatted", "E164", "Local"],
+                "Request": ["Id", "Type", "Status", "Timestamp"],
+                "Facebook": ["CampaignId", "AdSetId", "AdId", "PlacementId"],
+                "Redtrack CID": ["ClickId", "VisitorId", "ConversionId", "SessionId"],
+                "Redtrack CMPID": ["CampaignId", "OfferId", "AffiliateId", "SubId"],
+                "Zip Code": ["Primary", "Secondary", "Extended", "Delivery"],
+                "Integration": ["Type", "Provider", "Status", "Configuration"]
+              }).map(([category, subcategories]) => (
+                <div key={category}>
+                  <button
+                    onClick={() => {
+                      const isExpanded = expandedCategories[category];
+                      setExpandedCategories(prev => ({
+                        ...prev,
+                        [category]: !isExpanded
+                      }));
+                    }}
+                    className="flex items-center w-full text-left text-xs text-white hover:bg-gray-700 p-2 rounded"
+                  >
+                    <ChevronDown 
+                      className={`h-3 w-3 mr-2 transition-transform ${expandedCategories[category] ? 'rotate-180' : ''}`} 
+                    />
+                    {category}
+                  </button>
+                  
+                  {expandedCategories[category] && (
+                    <div className="ml-5 space-y-1">
+                      {subcategories.map(subcategory => (
+                        <div
+                          key={subcategory}
+                          className="text-xs text-gray-300 hover:bg-gray-700 hover:text-white p-2 rounded cursor-pointer"
+                        >
+                          {subcategory}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
