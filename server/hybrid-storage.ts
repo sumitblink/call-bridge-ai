@@ -903,6 +903,56 @@ class HybridStorage implements IStorage {
       () => this.memStorage.getBasicTrackingStats(userId)
     );
   }
+
+  // Enhanced Reporting Methods
+  async getPhoneNumberTagsByUser(userId: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getPhoneNumberTagsByUser ? this.databaseStorage.getPhoneNumberTagsByUser(userId) : Promise.resolve([]),
+      () => this.memStorage.getPhoneNumberTagsByUser(userId)
+    );
+  }
+
+  async getPhoneNumberTagById(tagId: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getPhoneNumberTagById ? this.databaseStorage.getPhoneNumberTagById(tagId) : Promise.resolve(undefined),
+      () => this.memStorage.getPhoneNumberTagById(tagId)
+    );
+  }
+
+  async createPhoneNumberTag(tag: any): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.createPhoneNumberTag ? this.databaseStorage.createPhoneNumberTag(tag) : Promise.resolve(tag),
+      () => this.memStorage.createPhoneNumberTag(tag)
+    );
+  }
+
+  async updatePhoneNumberTag(tagId: number, tag: any): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.updatePhoneNumberTag ? this.databaseStorage.updatePhoneNumberTag(tagId, tag) : Promise.resolve(tag),
+      () => this.memStorage.updatePhoneNumberTag(tagId, tag)
+    );
+  }
+
+  async deletePhoneNumberTag(tagId: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.deletePhoneNumberTag ? this.databaseStorage.deletePhoneNumberTag(tagId) : Promise.resolve(true),
+      () => this.memStorage.deletePhoneNumberTag(tagId)
+    );
+  }
+
+  async getEnhancedCallsByUser(userId: number, filters?: any): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getEnhancedCallsByUser ? this.databaseStorage.getEnhancedCallsByUser(userId, filters) : Promise.resolve([]),
+      () => this.memStorage.getEnhancedCallsByUser(userId, filters)
+    );
+  }
+
+  async getEnhancedCallById(callId: number, userId: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getEnhancedCallById ? this.databaseStorage.getEnhancedCallById(callId, userId) : Promise.resolve(undefined),
+      () => this.memStorage.getEnhancedCallById(callId, userId)
+    );
+  }
 }
 
 export const storage = new HybridStorage();
