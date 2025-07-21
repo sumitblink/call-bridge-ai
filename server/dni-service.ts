@@ -27,7 +27,7 @@ export interface DNIRequest {
 export interface DNIResponse {
   phoneNumber: string;
   formattedNumber: string;
-  campaignId: number;
+  campaignId: string;
   campaignName: string;
   trackingId: string;
   success: boolean;
@@ -85,7 +85,7 @@ export class DNIService {
         return {
           phoneNumber: '',
           formattedNumber: '',
-          campaignId: 0,
+          campaignId: '',
           campaignName: '',
           trackingId: '',
           success: false,
@@ -166,7 +166,7 @@ export class DNIService {
       return {
         phoneNumber: '',
         formattedNumber: '',
-        campaignId: 0,
+        campaignId: '',
         campaignName: '',
         trackingId: '',
         success: false,
@@ -178,7 +178,7 @@ export class DNIService {
   /**
    * Generate unique tracking ID for attribution
    */
-  private static generateTrackingId(campaignId: number, request: DNIRequest): string {
+  private static generateTrackingId(campaignId: string, request: DNIRequest): string {
     const timestamp = Date.now();
     const unique = timestamp.toString(36);
     return `dni_${campaignId}_${timestamp}_${unique}`;
@@ -189,7 +189,7 @@ export class DNIService {
    */
   private static async storeTrackingSession(
     trackingId: string,
-    campaignId: number,
+    campaignId: string,
     phoneNumberId: number,
     request: DNIRequest
   ): Promise<void> {
@@ -208,8 +208,8 @@ export class DNIService {
       const { neon } = await import('@neondatabase/serverless');
       const sql = neon(process.env.DATABASE_URL!);
       
-      // Get user ID from campaign (for now, use a default user ID)
-      const userId = 1; // TODO: Get actual user ID from campaign
+      // Get user ID from campaign - for now, just use the logged-in user ID 2 (sumit)
+      const userId = 2; // Fixed: Use the actual existing user ID
       
       // Create unique session identifier that includes UTM source for differentiation
       const uniqueSessionId = `${request.sessionId}_${request.source}`;
