@@ -164,6 +164,12 @@ export interface IStorage {
   updateRtbTarget(id: number, target: Partial<InsertRtbTarget>): Promise<RtbTarget | undefined>;
   deleteRtbTarget(id: number): Promise<boolean>;
   
+  // Campaign RTB Target assignments
+  getCampaignRtbTargets(campaignId: string): Promise<any[]>;
+  createCampaignRtbTarget(data: { campaignId: string; rtbTargetId: number }): Promise<any>;
+  removeCampaignRtbTarget(campaignId: string, rtbTargetId: number): Promise<boolean>;
+  updateCampaignRtbTargets(campaignId: string, targetIds: number[]): Promise<void>;
+  
   // RTB Routers
   getRtbRouters(userId?: number): Promise<RtbRouter[]>;
   getRtbRouter(id: number, userId?: number): Promise<RtbRouter | undefined>;
@@ -1180,6 +1186,60 @@ export class MemStorage implements IStorage {
 
   async getRtbRouterAssignments(routerId: number): Promise<any[]> {
     return [];
+  }
+
+  // Campaign RTB Target assignments - In-memory storage
+  private campaignRtbTargets: any[] = [];
+
+  async getCampaignRtbTargets(campaignId: string): Promise<any[]> {
+    return this.campaignRtbTargets
+      .filter(assignment => assignment.campaignId === campaignId)
+      .map(assignment => {
+        const target = this.rtbTargets.find(t => t.id === assignment.rtbTargetId);
+        return target ? { ...target, assignmentId: assignment.id } : null;
+      })
+      .filter(Boolean);
+  }
+
+  async createCampaignRtbTarget(data: { campaignId: string; rtbTargetId: number }): Promise<any> {
+    const assignment = {
+      id: Date.now(),
+      campaignId: data.campaignId,
+      rtbTargetId: data.rtbTargetId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.campaignRtbTargets.push(assignment);
+    return assignment;
+  }
+
+  async removeCampaignRtbTarget(campaignId: string, rtbTargetId: number): Promise<boolean> {
+    const index = this.campaignRtbTargets.findIndex(
+      assignment => assignment.campaignId === campaignId && assignment.rtbTargetId === rtbTargetId
+    );
+    if (index !== -1) {
+      this.campaignRtbTargets.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  async updateCampaignRtbTargets(campaignId: string, targetIds: number[]): Promise<void> {
+    // Remove existing assignments
+    this.campaignRtbTargets = this.campaignRtbTargets.filter(
+      assignment => assignment.campaignId !== campaignId
+    );
+    
+    // Add new assignments
+    targetIds.forEach(targetId => {
+      this.campaignRtbTargets.push({
+        id: Date.now() + Math.random(),
+        campaignId,
+        rtbTargetId: targetId,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    });
   }
 
   // Call Flow methods - In-memory storage implementation

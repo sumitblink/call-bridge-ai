@@ -727,10 +727,31 @@ class HybridStorage implements IStorage {
     );
   }
 
-  async getCampaignRtbTargets(campaignId: number): Promise<any[]> {
+  async getCampaignRtbTargets(campaignId: string): Promise<any[]> {
     return this.executeOperation(
       () => this.databaseStorage.getCampaignRtbTargets(campaignId),
-      () => this.memStorage.getCampaignRtbTargets ? this.memStorage.getCampaignRtbTargets(campaignId) : []
+      () => this.memStorage.getCampaignRtbTargets(campaignId)
+    );
+  }
+
+  async createCampaignRtbTarget(data: { campaignId: string; rtbTargetId: number }): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.createCampaignRtbTarget(data),
+      () => this.memStorage.createCampaignRtbTarget(data)
+    );
+  }
+
+  async removeCampaignRtbTarget(campaignId: string, rtbTargetId: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.removeCampaignRtbTarget(campaignId, rtbTargetId),
+      () => this.memStorage.removeCampaignRtbTarget(campaignId, rtbTargetId)
+    );
+  }
+
+  async updateCampaignRtbTargets(campaignId: string, targetIds: number[]): Promise<void> {
+    return this.executeOperation(
+      () => this.databaseStorage.updateCampaignRtbTargets(campaignId, targetIds),
+      () => this.memStorage.updateCampaignRtbTargets(campaignId, targetIds)
     );
   }
 

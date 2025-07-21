@@ -1080,6 +1080,97 @@ export class SupabaseStorage implements IStorage {
     const { storage } = await import('./storage-db');
     return storage.getCampaignPublishers(campaignId);
   }
+
+  // Campaign RTB Target methods
+  async getCampaignRtbTargets(campaignId: string): Promise<any[]> {
+    try {
+      const result = await db
+        .select({
+          id: rtbTargets.id,
+          name: rtbTargets.name,
+          companyName: rtbTargets.companyName,
+          contactPerson: rtbTargets.contactPerson,
+          contactEmail: rtbTargets.contactEmail,
+          contactPhone: rtbTargets.contactPhone,
+          endpointUrl: rtbTargets.endpointUrl,
+          minBidAmount: rtbTargets.minBidAmount,
+          maxBidAmount: rtbTargets.maxBidAmount,
+          currency: rtbTargets.currency,
+          isActive: rtbTargets.isActive,
+          createdAt: rtbTargets.createdAt,
+          updatedAt: rtbTargets.updatedAt
+        })
+        .from(campaignRtbTargets)
+        .innerJoin(rtbTargets, eq(campaignRtbTargets.rtbTargetId, rtbTargets.id))
+        .where(eq(campaignRtbTargets.campaignId, campaignId));
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching campaign RTB targets:', error);
+      return [];
+    }
+  }
+
+  async createCampaignRtbTarget(data: { campaignId: string; rtbTargetId: number }): Promise<any> {
+    try {
+      const result = await db
+        .insert(campaignRtbTargets)
+        .values({
+          campaignId: data.campaignId,
+          rtbTargetId: data.rtbTargetId,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating campaign RTB target:', error);
+      throw error;
+    }
+  }
+
+  async removeCampaignRtbTarget(campaignId: string, rtbTargetId: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(campaignRtbTargets)
+        .where(
+          and(
+            eq(campaignRtbTargets.campaignId, campaignId),
+            eq(campaignRtbTargets.rtbTargetId, rtbTargetId)
+          )
+        );
+      
+      return true;
+    } catch (error) {
+      console.error('Error removing campaign RTB target:', error);
+      return false;
+    }
+  }
+
+  async updateCampaignRtbTargets(campaignId: string, targetIds: number[]): Promise<void> {
+    try {
+      // First, remove all existing assignments
+      await db
+        .delete(campaignRtbTargets)
+        .where(eq(campaignRtbTargets.campaignId, campaignId));
+      
+      // Then add new assignments
+      if (targetIds.length > 0) {
+        const assignments = targetIds.map(targetId => ({
+          campaignId,
+          rtbTargetId: targetId,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }));
+        
+        await db.insert(campaignRtbTargets).values(assignments);
+      }
+    } catch (error) {
+      console.error('Error updating campaign RTB targets:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new SupabaseStorage();
