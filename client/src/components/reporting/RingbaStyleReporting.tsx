@@ -1082,7 +1082,7 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }:
                           case 'numberPool':
                             return <div className="truncate">{summary.numberPool}</div>;
                           case 'date':
-                            return <div className="text-xs text-gray-500">{formatDistanceToNow(new Date(summary.lastCallDate), { addSuffix: true })}</div>;
+                            return <div className="text-xs text-gray-500">{new Date(summary.lastCallDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })} {new Date(summary.lastCallDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</div>;
                           case 'duplicate':
                             return <div className="text-center">{summary.duplicate}</div>;
                           case 'tags':
