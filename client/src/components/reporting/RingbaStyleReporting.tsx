@@ -986,6 +986,17 @@ export default function RingbaStyleReporting() {
               // Generate a clean publisher ID for display
               const pubId = summary.campaignId.replace('CAMP', 'PUB');
               filteredSummary.publisher = `[${pubId}] ${filteredSummary.publisher}`;
+            } else if (tag.tag === 'Name') {
+              // Already shows publisher name, no change needed
+            } else if (tag.tag === 'Type') {
+              // Show publisher type in parentheses
+              const pubType = filteredSummary.publisher.includes('Google') ? '(Search)' : 
+                             filteredSummary.publisher.includes('Facebook') ? '(Social)' : 
+                             filteredSummary.publisher.includes('LinkedIn') ? '(Professional)' :
+                             filteredSummary.publisher.includes('YouTube') ? '(Video)' :
+                             filteredSummary.publisher.includes('Bing') ? '(Search)' :
+                             filteredSummary.publisher.includes('Instagram') ? '(Social)' : '(Network)';
+              filteredSummary.publisher = `${filteredSummary.publisher} ${pubType}`;
             }
             break;
           case 'Buyer':
@@ -993,6 +1004,16 @@ export default function RingbaStyleReporting() {
               // Generate a clean buyer ID for display  
               const buyerId = summary.campaignId.replace('CAMP', 'BUY');
               filteredSummary.buyer = `[${buyerId}] ${filteredSummary.buyer}`;
+            } else if (tag.tag === 'Name') {
+              // Already shows buyer name, no change needed
+            } else if (tag.tag === 'Type') {
+              // Show buyer type based on industry
+              const buyerType = filteredSummary.buyer.includes('Insurance') || filteredSummary.buyer.includes('Life') || filteredSummary.buyer.includes('Medicare') ? '(Insurance)' :
+                               filteredSummary.buyer.includes('Loan') || filteredSummary.buyer.includes('Capital') || filteredSummary.buyer.includes('Credit') ? '(Financial)' :
+                               filteredSummary.buyer.includes('Solar') || filteredSummary.buyer.includes('HVAC') || filteredSummary.buyer.includes('Home') ? '(Home Services)' :
+                               filteredSummary.buyer.includes('Real Estate') || filteredSummary.buyer.includes('Keller') ? '(Real Estate)' :
+                               filteredSummary.buyer.includes('Health') || filteredSummary.buyer.includes('Weight') || filteredSummary.buyer.includes('Jenny') ? '(Health)' : '(Services)';
+              filteredSummary.buyer = `${filteredSummary.buyer} ${buyerType}`;
             }
             break;
           case 'Target':
@@ -1000,17 +1021,62 @@ export default function RingbaStyleReporting() {
               // Generate a clean target ID for display
               const targetId = summary.campaignId.replace('CAMP', 'TGT');
               filteredSummary.target = `[${targetId}] ${filteredSummary.target}`;
+            } else if (tag.tag === 'Name') {
+              // Already shows target name, no change needed
+            } else if (tag.tag === 'Type') {
+              // Show target category
+              const targetType = filteredSummary.target.includes('Auto') || filteredSummary.target.includes('Vehicle') ? '(Auto)' :
+                                filteredSummary.target.includes('Health') || filteredSummary.target.includes('Medical') || filteredSummary.target.includes('Life') || filteredSummary.target.includes('Medicare') ? '(Health)' :
+                                filteredSummary.target.includes('Home') || filteredSummary.target.includes('Refinance') || filteredSummary.target.includes('Property') || filteredSummary.target.includes('Real Estate') || filteredSummary.target.includes('HVAC') || filteredSummary.target.includes('Security') ? '(Home)' :
+                                filteredSummary.target.includes('Business') || filteredSummary.target.includes('Credit') || filteredSummary.target.includes('Debt') || filteredSummary.target.includes('Tax') ? '(Finance)' :
+                                filteredSummary.target.includes('Solar') || filteredSummary.target.includes('Energy') ? '(Energy)' : '(General)';
+              filteredSummary.target = `${filteredSummary.target} ${targetType}`;
             }
             break;
           case 'DialedNumber':
-            if (tag.tag === 'Original' || tag.tag === 'Formatted') {
-              // Already shows dialed numbers, no change needed
+            if (tag.tag === 'Original') {
+              // Show original format without formatting
+              filteredSummary.dialedNumbers = summary.dialedNumbers.map(num => num.replace(/[^\d]/g, ''));
+            } else if (tag.tag === 'Formatted') {
+              // Show formatted numbers with dashes
+              filteredSummary.dialedNumbers = summary.dialedNumbers.map(num => {
+                const clean = num.replace(/[^\d]/g, '');
+                return `${clean.slice(0, 3)}-${clean.slice(3, 6)}-${clean.slice(6)}`;
+              });
+            }
+            break;
+          case 'NumberPool':
+            if (tag.tag === 'Name') {
+              // Already shows pool name, no change needed
+            } else if (tag.tag === 'Id') {
+              // Generate pool ID for display
+              const poolId = summary.campaignId.replace('CAMP', 'POOL');
+              filteredSummary.numberPool = `[${poolId}] ${filteredSummary.numberPool}`;
             }
             break;
           case 'Date':
             if (tag.tag === 'CallDate') {
               // Show more detailed date format
-              filteredSummary.lastCallDate = summary.lastCallDate;
+              const date = new Date(summary.lastCallDate);
+              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              const formattedDate = `${monthNames[date.getMonth()]} ${date.getDate()} ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
+              filteredSummary.lastCallDate = formattedDate;
+            } else if (tag.tag === 'TimeRange') {
+              // Show relative time
+              const now = Date.now();
+              const callTime = new Date(summary.lastCallDate).getTime();
+              const diffHours = Math.floor((now - callTime) / (1000 * 60 * 60));
+              filteredSummary.lastCallDate = `${diffHours}h ago`;
+            }
+            break;
+          case 'Duplicate':
+            if (tag.tag === 'Count') {
+              // Show duplicate count prominently
+              filteredSummary.duplicate = `${summary.duplicate} duplicates`;
+            } else if (tag.tag === 'Status') {
+              // Show duplicate status
+              const status = summary.duplicate > 10 ? 'High' : summary.duplicate > 5 ? 'Medium' : summary.duplicate > 0 ? 'Low' : 'None';
+              filteredSummary.duplicate = `${summary.duplicate} (${status})`;
             }
             break;
         }
