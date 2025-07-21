@@ -187,7 +187,6 @@ export const agents = pgTable("agents", {
 
 // Agent-Campaign assignments for skill-based routing
 export const agentCampaigns = pgTable("agent_campaigns", {
-  id: serial("id").primaryKey(),
   agentId: integer("agent_id").references(() => agents.id).notNull(),
   campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   priority: integer("priority").default(1).notNull(),
@@ -523,7 +522,6 @@ export const insertAgentSchema = createInsertSchema(agents).omit({
 });
 
 export const insertAgentCampaignSchema = createInsertSchema(agentCampaigns).omit({
-  id: true,
   createdAt: true,
 });
 
@@ -982,7 +980,7 @@ export const rtbRouters = pgTable("rtb_routers", {
 // Direct Campaign-RTB Target Assignment (replaces router assignments)
 export const campaignRtbTargets = pgTable("campaign_rtb_targets", {
   id: serial("id").primaryKey(),
-  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
+  campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   rtbTargetId: integer("rtb_target_id").references(() => rtbTargets.id).notNull(),
   
   // Assignment Configuration
@@ -1001,7 +999,7 @@ export const campaignRtbTargets = pgTable("campaign_rtb_targets", {
 export const rtbBidRequests = pgTable("rtb_bid_requests", {
   id: serial("id").primaryKey(),
   requestId: varchar("request_id", { length: 128 }).notNull().unique(),
-  campaignId: integer("campaign_id").references(() => campaigns.id).notNull(),
+  campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   rtbRouterId: integer("rtb_router_id").references(() => rtbRouters.id).notNull(),
   
   // Call Information
