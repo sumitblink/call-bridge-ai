@@ -2401,16 +2401,22 @@ function NodeConfigurationDialog({ node, onSave, onCancel }: {
                     <SelectValue placeholder="Choose a buyer" />
                   </SelectTrigger>
                   <SelectContent>
-                    {buyers.map((buyer) => (
-                      <SelectItem key={buyer.id} value={buyer.id.toString()}>
-                        <div className="flex items-center justify-between w-full">
-                          <span className="font-medium">{buyer.name}</span>
-                          <span className="text-sm text-muted-foreground ml-2">
-                            {buyer.phoneNumber || buyer.email}
-                          </span>
-                        </div>
+                    {buyers && buyers.length > 0 ? (
+                      buyers.map((buyer) => (
+                        <SelectItem key={buyer.id} value={buyer.id.toString()}>
+                          <div className="flex items-center justify-between w-full">
+                            <span className="font-medium">{buyer.name}</span>
+                            <span className="text-sm text-muted-foreground ml-2">
+                              {buyer.phoneNumber || buyer.email}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-buyers" disabled>
+                        No buyers available
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
               </div>
