@@ -364,7 +364,7 @@ export default function RingbaStyleReporting() {
   // Mock data for demonstration (rich data with realistic metrics)
   const mockCampaignSummaries: CampaignSummary[] = [
     {
-      campaignId: 'healthcare-2025',
+      campaignId: 'CAMP001',
       campaignName: 'Healthcare Insurance Lead Generation Campaign',
       publisher: 'Google Ads Premium',
       target: 'Insurance Qualified Leads',
@@ -396,7 +396,7 @@ export default function RingbaStyleReporting() {
       totalCost: 1934.75
     },
     {
-      campaignId: 'auto-insurance-2025',
+      campaignId: 'CAMP002',
       campaignName: 'Auto Insurance Leads - Facebook Campaign',
       publisher: 'Facebook Marketing Agency',
       target: 'Auto Insurance Buyers',
@@ -428,7 +428,7 @@ export default function RingbaStyleReporting() {
       totalCost: 1176.00
     },
     {
-      campaignId: 'mortgage-refinance',
+      campaignId: 'CAMP003',
       campaignName: 'Mortgage Refinance - LinkedIn Professional',
       publisher: 'LinkedIn Ads Professional',
       target: 'Homeowner Refinance Prospects',
@@ -460,7 +460,7 @@ export default function RingbaStyleReporting() {
       totalCost: 2912.00
     },
     {
-      campaignId: 'solar-energy-2025',
+      campaignId: 'CAMP004',
       campaignName: 'Solar Energy Installation Leads',
       publisher: 'YouTube Advertising Network',
       target: 'Solar Installation Qualified',
@@ -492,7 +492,7 @@ export default function RingbaStyleReporting() {
       totalCost: 4104.00
     },
     {
-      campaignId: 'life-insurance-2025',
+      campaignId: 'CAMP005',
       campaignName: 'Life Insurance Premium Leads',
       publisher: 'Google Ads Premium',
       target: 'Term Life Insurance',
@@ -524,7 +524,7 @@ export default function RingbaStyleReporting() {
       totalCost: 6164.00
     },
     {
-      campaignId: 'credit-repair-2025',
+      campaignId: 'CAMP006',
       campaignName: 'Credit Repair Services Campaign',
       publisher: 'Bing Ads Network',
       target: 'Credit Restoration Services',
@@ -556,7 +556,7 @@ export default function RingbaStyleReporting() {
       totalCost: 2419.76
     },
     {
-      campaignId: 'business-loans-2025',
+      campaignId: 'CAMP007',
       campaignName: 'Small Business Loan Campaign',
       publisher: 'Facebook Business Network',
       target: 'Small Business Funding',
@@ -588,7 +588,7 @@ export default function RingbaStyleReporting() {
       totalCost: 4752.58
     },
     {
-      campaignId: 'weight-loss-2025',
+      campaignId: 'CAMP008',
       campaignName: 'Weight Loss Program Leads',
       publisher: 'Instagram Marketing',
       target: 'Weight Management Programs',
@@ -620,7 +620,7 @@ export default function RingbaStyleReporting() {
       totalCost: 3197.04
     },
     {
-      campaignId: 'hvac-repair-2025',
+      campaignId: 'CAMP009',
       campaignName: 'HVAC Repair Services Lead Gen',
       publisher: 'Google Local Services',
       target: 'AC Repair Emergency',
@@ -652,7 +652,7 @@ export default function RingbaStyleReporting() {
       totalCost: 6238.61
     },
     {
-      campaignId: 'real-estate-2025',
+      campaignId: 'CAMP010',
       campaignName: 'Real Estate Investment Leads',
       publisher: 'YouTube Property Network',
       target: 'Investment Property Buyers',
@@ -684,7 +684,7 @@ export default function RingbaStyleReporting() {
       totalCost: 5358.36
     },
     {
-      campaignId: 'debt-consolidation-2025',
+      campaignId: 'CAMP011',
       campaignName: 'Debt Consolidation Services',
       publisher: 'LinkedIn Finance Network',
       target: 'Debt Relief Programs',
@@ -716,7 +716,7 @@ export default function RingbaStyleReporting() {
       totalCost: 4580.59
     },
     {
-      campaignId: 'medicare-supplement-2025',
+      campaignId: 'CAMP012',
       campaignName: 'Medicare Supplement Insurance',
       publisher: 'Facebook Senior Network',
       target: 'Medicare Plan Enrollment',
@@ -748,7 +748,7 @@ export default function RingbaStyleReporting() {
       totalCost: 8797.46
     },
     {
-      campaignId: 'home-security-2025',
+      campaignId: 'CAMP013',
       campaignName: 'Home Security System Installation',
       publisher: 'Google Smart Home Ads',
       target: 'Security System Installation',
@@ -780,7 +780,7 @@ export default function RingbaStyleReporting() {
       totalCost: 3975.23
     },
     {
-      campaignId: 'tax-relief-2025',
+      campaignId: 'CAMP014',
       campaignName: 'IRS Tax Relief Services',
       publisher: 'Bing Finance Ads',
       target: 'Tax Problem Resolution',
@@ -975,22 +975,31 @@ export default function RingbaStyleReporting() {
         switch (tag.category) {
           case 'Campaign':
             if (tag.tag === 'Id') {
-              // Show campaign ID in the campaign name for filtering
-              filteredSummary.campaignName = `${filteredSummary.campaignId} - ${filteredSummary.campaignName}`;
+              // Show campaign ID prominently in the campaign name for filtering
+              filteredSummary.campaignName = `[${filteredSummary.campaignId}] ${filteredSummary.campaignName}`;
             } else if (tag.tag === 'Name') {
               // Already shows campaign name, no change needed
             }
             break;
           case 'Publisher':
             if (tag.tag === 'Id') {
-              // Generate a publisher ID for display
-              filteredSummary.publisher = `PUB${Math.abs(summary.campaignId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 1000).toString().padStart(3, '0')} - ${filteredSummary.publisher}`;
+              // Generate a clean publisher ID for display
+              const pubId = summary.campaignId.replace('CAMP', 'PUB');
+              filteredSummary.publisher = `[${pubId}] ${filteredSummary.publisher}`;
             }
             break;
           case 'Buyer':
             if (tag.tag === 'Id') {
-              // Generate a buyer ID for display
-              filteredSummary.buyer = `BUY${Math.abs(summary.buyer.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 1000).toString().padStart(3, '0')} - ${filteredSummary.buyer}`;
+              // Generate a clean buyer ID for display  
+              const buyerId = summary.campaignId.replace('CAMP', 'BUY');
+              filteredSummary.buyer = `[${buyerId}] ${filteredSummary.buyer}`;
+            }
+            break;
+          case 'Target':
+            if (tag.tag === 'Id') {
+              // Generate a clean target ID for display
+              const targetId = summary.campaignId.replace('CAMP', 'TGT');
+              filteredSummary.target = `[${targetId}] ${filteredSummary.target}`;
             }
             break;
           case 'DialedNumber':
