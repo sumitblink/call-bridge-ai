@@ -322,6 +322,7 @@ export default function RingbaStyleReporting() {
   const [activeTab, setActiveTab] = useState("campaign");
   const [filterRules, setFilterRules] = useState<FilterRule[]>([]);
   const [showFilterDialog, setShowFilterDialog] = useState<string | null>(null);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     campaign: true,
     publisher: true,
@@ -1319,6 +1320,14 @@ export default function RingbaStyleReporting() {
       <div className="bg-gray-50 border-b px-4 py-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => setShowSidebar(!showSidebar)}
+              className="h-6 px-2 text-xs"
+            >
+              ☰
+            </Button>
             <span className="text-sm font-medium text-gray-700">Untitled Report</span>
             <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
               SAVE
@@ -1447,18 +1456,7 @@ export default function RingbaStyleReporting() {
           >
             Duplicate
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setActiveTab("tags");
-              setShowFilterDialog(showFilterDialog === "tags" ? null : "tags");
-            }}
-            className="h-7 px-2 text-xs font-medium"
-          >
-            Tags
-            <ChevronDown className="ml-1 h-3 w-3" />
-          </Button>
+
         </div>
 
         {/* Filter Dialog */}
@@ -1833,14 +1831,37 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }:
                             return <div className="text-center">{summary.duplicate}</div>;
                           case 'tags':
                             return (
-                              <div className="flex flex-wrap gap-1">
-                                {summary.tags.slice(0, 2).map((tag, i) => (
-                                  <Badge key={i} variant="secondary" className="text-xs px-1 py-0">{tag}</Badge>
-                                ))}
-                                {summary.tags.length > 2 && (
-                                  <Badge variant="outline" className="text-xs px-1 py-0">+{summary.tags.length - 2}</Badge>
-                                )}
-                              </div>
+                              <Select>
+                                <SelectTrigger className="h-6 text-xs border-none bg-transparent p-0 w-full">
+                                  <SelectValue placeholder="Search Breakdown Levels" className="text-xs text-gray-600" />
+                                  <ChevronDown className="h-3 w-3" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white border-gray-200">
+                                  {Object.entries({
+                                    "InboundNumber": ["Number", "Pool", "TrackingNumber", "Country", "State"],
+                                    "Date": ["CallDate", "CallTime", "Timezone", "DayOfWeek", "Month"],
+                                    "Time": ["StartTime", "EndTime", "Duration", "TimeOfDay", "BusinessHours"],
+                                    "User": ["UserId", "Username", "UserType", "Permissions", "LastLogin"],
+                                    "Publisher": ["Company", "Id", "Name", "SubId", "ReplacementNumber"],
+                                    "Campaign": ["Id", "Name", "TrackingId", "Status", "Type"],
+                                    "Geo": ["Country", "State", "City", "ZipCode", "Timezone"],
+                                    "CallLength": ["TotalDuration", "TalkTime", "RingTime", "HoldTime"],
+                                    "RTB": ["BidAmount", "Winner", "Participants", "AuctionId", "ResponseTime"],
+                                    "CallInfo": ["CallId", "Status", "Direction", "Quality", "Recording"]
+                                  }).slice(0, 10).map(([category, subcategories]) => (
+                                    <div key={category}>
+                                      <SelectItem value={category} className="text-xs font-medium">
+                                        {category}
+                                      </SelectItem>
+                                      {subcategories.slice(0, 3).map(sub => (
+                                        <SelectItem key={`${category}.${sub}`} value={`${category}.${sub}`} className="text-xs text-gray-600 pl-4">
+                                          {sub}
+                                        </SelectItem>
+                                      ))}
+                                    </div>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             );
                           case 'incoming':
                             return <div className="text-center font-medium">{summary.incoming}</div>;
