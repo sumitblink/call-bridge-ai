@@ -18,6 +18,7 @@ import CampaignPublishers from "@/components/campaign/CampaignPublishers";
 import CampaignAnalytics from "@/components/campaign/CampaignAnalytics";
 import { CampaignReadinessDashboard } from "@/components/campaign/CampaignReadinessDashboard";
 import { RTBTargetAssignment } from "@/components/campaign/RTBTargetAssignment";
+import UTMCodeManager from "@/components/campaign/UTMCodeManager";
 
 export default function CampaignDetail() {
   const { campaignId } = useParams();
