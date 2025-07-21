@@ -27,7 +27,7 @@ const rtbAssignmentSchema = z.object({
 type RTBAssignmentFormData = z.infer<typeof rtbAssignmentSchema>;
 
 interface RTBTargetAssignmentProps {
-  campaignId: number;
+  campaignId: string;
   campaignName: string;
   isRtbEnabled: boolean;
 }
@@ -40,12 +40,12 @@ export function RTBTargetAssignment({ campaignId, campaignName, isRtbEnabled }: 
   const queryClient = useQueryClient();
 
   // Fetch available RTB targets
-  const { data: rtbTargets = [], isLoading: isLoadingTargets } = useQuery({
+  const { data: rtbTargets = [], isLoading: isLoadingTargets } = useQuery<any[]>({
     queryKey: ['/api/rtb/targets'],
   });
 
   // Fetch current campaign RTB target assignments
-  const { data: currentAssignments = [], isLoading: isLoadingAssignments } = useQuery({
+  const { data: currentAssignments = [], isLoading: isLoadingAssignments } = useQuery<any[]>({
     queryKey: [`/api/campaigns/${campaignId}/rtb-targets`],
     enabled: isRtbEnabled,
   });
@@ -87,10 +87,13 @@ export function RTBTargetAssignment({ campaignId, campaignName, isRtbEnabled }: 
     // Load current assignments into the form state
     const assignmentMap: {[key: number]: {priority: number, active: boolean}} = {};
     currentAssignments.forEach((assignment: any) => {
-      assignmentMap[assignment.rtbTargetId] = {
-        priority: assignment.priority || 1,
-        active: assignment.isActive !== false,
-      };
+      const targetId = assignment.rtbTargetId || assignment.id;
+      if (targetId) {
+        assignmentMap[targetId] = {
+          priority: assignment.priority || 1,
+          active: assignment.isActive !== false,
+        };
+      }
     });
     setTargetAssignments(assignmentMap);
     setIsDialogOpen(true);
@@ -189,18 +192,18 @@ export function RTBTargetAssignment({ campaignId, campaignName, isRtbEnabled }: 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentAssignments.map((assignment: any) => {
-                  const target = rtbTargets.find((t: any) => t.id === assignment.rtbTargetId);
+                {currentAssignments.map((assignment: any, index: number) => {
+                  const target = rtbTargets.find((t: any) => t.id === (assignment.rtbTargetId || assignment.id));
                   return (
-                    <TableRow key={assignment.rtbTargetId}>
+                    <TableRow key={assignment.id || assignment.rtbTargetId || index}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{target?.name || `Target ${assignment.rtbTargetId}`}</div>
-                          <div className="text-sm text-muted-foreground">{target?.companyName || target?.endpointUrl}</div>
+                          <div className="font-medium">{assignment.name || target?.name || `Target ${assignment.rtbTargetId || assignment.id}`}</div>
+                          <div className="text-sm text-muted-foreground">{assignment.companyName || target?.companyName || assignment.endpointUrl || target?.endpointUrl}</div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">Priority {assignment.priority}</Badge>
+                        <Badge variant="outline">Priority {assignment.priority || 1}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge 
@@ -211,7 +214,8 @@ export function RTBTargetAssignment({ campaignId, campaignName, isRtbEnabled }: 
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {target ? `$${target.minBidAmount} - $${target.maxBidAmount}` : '-'}
+                        {assignment.minBidAmount && assignment.maxBidAmount ? `$${assignment.minBidAmount} - $${assignment.maxBidAmount}` : 
+                         target ? `$${target.minBidAmount} - $${target.maxBidAmount}` : '-'}
                       </TableCell>
                     </TableRow>
                   );
