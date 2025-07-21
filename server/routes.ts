@@ -347,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Call routing stats and testing endpoints
   app.get("/api/campaigns/:id/routing-stats", requireAuth, async (req: any, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const stats = await CallRouter.getRoutingStats(campaignId);
       res.json(stats);
     } catch (error) {
@@ -358,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/campaigns/:id/test-routing", requireAuth, async (req: any, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const testResults = await CallRouter.testRouting(campaignId);
       res.json({ campaignId, testResults });
     } catch (error) {
@@ -381,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/campaigns/:id', requireAuth, async (req: any, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = req.params.id;
       const userId = req.user?.id;
       const campaign = await storage.getCampaign(id);
       if (!campaign || campaign.userId !== userId) {
@@ -424,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/campaigns/:id', requireAuth, async (req: any, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = req.params.id;
       const userId = req.user?.id;
       
       // Get existing campaign to check current RTB status and ownership
@@ -454,7 +454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/campaigns/:id', requireAuth, async (req: any, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = req.params.id;
       const userId = req.user?.id;
       
       // Check if campaign exists and belongs to user
@@ -477,7 +477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/campaigns/:id', requireAuth, async (req: any, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = req.params.id;
       const userId = req.user?.id;
       
       // Check if campaign exists and belongs to user
@@ -535,7 +535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Campaign-Buyer relationships
   app.get('/api/campaigns/:id/buyers', requireAuth, async (req: any, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = req.params.id; // UUID string, no parsing needed
       const userId = req.user?.id;
       
       // Check if campaign exists and belongs to user
@@ -554,7 +554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/campaigns/:id/buyers', requireAuth, async (req: any, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id; // UUID string, no parsing needed
       const userId = req.user?.id;
       const { buyerId, priority = 1 } = req.body;
       
@@ -620,7 +620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Campaign-Publisher relationships
   app.get('/api/campaigns/:id/publishers', async (req, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const publishers = await storage.getCampaignPublishers(campaignId);
       res.json(publishers);
     } catch (error) {
@@ -631,7 +631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/campaigns/:id/publishers', async (req, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const { publisherId, customPayout } = req.body;
       
       const assignment = await storage.addPublisherToCampaign(
@@ -3310,7 +3310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Twilio Trunk Management API Routes
   app.post('/api/campaigns/:id/trunk/create', requireAuth, async (req, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const { friendlyName, domainName, secure, cnamLookupEnabled } = req.body;
 
       const trunkConfig = await TwilioTrunkService.createTrunk(campaignId, {
@@ -3337,7 +3337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Number Provisioning API Routes
   app.post('/api/campaigns/:id/provision-numbers', requireAuth, async (req, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const { quantity = 10, areaCode, numberType = 'local' } = req.body;
 
       const config = {
@@ -3446,7 +3446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/campaigns/:id/numbers', requireAuth, async (req, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const numbers = await storage.getCampaignByPhoneNumber(campaignId.toString());
       
       res.json({
@@ -3520,7 +3520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/campaigns/:id/trunk/provision-numbers', requireAuth, async (req, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const { trunkSid, count = 10, areaCode } = req.body;
 
       if (!trunkSid) {
@@ -3551,7 +3551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/campaigns/:id/assign-tracking-number', async (req, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const { sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, ipAddress, userAgent, referrer } = req.body;
 
       if (!sessionId) {
@@ -3612,7 +3612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/campaigns/:id/pool-stats', requireAuth, async (req, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const stats = TwilioTrunkService.getPoolStats(campaignId);
 
       if (!stats) {
@@ -3646,7 +3646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/campaigns/:id/release-number', async (req, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const { sessionId } = req.body;
 
       if (!sessionId) {
@@ -3714,7 +3714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // JavaScript SDK for tracking number assignment
   app.get('/api/campaigns/:id/tracking-sdk.js', async (req, res) => {
     try {
-      const campaignId = parseInt(req.params.id);
+      const campaignId = req.params.id;
       const campaign = await storage.getCampaign(campaignId);
       
       if (!campaign) {
