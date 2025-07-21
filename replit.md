@@ -113,6 +113,19 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 21, 2025: **SETTINGS PAGE REMOVED** - Eliminated settings page per user request for cleaner system navigation
+  - **File Cleanup**: Removed client/src/pages/settings.tsx completely
+  - **Navigation Update**: Removed settings link from sidebar navigation menu
+  - **Route Cleanup**: Removed /settings route from App.tsx routing configuration
+  - **Import Cleanup**: Removed Settings icon import and all references to settings functionality
+  - **User Experience**: Simplified navigation with focus on core business functions
+- July 21, 2025: **BUYER DROPDOWN UX ENHANCEMENT COMPLETE** - Successfully replaced manual buyer ID inputs with user-friendly dropdown selections
+  - **Call Flow Editor Enhanced**: Replaced buyer ID text input with dropdown showing buyer names and contact info
+  - **Campaign Buyer Assignment**: Enhanced existing dropdown with informative tooltips explaining routing priority
+  - **Professional Interface**: Shows buyer names with phone numbers/emails for easy identification
+  - **Error Handling**: Added proper null checking and "No buyers available" fallback state
+  - **Component Architecture**: Fixed prop passing between parent CallFlowEditor and NodeConfigurationDialog components
+  - **User-Friendly Design**: Users no longer need to memorize numeric buyer IDs for call routing configuration
 - July 21, 2025: **UUID CAMPAIGN IDS IMPLEMENTED** - Successfully migrated campaign system from integer IDs to secure UUID identifiers
   - **Enhanced Security**: Prevents ID enumeration attacks and improves system security posture
   - **UUID Primary Keys**: Campaigns now use cryptographically secure 36-character UUID identifiers

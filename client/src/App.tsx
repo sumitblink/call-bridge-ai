@@ -27,7 +27,7 @@ import AdvancedAnalyticsPage from "@/pages/advanced-analytics";
 import UsefulAnalytics from "@/pages/useful-analytics";
 import RingbaStyleAnalytics from "@/pages/ringba-style-analytics";
 
-import Settings from "@/pages/settings";
+
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -73,7 +73,7 @@ function Router() {
           <Route path="/ringba-analytics" component={RingbaStyleAnalytics} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/help" component={Feedback} />
-          <Route path="/settings" component={Settings} />
+
           <Route component={NotFound} />
         </>
       )}
