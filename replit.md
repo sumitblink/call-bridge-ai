@@ -113,6 +113,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 20, 2025: **CAMPAIGN URL BUILDER WITH PERSISTENCE** - Added professional URL builder to each campaign with form data persistence
+  - **Campaign URL Builder**: Professional interface for generating UTM tracking URLs with dropdown selectors and quick presets
+  - **Form Data Persistence**: Automatically saves and restores form data using localStorage for seamless user experience
+  - **Smart Presets**: Quick buttons for Google Ads, Facebook, Instagram, LinkedIn, Email, YouTube with proper UTM combinations
+  - **Copy-to-Clipboard**: One-click copying of generated tracking URLs for immediate use in marketing campaigns
+  - **Campaign Context**: Auto-populates campaign names and retains form data when switching between campaigns
+  - **Professional UX**: Matches enterprise call tracking platforms with comprehensive usage instructions and validation
 - July 20, 2025: **RINGBA-STYLE UTM VALIDATION COMPLETE** - Implemented intelligent UTM parameter validation to prevent garbage data while maintaining user-friendly tracking
   - **Smart Garbage Filtering**: Blocks obvious spam like "huihui", "test", "spam" while allowing legitimate campaign names
   - **Auto-Correction**: Invalid medium parameters automatically corrected to "referral" instead of blocking request

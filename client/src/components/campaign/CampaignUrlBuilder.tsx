@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,8 @@ interface CampaignUrlBuilderProps {
   campaignName: string;
 }
 
+const STORAGE_KEY = 'campaign_url_builder_data';
+
 export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderProps) {
   const [baseUrl, setBaseUrl] = useState('https://your-website.com');
   const [utmSource, setUtmSource] = useState('');
@@ -19,6 +21,46 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
   const [utmContent, setUtmContent] = useState('');
   const [utmTerm, setUtmTerm] = useState('');
   const { toast } = useToast();
+
+  // Load saved data from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        setBaseUrl(parsed.baseUrl || 'https://your-website.com');
+        setUtmSource(parsed.utmSource || '');
+        setUtmMedium(parsed.utmMedium || '');
+        setUtmContent(parsed.utmContent || '');
+        setUtmTerm(parsed.utmTerm || '');
+        // Only restore campaign name if it matches current campaign
+        if (parsed.utmCampaign && parsed.campaignContext === campaignName) {
+          setUtmCampaign(parsed.utmCampaign);
+        }
+      }
+    } catch (error) {
+      console.log('Failed to load URL builder data from localStorage');
+    }
+  }, [campaignName]);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const dataToSave = {
+      baseUrl,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmContent,
+      utmTerm,
+      campaignContext: campaignName
+    };
+    
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    } catch (error) {
+      console.log('Failed to save URL builder data to localStorage');
+    }
+  }, [baseUrl, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, campaignName]);
 
   const generateUrl = () => {
     const params = new URLSearchParams();
@@ -212,6 +254,7 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
             <li>3. Customize the campaign name and content as needed</li>
             <li>4. Copy the generated URL and use it in your marketing campaigns</li>
             <li>5. All clicks on this URL will be tracked with proper UTM parameters</li>
+            <li>6. Your form data is automatically saved and will persist across page reloads</li>
           </ol>
         </div>
       </CardContent>
