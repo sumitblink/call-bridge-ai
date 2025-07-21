@@ -1831,37 +1831,14 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }:
                             return <div className="text-center">{summary.duplicate}</div>;
                           case 'tags':
                             return (
-                              <Select>
-                                <SelectTrigger className="h-6 text-xs border-none bg-transparent p-0 w-full">
-                                  <SelectValue placeholder="Search Breakdown Levels" className="text-xs text-gray-600" />
-                                  <ChevronDown className="h-3 w-3" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-white border-gray-200">
-                                  {Object.entries({
-                                    "InboundNumber": ["Number", "Pool", "TrackingNumber", "Country", "State"],
-                                    "Date": ["CallDate", "CallTime", "Timezone", "DayOfWeek", "Month"],
-                                    "Time": ["StartTime", "EndTime", "Duration", "TimeOfDay", "BusinessHours"],
-                                    "User": ["UserId", "Username", "UserType", "Permissions", "LastLogin"],
-                                    "Publisher": ["Company", "Id", "Name", "SubId", "ReplacementNumber"],
-                                    "Campaign": ["Id", "Name", "TrackingId", "Status", "Type"],
-                                    "Geo": ["Country", "State", "City", "ZipCode", "Timezone"],
-                                    "CallLength": ["TotalDuration", "TalkTime", "RingTime", "HoldTime"],
-                                    "RTB": ["BidAmount", "Winner", "Participants", "AuctionId", "ResponseTime"],
-                                    "CallInfo": ["CallId", "Status", "Direction", "Quality", "Recording"]
-                                  }).slice(0, 10).map(([category, subcategories]) => (
-                                    <div key={category}>
-                                      <SelectItem value={category} className="text-xs font-medium">
-                                        {category}
-                                      </SelectItem>
-                                      {subcategories.slice(0, 3).map(sub => (
-                                        <SelectItem key={`${category}.${sub}`} value={`${category}.${sub}`} className="text-xs text-gray-600 pl-4">
-                                          {sub}
-                                        </SelectItem>
-                                      ))}
-                                    </div>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-6 px-2 text-xs border-gray-300 text-gray-600 hover:bg-gray-50"
+                              >
+                                Search Breakdown Levels
+                                <ChevronDown className="ml-1 h-3 w-3" />
+                              </Button>
                             );
                           case 'incoming':
                             return <div className="text-center font-medium">{summary.incoming}</div>;
