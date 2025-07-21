@@ -287,6 +287,32 @@ export default function Auth() {
                     </Button>
                   </form>
 
+                  {/* Demo Auto-Login Button */}
+                  <Button
+                    variant="outline"
+                    className="w-full h-12 border-2 border-dashed border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-700 bg-gray-50 hover:bg-gray-100"
+                    disabled={loginMutation.isPending}
+                    onClick={() => {
+                      // Fill in demo credentials
+                      const emailInput = document.getElementById("email") as HTMLInputElement;
+                      const passwordInput = document.getElementById("password") as HTMLInputElement;
+                      
+                      if (emailInput && passwordInput) {
+                        emailInput.value = "sumit@blinkdigital.in";
+                        passwordInput.value = "Demo1234";
+                        
+                        // Auto-submit the form
+                        loginMutation.mutate({ 
+                          email: "sumit@blinkdigital.in", 
+                          password: "Demo1234" 
+                        });
+                      }
+                    }}
+                  >
+                    {loginMutation.isPending ? "Signing in..." : "Demo Auto-Login"}
+                    <Zap className="ml-2 h-4 w-4" />
+                  </Button>
+
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                       <Separator className="w-full" />
