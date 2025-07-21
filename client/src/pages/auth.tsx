@@ -299,12 +299,12 @@ export default function Auth() {
                       
                       if (emailInput && passwordInput) {
                         emailInput.value = "sumit@blinkdigital.in";
-                        passwordInput.value = "Demo1234";
+                        passwordInput.value = "demo1234";
                         
                         // Auto-submit the form
                         loginMutation.mutate({ 
                           email: "sumit@blinkdigital.in", 
-                          password: "Demo1234" 
+                          password: "demo1234" 
                         });
                       }
                     }}
