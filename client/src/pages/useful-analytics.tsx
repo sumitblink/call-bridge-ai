@@ -20,10 +20,11 @@ const COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'];
 export default function UsefulAnalytics() {
   const [timeRange, setTimeRange] = useState('7d');
 
-  // Fetch real visitor session data
-  const { data: sessionData, isLoading } = useQuery({
+  // Fetch real visitor session data with auto-refresh
+  const { data: sessionData, isLoading, refetch } = useQuery({
     queryKey: ['/api/tracking/live-sessions'],
-    staleTime: 30000,
+    staleTime: 5000, // Refresh every 5 seconds
+    refetchInterval: 10000, // Auto-refetch every 10 seconds
   });
 
   const sessions = sessionData?.sessions || [];
@@ -364,6 +365,33 @@ export default function UsefulAnalytics() {
             </CardContent>
           </Card>
         )}
+
+        {/* Refresh Controls */}
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Activity className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="font-medium">Data Status</p>
+                  <p className="text-sm text-muted-foreground">
+                    {isLoading ? 'Loading analytics data...' : 
+                     sessions.length > 0 ? `${sessions.length} tracking sessions found` : 
+                     'No tracking data available'}
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => refetch()} 
+                variant="outline" 
+                size="sm"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Loading...' : 'Refresh Data'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Status - Only show when sessions exist */}
         {sessions.length > 0 && (
