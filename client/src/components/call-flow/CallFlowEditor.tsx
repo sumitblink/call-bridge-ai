@@ -12,7 +12,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { CallFlow, Campaign } from '@shared/schema';
+import { CallFlow, Campaign, Buyer } from '@shared/schema';
+import { useQuery } from '@tanstack/react-query';
 
 interface CallFlowEditorProps {
   flow: CallFlow | null;
@@ -44,6 +45,11 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
   const [name, setName] = useState(flow?.name || '');
   const [description, setDescription] = useState(flow?.description || '');
   const [campaignId, setCampaignId] = useState(flow?.campaignId?.toString() || '');
+
+  // Fetch buyers for dropdown selection
+  const { data: buyers = [] } = useQuery<Buyer[]>({
+    queryKey: ["/api/buyers"],
+  });
   const [nodes, setNodes] = useState<FlowNode[]>([
     {
       id: 'start',
@@ -2373,14 +2379,40 @@ function NodeConfigurationDialog({ node, onSave, onCancel }: {
             
             {config.actionType === 'route' && config.destination === 'buyer' && (
               <div>
-                <Label htmlFor="buyerId">Buyer ID</Label>
-                <Input
-                  id="buyerId"
-                  type="number"
-                  value={config.buyerId || ''}
-                  onChange={(e) => updateConfig('buyerId', parseInt(e.target.value))}
-                  placeholder="Enter buyer ID"
-                />
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="buyerId">Select Buyer</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Choose the buyer to route calls to<br/>
+                          Displays buyer name and phone number</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Select 
+                  value={config.buyerId?.toString() || ''} 
+                  onValueChange={(value) => updateConfig('buyerId', parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a buyer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {buyers.map((buyer) => (
+                      <SelectItem key={buyer.id} value={buyer.id.toString()}>
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-medium">{buyer.name}</span>
+                          <span className="text-sm text-muted-foreground ml-2">
+                            {buyer.phoneNumber || buyer.email}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
             

@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Trash2, Settings, Phone, DollarSign, Users } from "lucide-react";
+import { Plus, Trash2, Settings, Phone, DollarSign, Users, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CampaignBuyersProps {
   campaignId: number;
@@ -135,7 +136,20 @@ export default function CampaignBuyers({ campaignId }: CampaignBuyersProps) {
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="buyer">Select Buyer</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="buyer">Select Buyer</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Choose a buyer to assign to this campaign<br/>
+                          Each buyer has routing priority and capacity limits</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Select value={selectedBuyerId} onValueChange={setSelectedBuyerId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a buyer" />
@@ -151,7 +165,20 @@ export default function CampaignBuyers({ campaignId }: CampaignBuyersProps) {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Call routing priority (1=highest, 10=lowest)<br/>
+                          Higher priority buyers receive calls first</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Input
                   id="priority"
                   type="number"
