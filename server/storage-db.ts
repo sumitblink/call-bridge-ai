@@ -12,7 +12,7 @@ import {
   trackingPixels,
   phoneNumbers,
   publishers,
-  publisherCampaigns,
+  campaignPublishers,
   numberPools,
   numberPoolAssignments,
   campaignPoolAssignments,

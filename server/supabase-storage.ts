@@ -14,7 +14,7 @@ import {
   apiAuthentications,
   platformIntegrations,
   publishers,
-  publisherCampaigns,
+  campaignPublishers,
   phoneNumbers,
   numberPools,
   numberPoolAssignments,

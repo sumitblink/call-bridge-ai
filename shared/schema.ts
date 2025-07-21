@@ -119,22 +119,73 @@ export const calls = pgTable("calls", {
   id: serial("id").primaryKey(),
   campaignId: uuid("campaign_id").references(() => campaigns.id),
   buyerId: integer("buyer_id").references(() => buyers.id),
+  publisherId: integer("publisher_id").references(() => publishers.id), // Publisher/affiliate who generated the call
   callSid: varchar("call_sid", { length: 100 }),
   fromNumber: varchar("from_number", { length: 20 }).notNull(),
   toNumber: varchar("to_number", { length: 20 }).notNull(),
+  dialedNumber: varchar("dialed_number", { length: 20 }), // The number that was actually dialed (from pool)
+  numberPoolId: integer("number_pool_id").references(() => numberPools.id), // Pool used for this call
+  phoneNumberId: integer("phone_number_id").references(() => phoneNumbers.id), // Specific number from pool
+  
+  // Call Details & Timing
   duration: integer("duration").default(0).notNull(),
+  ringTime: integer("ring_time").default(0), // seconds before answered
+  talkTime: integer("talk_time").default(0), // actual conversation time
+  holdTime: integer("hold_time").default(0), // time on hold
   status: varchar("status", { length: 50 }).notNull(), // ringing, in_progress, completed, failed, busy, no_answer
-  callQuality: varchar("call_quality", { length: 20 }), // good, poor, excellent
+  disposition: varchar("disposition", { length: 50 }), // connected, no_answer, busy, failed, voicemail
+  hangupCause: varchar("hangup_cause", { length: 50 }), // caller_hangup, callee_hangup, timeout, error
+  
+  // Quality & Performance
+  callQuality: varchar("call_quality", { length: 20 }), // excellent, good, fair, poor
+  connectionTime: integer("connection_time"), // milliseconds to connect
+  audioQuality: varchar("audio_quality", { length: 20 }), // excellent, good, poor
+  isDuplicate: boolean("is_duplicate").default(false), // duplicate call detection
+  duplicateOfCallId: integer("duplicate_of_call_id").references(() => calls.id),
+  
+  // Financial Tracking
+  cost: decimal("cost", { precision: 10, scale: 4 }).default("0.0000"), // Actual cost (Twilio charges)
+  payout: decimal("payout", { precision: 10, scale: 4 }).default("0.0000"), // Amount paid to publisher
+  revenue: decimal("revenue", { precision: 10, scale: 4 }).default("0.0000"), // Revenue from buyer
+  profit: decimal("profit", { precision: 10, scale: 4 }).default("0.0000"), // revenue - payout - cost
+  margin: decimal("margin", { precision: 5, scale: 2 }).default("0.00"), // profit margin percentage
+  
+  // Attribution & Tracking
+  tags: text("tags").array(), // Tags from the phone number used
+  utmSource: varchar("utm_source", { length: 255 }),
+  utmMedium: varchar("utm_medium", { length: 255 }),
+  utmCampaign: varchar("utm_campaign", { length: 255 }),
+  utmContent: varchar("utm_content", { length: 255 }),
+  utmTerm: varchar("utm_term", { length: 255 }),
+  referrer: text("referrer"),
+  landingPage: text("landing_page"),
+  
+  // Geographic & Technical
+  geoLocation: varchar("geo_location", { length: 100 }),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 50 }),
+  country: varchar("country", { length: 10 }),
+  zipCode: varchar("zip_code", { length: 20 }),
+  userAgent: text("user_agent"),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  deviceType: varchar("device_type", { length: 50 }), // mobile, desktop, tablet
+  
+  // Recording & Transcription
   recordingUrl: varchar("recording_url", { length: 512 }),
   recordingSid: varchar("recording_sid", { length: 100 }),
   recordingStatus: varchar("recording_status", { length: 50 }), // processing, completed, failed
   recordingDuration: integer("recording_duration"), // in seconds
   transcription: text("transcription"),
   transcriptionStatus: varchar("transcription_status", { length: 50 }), // pending, completed, failed
-  cost: decimal("cost", { precision: 10, scale: 4 }).default("0.0000"),
-  revenue: decimal("revenue", { precision: 10, scale: 4 }).default("0.0000"),
-  geoLocation: varchar("geo_location", { length: 100 }),
-  userAgent: text("user_agent"),
+  transcriptionConfidence: decimal("transcription_confidence", { precision: 3, scale: 2 }), // 0.00 to 1.00
+  
+  // Conversion & Revenue Tracking
+  isConverted: boolean("is_converted").default(false),
+  conversionType: varchar("conversion_type", { length: 50 }), // sale, lead, appointment, quote
+  conversionValue: decimal("conversion_value", { precision: 10, scale: 2 }),
+  conversionTimestamp: timestamp("conversion_timestamp"),
+  
+  // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -453,6 +504,100 @@ export const campaignPoolAssignments = pgTable("campaign_pool_assignments", {
   assignedAt: timestamp("assigned_at").defaultNow().notNull(),
 });
 
+// Phone Number Tags - Ringba-style tagging for pool numbers
+export const phoneNumberTags = pgTable("phone_number_tags", {
+  id: serial("id").primaryKey(),
+  phoneNumberId: integer("phone_number_id").references(() => phoneNumbers.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  
+  // Tag Information
+  tagName: varchar("tag_name", { length: 100 }).notNull(), // e.g., "google-ads", "facebook", "affiliate-123"
+  tagCategory: varchar("tag_category", { length: 50 }), // traffic-source, publisher, campaign-type, geographic, quality
+  tagValue: varchar("tag_value", { length: 255 }), // Additional value for the tag
+  
+  // Attribution Settings
+  priority: integer("priority").default(1), // Priority for this tag in attribution
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // Performance Tracking
+  callCount: integer("call_count").default(0),
+  totalRevenue: decimal("total_revenue", { precision: 10, scale: 2 }).default("0.00"),
+  conversionRate: decimal("conversion_rate", { precision: 5, scale: 2 }).default("0.00"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  // Ensure unique tag per phone number
+  index("unique_phone_tag").on(table.phoneNumberId, table.tagName),
+]);
+
+// Publishers - For affiliate/traffic source management
+export const publishers = pgTable("publishers", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: varchar("name", { length: 256 }).notNull(),
+  email: varchar("email", { length: 256 }),
+  phoneNumber: varchar("phone_number", { length: 20 }),
+  company: varchar("company", { length: 256 }),
+  
+  // Publisher Type & Classification
+  publisherType: varchar("publisher_type", { length: 50 }).default("affiliate"), // affiliate, network, direct, internal
+  trafficSource: varchar("traffic_source", { length: 100 }), // google-ads, facebook, bing, organic, email
+  quality: varchar("quality", { length: 20 }).default("standard"), // premium, standard, test, blocked
+  
+  // Financial Settings
+  defaultPayout: decimal("default_payout", { precision: 10, scale: 2 }).default("0.00"),
+  payoutModel: varchar("payout_model", { length: 50 }).default("per_call"), // per_call, per_minute, cpa, cpl, revenue_share
+  currency: varchar("currency", { length: 10 }).default("USD"),
+  
+  // Performance Tracking
+  callsGenerated: integer("calls_generated").default(0),
+  conversions: integer("conversions").default(0),
+  totalPayout: decimal("total_payout", { precision: 10, scale: 2 }).default("0.00"),
+  avgCallDuration: integer("avg_call_duration").default(0),
+  conversionRate: decimal("conversion_rate", { precision: 5, scale: 2 }).default("0.00"),
+  
+  // Contact & Integration
+  postbackUrl: varchar("postback_url", { length: 512 }), // For conversion tracking
+  webhookUrl: varchar("webhook_url", { length: 512 }), // For real-time notifications
+  apiKey: varchar("api_key", { length: 100 }), // For API access
+  
+  // Status & Controls
+  status: varchar("status", { length: 20 }).default("active"), // active, paused, blocked, pending
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Campaign Publisher Assignments - Link publishers to campaigns with specific payouts
+export const campaignPublishers = pgTable("campaign_publishers", {
+  id: serial("id").primaryKey(),
+  campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
+  publisherId: integer("publisher_id").references(() => publishers.id).notNull(),
+  
+  // Payout Configuration
+  payout: decimal("payout", { precision: 10, scale: 2 }).notNull(),
+  payoutModel: varchar("payout_model", { length: 50 }).default("per_call"),
+  
+  // Caps & Limits
+  dailyCap: integer("daily_cap").default(100),
+  monthlyCap: integer("monthly_cap").default(3000),
+  
+  // Performance Requirements
+  minCallDuration: integer("min_call_duration").default(30), // seconds
+  maxDuplicateRate: decimal("max_duplicate_rate", { precision: 5, scale: 2 }).default("10.00"), // percentage
+  
+  // Status & Tracking
+  isActive: boolean("is_active").default(true).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.campaignId, table.publisherId] })
+}));
+
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
@@ -599,6 +744,51 @@ export type InsertNumberPoolAssignment = z.infer<typeof insertNumberPoolAssignme
 export type CampaignPoolAssignment = typeof campaignPoolAssignments.$inferSelect;
 export type InsertCampaignPoolAssignment = z.infer<typeof insertCampaignPoolAssignmentSchema>;
 
+// New table schemas
+export const insertPhoneNumberTagSchema = createInsertSchema(phoneNumberTags).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  userId: z.number().optional(),
+  tagName: z.string().min(1, "Tag name is required"),
+  tagCategory: z.enum(["traffic-source", "publisher", "campaign-type", "geographic", "quality"]).optional(),
+  priority: z.number().min(1).max(10).optional(),
+});
+
+export const insertPublisherSchema = createInsertSchema(publishers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  userId: z.number().optional(),
+  name: z.string().min(1, "Publisher name is required"),
+  email: z.string().email("Invalid email format").optional(),
+  publisherType: z.enum(["affiliate", "network", "direct", "internal"]).optional(),
+  quality: z.enum(["premium", "standard", "test", "blocked"]).optional(),
+  payoutModel: z.enum(["per_call", "per_minute", "cpa", "cpl", "revenue_share"]).optional(),
+  status: z.enum(["active", "paused", "blocked", "pending"]).optional(),
+});
+
+export const insertCampaignPublisherSchema = createInsertSchema(campaignPublishers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  payout: z.number().min(0, "Payout must be positive"),
+  payoutModel: z.enum(["per_call", "per_minute", "cpa", "cpl"]).optional(),
+});
+
+// Type definitions
+export type PhoneNumberTag = typeof phoneNumberTags.$inferSelect;
+export type InsertPhoneNumberTag = z.infer<typeof insertPhoneNumberTagSchema>;
+
+export type Publisher = typeof publishers.$inferSelect;
+export type InsertPublisher = z.infer<typeof insertPublisherSchema>;
+
+export type CampaignPublisher = typeof campaignPublishers.$inferSelect;
+export type InsertCampaignPublisher = z.infer<typeof insertCampaignPublisherSchema>;
+
 export const insertPhoneNumberSchema = createInsertSchema(phoneNumbers).omit({
   id: true,
   createdAt: true,
@@ -642,36 +832,7 @@ export type InsertDniSession = z.infer<typeof insertDniSessionSchema>;
 export type DniSnippet = typeof dniSnippets.$inferSelect;
 export type InsertDniSnippet = z.infer<typeof insertDniSnippetSchema>;
 
-// Publishers (Traffic Sources) table
-export const publishers = pgTable('publishers', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  name: text('name').notNull(),
-  email: text('email').notNull(),
-  phone: text('phone'),
-  status: text('status').notNull().default('active'), // 'active', 'paused', 'suspended'
-  payoutType: text('payout_type').notNull().default('per_call'), // 'per_call', 'per_minute', 'revenue_share'
-  payoutAmount: decimal('payout_amount', { precision: 10, scale: 2 }).notNull().default('0.00'),
-  minCallDuration: integer('min_call_duration').default(0), // seconds
-  allowedTargets: text('allowed_targets').array(), // campaign IDs they can send traffic to
-  enableTracking: boolean('enable_tracking').default(true), // simplified tracking toggle
-  trackingSettings: text('tracking_settings'), // custom tracking parameters as JSON string
-  customParameters: text('custom_parameters'), // custom JSON parameters for publisher integration
-  totalCalls: integer('total_calls').default(0),
-  totalPayout: decimal('total_payout', { precision: 10, scale: 2 }).default('0.00'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
-
-// Publisher-Campaign relations
-export const publisherCampaigns = pgTable('publisher_campaigns', {
-  id: serial('id').primaryKey(),
-  publisherId: integer('publisher_id').references(() => publishers.id).notNull(),
-  campaignId: uuid('campaign_id').references(() => campaigns.id).notNull(),
-  customPayout: decimal('custom_payout', { precision: 10, scale: 2 }), // override default payout for this campaign
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
-});
+// Removed duplicate publishers table - using the one defined above
 
 // Call Flow System Tables
 export const callFlows = pgTable("call_flows", {
@@ -1063,22 +1224,7 @@ export const rtbBidResponses = pgTable("rtb_bid_responses", {
   index("idx_rtb_responses_valid").on(table.isValid),
 ]);
 
-export const insertPublisherSchema = createInsertSchema(publishers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertPublisherCampaignSchema = createInsertSchema(publisherCampaigns).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type Publisher = typeof publishers.$inferSelect;
-export type InsertPublisher = z.infer<typeof insertPublisherSchema>;
-
-export type PublisherCampaign = typeof publisherCampaigns.$inferSelect;
-export type InsertPublisherCampaign = z.infer<typeof insertPublisherCampaignSchema>;
+// Removed duplicate - using the enhanced insertPublisherSchema defined earlier
 
 // RTB Insert Schemas and Types
 export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
@@ -1240,7 +1386,7 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
     references: [numberPools.id],
   }),
   callFlows: many(callFlows),
-  publisherCampaigns: many(publisherCampaigns),
+  campaignPublishers: many(campaignPublishers),
   dniSessions: many(dniSessions),
   visitorSessions: many(visitorSessions),
   rtbTargets: many(campaignRtbTargets),

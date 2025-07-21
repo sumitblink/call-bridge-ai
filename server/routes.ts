@@ -5572,6 +5572,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced Reporting API Routes
+  const phoneNumberTagsRouter = (await import('./api/phone-number-tags')).default;
+  app.use('/api/phone-number-tags', phoneNumberTagsRouter);
+  
+  const callsEnhancedRouter = (await import('./api/calls-enhanced')).default;
+  app.use('/api/calls/enhanced', callsEnhancedRouter);
+
   const httpServer = createServer(app);
   return httpServer;
 }

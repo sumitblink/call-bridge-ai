@@ -27,6 +27,7 @@ const reportingNavigation = [
   { name: "Live Tracking", href: "/tracking-dashboard", icon: Activity, current: false },
   { name: "Traffic Analytics", href: "/analytics", icon: BarChart3, current: false },
   { name: "Professional Analytics", href: "/ringba-analytics", icon: TrendingUp, current: false },
+  { name: "Enhanced Reporting", href: "/enhanced-reporting", icon: PhoneCall, current: false },
 ];
 
 export default function Sidebar() {

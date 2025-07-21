@@ -221,6 +221,16 @@ export interface IStorage {
     topSources: Array<{source: string; count: number}>;
     recentConversions: ConversionEvent[];
   }>;
+
+  // Enhanced Reporting Methods
+  getPhoneNumberTagsByUser(userId: number): Promise<any[]>;
+  getPhoneNumberTagById(tagId: number): Promise<any | undefined>;
+  createPhoneNumberTag(tag: any): Promise<any>;
+  updatePhoneNumberTag(tagId: number, tag: any): Promise<any>;
+  deletePhoneNumberTag(tagId: number): Promise<boolean>;
+  
+  getEnhancedCallsByUser(userId: number, filters?: any): Promise<any[]>;
+  getEnhancedCallById(callId: number, userId: number): Promise<any | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -233,6 +243,7 @@ export class MemStorage implements IStorage {
   private callLogs: Map<number, CallLog> = new Map();
   private publishers: Map<number, any> = new Map();
   private publisherCampaigns: Map<string, any> = new Map();
+  private phoneNumberTags: Map<number, any> = new Map();
   private currentUserId: number = 1;
   private currentCampaignId: number = 1;
   private currentBuyerId: number = 1;
@@ -240,6 +251,7 @@ export class MemStorage implements IStorage {
   private currentCallId: number = 1;
   private currentCallLogId: number = 1;
   private currentPublisherId: number = 1;
+  private currentTagId: number = 1;
 
   constructor() {
     this.initializeSampleData();
@@ -1385,6 +1397,135 @@ export class MemStorage implements IStorage {
       topSources,
       recentConversions
     };
+  }
+
+  // Enhanced Reporting Methods
+  async getPhoneNumberTagsByUser(userId: number): Promise<any[]> {
+    const tags: any[] = [];
+    for (const tag of this.phoneNumberTags.values()) {
+      if (tag.userId === userId) {
+        tags.push(tag);
+      }
+    }
+    return tags;
+  }
+
+  async getPhoneNumberTagById(tagId: number): Promise<any | undefined> {
+    return this.phoneNumberTags.get(tagId);
+  }
+
+  async createPhoneNumberTag(tag: any): Promise<any> {
+    const id = this.currentTagId++;
+    const newTag = {
+      id,
+      ...tag,
+      callCount: 0,
+      totalRevenue: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.phoneNumberTags.set(id, newTag);
+    return newTag;
+  }
+
+  async updatePhoneNumberTag(tagId: number, tag: any): Promise<any> {
+    const existing = this.phoneNumberTags.get(tagId);
+    if (!existing) return undefined;
+    
+    const updated = {
+      ...existing,
+      ...tag,
+      updatedAt: new Date()
+    };
+    this.phoneNumberTags.set(tagId, updated);
+    return updated;
+  }
+
+  async deletePhoneNumberTag(tagId: number): Promise<boolean> {
+    return this.phoneNumberTags.delete(tagId);
+  }
+
+  async getEnhancedCallsByUser(userId: number, filters?: any): Promise<any[]> {
+    const enhancedCalls: any[] = [];
+    
+    // Get user campaigns for filtering
+    const userCampaigns = await this.getCampaigns();
+    const userCampaignIds = userCampaigns
+      .filter(c => c.userId === userId.toString())
+      .map(c => c.id);
+
+    for (const call of this.calls.values()) {
+      // Filter by user campaigns
+      if (call.campaignId && !userCampaignIds.includes(call.campaignId)) {
+        continue;
+      }
+
+      // Apply date filters
+      if (filters?.startDate && call.createdAt < filters.startDate) continue;
+      if (filters?.endDate && call.createdAt > filters.endDate) continue;
+      
+      // Apply status filter
+      if (filters?.status && call.status !== filters.status) continue;
+      
+      // Apply campaign filter
+      if (filters?.campaignId && call.campaignId !== parseInt(filters.campaignId)) continue;
+      
+      // Apply minimum duration filter
+      if (filters?.minDuration && call.duration < filters.minDuration) continue;
+
+      // Get related entities
+      const campaign = await this.getCampaign(call.campaignId || 0);
+      const buyer = call.buyerId ? await this.getBuyer(call.buyerId) : undefined;
+
+      // Create enhanced call object with financial tracking
+      const enhancedCall = {
+        ...call,
+        campaign,
+        buyer,
+        // Enhanced financial data
+        revenue: parseFloat(call.revenue || '0'),
+        cost: parseFloat(call.cost || '0'),
+        profit: parseFloat(call.revenue || '0') - parseFloat(call.cost || '0'),
+        margin: parseFloat(call.revenue || '0') > 0 
+          ? ((parseFloat(call.revenue || '0') - parseFloat(call.cost || '0')) / parseFloat(call.revenue || '0')) * 100 
+          : 0,
+        
+        // Enhanced tracking data
+        tags: call.tags || [],
+        utmSource: call.utmSource || undefined,
+        utmMedium: call.utmMedium || undefined,
+        utmCampaign: call.utmCampaign || undefined,
+        city: call.city || undefined,
+        state: call.state || undefined,
+        
+        // Call quality data
+        callQuality: call.callQuality || undefined,
+        disposition: call.disposition || undefined,
+        talkTime: call.talkTime || call.duration,
+        ringTime: call.ringTime || 0,
+        connectionTime: call.connectionTime || 0,
+        audioQuality: call.audioQuality || undefined,
+        
+        // Technical details
+        ipAddress: call.ipAddress || undefined,
+        userAgent: call.userAgent || undefined,
+        referrer: call.referrer || undefined,
+        deviceType: call.deviceType || undefined,
+        transcription: call.transcription || undefined,
+      };
+
+      enhancedCalls.push(enhancedCall);
+    }
+
+    // Sort by creation date (newest first)
+    enhancedCalls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return enhancedCalls;
+  }
+
+  async getEnhancedCallById(callId: number, userId: number): Promise<any | undefined> {
+    const calls = await this.getEnhancedCallsByUser(userId);
+    return calls.find(call => call.id === callId);
   }
 }
 
