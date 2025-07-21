@@ -2207,7 +2207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const newNumber = await storage.createPhoneNumber({
           userId,
           phoneNumber: twilioNumber.phone_number,
-          friendlyName: twilioNumber.friendly_name || `Imported ${twilioNumber.phone_number}`,
+          friendlyName: twilioNumber.phone_number, // Use just the phone number as display name
           phoneNumberSid: twilioNumber.sid,
           accountSid: twilioNumber.account_sid,
           country: 'US', // Default to US, can be enhanced later
