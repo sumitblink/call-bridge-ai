@@ -3,11 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PhoneNumberTagsManager } from "@/components/reporting/PhoneNumberTagsManager";
 import { EnhancedCallDetails } from "@/components/reporting/EnhancedCallDetails";
 import { BarChart3, Phone, Tag, TrendingUp } from "lucide-react";
+import Layout from "@/components/Layout";
 
 export default function EnhancedReporting() {
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <Layout>
+      <div className="space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Enhanced Reporting</h1>
           <p className="text-gray-600">
@@ -86,6 +87,6 @@ export default function EnhancedReporting() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </Layout>
   );
 }
