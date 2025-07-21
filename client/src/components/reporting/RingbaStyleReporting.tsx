@@ -1709,15 +1709,17 @@ export default function RingbaStyleReporting() {
                         <div
                           key={subcategory}
                           onClick={() => {
-                            // Map category to table column
+                            // Map category to table column and corresponding tab
                             const columnMap: Record<string, string> = {
                               "Campaign": "campaign",
                               "Publisher": "publisher", 
                               "Target": "target",
                               "Buyer": "buyer",
-                              "DialedNumber": "dialed",
-                              "InboundNumber": "inbound",
+                              "DialedNumber": "dialedNumber",
+                              "NumberPool": "numberPool",
                               "Date": "date",
+                              "Duplicate": "duplicate",
+                              "InboundNumber": "inbound",
                               "Time": "time",
                               "CallInfo": "callinfo",
                               "RTB": "rtb",
@@ -1738,6 +1740,23 @@ export default function RingbaStyleReporting() {
                               if (exists) return prev;
                               return [...prev, newTag];
                             });
+                            
+                            // Auto-switch to the appropriate tab based on tag category
+                            const tabMap: Record<string, string> = {
+                              "Campaign": "campaign",
+                              "Publisher": "publisher",
+                              "Target": "target", 
+                              "Buyer": "buyer",
+                              "DialedNumber": "dialed",
+                              "NumberPool": "pool",
+                              "Date": "date",
+                              "Duplicate": "duplicate"
+                            };
+                            
+                            const targetTab = tabMap[category];
+                            if (targetTab) {
+                              setActiveTab(targetTab);
+                            }
                             
                             setShowFilterDialog(null);
                           }}
