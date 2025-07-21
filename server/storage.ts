@@ -1098,29 +1098,84 @@ export class MemStorage implements IStorage {
     return [];
   }
 
-  // RTB methods (placeholder for memory storage)
+  // RTB methods - In-memory storage implementation
+  private rtbTargets: any[] = [];
+  private rtbRouters: any[] = [];
+  private rtbBidRequests: any[] = [];
+  private rtbBidResponses: any[] = [];
+
   async getRtbTargets(userId?: number): Promise<any[]> {
-    return [];
+    if (userId) {
+      return this.rtbTargets.filter(target => target.userId === userId);
+    }
+    return this.rtbTargets;
+  }
+
+  async getRtbTarget(id: number, userId?: number): Promise<any | undefined> {
+    const target = this.rtbTargets.find(t => t.id === id);
+    if (target && userId && target.userId !== userId) {
+      return undefined;
+    }
+    return target;
+  }
+
+  async createRtbTarget(target: any): Promise<any> {
+    const newTarget = {
+      id: Date.now(),
+      ...target,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.rtbTargets.push(newTarget);
+    return newTarget;
+  }
+
+  async updateRtbTarget(id: number, target: any): Promise<any | undefined> {
+    const index = this.rtbTargets.findIndex(t => t.id === id);
+    if (index !== -1) {
+      this.rtbTargets[index] = {
+        ...this.rtbTargets[index],
+        ...target,
+        updatedAt: new Date()
+      };
+      return this.rtbTargets[index];
+    }
+    return undefined;
+  }
+
+  async deleteRtbTarget(id: number): Promise<boolean> {
+    const index = this.rtbTargets.findIndex(t => t.id === id);
+    if (index !== -1) {
+      this.rtbTargets.splice(index, 1);
+      return true;
+    }
+    return false;
   }
 
   async getRtbBidRequests(campaignId?: number): Promise<any[]> {
-    return [];
+    if (campaignId) {
+      return this.rtbBidRequests.filter(req => req.campaignId === campaignId);
+    }
+    return this.rtbBidRequests;
   }
 
   async getRtbBidRequest(requestId: string): Promise<any | undefined> {
-    return undefined;
+    return this.rtbBidRequests.find(req => req.requestId === requestId);
   }
 
   async getRtbBidResponses(requestId: string): Promise<any[]> {
-    return [];
+    return this.rtbBidResponses.filter(res => res.requestId === requestId);
   }
 
   async getRtbRouters(userId?: number): Promise<any[]> {
-    return [];
+    if (userId) {
+      return this.rtbRouters.filter(router => router.userId === userId);
+    }
+    return this.rtbRouters;
   }
 
   async getRtbRouter(id: number): Promise<any | undefined> {
-    return undefined;
+    return this.rtbRouters.find(router => router.id === id);
   }
 
   async getRtbRouterAssignments(routerId: number): Promise<any[]> {
