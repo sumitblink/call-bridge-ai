@@ -746,25 +746,25 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }:
     
     switch (tab) {
       case 'campaign':
-        return ['campaign', 'publisher', 'target', 'buyer', 'dialedNumber', 'numberPool', 'date', 'duplicate', 'tags', ...baseColumns];
+        return ['campaign', ...baseColumns];
       case 'publisher':
-        return ['publisher', 'date', 'tags', ...baseColumns];
+        return ['publisher', ...baseColumns];
       case 'target':
-        return ['target', 'date', 'tags', ...baseColumns];
+        return ['target', ...baseColumns];
       case 'buyer':
-        return ['buyer', 'date', 'tags', ...baseColumns];
+        return ['buyer', ...baseColumns];
       case 'dialed':
-        return ['dialedNumber', 'campaign', 'buyer', 'date', 'tags', ...baseColumns];
+        return ['dialedNumber', ...baseColumns];
       case 'pool':
-        return ['numberPool', 'campaign', 'buyer', 'date', 'tags', ...baseColumns];
+        return ['numberPool', ...baseColumns];
       case 'date':
-        return ['date', 'campaign', 'buyer', 'tags', ...baseColumns];
+        return ['date', ...baseColumns];
       case 'duplicate':
-        return ['campaign', 'duplicate', 'buyer', 'date', 'tags', ...baseColumns];
+        return ['duplicate', ...baseColumns];
       case 'tags':
-        return ['tags', 'campaign', 'buyer', 'date', ...baseColumns];
+        return ['tags', ...baseColumns];
       default:
-        return Object.keys(visibleColumns);
+        return ['campaign', 'publisher', 'target', 'buyer', 'dialedNumber', 'numberPool', 'date', 'duplicate', 'tags', ...baseColumns];
     }
   };
 
