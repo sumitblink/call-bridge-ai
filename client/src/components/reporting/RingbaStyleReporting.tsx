@@ -174,7 +174,7 @@ function FilterDialog({ field, onApply, onClose }: FilterDialogProps) {
           variant="outline" 
           size="sm" 
           onClick={onClose}
-          className="border-gray-600 text-white hover:bg-gray-700"
+          className="border-gray-500 text-gray-300 hover:bg-gray-600 hover:text-white"
         >
           Clear Filters
         </Button>
