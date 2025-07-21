@@ -829,6 +829,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Phone number webhook update endpoint
+  app.post('/api/phone-numbers/:phoneId/update-webhook', async (req, res) => {
+    try {
+      const { phoneId } = req.params;
+      const { poolId } = req.body;
+      
+      // Get phone number details
+      const phoneNumbers = await storage.getPhoneNumbers();
+      const phoneNumber = phoneNumbers.find(p => p.id === parseInt(phoneId));
+      
+      if (!phoneNumber) {
+        return res.status(404).json({ error: 'Phone number not found' });
+      }
+      
+      if (!poolId) {
+        return res.status(400).json({ error: 'Pool ID is required' });
+      }
+      
+      // Import and use TwilioWebhookService
+      const { TwilioWebhookService } = await import('./twilio-webhook-service');
+      
+      // Update the webhook for this specific phone number
+      const result = await TwilioWebhookService.updatePoolWebhooks(poolId, [phoneNumber]);
+      
+      if (result.success && result.updated.length > 0) {
+        res.json({ 
+          success: true, 
+          message: `Webhook updated for ${phoneNumber.phoneNumber}`,
+          details: result
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          error: 'Failed to update webhook',
+          details: result
+        });
+      }
+    } catch (error) {
+      console.error('Error updating phone number webhook:', error);
+      res.status(500).json({ error: 'Failed to update webhook' });
+    }
+  });
+
   // Pool-based webhook endpoints for Dynamic Number Insertion
   app.post('/api/webhooks/pool/:poolId/voice', async (req, res) => {
     try {

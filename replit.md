@@ -113,6 +113,11 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 21, 2025: **WEBHOOK ROUTING BUG FIXED** - Resolved critical "number not configured" error by updating Twilio webhook configuration
+  - **Root Cause**: Phone number +18569256411 was assigned to pool 1 in database but Twilio webhook still pointed to pool 25
+  - **Solution**: Updated Twilio phone number configuration to use correct pool 1 webhook endpoint (/api/webhooks/pool/1/voice)
+  - **Status**: Healthcare landing page DNI system now fully operational for both number display AND call routing
+  - **Verification**: Webhook URL successfully updated from pool 25 to pool 1, calls should now route properly
 - July 21, 2025: **DNI SYSTEM FULLY OPERATIONAL** - Fixed pool assignment and database user ID issues for complete phone number replacement functionality
   - **Pool Numbers Assigned**: Successfully assigned 5 phone numbers to FirstCampaignPool for Healthcare Campaign
   - **Database User ID Fixed**: Resolved foreign key constraint issues by using correct user ID (2) instead of hardcoded value (1)
