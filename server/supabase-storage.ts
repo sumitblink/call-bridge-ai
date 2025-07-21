@@ -1,4 +1,4 @@
-import { eq, desc, count, sql, and } from 'drizzle-orm';
+import { eq, desc, count, sql, and, isNull } from 'drizzle-orm';
 import { db } from './db';
 import { 
   campaigns, 
@@ -742,14 +742,23 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getUnassignedPhoneNumbers(userId?: number): Promise<any[]> {
-    const conditions = [eq(phoneNumbers.campaignId, null)];
+    // Get phone numbers that are not assigned to campaigns and not assigned to pools
+    const conditions = [
+      isNull(phoneNumbers.campaignId),
+      isNull(numberPoolAssignments.phoneNumberId) // Not assigned to any pool
+    ];
     
     if (userId) {
       conditions.push(eq(phoneNumbers.userId, userId));
     }
     
-    const result = await db.select().from(phoneNumbers).where(and(...conditions));
-    return result;
+    const result = await db
+      .select()
+      .from(phoneNumbers)
+      .leftJoin(numberPoolAssignments, eq(phoneNumbers.id, numberPoolAssignments.phoneNumberId))
+      .where(and(...conditions));
+    
+    return result.map(row => row.phone_numbers);
   }
 
   // Number Pools - missing methods
