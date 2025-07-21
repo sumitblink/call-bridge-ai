@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,12 +23,10 @@ import {
   ChevronDown,
   Settings,
   Eye,
-  EyeOff,
-  GripVertical
+  EyeOff
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 interface CallData {
   id: number;
@@ -874,20 +872,60 @@ interface ReportSummaryTableProps {
 }
 
 function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }: ReportSummaryTableProps) {
-  const [columnOrder, setColumnOrder] = useState<string[]>([
-    'campaign', 'publisher', 'target', 'buyer', 'dialedNumber', 'numberPool', 'date', 'duplicate', 'tags',
-    'incoming', 'live', 'completed', 'ended', 'connected', 'paid', 'converted', 'noConnection', 'blocked', 'ivrHangup',
-    'rpc', 'revenue', 'payout', 'profit', 'margin', 'conversionRate', 'tcl', 'acl', 'totalCost'
-  ]);
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
+    campaign: 200,
+    publisher: 150,
+    target: 150,
+    buyer: 150,
+    dialedNumber: 120,
+    numberPool: 120,
+    date: 100,
+    duplicate: 80,
+    tags: 120,
+    incoming: 80,
+    live: 60,
+    completed: 80,
+    ended: 70,
+    connected: 80,
+    paid: 60,
+    converted: 80,
+    noConnection: 100,
+    blocked: 70,
+    ivrHangup: 80,
+    rpc: 70,
+    revenue: 90,
+    payout: 80,
+    profit: 80,
+    margin: 70,
+    conversionRate: 100,
+    tcl: 60,
+    acl: 60,
+    totalCost: 90
+  });
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
+  const [isResizing, setIsResizing] = useState<string | null>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  const handleMouseDown = (column: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(column);
     
-    const items = Array.from(columnOrder);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    setColumnOrder(items);
+    const startX = e.clientX;
+    const startWidth = columnWidths[column];
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.max(50, startWidth + (e.clientX - startX));
+      setColumnWidths(prev => ({ ...prev, [column]: newWidth }));
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(null);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   };
 
   const getColumnLabel = (column: string) => {
@@ -986,94 +1024,125 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }:
   return (
     <div className="rounded border overflow-hidden">
       <div className="overflow-x-auto max-h-96">
-        <Table>
+        <Table ref={tableRef} className="table-fixed">
           <TableHeader className="sticky top-0 bg-gray-50 z-10">
             <TableRow>
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="columns" direction="horizontal">
-                  {(provided) => (
-                    <div className="contents" {...provided.droppableProps} ref={provided.innerRef}>
-                      {columnOrder.filter(col => activeColumns.includes(col)).map((column, index) => (
-                        <Draggable key={column} draggableId={column} index={index}>
-                          {(provided, snapshot) => (
-                            <TableHead 
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              className={`text-xs font-medium text-gray-600 py-2 px-2 cursor-move ${snapshot.isDragging ? 'bg-blue-50' : ''}`}
-                            >
-                              <div {...provided.dragHandleProps} className="flex items-center gap-1">
-                                <GripVertical className="h-3 w-3 text-gray-400" />
-                                {getColumnLabel(column)}
-                              </div>
-                            </TableHead>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </DragDropContext>
+              {activeColumns.map((column) => (
+                <TableHead 
+                  key={column}
+                  className="text-xs font-medium text-gray-600 py-2 px-2 relative border-r border-gray-200"
+                  style={{ width: `${columnWidths[column]}px` }}
+                >
+                  <div className="truncate pr-2">{getColumnLabel(column)}</div>
+                  <div
+                    className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-blue-300 transition-colors"
+                    onMouseDown={(e) => handleMouseDown(column, e)}
+                    style={{ 
+                      backgroundColor: isResizing === column ? '#93c5fd' : 'transparent'
+                    }}
+                  />
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {summaries.map((summary) => (
-              <TableRow key={summary.campaignId} className="hover:bg-gray-50">
-                {activeColumns.includes('campaign') && (
-                  <TableCell className="text-xs py-1 px-2">
-                    <button className="text-blue-600 hover:underline text-left truncate max-w-24">
-                      {summary.campaignName}
-                    </button>
-                  </TableCell>
-                )}
-                {activeColumns.includes('publisher') && <TableCell className="text-xs py-1 px-2">{summary.publisher}</TableCell>}
-                {activeColumns.includes('target') && <TableCell className="text-xs py-1 px-2">{summary.target}</TableCell>}
-                {activeColumns.includes('buyer') && <TableCell className="text-xs py-1 px-2 text-blue-600 truncate max-w-20">{summary.buyer}</TableCell>}
-                {activeColumns.includes('dialedNumber') && (
-                  <TableCell className="text-xs py-1 px-2 font-mono">
-                    {summary.dialedNumbers.slice(0, 1).join(', ')}{summary.dialedNumbers.length > 1 && ` +${summary.dialedNumbers.length - 1}`}
-                  </TableCell>
-                )}
-                {activeColumns.includes('numberPool') && <TableCell className="text-xs py-1 px-2">{summary.numberPool}</TableCell>}
-                {activeColumns.includes('date') && <TableCell className="text-xs py-1 px-2">{formatDistanceToNow(new Date(summary.lastCallDate), { addSuffix: true })}</TableCell>}
-                {activeColumns.includes('duplicate') && (
-                  <TableCell className="text-xs py-1 px-2">
-                    <Badge variant="outline" className="text-xs">
-                      {summary.duplicate}
-                    </Badge>
-                  </TableCell>
-                )}
-                {activeColumns.includes('tags') && (
-                  <TableCell className="text-xs py-1 px-2">
-                    {summary.tags.slice(0, 2).map(tag => (
-                      <Badge key={tag} variant="secondary" className="text-xs px-1 mr-1">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {summary.tags.length > 2 && <span className="text-gray-500">+{summary.tags.length - 2}</span>}
-                  </TableCell>
-                )}
-                {activeColumns.includes('incoming') && <TableCell className="text-xs py-1 px-2 text-center">{summary.incoming}</TableCell>}
-                {activeColumns.includes('live') && <TableCell className="text-xs py-1 px-2 text-center">{summary.live}</TableCell>}
-                {activeColumns.includes('completed') && <TableCell className="text-xs py-1 px-2 text-center">{summary.completed}</TableCell>}
-                {activeColumns.includes('ended') && <TableCell className="text-xs py-1 px-2 text-center">{summary.ended}</TableCell>}
-                {activeColumns.includes('connected') && <TableCell className="text-xs py-1 px-2 text-center text-green-600 font-medium">{summary.connected}</TableCell>}
-                {activeColumns.includes('paid') && <TableCell className="text-xs py-1 px-2 text-center">{summary.paid}</TableCell>}
-                {activeColumns.includes('converted') && <TableCell className="text-xs py-1 px-2 text-center text-green-600 font-medium">{summary.converted}</TableCell>}
-                {activeColumns.includes('noConnection') && <TableCell className="text-xs py-1 px-2 text-center text-red-600">{summary.noConnection}</TableCell>}
-                {activeColumns.includes('blocked') && <TableCell className="text-xs py-1 px-2 text-center text-orange-600">{summary.blocked}</TableCell>}
-                {activeColumns.includes('ivrHangup') && <TableCell className="text-xs py-1 px-2 text-center">{summary.ivrHangup}</TableCell>}
-                {activeColumns.includes('rpc') && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.rpc)}</TableCell>}
-                {activeColumns.includes('revenue') && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.revenue)}</TableCell>}
-                {activeColumns.includes('payout') && <TableCell className="text-xs py-1 px-2 text-red-600">{formatCurrency(summary.payout)}</TableCell>}
-                {activeColumns.includes('profit') && <TableCell className="text-xs py-1 px-2 text-green-600 font-medium">{formatCurrency(summary.profit)}</TableCell>}
-                {activeColumns.includes('margin') && <TableCell className="text-xs py-1 px-2 font-medium">{summary.margin.toFixed(1)}%</TableCell>}
-                {activeColumns.includes('conversionRate') && <TableCell className="text-xs py-1 px-2">{summary.conversionRate.toFixed(1)}%</TableCell>}
-                {activeColumns.includes('tcl') && <TableCell className="text-xs py-1 px-2 font-mono">{formatDuration(summary.tcl)}</TableCell>}
-                {activeColumns.includes('acl') && <TableCell className="text-xs py-1 px-2 font-mono">{formatDuration(summary.acl)}</TableCell>}
-                {activeColumns.includes('totalCost') && <TableCell className="text-xs py-1 px-2 text-red-600">{formatCurrency(summary.totalCost)}</TableCell>}
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={activeColumns.length} className="text-center py-8 text-gray-500">
+                  Loading campaign data...
+                </TableCell>
               </TableRow>
-            ))}
+            ) : summaries.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={activeColumns.length} className="text-center py-8 text-gray-500">
+                  No campaign data available
+                </TableCell>
+              </TableRow>
+            ) : (
+              summaries.map((summary, index) => (
+                <TableRow key={summary.campaignId} className="hover:bg-gray-50 text-xs">
+                  {activeColumns.map((column) => (
+                    <TableCell 
+                      key={column}
+                      className="py-1 px-2 border-r border-gray-200 truncate"
+                      style={{ width: `${columnWidths[column]}px` }}
+                    >
+                      {(() => {
+                        switch (column) {
+                          case 'campaign':
+                            return <div className="text-blue-600 font-medium truncate">{summary.campaignName}</div>;
+                          case 'publisher':
+                            return <div className="truncate">{summary.publisher}</div>;
+                          case 'target':
+                            return <div className="truncate">{summary.target}</div>;
+                          case 'buyer':
+                            return <div className="truncate">{summary.buyer}</div>;
+                          case 'dialedNumber':
+                            return <div className="text-xs font-mono truncate">{summary.dialedNumbers.join(', ')}</div>;
+                          case 'numberPool':
+                            return <div className="truncate">{summary.numberPool}</div>;
+                          case 'date':
+                            return <div className="text-xs text-gray-500">{formatDistanceToNow(new Date(summary.lastCallDate), { addSuffix: true })}</div>;
+                          case 'duplicate':
+                            return <div className="text-center">{summary.duplicate}</div>;
+                          case 'tags':
+                            return (
+                              <div className="flex flex-wrap gap-1">
+                                {summary.tags.slice(0, 2).map((tag, i) => (
+                                  <Badge key={i} variant="secondary" className="text-xs px-1 py-0">{tag}</Badge>
+                                ))}
+                                {summary.tags.length > 2 && (
+                                  <Badge variant="outline" className="text-xs px-1 py-0">+{summary.tags.length - 2}</Badge>
+                                )}
+                              </div>
+                            );
+                          case 'incoming':
+                            return <div className="text-center font-medium">{summary.incoming}</div>;
+                          case 'live':
+                            return <div className="text-center text-green-600 font-medium">{summary.live}</div>;
+                          case 'completed':
+                            return <div className="text-center text-blue-600 font-medium">{summary.completed}</div>;
+                          case 'ended':
+                            return <div className="text-center text-gray-600">{summary.ended}</div>;
+                          case 'connected':
+                            return <div className="text-center text-green-600 font-medium">{summary.connected}</div>;
+                          case 'paid':
+                            return <div className="text-center text-purple-600 font-medium">{summary.paid}</div>;
+                          case 'converted':
+                            return <div className="text-center text-emerald-600 font-medium">{summary.converted}</div>;
+                          case 'noConnection':
+                            return <div className="text-center text-red-600">{summary.noConnection}</div>;
+                          case 'blocked':
+                            return <div className="text-center text-red-600">{summary.blocked}</div>;
+                          case 'ivrHangup':
+                            return <div className="text-center text-orange-600">{summary.ivrHangup}</div>;
+                          case 'rpc':
+                            return <div className="text-center text-green-600 font-medium">${summary.rpc.toFixed(2)}</div>;
+                          case 'revenue':
+                            return <div className="text-center text-green-600 font-medium">${summary.revenue.toFixed(2)}</div>;
+                          case 'payout':
+                            return <div className="text-center text-orange-600">${summary.payout.toFixed(2)}</div>;
+                          case 'profit':
+                            return <div className="text-center text-emerald-600 font-medium">${summary.profit.toFixed(2)}</div>;
+                          case 'margin':
+                            return <div className="text-center text-blue-600 font-medium">{summary.margin.toFixed(1)}%</div>;
+                          case 'conversionRate':
+                            return <div className="text-center text-purple-600 font-medium">{summary.conversionRate.toFixed(1)}%</div>;
+                          case 'tcl':
+                            return <div className="text-center text-gray-600">{Math.floor(summary.tcl / 60)}m {summary.tcl % 60}s</div>;
+                          case 'acl':
+                            return <div className="text-center text-gray-600">{summary.acl.toFixed(0)}s</div>;
+                          case 'totalCost':
+                            return <div className="text-center text-red-600">${summary.totalCost.toFixed(2)}</div>;
+                          default:
+                            return null;
+                        }
+                      })()}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
