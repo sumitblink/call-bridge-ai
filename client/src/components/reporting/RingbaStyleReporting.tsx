@@ -1448,6 +1448,17 @@ export default function RingbaStyleReporting() {
           >
             Duplicate
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setShowFilterDialog(showFilterDialog === "tags" ? null : "tags");
+            }}
+            className="h-7 px-2 text-xs font-medium"
+          >
+            Tags
+            <ChevronDown className="ml-1 h-3 w-3" />
+          </Button>
         </div>
 
         {/* Filter Dialog */}
@@ -1671,8 +1682,6 @@ export default function RingbaStyleReporting() {
                 visibleColumns={visibleColumns} 
                 isLoading={isLoading} 
                 activeTab={activeTab}
-                showFilterDialog={showFilterDialog}
-                setShowFilterDialog={setShowFilterDialog}
               />
             </div>
           </Tabs>
@@ -1688,11 +1697,9 @@ interface ReportSummaryTableProps {
   visibleColumns: Record<string, boolean>;
   isLoading: boolean;
   activeTab: string;
-  showFilterDialog: string | null;
-  setShowFilterDialog: (value: string | null) => void;
 }
 
-function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab, showFilterDialog, setShowFilterDialog }: ReportSummaryTableProps) {
+function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }: ReportSummaryTableProps) {
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
     campaign: 200,
     publisher: 150,
@@ -1725,7 +1732,6 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab, s
   });
 
   const [isResizing, setIsResizing] = useState<string | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const tableRef = useRef<HTMLTableElement>(null);
 
   const handleMouseDown = (column: string, e: React.MouseEvent) => {
@@ -1785,7 +1791,7 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab, s
   };
   // Define which columns to show for each tab
   const getColumnsForTab = (tab: string) => {
-    const baseColumns = ['tags', 'incoming', 'live', 'completed', 'ended', 'connected', 'paid', 'converted', 'noConnection', 'blocked', 'ivrHangup', 'rpc', 'revenue', 'payout', 'profit', 'margin', 'conversionRate', 'tcl', 'acl', 'totalCost'];
+    const baseColumns = ['incoming', 'live', 'completed', 'ended', 'connected', 'paid', 'converted', 'noConnection', 'blocked', 'ivrHangup', 'rpc', 'revenue', 'payout', 'profit', 'margin', 'conversionRate', 'tcl', 'acl', 'totalCost'];
     
     switch (tab) {
       case 'campaign':
@@ -1853,19 +1859,7 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab, s
                   className="text-xs font-medium text-gray-600 py-2 px-2 relative border-r border-gray-200"
                   style={{ width: `${columnWidths[column]}px` }}
                 >
-                  {column === 'tags' ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowFilterDialog(showFilterDialog === "tags" ? null : "tags")}
-                      className="h-auto p-0 text-xs font-medium text-gray-600 hover:text-gray-900 truncate pr-2"
-                    >
-                      {getColumnLabel(column)}
-                      <ChevronDown className="ml-1 h-3 w-3" />
-                    </Button>
-                  ) : (
-                    <div className="truncate pr-2">{getColumnLabel(column)}</div>
-                  )}
+                  <div className="truncate pr-2">{getColumnLabel(column)}</div>
                   <div
                     className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-blue-300 transition-colors"
                     onMouseDown={(e) => handleMouseDown(column, e)}
@@ -1979,74 +1973,7 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab, s
         </Table>
       </div>
 
-      {/* Tags Dropdown Dialog - positioned relative to table */}
-      {showFilterDialog === "tags" && (
-        <div className="absolute top-8 right-0 w-80 bg-gray-800 text-white rounded shadow-lg z-50">
-          <div className="p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-sm">Tags</h4>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowFilterDialog(null)}
-                className="h-6 w-6 p-0 text-white hover:bg-gray-700"
-              >
-                ×
-              </Button>
-            </div>
-            
-            <Input
-              placeholder="Search tags..."
-              className="mb-3 bg-gray-700 border-gray-600 text-white placeholder-gray-400 text-xs"
-            />
-            
-            <div className="max-h-64 overflow-y-auto space-y-1">
-              {Object.entries({
-                "InboundNumber": ["Number", "Pool", "Region"],
-                "Date": ["Created", "Modified", "Expires"],
-                "Time": ["Hour", "Minute", "Second"],
-                "User": ["Name", "Email", "Role"],
-                "Publisher": ["Name", "Type", "Status"],
-                "Campaign": ["Name", "Type", "Status"],
-                "Geo": ["Country", "State", "City"],
-                "CallLength": ["Duration", "Connected", "Hold"],
-                "RTB": ["Bid Amount", "Winner", "Response Time"],
-                "CallInfo": ["Status", "Disposition", "Recording"]
-              }).map(([category, subcategories]) => (
-                <div key={category}>
-                  <button
-                    onClick={() => {
-                      setExpandedCategories(prev => ({
-                        ...prev,
-                        [category]: !prev[category]
-                      }));
-                    }}
-                    className="flex items-center w-full text-left text-xs text-white hover:bg-gray-700 p-2 rounded"
-                  >
-                    <ChevronDown 
-                      className={`h-3 w-3 mr-2 transition-transform ${expandedCategories[category] ? 'rotate-180' : ''}`} 
-                    />
-                    {category}
-                  </button>
-                  
-                  {expandedCategories[category] && (
-                    <div className="ml-5 space-y-1">
-                      {subcategories.map(subcategory => (
-                        <div
-                          key={subcategory}
-                          className="text-xs text-gray-300 hover:bg-gray-700 hover:text-white p-2 rounded cursor-pointer"
-                        >
-                          {subcategory}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
