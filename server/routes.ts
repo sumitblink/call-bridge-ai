@@ -2470,7 +2470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const availablePools = await Promise.all(
           allPools.map(async (pool) => {
             const assignedCampaigns = await storage.getCampaignsByPool(pool.id);
-            const currentCampaignId = excludeCampaign ? parseInt(excludeCampaign as string) : null;
+            const currentCampaignId = excludeCampaign as string || null;
             
             // Pool is available if it has no assigned campaigns, or only assigned to the current campaign
             const isAvailable = assignedCampaigns.length === 0 || 
