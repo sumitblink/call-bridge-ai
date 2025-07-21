@@ -1372,6 +1372,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
           {configNode && (
             <NodeConfigurationDialog 
               node={configNode} 
+              buyers={buyers}
               onSave={handleConfigSave}
               onCancel={() => setConfigDialogOpen(false)}
             />
@@ -1383,8 +1384,9 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
 }
 
 // Configuration Dialog Component
-function NodeConfigurationDialog({ node, onSave, onCancel }: {
+function NodeConfigurationDialog({ node, buyers, onSave, onCancel }: {
   node: FlowNode;
+  buyers: Buyer[];
   onSave: (config: any) => void;
   onCancel: () => void;
 }) {
