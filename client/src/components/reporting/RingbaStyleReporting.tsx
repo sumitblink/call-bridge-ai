@@ -23,10 +23,12 @@ import {
   ChevronDown,
   Settings,
   Eye,
-  EyeOff
+  EyeOff,
+  GripVertical
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 interface CallData {
   id: number;
@@ -133,8 +135,140 @@ export default function RingbaStyleReporting() {
     refetchInterval: autoRefresh ? 30000 : false,
   });
 
-  // Calculate campaign summaries from call data
-  const campaignSummaries: CampaignSummary[] = calls.reduce((acc, call) => {
+  // Mock data for demonstration (rich data with realistic metrics)
+  const mockCampaignSummaries: CampaignSummary[] = [
+    {
+      campaignId: 'healthcare-2025',
+      campaignName: 'Healthcare Insurance Lead Generation Campaign',
+      publisher: 'Google Ads Premium',
+      target: 'Insurance Qualified Leads',
+      buyer: 'Allstate Insurance Partners',
+      dialedNumbers: ['+18566441573', '+18568791483', '+18564853922'],
+      numberPool: 'Healthcare Pool 1',
+      lastCallDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      tags: ['healthcare', 'insurance', 'qualified', 'premium'],
+      totalCalls: 127,
+      incoming: 127,
+      live: 23,
+      completed: 89,
+      ended: 104,
+      connected: 89,
+      paid: 67,
+      converted: 43,
+      noConnection: 15,
+      blocked: 8,
+      duplicate: 3,
+      ivrHangup: 5,
+      revenue: 2890.50,
+      payout: 1934.75,
+      profit: 955.75,
+      margin: 33.1,
+      conversionRate: 48.3,
+      rpc: 32.47,
+      tcl: 4567,
+      acl: 51.3,
+      totalCost: 1934.75
+    },
+    {
+      campaignId: 'auto-insurance-2025',
+      campaignName: 'Auto Insurance Leads - Facebook Campaign',
+      publisher: 'Facebook Marketing Agency',
+      target: 'Auto Insurance Buyers',
+      buyer: 'State Farm Regional Office',
+      dialedNumbers: ['+18569256411', '+18046079719'],
+      numberPool: 'Auto Insurance Pool 2',
+      lastCallDate: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+      tags: ['auto', 'insurance', 'facebook', 'social'],
+      totalCalls: 84,
+      incoming: 84,
+      live: 12,
+      completed: 58,
+      ended: 72,
+      connected: 58,
+      paid: 45,
+      converted: 28,
+      noConnection: 12,
+      blocked: 2,
+      duplicate: 1,
+      ivrHangup: 3,
+      revenue: 1680.00,
+      payout: 1176.00,
+      profit: 504.00,
+      margin: 30.0,
+      conversionRate: 48.3,
+      rpc: 28.97,
+      tcl: 2934,
+      acl: 50.6,
+      totalCost: 1176.00
+    },
+    {
+      campaignId: 'mortgage-refinance',
+      campaignName: 'Mortgage Refinance - LinkedIn Professional',
+      publisher: 'LinkedIn Ads Professional',
+      target: 'Homeowner Refinance Prospects',
+      buyer: 'QuickenLoans Partnership',
+      dialedNumbers: ['+15551234567'],
+      numberPool: 'Mortgage Refinance Pool 3',
+      lastCallDate: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+      tags: ['mortgage', 'refinance', 'homeowner', 'linkedin'],
+      totalCalls: 156,
+      incoming: 156,
+      live: 34,
+      completed: 112,
+      ended: 122,
+      connected: 112,
+      paid: 89,
+      converted: 67,
+      noConnection: 22,
+      blocked: 12,
+      duplicate: 5,
+      ivrHangup: 7,
+      revenue: 4480.00,
+      payout: 2912.00,
+      profit: 1568.00,
+      margin: 35.0,
+      conversionRate: 59.8,
+      rpc: 40.00,
+      tcl: 6789,
+      acl: 60.6,
+      totalCost: 2912.00
+    },
+    {
+      campaignId: 'solar-energy-2025',
+      campaignName: 'Solar Energy Installation Leads',
+      publisher: 'YouTube Advertising Network',
+      target: 'Solar Installation Qualified',
+      buyer: 'SunPower Installation Team',
+      dialedNumbers: ['+15552345678', '+15553456789'],
+      numberPool: 'Solar Energy Pool 4',
+      lastCallDate: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+      tags: ['solar', 'energy', 'installation', 'youtube'],
+      totalCalls: 203,
+      incoming: 203,
+      live: 45,
+      completed: 134,
+      ended: 158,
+      connected: 134,
+      paid: 98,
+      converted: 76,
+      noConnection: 34,
+      blocked: 11,
+      duplicate: 7,
+      ivrHangup: 9,
+      revenue: 6840.00,
+      payout: 4104.00,
+      profit: 2736.00,
+      margin: 40.0,
+      conversionRate: 56.7,
+      rpc: 51.04,
+      tcl: 8912,
+      acl: 66.5,
+      totalCost: 4104.00
+    }
+  ];
+
+  // Use mock data if no real data available, otherwise use real data
+  const campaignSummaries: CampaignSummary[] = calls.length > 0 ? calls.reduce((acc, call) => {
     const campaignId = call.campaignId;
     let summary = acc.find(s => s.campaignId === campaignId);
     
@@ -213,7 +347,7 @@ export default function RingbaStyleReporting() {
     }
 
     return acc;
-  }, [] as CampaignSummary[]);
+  }, [] as CampaignSummary[]) : mockCampaignSummaries;
 
   // Calculate derived metrics for each summary
   campaignSummaries.forEach(summary => {
@@ -740,6 +874,55 @@ interface ReportSummaryTableProps {
 }
 
 function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }: ReportSummaryTableProps) {
+  const [columnOrder, setColumnOrder] = useState<string[]>([
+    'campaign', 'publisher', 'target', 'buyer', 'dialedNumber', 'numberPool', 'date', 'duplicate', 'tags',
+    'incoming', 'live', 'completed', 'ended', 'connected', 'paid', 'converted', 'noConnection', 'blocked', 'ivrHangup',
+    'rpc', 'revenue', 'payout', 'profit', 'margin', 'conversionRate', 'tcl', 'acl', 'totalCost'
+  ]);
+
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+    
+    const items = Array.from(columnOrder);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    setColumnOrder(items);
+  };
+
+  const getColumnLabel = (column: string) => {
+    const labels: Record<string, string> = {
+      campaign: 'Campaign',
+      publisher: 'Publisher',
+      target: 'Target',
+      buyer: 'Buyer',
+      dialedNumber: 'Dialed #',
+      numberPool: 'Number Pool',
+      date: 'Date',
+      duplicate: 'Duplicate',
+      tags: 'Tags',
+      incoming: 'Incoming',
+      live: 'Live',
+      completed: 'Completed',
+      ended: 'Ended',
+      connected: 'Connected',
+      paid: 'Paid',
+      converted: 'Converted',
+      noConnection: 'No Connection',
+      blocked: 'Blocked',
+      ivrHangup: 'IVR Hangup',
+      rpc: 'RPC',
+      revenue: 'Revenue',
+      payout: 'Payout',
+      profit: 'Profit',
+      margin: 'Margin',
+      conversionRate: 'Conversion Rate',
+      tcl: 'TCL',
+      acl: 'ACL',
+      totalCost: 'Total Cost'
+    };
+    return labels[column] || column;
+  };
   // Define which columns to show for each tab
   const getColumnsForTab = (tab: string) => {
     const baseColumns = ['incoming', 'live', 'completed', 'ended', 'connected', 'paid', 'converted', 'noConnection', 'blocked', 'ivrHangup', 'rpc', 'revenue', 'payout', 'profit', 'margin', 'conversionRate', 'tcl', 'acl', 'totalCost'];
@@ -806,34 +989,31 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }:
         <Table>
           <TableHeader className="sticky top-0 bg-gray-50 z-10">
             <TableRow>
-              {activeColumns.includes('campaign') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Campaign</TableHead>}
-              {activeColumns.includes('publisher') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Publisher</TableHead>}
-              {activeColumns.includes('target') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Target</TableHead>}
-              {activeColumns.includes('buyer') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Buyer</TableHead>}
-              {activeColumns.includes('dialedNumber') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Dialed #</TableHead>}
-              {activeColumns.includes('numberPool') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Number Pool</TableHead>}
-              {activeColumns.includes('date') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Date</TableHead>}
-              {activeColumns.includes('duplicate') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Duplicate</TableHead>}
-              {activeColumns.includes('tags') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Tags</TableHead>}
-              {activeColumns.includes('incoming') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Incoming</TableHead>}
-              {activeColumns.includes('live') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Live</TableHead>}
-              {activeColumns.includes('completed') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Completed</TableHead>}
-              {activeColumns.includes('ended') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Ended</TableHead>}
-              {activeColumns.includes('connected') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Connected</TableHead>}
-              {activeColumns.includes('paid') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Paid</TableHead>}
-              {activeColumns.includes('converted') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Converted</TableHead>}
-              {activeColumns.includes('noConnection') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">No Connection</TableHead>}
-              {activeColumns.includes('blocked') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Blocked</TableHead>}
-              {activeColumns.includes('ivrHangup') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">IVR Hangup</TableHead>}
-              {activeColumns.includes('rpc') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">RPC</TableHead>}
-              {activeColumns.includes('revenue') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Revenue</TableHead>}
-              {activeColumns.includes('payout') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Payout</TableHead>}
-              {activeColumns.includes('profit') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Profit</TableHead>}
-              {activeColumns.includes('margin') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Margin</TableHead>}
-              {activeColumns.includes('conversionRate') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Conversion Rate</TableHead>}
-              {activeColumns.includes('tcl') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">TCL</TableHead>}
-              {activeColumns.includes('acl') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">ACL</TableHead>}
-              {activeColumns.includes('totalCost') && <TableHead className="text-xs font-medium text-gray-600 py-2 px-2">Total Cost</TableHead>}
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="columns" direction="horizontal">
+                  {(provided) => (
+                    <div className="contents" {...provided.droppableProps} ref={provided.innerRef}>
+                      {columnOrder.filter(col => activeColumns.includes(col)).map((column, index) => (
+                        <Draggable key={column} draggableId={column} index={index}>
+                          {(provided, snapshot) => (
+                            <TableHead 
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={`text-xs font-medium text-gray-600 py-2 px-2 cursor-move ${snapshot.isDragging ? 'bg-blue-50' : ''}`}
+                            >
+                              <div {...provided.dragHandleProps} className="flex items-center gap-1">
+                                <GripVertical className="h-3 w-3 text-gray-400" />
+                                {getColumnLabel(column)}
+                              </div>
+                            </TableHead>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
             </TableRow>
           </TableHeader>
           <TableBody>
