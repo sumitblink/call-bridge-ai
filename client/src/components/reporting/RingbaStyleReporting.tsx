@@ -1831,14 +1831,61 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }:
                             return <div className="text-center">{summary.duplicate}</div>;
                           case 'tags':
                             return (
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-6 px-2 text-xs border-gray-300 text-gray-600 hover:bg-gray-50"
-                              >
-                                Search Breakdown Levels
-                                <ChevronDown className="ml-1 h-3 w-3" />
-                              </Button>
+                              <div className="relative">
+                                <Select>
+                                  <SelectTrigger className="h-6 px-2 text-xs border-gray-300 bg-white hover:bg-gray-50">
+                                    <div className="flex items-center justify-between w-full">
+                                      <span className="text-gray-600">Search Breakdown Levels</span>
+                                      <ChevronDown className="h-3 w-3 ml-1" />
+                                    </div>
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-white border-gray-200 max-h-64 overflow-y-auto">
+                                    {Object.entries({
+                                      "InboundNumber": ["Number", "Pool", "TrackingNumber", "Country", "State"],
+                                      "Date": ["CallDate", "CallTime", "Timezone", "DayOfWeek", "Month"],
+                                      "Time": ["StartTime", "EndTime", "Duration", "TimeOfDay", "BusinessHours"],
+                                      "User": ["UserId", "Username", "UserType", "Permissions", "LastLogin"],
+                                      "Publisher": ["Company", "Id", "Name", "SubId", "ReplacementNumber"],
+                                      "Campaign": ["Id", "Name", "TrackingId", "Status", "Type"],
+                                      "Geo": ["Country", "State", "City", "ZipCode", "Timezone"],
+                                      "CallLength": ["TotalDuration", "TalkTime", "RingTime", "HoldTime"],
+                                      "RTB": ["BidAmount", "Winner", "Participants", "AuctionId", "ResponseTime"],
+                                      "CallInfo": ["CallId", "Status", "Direction", "Quality", "Recording"],
+                                      "Display": ["Format", "Appearance", "Layout", "Theme"],
+                                      "Location": ["Address", "Coordinates", "Region", "AreaCode"],
+                                      "ConnectionInfo": ["Carrier", "Network", "Signal", "Protocol"],
+                                      "Technology": ["CodecUsed", "Platform", "Device", "Browser"],
+                                      "EndCall": ["Reason", "Duration", "Outcome", "Disposition"],
+                                      "Ivr": ["MenuSelection", "PromptPlayed", "UserInput", "Path"],
+                                      "PlacementInfo": ["Position", "Source", "Medium", "Content"],
+                                      "Conversion": ["Type", "Value", "Timestamp", "Attribution"],
+                                      "RequestInfo": ["Method", "Headers", "Parameters", "Response"],
+                                      "DialedNumber": ["Original", "Formatted", "E164", "Local"],
+                                      "Request": ["Id", "Type", "Status", "Timestamp"],
+                                      "Facebook": ["CampaignId", "AdSetId", "AdId", "PlacementId"],
+                                      "Redtrack CID": ["ClickId", "VisitorId", "ConversionId", "SessionId"],
+                                      "Redtrack CMPID": ["CampaignId", "OfferId", "AffiliateId", "SubId"],
+                                      "Zip Code": ["Primary", "Secondary", "Extended", "Delivery"],
+                                      "Integration": ["Type", "Provider", "Status", "Configuration"]
+                                    }).map(([category, subcategories]) => (
+                                      <div key={category}>
+                                        <SelectItem value={category} className="text-xs font-medium text-gray-800 py-1">
+                                          {category}
+                                        </SelectItem>
+                                        {subcategories.map(sub => (
+                                          <SelectItem 
+                                            key={`${category}.${sub}`} 
+                                            value={`${category}.${sub}`} 
+                                            className="text-xs text-gray-600 pl-4 py-0.5"
+                                          >
+                                            {sub}
+                                          </SelectItem>
+                                        ))}
+                                      </div>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             );
                           case 'incoming':
                             return <div className="text-center font-medium">{summary.incoming}</div>;
