@@ -1348,11 +1348,11 @@ export default function RingbaStyleReporting() {
         <div className="bg-white border-b px-4 py-2">
           <div className="flex flex-wrap gap-2">
             {filterRules.map((rule, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
+              <Badge key={index} variant="secondary" className="text-xs bg-blue-100 text-blue-800 border border-blue-200">
                 {rule.field}: {rule.operator} "{rule.value}"
                 <button 
                   onClick={() => setFilterRules(prev => prev.filter((_, i) => i !== index))}
-                  className="ml-2 text-gray-500 hover:text-gray-700"
+                  className="ml-2 text-blue-600 hover:text-blue-800 font-bold"
                 >
                   ×
                 </button>
@@ -1362,7 +1362,7 @@ export default function RingbaStyleReporting() {
               variant="outline" 
               size="sm" 
               onClick={() => setFilterRules([])}
-              className="h-6 px-2 text-xs"
+              className="h-6 px-2 text-xs border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
             >
               Clear All Filters
             </Button>
