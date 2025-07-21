@@ -348,8 +348,224 @@ export default function RingbaStyleReporting() {
     URL.revokeObjectURL(url);
   };
 
-  // Filter summaries based on active tab (no filtering for now, just group by tab type)
-  const filteredSummaries = campaignSummaries;
+  // Filter summaries based on active tab - group data by the selected dimension
+  const getFilteredData = () => {
+    switch (activeTab) {
+      case 'campaign':
+        // Group by campaign - show each campaign as a row
+        return campaignSummaries;
+        
+      case 'publisher':
+        // Group by publisher - combine campaigns by publisher
+        const publisherGroups = campaignSummaries.reduce((acc, summary) => {
+          const publisher = summary.publisher || 'Unknown Publisher';
+          if (!acc[publisher]) {
+            acc[publisher] = {
+              ...summary,
+              campaignName: publisher,
+              campaignId: `publisher-${publisher}`,
+              totalCalls: 0,
+              incoming: 0,
+              connected: 0,
+              revenue: 0,
+              profit: 0,
+              tcl: 0,
+              dialedNumbers: []
+            };
+          }
+          const group = acc[publisher];
+          group.totalCalls += summary.totalCalls;
+          group.incoming += summary.incoming;
+          group.connected += summary.connected;
+          group.revenue += summary.revenue;
+          group.profit += summary.profit;
+          group.tcl += summary.tcl;
+          group.dialedNumbers = [...group.dialedNumbers, ...summary.dialedNumbers];
+          return acc;
+        }, {} as Record<string, CampaignSummary>);
+        return Object.values(publisherGroups);
+        
+      case 'target':
+        // Group by target
+        const targetGroups = campaignSummaries.reduce((acc, summary) => {
+          const target = summary.target || 'Unknown Target';
+          if (!acc[target]) {
+            acc[target] = {
+              ...summary,
+              campaignName: target,
+              campaignId: `target-${target}`,
+              totalCalls: 0,
+              incoming: 0,
+              connected: 0,
+              revenue: 0,
+              profit: 0,
+              tcl: 0,
+              dialedNumbers: []
+            };
+          }
+          const group = acc[target];
+          group.totalCalls += summary.totalCalls;
+          group.incoming += summary.incoming;
+          group.connected += summary.connected;
+          group.revenue += summary.revenue;
+          group.profit += summary.profit;
+          group.tcl += summary.tcl;
+          group.dialedNumbers = [...group.dialedNumbers, ...summary.dialedNumbers];
+          return acc;
+        }, {} as Record<string, CampaignSummary>);
+        return Object.values(targetGroups);
+        
+      case 'buyer':
+        // Group by buyer
+        const buyerGroups = campaignSummaries.reduce((acc, summary) => {
+          const buyer = summary.buyer || 'Unknown Buyer';
+          if (!acc[buyer]) {
+            acc[buyer] = {
+              ...summary,
+              campaignName: buyer,
+              campaignId: `buyer-${buyer}`,
+              totalCalls: 0,
+              incoming: 0,
+              connected: 0,
+              revenue: 0,
+              profit: 0,
+              tcl: 0,
+              dialedNumbers: []
+            };
+          }
+          const group = acc[buyer];
+          group.totalCalls += summary.totalCalls;
+          group.incoming += summary.incoming;
+          group.connected += summary.connected;
+          group.revenue += summary.revenue;
+          group.profit += summary.profit;
+          group.tcl += summary.tcl;
+          group.dialedNumbers = [...group.dialedNumbers, ...summary.dialedNumbers];
+          return acc;
+        }, {} as Record<string, CampaignSummary>);
+        return Object.values(buyerGroups);
+        
+      case 'dialed':
+        // Group by dialed numbers - show each unique dialed number
+        const dialedGroups: Record<string, CampaignSummary> = {};
+        campaignSummaries.forEach(summary => {
+          summary.dialedNumbers.forEach(number => {
+            if (!dialedGroups[number]) {
+              dialedGroups[number] = {
+                ...summary,
+                campaignName: number,
+                campaignId: `dialed-${number}`,
+                totalCalls: 0,
+                incoming: 0,
+                connected: 0,
+                revenue: 0,
+                profit: 0,
+                tcl: 0,
+                dialedNumbers: [number]
+              };
+            }
+            // Note: This is simplified - in real implementation you'd need to track which calls used which numbers
+            dialedGroups[number].totalCalls += Math.floor(summary.totalCalls / summary.dialedNumbers.length);
+          });
+        });
+        return Object.values(dialedGroups);
+        
+      case 'pool':
+        // Group by number pool
+        const poolGroups = campaignSummaries.reduce((acc, summary) => {
+          const pool = summary.numberPool || 'Unknown Pool';
+          if (!acc[pool]) {
+            acc[pool] = {
+              ...summary,
+              campaignName: pool,
+              campaignId: `pool-${pool}`,
+              totalCalls: 0,
+              incoming: 0,
+              connected: 0,
+              revenue: 0,
+              profit: 0,
+              tcl: 0,
+              dialedNumbers: []
+            };
+          }
+          const group = acc[pool];
+          group.totalCalls += summary.totalCalls;
+          group.incoming += summary.incoming;
+          group.connected += summary.connected;
+          group.revenue += summary.revenue;
+          group.profit += summary.profit;
+          group.tcl += summary.tcl;
+          group.dialedNumbers = [...group.dialedNumbers, ...summary.dialedNumbers];
+          return acc;
+        }, {} as Record<string, CampaignSummary>);
+        return Object.values(poolGroups);
+        
+      case 'date':
+        // Group by date
+        const dateGroups = campaignSummaries.reduce((acc, summary) => {
+          const date = new Date(summary.lastCallDate).toDateString();
+          if (!acc[date]) {
+            acc[date] = {
+              ...summary,
+              campaignName: date,
+              campaignId: `date-${date}`,
+              totalCalls: 0,
+              incoming: 0,
+              connected: 0,
+              revenue: 0,
+              profit: 0,
+              tcl: 0,
+              dialedNumbers: []
+            };
+          }
+          const group = acc[date];
+          group.totalCalls += summary.totalCalls;
+          group.incoming += summary.incoming;
+          group.connected += summary.connected;
+          group.revenue += summary.revenue;
+          group.profit += summary.profit;
+          group.tcl += summary.tcl;
+          group.dialedNumbers = [...group.dialedNumbers, ...summary.dialedNumbers];
+          return acc;
+        }, {} as Record<string, CampaignSummary>);
+        return Object.values(dateGroups);
+        
+      case 'duplicate':
+        // Group by duplicate status
+        return campaignSummaries.filter(summary => summary.duplicate > 0);
+        
+      case 'tags':
+        // Group by tags - show each unique tag
+        const tagGroups: Record<string, CampaignSummary> = {};
+        campaignSummaries.forEach(summary => {
+          summary.tags.forEach(tag => {
+            if (!tagGroups[tag]) {
+              tagGroups[tag] = {
+                ...summary,
+                campaignName: tag,
+                campaignId: `tag-${tag}`,
+                totalCalls: 0,
+                incoming: 0,
+                connected: 0,
+                revenue: 0,
+                profit: 0,
+                tcl: 0,
+                dialedNumbers: [],
+                tags: [tag]
+              };
+            }
+            // Distribute metrics across tags
+            tagGroups[tag].totalCalls += Math.floor(summary.totalCalls / summary.tags.length);
+          });
+        });
+        return Object.values(tagGroups);
+        
+      default:
+        return campaignSummaries;
+    }
+  };
+
+  const filteredSummaries = getFilteredData();
 
   return (
     <div className="space-y-1">
@@ -499,41 +715,15 @@ export default function RingbaStyleReporting() {
               <TabsTrigger value="tags" className="text-xs px-2">Tags</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="campaign" className="mt-4">
-              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
-            </TabsContent>
-            
-            <TabsContent value="publisher" className="mt-4">
-              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
-            </TabsContent>
-            
-            <TabsContent value="target" className="mt-4">
-              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
-            </TabsContent>
-            
-            <TabsContent value="buyer" className="mt-4">
-              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
-            </TabsContent>
-            
-            <TabsContent value="dialed" className="mt-4">
-              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
-            </TabsContent>
-            
-            <TabsContent value="pool" className="mt-4">
-              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
-            </TabsContent>
-            
-            <TabsContent value="date" className="mt-4">
-              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
-            </TabsContent>
-            
-            <TabsContent value="duplicate" className="mt-4">
-              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
-            </TabsContent>
-            
-            <TabsContent value="tags" className="mt-4">
-              <ReportSummaryTable summaries={filteredSummaries} visibleColumns={visibleColumns} isLoading={isLoading} />
-            </TabsContent>
+            {/* Single tab content that changes based on active tab */}
+            <div className="mt-4">
+              <ReportSummaryTable 
+                summaries={filteredSummaries} 
+                visibleColumns={visibleColumns} 
+                isLoading={isLoading} 
+                activeTab={activeTab}
+              />
+            </div>
           </Tabs>
         </CardContent>
       </Card>
@@ -546,9 +736,10 @@ interface ReportSummaryTableProps {
   summaries: CampaignSummary[];
   visibleColumns: Record<string, boolean>;
   isLoading: boolean;
+  activeTab: string;
 }
 
-function ReportSummaryTable({ summaries, visibleColumns, isLoading }: ReportSummaryTableProps) {
+function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab }: ReportSummaryTableProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
