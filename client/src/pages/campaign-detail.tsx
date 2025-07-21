@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings, Users, Phone, Globe, BarChart3, Zap, Target } from "lucide-react";
+import { ArrowLeft, Settings, Users, Phone, Globe, BarChart3, Zap, Target, Link } from "lucide-react";
 import Layout from "@/components/Layout";
 
 // Individual tab components
@@ -18,6 +18,7 @@ import CampaignPublishers from "@/components/campaign/CampaignPublishers";
 import CampaignAnalytics from "@/components/campaign/CampaignAnalytics";
 import { CampaignReadinessDashboard } from "@/components/campaign/CampaignReadinessDashboard";
 import { RTBTargetAssignment } from "@/components/campaign/RTBTargetAssignment";
+import CampaignUrlBuilder from "@/components/campaign/CampaignUrlBuilder";
 
 export default function CampaignDetail() {
   const { campaignId } = useParams();
@@ -110,7 +111,7 @@ export default function CampaignDetail() {
 
         {/* Campaign Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-7" : "grid-cols-6") : (campaign.routingType === "pool" ? "grid-cols-6" : "grid-cols-5")}`}>
+          <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-8" : "grid-cols-7") : (campaign.routingType === "pool" ? "grid-cols-7" : "grid-cols-6")}`}>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
@@ -134,6 +135,10 @@ export default function CampaignDetail() {
             <TabsTrigger value="tracking" className="flex items-center space-x-2">
               <Globe className="h-4 w-4" />
               <span className="hidden sm:inline">Tracking</span>
+            </TabsTrigger>
+            <TabsTrigger value="url-builder" className="flex items-center space-x-2">
+              <Link className="h-4 w-4" />
+              <span className="hidden sm:inline">URL Builder</span>
             </TabsTrigger>
             <TabsTrigger value="publishers" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
@@ -161,6 +166,10 @@ export default function CampaignDetail() {
 
           <TabsContent value="tracking">
             <CampaignTracking campaignId={campaign.id} campaign={campaign} />
+          </TabsContent>
+
+          <TabsContent value="url-builder">
+            <CampaignUrlBuilder campaignName={campaign.name} />
           </TabsContent>
 
           <TabsContent value="publishers">
