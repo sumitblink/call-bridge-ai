@@ -131,6 +131,40 @@ export default function SimplifiedRTBManagementPage() {
     },
   });
 
+  // Create RTB target mutation
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const method = editingTarget ? 'PUT' : 'POST';
+      const url = editingTarget ? `/api/rtb/targets/${editingTarget.id}` : '/api/rtb/targets';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to ${editingTarget ? 'update' : 'create'} RTB target`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
+      toast({ 
+        title: "Success", 
+        description: `RTB target ${editingTarget ? 'updated' : 'created'} successfully` 
+      });
+      handleCloseTargetDialog();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   // Calculate metrics
   const totalTargets = targets.length;
   const activeTargets = targets.filter(t => t.isActive).length;
@@ -487,10 +521,7 @@ export default function SimplifiedRTBManagementPage() {
           open={isTargetDialogOpen}
           onOpenChange={handleCloseTargetDialog}
           editingTarget={editingTarget}
-          onSubmit={async () => {
-            queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
-            handleCloseTargetDialog();
-          }}
+          onSubmit={createMutation.mutateAsync}
         />
 
         <Phase1AdvancedBiddingDialog
@@ -516,7 +547,6 @@ export default function SimplifiedRTBManagementPage() {
         <Phase3AdvancedFilteringDialog
           isOpen={phase3DialogOpen}
           onClose={() => setPhase3DialogOpen(false)}
-          target={phase3Target}
           onSave={(data) => {
             // Handle Phase 3 save
             setPhase3DialogOpen(false);
