@@ -642,6 +642,56 @@ class HybridStorage implements IStorage {
     );
   }
 
+  // Pool Assignment methods
+  async assignNumberToPool(poolId: number, phoneNumberId: number, priority?: number): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.assignNumberToPool(poolId, phoneNumberId, priority),
+      () => this.memStorage.assignNumberToPool(poolId, phoneNumberId, priority)
+    );
+  }
+
+  async removeNumberFromPool(poolId: number, phoneNumberId: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.removeNumberFromPool(poolId, phoneNumberId),
+      () => this.memStorage.removeNumberFromPool(poolId, phoneNumberId)
+    );
+  }
+
+  async getNumberPoolAssignments(phoneNumberId: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getNumberPoolAssignments(phoneNumberId),
+      () => this.memStorage.getNumberPoolAssignments(phoneNumberId)
+    );
+  }
+
+  async getPoolAssignedCount(poolId: number): Promise<number> {
+    return this.executeOperation(
+      () => this.databaseStorage.getPoolAssignedCount(poolId),
+      () => this.memStorage.getPoolAssignedCount(poolId)
+    );
+  }
+
+  async assignPoolToCampaign(campaignId: number, poolId: number, priority?: number): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.assignPoolToCampaign(campaignId, poolId, priority),
+      () => this.memStorage.assignPoolToCampaign(campaignId, poolId, priority)
+    );
+  }
+
+  async removePoolFromCampaign(campaignId: number, poolId: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.removePoolFromCampaign(campaignId, poolId),
+      () => this.memStorage.removePoolFromCampaign(campaignId, poolId)
+    );
+  }
+
+  async getCampaignPools(campaignId: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getCampaignPools(campaignId),
+      () => this.memStorage.getCampaignPools(campaignId)
+    );
+  }
+
   // RTB methods - add missing methods
   async getRtbTargets(userId?: number): Promise<any[]> {
     return this.executeOperation(
