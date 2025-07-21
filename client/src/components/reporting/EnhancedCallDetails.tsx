@@ -303,20 +303,20 @@ export function EnhancedCallDetails() {
                         <div className="flex items-center gap-1 text-sm">
                           <DollarSign className="h-3 w-3" />
                           <span className="text-green-600">
-                            {formatCurrency(call.revenue || 0)}
+                            {formatCurrency(parseFloat(call.revenue?.toString() || '0'))}
                           </span>
                         </div>
                         <div className="text-xs text-gray-500">
-                          Cost: {formatCurrency(call.cost || 0)}
+                          Cost: {formatCurrency(parseFloat(call.cost?.toString() || '0'))}
                         </div>
                         <div className="text-xs text-gray-500">
-                          Profit: <span className={`${(call.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(call.profit || 0)}
+                          Profit: <span className={`${(parseFloat(call.profit?.toString() || '0')) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(parseFloat(call.profit?.toString() || '0'))}
                           </span>
                         </div>
                         {call.margin && (
                           <div className="text-xs">
-                            {(call.margin || 0).toFixed(1)}% margin
+                            {(parseFloat(call.margin?.toString() || '0')).toFixed(1)}% margin
                           </div>
                         )}
                       </div>

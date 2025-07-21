@@ -103,7 +103,7 @@ router.get("/:id", requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid call ID" });
     }
 
-    const call = await storage.getEnhancedCallById(callId, userId);
+    const call = await storage.getEnhancedCallById(callId);
     
     if (!call) {
       return res.status(404).json({ error: "Call not found" });

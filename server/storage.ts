@@ -84,6 +84,10 @@ export interface IStorage {
   createCall(call: InsertCall): Promise<Call>;
   updateCall(id: number, updates: Partial<InsertCall>): Promise<Call | undefined>;
   
+  // Enhanced Calls (for advanced reporting)
+  getEnhancedCallsByUser(userId: number, filters?: any): Promise<any[]>;
+  getEnhancedCallById(id: number): Promise<any | undefined>;
+  
   // Call Logs
   getCallLogs(callId: number): Promise<CallLog[]>;
   createCallLog(log: InsertCallLog): Promise<CallLog>;

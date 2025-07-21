@@ -1,4 +1,4 @@
-import { eq, desc, count, sql, and, isNull } from 'drizzle-orm';
+import { eq, desc, count, sql, and, isNull, gte } from 'drizzle-orm';
 import { db } from './db';
 import { 
   campaigns, 
@@ -380,6 +380,172 @@ export class SupabaseStorage implements IStorage {
       })
       .where(eq(calls.id, id))
       .returning();
+    return result[0];
+  }
+
+  // Enhanced Calls with detailed joins for reporting
+  async getEnhancedCallsByUser(userId: number, filters?: any): Promise<any[]> {
+    let query = db
+      .select({
+        id: calls.id,
+        campaignId: calls.campaignId,
+        buyerId: calls.buyerId,
+        publisherId: calls.publisherId,
+        callSid: calls.callSid,
+        fromNumber: calls.fromNumber,
+        toNumber: calls.toNumber,
+        dialedNumber: calls.dialedNumber,
+        duration: calls.duration,
+        ringTime: calls.ringTime,
+        talkTime: calls.talkTime,
+        holdTime: calls.holdTime,
+        status: calls.status,
+        disposition: calls.disposition,
+        hangupCause: calls.hangupCause,
+        callQuality: calls.callQuality,
+        connectionTime: calls.connectionTime,
+        audioQuality: calls.audioQuality,
+        isDuplicate: calls.isDuplicate,
+        cost: calls.cost,
+        revenue: calls.revenue,
+        payout: calls.payout,
+        profit: calls.profit,
+        margin: calls.margin,
+        tags: calls.tags,
+        utmSource: calls.utmSource,
+        utmMedium: calls.utmMedium,
+        utmCampaign: calls.utmCampaign,
+        utmContent: calls.utmContent,
+        utmTerm: calls.utmTerm,
+        referrer: calls.referrer,
+        landingPage: calls.landingPage,
+        geoLocation: calls.geoLocation,
+        city: calls.city,
+        state: calls.state,
+        country: calls.country,
+        zipCode: calls.zipCode,
+        ipAddress: calls.ipAddress,
+        deviceType: calls.deviceType,
+        recordingUrl: calls.recordingUrl,
+        recordingSid: calls.recordingSid,
+        recordingStatus: calls.recordingStatus,
+        recordingDuration: calls.recordingDuration,
+        transcription: calls.transcription,
+        transcriptionStatus: calls.transcriptionStatus,
+        transcriptionConfidence: calls.transcriptionConfidence,
+        isConverted: calls.isConverted,
+        conversionType: calls.conversionType,
+        conversionValue: calls.conversionValue,
+        conversionTimestamp: calls.conversionTimestamp,
+        createdAt: calls.createdAt,
+        updatedAt: calls.updatedAt,
+        // Campaign details
+        campaignName: campaigns.name,
+        campaignStatus: campaigns.status,
+        // Buyer details
+        buyerName: buyers.name,
+        buyerEmail: buyers.email,
+        // Publisher details
+        publisherName: publishers.name,
+        publisherStatus: publishers.status,
+      })
+      .from(calls)
+      .leftJoin(campaigns, eq(calls.campaignId, campaigns.id))
+      .leftJoin(buyers, eq(calls.buyerId, buyers.id))
+      .leftJoin(publishers, eq(calls.publisherId, publishers.id))
+      .where(eq(campaigns.userId, userId));
+
+    // Apply filters
+    if (filters?.status && filters.status !== "all") {
+      query = query.where(eq(calls.status, filters.status));
+    }
+
+    if (filters?.campaignId && filters.campaignId !== "all") {
+      query = query.where(eq(calls.campaignId, filters.campaignId));
+    }
+
+    if (filters?.minDuration) {
+      const minDuration = parseInt(filters.minDuration);
+      if (!isNaN(minDuration)) {
+        query = query.where(gte(calls.duration, minDuration));
+      }
+    }
+
+    return await query.orderBy(desc(calls.createdAt));
+  }
+
+  async getEnhancedCallById(id: number): Promise<any | undefined> {
+    const result = await db
+      .select({
+        id: calls.id,
+        campaignId: calls.campaignId,
+        buyerId: calls.buyerId,
+        publisherId: calls.publisherId,
+        callSid: calls.callSid,
+        fromNumber: calls.fromNumber,
+        toNumber: calls.toNumber,
+        dialedNumber: calls.dialedNumber,
+        duration: calls.duration,
+        ringTime: calls.ringTime,
+        talkTime: calls.talkTime,
+        holdTime: calls.holdTime,
+        status: calls.status,
+        disposition: calls.disposition,
+        hangupCause: calls.hangupCause,
+        callQuality: calls.callQuality,
+        connectionTime: calls.connectionTime,
+        audioQuality: calls.audioQuality,
+        isDuplicate: calls.isDuplicate,
+        cost: calls.cost,
+        revenue: calls.revenue,
+        payout: calls.payout,
+        profit: calls.profit,
+        margin: calls.margin,
+        tags: calls.tags,
+        utmSource: calls.utmSource,
+        utmMedium: calls.utmMedium,
+        utmCampaign: calls.utmCampaign,
+        utmContent: calls.utmContent,
+        utmTerm: calls.utmTerm,
+        referrer: calls.referrer,
+        landingPage: calls.landingPage,
+        geoLocation: calls.geoLocation,
+        city: calls.city,
+        state: calls.state,
+        country: calls.country,
+        zipCode: calls.zipCode,
+        ipAddress: calls.ipAddress,
+        deviceType: calls.deviceType,
+        recordingUrl: calls.recordingUrl,
+        recordingSid: calls.recordingSid,
+        recordingStatus: calls.recordingStatus,
+        recordingDuration: calls.recordingDuration,
+        transcription: calls.transcription,
+        transcriptionStatus: calls.transcriptionStatus,
+        transcriptionConfidence: calls.transcriptionConfidence,
+        isConverted: calls.isConverted,
+        conversionType: calls.conversionType,
+        conversionValue: calls.conversionValue,
+        conversionTimestamp: calls.conversionTimestamp,
+        createdAt: calls.createdAt,
+        updatedAt: calls.updatedAt,
+        // Campaign details
+        campaignName: campaigns.name,
+        campaignStatus: campaigns.status,
+        // Buyer details
+        buyerName: buyers.name,
+        buyerEmail: buyers.email,
+        // Publisher details
+        publisherName: publishers.name,
+        publisherStatus: publishers.status,
+      })
+      .from(calls)
+      .leftJoin(campaigns, eq(calls.campaignId, campaigns.id))
+      .leftJoin(buyers, eq(calls.buyerId, buyers.id))
+      .leftJoin(publishers, eq(calls.publisherId, publishers.id))
+      .where(eq(calls.id, id))
+      .limit(1);
+
     return result[0];
   }
 
