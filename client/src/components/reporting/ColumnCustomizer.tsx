@@ -229,20 +229,32 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
                 <CollapsibleContent className="space-y-2 pt-2 pb-4">
                   {(columns as ColumnDefinition[]).map((column: ColumnDefinition) => (
                     <div key={column.id} className="flex items-center space-x-2 pl-8">
-                      <Checkbox
-                        id={column.id}
-                        checked={localVisibleColumns.includes(column.id)}
-                        onCheckedChange={() => toggleColumn(column.id)}
-                      />
-                      <label
-                        htmlFor={column.id}
-                        className="flex-1 text-sm cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        <div className="font-medium">{column.label}</div>
-                        {column.description && (
-                          <div className="text-xs text-muted-foreground">{column.description}</div>
-                        )}
-                      </label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`checkbox-${column.id}`}
+                          checked={localVisibleColumns.includes(column.id)}
+                          onChange={(e) => {
+                            console.log('Native checkbox changed:', column.id, 'checked:', e.target.checked);
+                            toggleColumn(column.id);
+                          }}
+                          className="h-4 w-4 rounded border border-input bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                        />
+                        <label
+                          htmlFor={`checkbox-${column.id}`}
+                          className="flex-1 text-sm cursor-pointer leading-none"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            console.log('Label clicked for:', column.id);
+                            toggleColumn(column.id);
+                          }}
+                        >
+                          <div className="font-medium">{column.label}</div>
+                          {column.description && (
+                            <div className="text-xs text-muted-foreground">{column.description}</div>
+                          )}
+                        </label>
+                      </div>
                       <Badge variant="outline" className="text-xs">
                         {column.dataType}
                       </Badge>
