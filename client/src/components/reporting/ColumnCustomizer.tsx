@@ -121,9 +121,14 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
   };
 
   const toggleColumn = (columnId: string) => {
+    console.log('Toggling column:', columnId);
+    console.log('Current visible columns:', localVisibleColumns);
+    
     const newVisible = localVisibleColumns.includes(columnId)
       ? localVisibleColumns.filter(id => id !== columnId)
       : [...localVisibleColumns, columnId];
+    
+    console.log('New visible columns:', newVisible);
     
     // Ensure at least one column remains visible
     if (newVisible.length === 0) {
@@ -136,9 +141,16 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
     }
     
     setLocalVisibleColumns(newVisible);
+    
+    // Also immediately apply changes to the table (real-time preview)
+    onColumnsChange(newVisible);
   };
 
   const handleSave = () => {
+    // Immediately apply changes to the table
+    onColumnsChange(localVisibleColumns);
+    
+    // Mock save for demonstration
     saveMutation.mutate({
       visibleColumns: localVisibleColumns,
       columnOrder: null,
