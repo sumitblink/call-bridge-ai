@@ -5868,6 +5868,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/column-preferences', columnPreferencesRouter);
 
   const httpServer = createServer(app);
+  // Test landing page route for RedTrack integration testing
+  app.get('/redtrack-test-lander.html', (req, res) => {
+    res.sendFile('redtrack-test-lander.html', { root: '.' });
+  });
+
   return httpServer;
 }
 
