@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
+import CallActivity from "./CallActivity";
 
 interface CallData {
   id: number;
@@ -1909,6 +1910,11 @@ export default function RingbaStyleReporting() {
                 setSelectedTags([]); // Clear all tags since only one is allowed
               }}
             />
+          </div>
+          
+          {/* Call Activity Section */}
+          <div className="mt-6">
+            <CallActivity />
           </div>
         </CardContent>
       </Card>
