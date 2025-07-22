@@ -110,8 +110,10 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Campaign ID',
     category: 'Popular',
     dataType: 'string',
-    defaultVisible: false,
-    width: 120
+    defaultVisible: true,
+    width: 280,
+    sortable: true,
+    filterable: true
   },
   {
     id: 'publisherId',

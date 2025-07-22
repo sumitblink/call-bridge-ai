@@ -19,7 +19,7 @@ import { formatDistanceToNow } from "date-fns";
 
 interface Call {
   id: number;
-  campaignId: number | null;
+  campaignId: string | null;
   buyerId: number | null;
   callSid: string;
   fromNumber: string;
@@ -37,12 +37,13 @@ interface Call {
   revenue: string;
   geoLocation: string | null;
   userAgent: string | null;
+  numberPoolId: number | null;
   createdAt: string;
   updatedAt: string;
 }
 
 interface Campaign {
-  id: number;
+  id: string;
   name: string;
   description: string | null;
   status: string;
@@ -143,7 +144,7 @@ export default function CallActivity() {
 
   const filteredCalls = calls.filter(call => {
     const matchesStatus = statusFilter === "all" || call.status === statusFilter;
-    const matchesCampaign = campaignFilter === "all" || call.campaignId?.toString() === campaignFilter;
+    const matchesCampaign = campaignFilter === "all" || call.campaignId === campaignFilter;
     const matchesSearch = searchTerm === "" || 
       call.fromNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
       call.toNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -217,6 +218,8 @@ export default function CallActivity() {
         return <div className="text-xs">{call.numberPoolId || '-'}</div>;
       case 'numberPoolUsed':
         return <div className="text-xs">{call.numberPoolId ? 'Yes' : 'No'}</div>;
+      case 'campaignId':
+        return <div className="font-mono text-xs">{call.campaignId}</div>;
       case 'actions':
         return (
           <div className="flex items-center space-x-1">
@@ -273,6 +276,8 @@ export default function CallActivity() {
           switch (col) {
             case 'campaign':
               return campaigns.find(c => c.id === call.campaignId)?.name || 'Unknown';
+            case 'campaignId':
+              return call.campaignId;
             case 'buyer':
               return buyers.find(b => b.id === call.buyerId)?.name || 'No Buyer';
             default:
