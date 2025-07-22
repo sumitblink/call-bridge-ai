@@ -431,15 +431,8 @@ export default function RingbaStyleReporting() {
 
   // Filter handlers
   const handleAddFilter = useCallback((field: string, value: string) => {
-    const rule: FilterRule = {
-      field: field,
-      operator: 'contains',
-      value: value
-    };
-    setFilterRules(prev => [...prev.filter(r => r.field !== field), rule]);
-  }, []);
-
-  // Apply filters to the data
+      target: 'Homeowner Refinance Prospects',
+      buyer: 'QuickenLoans Partnership',
       dialedNumbers: ['+15551234567'],
       numberPool: 'Mortgage Refinance Pool 3',
       lastCallDate: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),

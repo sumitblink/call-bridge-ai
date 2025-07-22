@@ -431,7 +431,13 @@ export default function RingbaStyleReporting() {
 
   // Filter handlers
   const handleAddFilter = useCallback((field: string, value: string) => {
-      target: 'Homeowner Refinance Prospects',
+    const rule: FilterRule = {
+      field: field,
+      operator: 'contains',
+      value: value
+    };
+    setFilterRules(prev => [...prev.filter(r => r.field !== field), rule]);
+  }, []);
       buyer: 'QuickenLoans Partnership',
       dialedNumbers: ['+15551234567'],
       numberPool: 'Mortgage Refinance Pool 3',
