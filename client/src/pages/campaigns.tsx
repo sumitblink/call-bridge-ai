@@ -23,6 +23,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import type { Campaign, InsertCampaign, Buyer } from "@shared/schema";
+import CampaignUrlParameters from "@/components/campaign/CampaignUrlParameters";
+import CampaignTrackingPixels from "@/components/campaign/CampaignTrackingPixels";
 import { DatabaseStatus } from "@/components/DatabaseStatus";
 
 // Schema for campaign form (simplified RTB - no routers)
@@ -113,7 +115,7 @@ function CampaignCard({ campaign, onDelete, onEdit }: {
                 <p className="text-gray-500 mb-1">Buyers</p>
                 <div className="flex items-center justify-center gap-1">
                   <Users className="h-4 w-4 text-gray-400" />
-                  <BuyerCount campaignId={campaign.id} />
+                  <BuyerCount campaignId={Number(campaign.id)} />
                 </div>
               </div>
             </div>
@@ -513,11 +515,11 @@ function CampaignForm({
       </TabsContent>
       
       <TabsContent value="url-parameters">
-        <CampaignUrlParameters campaignId={campaign?.id} />
+        <CampaignUrlParameters campaignId={campaign?.id ? Number(campaign.id) : undefined} />
       </TabsContent>
       
       <TabsContent value="tracking-pixels">
-        <CampaignTrackingPixels campaignId={campaign?.id} />
+        <CampaignTrackingPixels campaignId={campaign?.id ? Number(campaign.id) : undefined} />
       </TabsContent>
     </Tabs>
   );
@@ -738,7 +740,7 @@ export default function Campaigns() {
                       <TableCell className="text-center font-medium">0</TableCell>
                       <TableCell className="text-center font-medium">0</TableCell>
                       <TableCell className="text-center">
-                        <BuyerCount campaignId={campaign.id} />
+                        <BuyerCount campaignId={Number(campaign.id)} />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -799,7 +801,7 @@ export default function Campaigns() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => campaignToDelete && deleteMutation.mutate(campaignToDelete.id)}
+                onClick={() => campaignToDelete && deleteMutation.mutate(Number(campaignToDelete.id))}
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? "Deleting..." : "Delete"}
