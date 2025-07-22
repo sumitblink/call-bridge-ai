@@ -516,7 +516,7 @@ export default function CallActivity() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Call Activity ({filteredCalls.length})</CardTitle>
+              <CardTitle>Call Details ({filteredCalls.length})</CardTitle>
               <CardDescription>
                 Real-time view of all calls with actions and monitoring
               </CardDescription>
