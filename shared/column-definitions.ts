@@ -215,6 +215,31 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 100
   },
   {
+    id: 'numberPool',
+    label: 'Number Pool',
+    category: 'Call',
+    dataType: 'string',
+    defaultVisible: false,
+    width: 120,
+    filterable: true
+  },
+  {
+    id: 'numberPoolId',
+    label: 'Pool ID',
+    category: 'Call',
+    dataType: 'number',
+    defaultVisible: false,
+    width: 80
+  },
+  {
+    id: 'numberPoolUsed',
+    label: 'Pool Used',
+    category: 'Call',
+    dataType: 'boolean',
+    defaultVisible: false,
+    width: 100
+  },
+  {
     id: 'callCompleteTimestamp',
     label: 'Call Complete Timestamp',
     category: 'Call',

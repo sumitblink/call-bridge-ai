@@ -211,6 +211,12 @@ export default function CallActivity() {
         return <div className="text-xs">No</div>;
       case 'previouslyConnected':
         return <div className="text-xs">No</div>;
+      case 'numberPool':
+        return <div className="truncate text-xs">{call.numberPoolId ? 'FirstCampaignPool' : 'Direct'}</div>;
+      case 'numberPoolId':
+        return <div className="text-xs">{call.numberPoolId || '-'}</div>;
+      case 'numberPoolUsed':
+        return <div className="text-xs">{call.numberPoolId ? 'Yes' : 'No'}</div>;
       case 'actions':
         return (
           <div className="flex items-center space-x-1">
