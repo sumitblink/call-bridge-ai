@@ -595,13 +595,32 @@ export class SupabaseStorage implements IStorage {
   }
 
   // Integration methods
-  async getUrlParameters(): Promise<any[]> {
-    return await db.select().from(urlParameters);
+  async getUrlParameters(userId: number): Promise<any[]> {
+    return await db.select().from(urlParameters).where(eq(urlParameters.userId, userId));
+  }
+
+  async getUrlParameter(id: number): Promise<any | undefined> {
+    const result = await db.select().from(urlParameters).where(eq(urlParameters.id, id));
+    return result[0];
   }
 
   async createUrlParameter(data: any): Promise<any> {
     const [result] = await db.insert(urlParameters).values(data).returning();
     return result;
+  }
+
+  async updateUrlParameter(id: number, data: any): Promise<any | undefined> {
+    const [result] = await db.update(urlParameters)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(urlParameters.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteUrlParameter(id: number): Promise<boolean> {
+    const result = await db.delete(urlParameters)
+      .where(eq(urlParameters.id, id));
+    return result.rowCount > 0;
   }
 
   async getTrackingPixels(): Promise<any[]> {
