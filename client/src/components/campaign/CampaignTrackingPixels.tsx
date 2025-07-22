@@ -497,27 +497,28 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                         </div>
                       </div>
 
-                      {/* Authentication */}
-                      <div>
-                        <Label htmlFor="authentication">Authentication</Label>
-                        <Select
-                          value={formData.authentication}
-                          onValueChange={(value: 'none' | 'basic' | 'bearer' | 'api_key') => 
-                            setFormData({ ...formData, authentication: value })}
-                        >
-                          <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                            <SelectValue placeholder="Choose Authentication" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            <SelectItem value="basic">Basic Auth</SelectItem>
-                            <SelectItem value="bearer">Bearer Token</SelectItem>
-                            <SelectItem value="api_key">API Key</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
                     </div>
                   )}
+
+                  {/* Authentication - Outside Advanced Options like Ringba */}
+                  <div>
+                    <Label htmlFor="authentication">Authentication</Label>
+                    <Select
+                      value={formData.authentication}
+                      onValueChange={(value: 'none' | 'basic' | 'bearer' | 'api_key') => 
+                        setFormData({ ...formData, authentication: value })}
+                    >
+                      <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
+                        <SelectValue placeholder="Choose Authentication" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="basic">Basic Auth</SelectItem>
+                        <SelectItem value="bearer">Bearer Token</SelectItem>
+                        <SelectItem value="api_key">API Key</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   <div className="flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={resetForm}>
