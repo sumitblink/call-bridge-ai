@@ -2001,6 +2001,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // URL Parameters routes
+  app.get('/api/integrations/url-parameters', requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const parameters = await storage.getUrlParameters(user.id);
+      res.json(parameters);
+    } catch (error) {
+      console.error('Error fetching URL parameters:', error);
+      res.status(500).json({ error: 'Failed to fetch URL parameters' });
+    }
+  });
+
+  app.post('/api/integrations/url-parameters', requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { insertUrlParameterSchema } = await import('@shared/schema');
+      
+      const dataWithUserId = {
+        ...req.body,
+        userId: user.id
+      };
+      
+      const validatedData = insertUrlParameterSchema.parse(dataWithUserId);
+      const newParameter = await storage.createUrlParameter(validatedData);
+      
+      res.status(201).json(newParameter);
+    } catch (error) {
+      console.error('Error creating URL parameter:', error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid URL parameter data', details: error.message });
+      }
+      res.status(500).json({ error: 'Failed to create URL parameter' });
+    }
+  });
+
+  app.put('/api/integrations/url-parameters/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { insertUrlParameterSchema } = await import('@shared/schema');
+      const validatedData = insertUrlParameterSchema.partial().parse(req.body);
+      
+      const updatedParameter = await storage.updateUrlParameter(parseInt(id), validatedData);
+      
+      if (!updatedParameter) {
+        return res.status(404).json({ error: 'URL parameter not found' });
+      }
+      
+      res.json(updatedParameter);
+    } catch (error) {
+      console.error('Error updating URL parameter:', error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid URL parameter data', details: error.message });
+      }
+      res.status(500).json({ error: 'Failed to update URL parameter' });
+    }
+  });
+
+  app.delete('/api/integrations/url-parameters/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteUrlParameter(parseInt(id));
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'URL parameter not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting URL parameter:', error);
+      res.status(500).json({ error: 'Failed to delete URL parameter' });
+    }
+  });
+
   // Pixel Testing API
   app.post('/api/pixels/test', async (req, res) => {
     try {

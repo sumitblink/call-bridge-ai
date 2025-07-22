@@ -39,6 +39,8 @@ import {
   type InsertConversionEvent,
   type RedtrackConfig,
   type InsertRedtrackConfig,
+  type URLParameter,
+  type InsertURLParameter,
 } from '@shared/schema';
 
 export interface IStorage {
@@ -244,6 +246,13 @@ export interface IStorage {
   getRedtrackConfigs(userId: number): Promise<RedtrackConfig[]>;
   updateRedtrackConfig(id: number, updates: Partial<InsertRedtrackConfig>): Promise<RedtrackConfig | undefined>;
   deleteRedtrackConfig(id: number): Promise<boolean>;
+
+  // URL Parameters
+  getUrlParameters(userId: number): Promise<URLParameter[]>;
+  getUrlParameter(id: number): Promise<URLParameter | undefined>;
+  createUrlParameter(parameter: InsertURLParameter): Promise<URLParameter>;
+  updateUrlParameter(id: number, parameter: Partial<InsertURLParameter>): Promise<URLParameter | undefined>;
+  deleteUrlParameter(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -258,6 +267,7 @@ export class MemStorage implements IStorage {
   private publisherCampaigns: Map<string, any> = new Map();
   private phoneNumberTags: Map<number, any> = new Map();
   private redtrackConfigs: Map<number, any> = new Map();
+  private urlParameters: Map<number, URLParameter> = new Map();
   private currentUserId: number = 1;
   private currentCampaignId: number = 1;
   private currentBuyerId: number = 1;
@@ -267,6 +277,7 @@ export class MemStorage implements IStorage {
   private currentPublisherId: number = 1;
   private currentTagId: number = 1;
   private currentRedtrackConfigId: number = 1;
+  private currentUrlParameterId: number = 1;
 
   constructor() {
     this.initializeSampleData();
@@ -1580,6 +1591,44 @@ export class MemStorage implements IStorage {
 
   async deleteRedtrackConfig(id: number): Promise<boolean> {
     return this.redtrackConfigs.delete(id);
+  }
+
+  // URL Parameters methods
+  async getUrlParameters(userId: number): Promise<URLParameter[]> {
+    return Array.from(this.urlParameters.values())
+      .filter(param => param.userId === userId);
+  }
+
+  async getUrlParameter(id: number): Promise<URLParameter | undefined> {
+    return this.urlParameters.get(id);
+  }
+
+  async createUrlParameter(parameter: InsertURLParameter): Promise<URLParameter> {
+    const newParameter: URLParameter = {
+      ...parameter,
+      id: this.currentUrlParameterId++,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.urlParameters.set(newParameter.id, newParameter);
+    return newParameter;
+  }
+
+  async updateUrlParameter(id: number, parameter: Partial<InsertURLParameter>): Promise<URLParameter | undefined> {
+    const existing = this.urlParameters.get(id);
+    if (!existing) return undefined;
+
+    const updated = {
+      ...existing,
+      ...parameter,
+      updatedAt: new Date()
+    };
+    this.urlParameters.set(id, updated);
+    return updated;
+  }
+
+  async deleteUrlParameter(id: number): Promise<boolean> {
+    return this.urlParameters.delete(id);
   }
 }
 

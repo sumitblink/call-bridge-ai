@@ -287,17 +287,20 @@ export const agentCalls = pgTable("agent_calls", {
   disposition: varchar("disposition", { length: 100 }), // sale, no_sale, callback, busy, etc.
 });
 
-// Integration system tables
+// URL Parameters table for custom parameter tracking configuration
 export const urlParameters = pgTable("url_parameters", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 256 }).notNull(),
-  parameter: varchar("parameter", { length: 100 }).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  parameterName: varchar("parameter_name", { length: 100 }).notNull(), // URL parameter key (e.g., 'clickid')
+  reportingMenuName: varchar("reporting_menu_name", { length: 100 }).notNull(), // Display name in reports (e.g., 'User')
+  reportName: varchar("report_name", { length: 100 }).notNull(), // Column name in reports (e.g., 'clickid')
+  parameterType: varchar("parameter_type", { length: 50 }).default("string").notNull(), // string, integer, decimal
+  isRequired: boolean("is_required").default(false),
+  defaultValue: varchar("default_value", { length: 255 }),
   description: text("description"),
-  value: varchar("value", { length: 256 }).notNull(),
-  campaignId: uuid("campaign_id").references(() => campaigns.id),
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const trackingPixels = pgTable("tracking_pixels", {
@@ -780,6 +783,16 @@ export type InsertAgentCall = z.infer<typeof insertAgentCallSchema>;
 
 export type NumberPool = typeof numberPools.$inferSelect;
 export type InsertNumberPool = z.infer<typeof insertNumberPoolSchema>;
+
+// URL Parameters schema and types
+export const insertUrlParameterSchema = createInsertSchema(urlParameters).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true 
+});
+
+export type URLParameter = typeof urlParameters.$inferSelect;
+export type InsertURLParameter = z.infer<typeof insertUrlParameterSchema>;
 
 export type NumberPoolAssignment = typeof numberPoolAssignments.$inferSelect;
 export type InsertNumberPoolAssignment = z.infer<typeof insertNumberPoolAssignmentSchema>;
@@ -1499,6 +1512,8 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
 
 export type Feedback = typeof feedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+
+
 
 // MVP Tracking Tables
 export const visitorSessions = pgTable("visitor_sessions", {

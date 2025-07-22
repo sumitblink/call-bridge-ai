@@ -46,6 +46,20 @@ interface Campaign {
   name: string;
 }
 
+interface URLParameter {
+  id: number;
+  parameterName: string;
+  reportingMenuName: string;
+  reportName: string;
+  parameterType: 'string' | 'integer' | 'decimal';
+  isRequired: boolean;
+  defaultValue?: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function IntegrationsPage() {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -65,6 +79,18 @@ export default function IntegrationsPage() {
 
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [customUrl, setCustomUrl] = useState("");
+
+  // URL Parameters form state
+  const [urlParameterForm, setUrlParameterForm] = useState({
+    parameterName: "",
+    reportingMenuName: "",
+    reportName: "",
+    parameterType: "string" as 'string' | 'integer' | 'decimal',
+    isRequired: false,
+    defaultValue: "",
+    description: "",
+    isActive: true
+  });
 
   // Fetch campaigns for assignment
   const { data: campaigns = [] } = useQuery<Campaign[]>({
@@ -89,6 +115,11 @@ export default function IntegrationsPage() {
       createdAt: pixel.createdAt || pixel.created_at,
       updatedAt: pixel.updatedAt || pixel.updated_at
     }))
+  });
+
+  // Fetch URL Parameters
+  const { data: urlParameters = [], isLoading: isLoadingUrlParameters } = useQuery<URLParameter[]>({
+    queryKey: ['/api/integrations/url-parameters']
   });
 
   // Filter pixels by campaign
@@ -292,6 +323,128 @@ export default function IntegrationsPage() {
     }
   };
 
+  // URL Parameters form handlers
+  const resetUrlParameterForm = () => {
+    setUrlParameterForm({
+      parameterName: "",
+      reportingMenuName: "",
+      reportName: "",
+      parameterType: "string",
+      isRequired: false,
+      defaultValue: "",
+      description: "",
+      isActive: true
+    });
+  };
+
+  const handleUrlParameterSubmit = () => {
+    if (!urlParameterForm.parameterName || !urlParameterForm.reportingMenuName || !urlParameterForm.reportName) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (editingItem) {
+      updateUrlParameterMutation.mutate({ id: editingItem.id, ...urlParameterForm });
+    } else {
+      createUrlParameterMutation.mutate(urlParameterForm);
+    }
+  };
+
+  const handleEditUrlParameter = (parameter: URLParameter) => {
+    setEditingItem(parameter);
+    setUrlParameterForm({
+      parameterName: parameter.parameterName,
+      reportingMenuName: parameter.reportingMenuName,
+      reportName: parameter.reportName,
+      parameterType: parameter.parameterType,
+      isRequired: parameter.isRequired,
+      defaultValue: parameter.defaultValue || "",
+      description: parameter.description || "",
+      isActive: parameter.isActive
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteUrlParameter = (id: number) => {
+    if (confirm("Are you sure you want to delete this URL parameter?")) {
+      deleteUrlParameterMutation.mutate(id);
+    }
+  };
+
+  // URL Parameters mutations
+  const createUrlParameterMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('/api/integrations/url-parameters', 'POST', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/integrations/url-parameters'] });
+      setIsDialogOpen(false);
+      resetUrlParameterForm();
+      toast({
+        title: "Success",
+        description: "URL parameter created successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create URL parameter",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const updateUrlParameterMutation = useMutation({
+    mutationFn: async (data: { id: number; [key: string]: any }) => {
+      const { id, ...payload } = data;
+      const response = await apiRequest(`/api/integrations/url-parameters/${id}`, 'PUT', payload);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/integrations/url-parameters'] });
+      setIsDialogOpen(false);
+      setEditingItem(null);
+      resetUrlParameterForm();
+      toast({
+        title: "Success",
+        description: "URL parameter updated successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update URL parameter",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const deleteUrlParameterMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest(`/api/integrations/url-parameters/${id}`, 'DELETE');
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/integrations/url-parameters'] });
+      toast({
+        title: "Success",
+        description: "URL parameter deleted successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete URL parameter",
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleTestPixel = () => {
     if (!pixelForm.code) {
       toast({
@@ -341,6 +494,7 @@ export default function IntegrationsPage() {
             <TabsTrigger value="pixels">Tracking Pixels</TabsTrigger>
             <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
             <TabsTrigger value="apis">API Keys</TabsTrigger>
+            <TabsTrigger value="url-parameters">URL Parameters</TabsTrigger>
           </TabsList>
 
           {/* Tracking Pixels Tab */}
@@ -619,6 +773,252 @@ export default function IntegrationsPage() {
               <h3 className="text-lg font-medium mb-2">API Key Management</h3>
               <p className="text-gray-600">API key management coming soon</p>
             </div>
+          </TabsContent>
+
+          {/* URL Parameters Tab */}
+          <TabsContent value="url-parameters" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">URL Parameters</h2>
+                <p className="text-gray-600">Configure URL parameters for campaign tracking and reporting</p>
+              </div>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => {
+                    setEditingItem(null);
+                    resetUrlParameterForm();
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Parameter
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingItem ? 'Edit URL Parameter' : 'Create URL Parameter'}
+                    </DialogTitle>
+                    <DialogDescription>
+                      Configure URL parameters to capture and report campaign data
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="parameter-name">Parameter Name *</Label>
+                      <Input
+                        id="parameter-name"
+                        placeholder="utm_campaign"
+                        value={urlParameterForm.parameterName}
+                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, parameterName: e.target.value }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="reporting-menu">Reporting Menu Name *</Label>
+                      <Input
+                        id="reporting-menu"
+                        placeholder="Campaign"
+                        value={urlParameterForm.reportingMenuName}
+                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, reportingMenuName: e.target.value }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="report-name">Report Column Name *</Label>
+                      <Input
+                        id="report-name"
+                        placeholder="Campaign Name"
+                        value={urlParameterForm.reportName}
+                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, reportName: e.target.value }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="parameter-type">Data Type</Label>
+                      <Select 
+                        value={urlParameterForm.parameterType} 
+                        onValueChange={(value: 'string' | 'integer' | 'decimal') => 
+                          setUrlParameterForm(prev => ({ ...prev, parameterType: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="string">String</SelectItem>
+                          <SelectItem value="integer">Integer</SelectItem>
+                          <SelectItem value="decimal">Decimal</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="default-value">Default Value</Label>
+                      <Input
+                        id="default-value"
+                        placeholder="direct"
+                        value={urlParameterForm.defaultValue}
+                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, defaultValue: e.target.value }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Describe what this parameter tracks..."
+                        value={urlParameterForm.description}
+                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, description: e.target.value }))}
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="is-required"
+                        checked={urlParameterForm.isRequired}
+                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, isRequired: e.target.checked }))}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor="is-required">Required Parameter</Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="is-active"
+                        checked={urlParameterForm.isActive}
+                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, isActive: e.target.checked }))}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor="is-active">Active</Label>
+                    </div>
+
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsDialogOpen(false);
+                          setEditingItem(null);
+                          resetUrlParameterForm();
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleUrlParameterSubmit}
+                        disabled={createUrlParameterMutation.isPending || updateUrlParameterMutation.isPending}
+                      >
+                        {editingItem ? 'Update Parameter' : 'Create Parameter'}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* URL Parameters Table */}
+            <div className="bg-white rounded-lg border">
+              {isLoadingUrlParameters ? (
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Loading URL parameters...</p>
+                </div>
+              ) : urlParameters.length === 0 ? (
+                <div className="text-center py-12">
+                  <Settings className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No URL Parameters</h3>
+                  <p className="text-gray-600 mb-4">Configure URL parameters to track campaign data from traffic sources</p>
+                  <p className="text-sm text-gray-500">Examples: utm_campaign, utm_source, keyword, adgroup_id</p>
+                </div>
+              ) : (
+                <div className="overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parameter</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Menu</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report Column</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {urlParameters.map((parameter) => (
+                        <tr key={parameter.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center">
+                              <Code className="h-4 w-4 text-purple-500 mr-2" />
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{parameter.parameterName}</div>
+                                {parameter.description && (
+                                  <div className="text-sm text-gray-500">{parameter.description}</div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">{parameter.reportingMenuName}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900">{parameter.reportName}</td>
+                          <td className="px-6 py-4">
+                            <Badge variant="outline" className="capitalize">{parameter.parameterType}</Badge>
+                            {parameter.isRequired && (
+                              <Badge variant="destructive" className="ml-1">Required</Badge>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <Badge variant={parameter.isActive ? "default" : "secondary"}>
+                              {parameter.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 text-sm space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditUrlParameter(parameter)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteUrlParameter(parameter.id)}
+                              disabled={deleteUrlParameterMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Usage Information */}
+            {urlParameters.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Globe className="h-5 w-5 mr-2" />
+                    Parameter Usage
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600 mb-3">
+                    These parameters will be captured from campaign URLs and displayed in reports:
+                  </p>
+                  <div className="bg-gray-50 p-3 rounded-lg font-mono text-sm">
+                    {`https://yoursite.com/landing-page?${urlParameters.map(p => `${p.parameterName}=value`).join('&')}`}
+                  </div>
+                  <div className="mt-3 text-xs text-gray-500">
+                    Values will appear in reporting under the configured menu names and column headers.
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
