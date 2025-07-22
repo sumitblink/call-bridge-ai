@@ -169,13 +169,15 @@ export default function CallActivity() {
   // Column resizing handlers
   const handleMouseDown = (column: string, e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsResizing(column);
     
+    const startX = e.clientX;
+    const startWidth = columnWidths[column] || getColumnDefinition(column)?.width || 120;
+    
     const handleMouseMove = (e: MouseEvent) => {
-      if (!tableRef.current) return;
-      
-      const rect = tableRef.current.getBoundingClientRect();
-      const newWidth = Math.max(50, e.clientX - rect.left);
+      const deltaX = e.clientX - startX;
+      const newWidth = Math.max(50, startWidth + deltaX);
       setColumnWidths(prev => ({ ...prev, [column]: newWidth }));
     };
 
@@ -545,12 +547,15 @@ export default function CallActivity() {
     const matchesStatus = statusFilter === "all" || call.status === statusFilter;
     const matchesCampaign = campaignFilter === "all" || call.campaignId?.toString() === campaignFilter;
     const matchesSearch = searchTerm === "" || 
-      call.fromNumber.includes(searchTerm) || 
-      call.toNumber.includes(searchTerm) ||
-      call.callSid.includes(searchTerm);
+      call.fromNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      call.toNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      call.callSid.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesStatus && matchesCampaign && matchesSearch;
   });
+
+  // Debug: log filtered calls count
+  console.log('Total calls:', calls.length, 'Filtered calls:', filteredCalls.length, 'Visible columns:', visibleColumns.length);
 
   const getStatusColor = (status: string) => {
     switch (status) {
