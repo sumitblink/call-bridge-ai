@@ -197,59 +197,18 @@ export default function CallActivity() {
     if (!columnDef) return <div className="truncate">-</div>;
 
     switch (column) {
-      case 'inbound_call_id':
-        return <div className="text-blue-600 font-mono text-xs">{call.id}</div>;
-      case 'call_date':
-        return <div className="text-xs">{formatDistanceToNow(new Date(call.createdAt), { addSuffix: true })}</div>;
-      case 'caller_id':
-        return <div className="font-mono text-xs">{call.fromNumber}</div>;
-      case 'dialed_number':
-        return <div className="font-mono text-xs">{call.toNumber}</div>;
-      case 'call_duration':
-        return <div className="text-center">{Math.floor(call.duration / 60)}:{(call.duration % 60).toString().padStart(2, '0')}</div>;
-      case 'call_status':
-        return (
-          <Badge variant={
-            call.status === 'completed' ? 'default' :
-            call.status === 'failed' ? 'destructive' :
-            call.status === 'busy' ? 'secondary' : 'outline'
-          }>
-            {call.status}
-          </Badge>
-        );
-      case 'call_revenue':
-        return <div className="text-right text-green-600 font-medium">${parseFloat(call.revenue || '0').toFixed(2)}</div>;
-      case 'call_cost':
-        return <div className="text-right text-red-600">${parseFloat(call.cost || '0').toFixed(2)}</div>;
-      case 'call_profit':
-        const profit = parseFloat(call.revenue || '0') - parseFloat(call.cost || '0');
-        return <div className="text-right font-medium">${profit.toFixed(2)}</div>;
-      case 'recording_status':
-        return call.recordingStatus ? <Badge variant="outline">{call.recordingStatus}</Badge> : <span className="text-gray-400">-</span>;
-      case 'call_quality':
-        return call.callQuality ? <Badge variant="secondary">{call.callQuality}</Badge> : <span className="text-gray-400">-</span>;
-      case 'geo_location':
-        return <div className="truncate">{call.geoLocation || '-'}</div>;
-      case 'user_agent':
-        return <div className="truncate text-xs">{call.userAgent || '-'}</div>;
-      case 'recording_url':
-        return call.recordingUrl ? (
-          <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
-            <Play className="h-3 w-3" />
-          </Button>
-        ) : <span className="text-gray-400">-</span>;
-      case 'transcription':
-        return call.transcription ? (
-          <div className="truncate max-w-32 text-xs">{call.transcription}</div>
-        ) : <span className="text-gray-400">-</span>;
-      case 'campaign_name':
+      case 'campaign':
         return (
           <div className="flex flex-col">
             <span className="font-medium text-xs">{campaign?.name || 'Unknown'}</span>
             <span className="text-xs text-gray-400">ID: {call.campaignId}</span>
           </div>
         );
-      case 'buyer_name':
+      case 'publisher':
+        return <div className="text-xs">Unknown Publisher</div>;
+      case 'target':
+        return <div className="text-xs">Target {call.buyerId}</div>;
+      case 'buyer':
         return (
           <div className="flex flex-col">
             {buyer ? (
@@ -262,6 +221,57 @@ export default function CallActivity() {
             )}
           </div>
         );
+      case 'callDate':
+        return <div className="text-xs">{formatDistanceToNow(new Date(call.createdAt), { addSuffix: true })}</div>;
+      case 'callerId':
+        return <div className="font-mono text-xs">{call.fromNumber}</div>;
+      case 'dialedNumber':
+        return <div className="font-mono text-xs">{call.toNumber}</div>;
+      case 'duration':
+        return <div className="text-center">{Math.floor(call.duration / 60)}:{(call.duration % 60).toString().padStart(2, '0')}</div>;
+      case 'connectedCallLength':
+        return <div className="text-center">{Math.floor(call.duration / 60)}:{(call.duration % 60).toString().padStart(2, '0')}</div>;
+      case 'duplicate':
+        return <div className="text-center text-xs">No</div>;
+      case 'previouslyConnected':
+        return <div className="text-center text-xs">No</div>;
+      case 'revenue':
+        return <div className="text-right text-green-600 font-medium">${parseFloat(call.revenue || '0').toFixed(2)}</div>;
+      case 'profit':
+        const profit = parseFloat(call.revenue || '0') - parseFloat(call.cost || '0');
+        return <div className="text-right font-medium">${profit.toFixed(2)}</div>;
+      case 'status':
+        return (
+          <Badge variant={
+            call.status === 'completed' ? 'default' :
+            call.status === 'failed' ? 'destructive' :
+            call.status === 'busy' ? 'secondary' : 'outline'
+          }>
+            {call.status}
+          </Badge>
+        );
+      case 'fromNumber':
+        return <div className="font-mono text-xs">{call.fromNumber}</div>;
+      case 'toNumber':
+        return <div className="font-mono text-xs">{call.toNumber}</div>;
+      case 'recordingStatus':
+        return call.recordingStatus ? <Badge variant="outline">{call.recordingStatus}</Badge> : <span className="text-gray-400">-</span>;
+      case 'callQuality':
+        return call.callQuality ? <Badge variant="secondary">{call.callQuality}</Badge> : <span className="text-gray-400">-</span>;
+      case 'geoLocation':
+        return <div className="truncate">{call.geoLocation || '-'}</div>;
+      case 'userAgent':
+        return <div className="truncate text-xs">{call.userAgent || '-'}</div>;
+      case 'recordingUrl':
+        return call.recordingUrl ? (
+          <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+            <Play className="h-3 w-3" />
+          </Button>
+        ) : <span className="text-gray-400">-</span>;
+      case 'transcription':
+        return call.transcription ? (
+          <div className="truncate max-w-32 text-xs">{call.transcription}</div>
+        ) : <span className="text-gray-400">-</span>;
       case 'actions':
         return (
           <div className="flex gap-1 items-center">
@@ -349,6 +359,7 @@ export default function CallActivity() {
           </div>
         );
       default:
+        console.log('Unknown column:', column, 'returning fallback');
         return <div className="truncate text-xs">-</div>;
     }
   };
@@ -555,7 +566,9 @@ export default function CallActivity() {
   });
 
   // Debug: log filtered calls count
-  console.log('Total calls:', calls.length, 'Filtered calls:', filteredCalls.length, 'Visible columns:', visibleColumns.length);
+  console.log('Total calls:', calls.length, 'Filtered calls:', filteredCalls.length, 'Visible columns:', visibleColumns);
+  console.log('Sample call data:', filteredCalls[0]);
+  console.log('Sample column mapping check:', visibleColumns.map(col => ({ col, def: getColumnDefinition(col) })));
 
   const getStatusColor = (status: string) => {
     switch (status) {
