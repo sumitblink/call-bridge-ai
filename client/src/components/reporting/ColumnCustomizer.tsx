@@ -26,11 +26,7 @@ interface ColumnPreferences {
 export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomizerProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Popular', 'Call']));
   // Initialize with the actual default visible columns from CallActivity
-  const [localVisibleColumns, setLocalVisibleColumns] = useState<string[]>([
-    'campaign', 'publisher', 'target', 'buyer', 'callDate', 'callerId', 'dialedNumber',
-    'duration', 'connectedCallLength', 'duplicate', 'previouslyConnected', 'revenue', 
-    'profit', 'status', 'fromNumber', 'toNumber', 'actions'
-  ]);
+  const [localVisibleColumns, setLocalVisibleColumns] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -93,22 +89,18 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
     }
   });
 
-  // Initialize local state when preferences load or on component mount
+  // Initialize with default visible columns on mount
   useEffect(() => {
-    if (preferences) {
-      setLocalVisibleColumns(preferences.visibleColumns);
-    } else {
-      // Set default visible columns based on what's actually shown in the table
-      const defaultColumns = [
-        'campaign', 'publisher', 'target', 'buyer', 'callDate', 'callerId', 'dialedNumber',
-        'duration', 'connectedCallLength', 'duplicate', 'previouslyConnected', 'revenue', 
-        'profit', 'status', 'fromNumber', 'toNumber', 'actions'
-      ];
-      setLocalVisibleColumns(defaultColumns);
-      // Notify parent component about the initial columns
-      onColumnsChange(defaultColumns);
-    }
-  }, [preferences, onColumnsChange]);
+    const defaultColumns = [
+      'campaign', 'publisher', 'target', 'buyer', 'callDate', 'callerId', 'dialedNumber',
+      'duration', 'connectedCallLength', 'duplicate', 'previouslyConnected', 'revenue', 
+      'profit', 'status', 'fromNumber', 'toNumber', 'actions'
+    ];
+    
+    console.log('Initializing ColumnCustomizer with default columns:', defaultColumns);
+    setLocalVisibleColumns(defaultColumns);
+    onColumnsChange(defaultColumns);
+  }, []); // Run only once on mount
 
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -151,7 +143,10 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
     setLocalVisibleColumns(newVisible);
     
     console.log('Calling onColumnsChange...');
-    onColumnsChange(newVisible);
+    // Use setTimeout to ensure state update completes first
+    setTimeout(() => {
+      onColumnsChange(newVisible);
+    }, 0);
     console.log('=== TOGGLE COLUMN END ===');
   };
 
@@ -249,8 +244,14 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
                             console.log('Target checked:', e.target.checked);
                             console.log('Current localVisibleColumns:', localVisibleColumns);
                             console.log('Includes check:', localVisibleColumns.includes(column.id));
+                            e.preventDefault();
                             e.stopPropagation();
-                            toggleColumn(column.id);
+                            
+                            // Immediately update the checkbox state to prevent revert
+                            const isCurrentlyChecked = localVisibleColumns.includes(column.id);
+                            if (e.target.checked !== isCurrentlyChecked) {
+                              toggleColumn(column.id);
+                            }
                           }}
                           className="h-4 w-4 accent-blue-600"
                         />
