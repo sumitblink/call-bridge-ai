@@ -5063,7 +5063,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return userCampaignIds.includes(request.campaignId);
       });
       
-      res.json(userRequests);
+      // Enhance with destination numbers from winning bid responses
+      const enhancedRequests = await Promise.all(
+        userRequests.map(async (request) => {
+          if (request.winningTargetId) {
+            try {
+              // Get all bid responses for this request
+              const bidResponses = await storage.getRtbBidResponses(request.requestId);
+              // Find the winning bid response
+              const winningResponse = bidResponses.find(response => 
+                response.rtbTargetId === request.winningTargetId && response.isWinningBid
+              );
+              
+              return {
+                ...request,
+                destinationNumber: winningResponse?.destinationNumber || null
+              };
+            } catch (error) {
+              console.error('Error fetching destination number for request:', request.requestId, error);
+              return { ...request, destinationNumber: null };
+            }
+          }
+          return { ...request, destinationNumber: null };
+        })
+      );
+      
+      res.json(enhancedRequests);
     } catch (error) {
       console.error('Error fetching RTB bid requests:', error);
       res.status(500).json({ error: 'Failed to fetch RTB bid requests' });

@@ -54,6 +54,7 @@ type RtbBidRequest = {
   winningBidAmount?: number;
   winningTargetId?: number;
   totalResponseTimeMs?: number;
+  destinationNumber?: string;
   createdAt: string;
   campaign?: {
     id: number;
@@ -512,6 +513,7 @@ export default function SimplifiedRTBManagementPage() {
                           <TableHead>Failed Bids</TableHead>
                           <TableHead>Winner</TableHead>
                           <TableHead>Winning Bid</TableHead>
+                          <TableHead>Destination Number</TableHead>
                           <TableHead>Avg Response Time</TableHead>
                           <TableHead>Total Auction Time</TableHead>
                           <TableHead>Auction Status</TableHead>
@@ -614,6 +616,23 @@ export default function SimplifiedRTBManagementPage() {
                                   <span className="text-muted-foreground">-</span>
                                 )}
                               </TableCell>
+                              <TableCell className="font-mono text-sm">
+                                {request.destinationNumber ? (
+                                  <div className="flex flex-col">
+                                    <span className="font-medium text-blue-600">
+                                      {request.destinationNumber}
+                                    </span>
+                                    <span className="text-muted-foreground text-xs">
+                                      External Route
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col">
+                                    <span className="text-muted-foreground">Not available</span>
+                                    <span className="text-muted-foreground text-xs">No winner</span>
+                                  </div>
+                                )}
+                              </TableCell>
                               <TableCell>
                                 {avgResponseTime ? (
                                   <div className="flex flex-col">
@@ -702,6 +721,13 @@ export default function SimplifiedRTBManagementPage() {
                               <div className="flex justify-between items-center p-2 bg-green-50 rounded-md">
                                 <span className="text-sm font-medium text-green-800">Winning Bid:</span>
                                 <span className="font-semibold text-green-600">${request.winningBidAmount}</span>
+                              </div>
+                            )}
+                            
+                            {request.destinationNumber && (
+                              <div className="flex justify-between items-center p-2 bg-blue-50 rounded-md">
+                                <span className="text-sm font-medium text-blue-800">Destination:</span>
+                                <span className="font-mono text-sm text-blue-600">{request.destinationNumber}</span>
                               </div>
                             )}
                             
