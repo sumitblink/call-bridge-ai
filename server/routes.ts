@@ -2947,14 +2947,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/number-pools/:id', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const poolId = parseInt(id);
       
       // Get pool numbers before deletion for webhook cleanup
-      const poolNumbers = await storage.getPoolNumbers(parseInt(id));
+      const poolNumbers = await storage.getPoolNumbers(poolId);
       
-      const deleted = await storage.deleteNumberPool(parseInt(id));
+      // First, check if the pool exists
+      const pools = await storage.getNumberPools();
+      const poolExists = pools.find(p => p.id === poolId);
+      if (!poolExists) {
+        return res.status(404).json({ error: 'Number pool not found' });
+      }
+      
+      // Clean up foreign key references first - these tables reference number_pools:
+      // 1. call_tracking_tags, 2. campaign_pool_assignments, 3. campaigns, 4. number_pool_assignments, 5. calls
+      try {
+        console.log(`Cleaning up foreign key references for pool ${poolId}...`);
+        
+        // Use direct database access with Drizzle ORM for cleanup
+        const { db } = await import('./db');
+        const { callTrackingTags, campaignPoolAssignments, campaigns, numberPoolAssignments, calls } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        // 1. Remove call_tracking_tags that reference this pool
+        console.log('Cleaning up call_tracking_tags...');
+        await db.delete(callTrackingTags).where(eq(callTrackingTags.poolId, poolId));
+        
+        // 2. Remove campaign_pool_assignments that reference this pool
+        console.log('Cleaning up campaign_pool_assignments...');
+        await db.delete(campaignPoolAssignments).where(eq(campaignPoolAssignments.poolId, poolId));
+        
+        // 3. Update campaigns that reference this pool (set pool_id to null)
+        console.log('Cleaning up campaigns...');
+        await db.update(campaigns)
+          .set({ poolId: null })
+          .where(eq(campaigns.poolId, poolId));
+        
+        // 4. Remove number_pool_assignments that reference this pool
+        console.log('Cleaning up number_pool_assignments...');
+        await db.delete(numberPoolAssignments).where(eq(numberPoolAssignments.poolId, poolId));
+        
+        // 5. Update calls that reference this pool (set number_pool_id to null)
+        console.log('Cleaning up calls...');
+        await db.update(calls)
+          .set({ numberPoolId: null })
+          .where(eq(calls.numberPoolId, poolId));
+        
+        console.log(`Successfully cleaned up all foreign key references for pool ${poolId}`);
+        
+      } catch (cleanupError) {
+        console.error('Error during cleanup before pool deletion:', cleanupError);
+        return res.status(500).json({ 
+          error: `Failed to clean up references for pool deletion: ${cleanupError.message}` 
+        });
+      }
+      
+      const deleted = await storage.deleteNumberPool(poolId);
       
       if (!deleted) {
-        return res.status(404).json({ error: 'Number pool not found' });
+        return res.status(404).json({ error: 'Number pool not found or could not be deleted' });
       }
 
       // Reset webhook URLs for all numbers that were in the pool
@@ -2988,8 +3039,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.json({ success: true });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting number pool:', error);
+      
+      // Provide specific error message for foreign key constraints
+      if (error.code === '23503' || (error.message && error.message.includes('foreign key'))) {
+        return res.status(409).json({ 
+          error: 'Cannot delete number pool: it is still being used by other resources. Please remove all associated call tracking tags and phone numbers first.' 
+        });
+      }
+      
       res.status(500).json({ error: 'Failed to delete number pool' });
     }
   });
