@@ -88,9 +88,22 @@ export default function CampaignBuyers({ campaignId }: CampaignBuyersProps) {
   const handleAddBuyer = () => {
     if (!selectedBuyerId) return;
     
+    const buyerId = parseInt(selectedBuyerId);
+    const buyerPriority = parseInt(priority);
+    
+    // Validate that parsing was successful
+    if (isNaN(buyerId) || isNaN(buyerPriority)) {
+      toast({
+        title: "Invalid Input",
+        description: "Please select a valid buyer and priority.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     addBuyerMutation.mutate({
-      buyerId: parseInt(selectedBuyerId),
-      priority: parseInt(priority),
+      buyerId,
+      priority: buyerPriority,
     });
   };
 

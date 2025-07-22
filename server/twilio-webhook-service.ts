@@ -50,10 +50,8 @@ export class TwilioWebhookService {
         try {
           console.log(`Processing ${phoneNumber.phoneNumber} with SID: ${phoneNumber.phoneNumberSid || 'MISSING'}`);
           
-          if (!phoneNumber.phoneNumberSid || phoneNumber.phoneNumberSid === '' || phoneNumber.phoneNumberSid === null) {
-            result.failed.push(phoneNumber.phoneNumber);
-            result.errors.push(`No Twilio SID found for ${phoneNumber.phoneNumber}`);
-            console.log(`Skipping ${phoneNumber.phoneNumber}: No valid SID (actual value: ${phoneNumber.phoneNumberSid})`);
+          if (!phoneNumber.phoneNumberSid || phoneNumber.phoneNumberSid === '' || phoneNumber.phoneNumberSid === null || phoneNumber.phoneNumberSid === undefined) {
+            console.log(`Skipping ${phoneNumber.phoneNumber}: No Twilio SID configured (this is normal for manually added numbers)`);
             continue;
           }
 
@@ -150,9 +148,8 @@ export class TwilioWebhookService {
     try {
       for (const phoneNumber of phoneNumbers) {
         try {
-          if (!phoneNumber.phoneNumberSid) {
-            result.failed.push(phoneNumber.phoneNumber);
-            result.errors.push(`No Twilio SID found for ${phoneNumber.phoneNumber}`);
+          if (!phoneNumber.phoneNumberSid || phoneNumber.phoneNumberSid === '' || phoneNumber.phoneNumberSid === null || phoneNumber.phoneNumberSid === undefined) {
+            console.log(`Skipping ${phoneNumber.phoneNumber}: No Twilio SID configured (this is normal for manually added numbers)`);
             continue;
           }
 
