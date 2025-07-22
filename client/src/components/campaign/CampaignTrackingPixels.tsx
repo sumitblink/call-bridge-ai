@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Plus, Edit, Trash2, Code, ExternalLink } from 'lucide-react';
+import { Copy, Plus, Edit, Trash2, Code, ExternalLink, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -64,8 +65,10 @@ fbq('track', 'PageView');
 
 export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingPixelsProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingPixel, setEditingPixel] = useState<TrackingPixel | null>(null);
   const [pixels, setPixels] = useState<TrackingPixel[]>(SAMPLE_PIXELS);
+  const [selectedGlobalPixels, setSelectedGlobalPixels] = useState<number[]>([]);
   const [formData, setFormData] = useState<{
     name: string;
     type: 'javascript' | 'image' | 'iframe';
@@ -81,6 +84,12 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   });
   
   const { toast } = useToast();
+
+  // Fetch global tracking pixels from Integrations
+  const { data: globalPixels, isLoading: isLoadingGlobal } = useQuery({
+    queryKey: ['/api/integrations/pixels'],
+    retry: false,
+  });
 
   const resetForm = () => {
     setFormData({
@@ -160,6 +169,41 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     });
   };
 
+  const handleImportPixels = () => {
+    if (!globalPixels || !Array.isArray(globalPixels) || selectedGlobalPixels.length === 0) return;
+
+    const pixelsToImport = globalPixels.filter((pixel: any) => 
+      selectedGlobalPixels.includes(pixel.id)
+    );
+
+    const highestId = Math.max(...pixels.map(p => p.id), 0);
+    const newPixels = pixelsToImport.map((pixel: any, index: number) => ({
+      id: highestId + index + 1,
+      name: pixel.name,
+      type: pixel.pixelType,
+      code: pixel.pixelCode,
+      triggerEvent: pixel.triggerEvent,
+      active: true
+    }));
+
+    setPixels(prev => [...prev, ...newPixels]);
+    setSelectedGlobalPixels([]);
+    setIsImportDialogOpen(false);
+    
+    toast({
+      title: 'Pixels Imported!',
+      description: `${newPixels.length} tracking pixel(s) imported from Integrations`
+    });
+  };
+
+  const handleTogglePixelSelection = (pixelId: number) => {
+    setSelectedGlobalPixels(prev => 
+      prev.includes(pixelId) 
+        ? prev.filter(id => id !== pixelId)
+        : [...prev, pixelId]
+    );
+  };
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'javascript':
@@ -183,13 +227,95 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
               Add tracking pixels and conversion codes for your campaigns
             </CardDescription>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setEditingPixel(null)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Pixel
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Import Existing
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Import Tracking Pixels</DialogTitle>
+                  <DialogDescription>
+                    Select tracking pixels from your Integrations to add to this campaign
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {isLoadingGlobal ? (
+                    <div className="text-center py-8">Loading pixels...</div>
+                  ) : !globalPixels || !Array.isArray(globalPixels) || globalPixels.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No tracking pixels found in Integrations. Create some pixels in the Integrations section first.
+                    </div>
+                  ) : (
+                    <>
+                      <div className="max-h-64 overflow-y-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-12">Select</TableHead>
+                              <TableHead>Pixel Name</TableHead>
+                              <TableHead>Type</TableHead>
+                              <TableHead>Trigger Event</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {globalPixels.map((pixel: any) => (
+                              <TableRow key={pixel.id}>
+                                <TableCell>
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedGlobalPixels.includes(pixel.id)}
+                                    onChange={() => handleTogglePixelSelection(pixel.id)}
+                                    className="rounded"
+                                  />
+                                </TableCell>
+                                <TableCell>{pixel.name}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">{pixel.pixelType}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary">{pixel.triggerEvent}</Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => {
+                            setSelectedGlobalPixels([]);
+                            setIsImportDialogOpen(false);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={handleImportPixels}
+                          disabled={selectedGlobalPixels.length === 0}
+                        >
+                          Import {selectedGlobalPixels.length} Pixel(s)
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+          
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setEditingPixel(null)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add New Pixel
+            </Button>
+          </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>

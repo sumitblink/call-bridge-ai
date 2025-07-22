@@ -261,7 +261,7 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                 <DialogTrigger asChild>
                   <Button variant="outline">
                     <Download className="h-4 w-4 mr-2" />
-                    Import from Integrations
+                    Import Existing
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
