@@ -9,7 +9,7 @@ import { Copy, Plus, Edit, Trash2, Link, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import CampaignUrlBuilder from './CampaignUrlBuilder';
+
 
 interface CampaignUrlParametersProps {
   campaignId?: number;
@@ -200,9 +200,6 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
 
   return (
     <div className="space-y-6">
-      {/* URL Builder */}
-      <CampaignUrlBuilder campaignName={`Campaign ${campaignId || 'New'}`} />
-      
       {/* Parameter Configuration */}
       <Card>
         <CardHeader>
