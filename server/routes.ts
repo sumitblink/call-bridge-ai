@@ -741,7 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/campaigns/:campaignId/buyers/:buyerId', requireAuth, async (req: any, res) => {
     try {
-      const campaignId = parseInt(req.params.campaignId);
+      const campaignId = req.params.campaignId; // UUID string, no parsing needed
       const buyerId = parseInt(req.params.buyerId);
       const userId = req.user?.id;
       
