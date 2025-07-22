@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings, Users, Phone, Globe, BarChart3, Zap, Target, Link } from "lucide-react";
+import { ArrowLeft, Settings, Users, Phone, Globe, BarChart3, Zap, Target, Link, Database, MousePointer } from "lucide-react";
 import Layout from "@/components/Layout";
 
 // Individual tab components
@@ -19,6 +19,8 @@ import CampaignAnalytics from "@/components/campaign/CampaignAnalytics";
 import { CampaignReadinessDashboard } from "@/components/campaign/CampaignReadinessDashboard";
 import { RTBTargetAssignment } from "@/components/campaign/RTBTargetAssignment";
 import CampaignUrlBuilder from "@/components/campaign/CampaignUrlBuilder";
+import CampaignUrlParameters from "@/components/campaign/CampaignUrlParameters";
+import CampaignTrackingPixels from "@/components/campaign/CampaignTrackingPixels";
 
 export default function CampaignDetail() {
   const { campaignId } = useParams();
@@ -111,7 +113,7 @@ export default function CampaignDetail() {
 
         {/* Campaign Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-8" : "grid-cols-7") : (campaign.routingType === "pool" ? "grid-cols-7" : "grid-cols-6")}`}>
+          <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-10" : "grid-cols-9") : (campaign.routingType === "pool" ? "grid-cols-9" : "grid-cols-8")}`}>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
@@ -135,6 +137,14 @@ export default function CampaignDetail() {
             <TabsTrigger value="tracking" className="flex items-center space-x-2">
               <Globe className="h-4 w-4" />
               <span className="hidden sm:inline">Tracking</span>
+            </TabsTrigger>
+            <TabsTrigger value="url-parameters" className="flex items-center space-x-2">
+              <Database className="h-4 w-4" />
+              <span className="hidden sm:inline">URL Parameters</span>
+            </TabsTrigger>
+            <TabsTrigger value="tracking-pixels" className="flex items-center space-x-2">
+              <MousePointer className="h-4 w-4" />
+              <span className="hidden sm:inline">Tracking Pixels</span>
             </TabsTrigger>
             <TabsTrigger value="url-builder" className="flex items-center space-x-2">
               <Link className="h-4 w-4" />
@@ -166,6 +176,14 @@ export default function CampaignDetail() {
 
           <TabsContent value="tracking">
             <CampaignTracking campaignId={campaign.id} campaign={campaign} />
+          </TabsContent>
+
+          <TabsContent value="url-parameters">
+            <CampaignUrlParameters campaignId={Number(campaign.id)} />
+          </TabsContent>
+
+          <TabsContent value="tracking-pixels">
+            <CampaignTrackingPixels campaignId={Number(campaign.id)} />
           </TabsContent>
 
           <TabsContent value="url-builder">

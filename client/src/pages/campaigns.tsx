@@ -23,8 +23,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import type { Campaign, InsertCampaign, Buyer } from "@shared/schema";
-import CampaignUrlParameters from "@/components/campaign/CampaignUrlParameters";
-import CampaignTrackingPixels from "@/components/campaign/CampaignTrackingPixels";
 import { DatabaseStatus } from "@/components/DatabaseStatus";
 
 // Schema for campaign form (simplified RTB - no routers)
@@ -289,14 +287,7 @@ function CampaignForm({
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Tabs defaultValue="general" className="w-full">
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="general">General</TabsTrigger>
-        <TabsTrigger value="url-parameters">URL Parameters</TabsTrigger>
-        <TabsTrigger value="tracking-pixels">Tracking Pixels</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="general">
+    <div className="w-full">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -512,16 +503,7 @@ function CampaignForm({
             </div>
           </form>
         </Form>
-      </TabsContent>
-      
-      <TabsContent value="url-parameters">
-        <CampaignUrlParameters campaignId={campaign?.id ? Number(campaign.id) : undefined} />
-      </TabsContent>
-      
-      <TabsContent value="tracking-pixels">
-        <CampaignTrackingPixels campaignId={campaign?.id ? Number(campaign.id) : undefined} />
-      </TabsContent>
-    </Tabs>
+    </div>
   );
 }
 
