@@ -21,7 +21,6 @@ import Feedback from "@/pages/feedback";
 import CallFlows from "@/pages/call-flows";
 import RedTrackPage from "@/pages/redtrack";
 
-import TrackingDashboard from "@/pages/tracking-dashboard";
 import RealTrackingDashboard from "@/pages/real-tracking-dashboard";
 import AdvancedAnalyticsPage from "@/pages/advanced-analytics";
 import UsefulAnalytics from "@/pages/useful-analytics";
