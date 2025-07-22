@@ -2001,16 +2001,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // URL Parameters routes - Direct database access
+  // URL Parameters routes - Raw SQL to bypass schema issues
   app.get('/api/integrations/url-parameters', requireAuth, async (req, res) => {
     try {
       const user = req.user as any;
       const { db } = await import('./db');
-      const { urlParameters } = await import('@shared/schema');
-      const { eq } = await import('drizzle-orm');
+      const { sql } = await import('drizzle-orm');
       
-      const parameters = await db.select().from(urlParameters).where(eq(urlParameters.userId, user.id));
-      res.json(parameters);
+      const parameters = await db.execute(sql`
+        SELECT * FROM url_parameters 
+        WHERE "userId" = ${user.id} 
+        ORDER BY "createdAt" DESC
+      `);
+      res.json(parameters.rows);
     } catch (error) {
       console.error('Error fetching URL parameters:', error);
       res.status(500).json({ error: 'Failed to fetch URL parameters' });
@@ -2021,24 +2024,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       const { db } = await import('./db');
-      const { urlParameters, insertUrlParameterSchema } = await import('@shared/schema');
+      const { sql } = await import('drizzle-orm');
       
-      const dataWithUserId = {
-        ...req.body,
-        userId: user.id,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+      const {
+        parameterName,
+        reportingMenuName,
+        reportName,
+        parameterType = 'string',
+        isRequired = false,
+        defaultValue = '',
+        description = '',
+        isActive = true
+      } = req.body;
       
-      const validatedData = insertUrlParameterSchema.parse(dataWithUserId);
-      const [newParameter] = await db.insert(urlParameters).values(validatedData).returning();
+      const result = await db.execute(sql`
+        INSERT INTO url_parameters (
+          "userId", "parameterName", "reportingMenuName", "reportName", 
+          "parameterType", "isRequired", "defaultValue", "description", 
+          "isActive", "createdAt", "updatedAt"
+        ) VALUES (
+          ${user.id}, ${parameterName}, ${reportingMenuName}, ${reportName},
+          ${parameterType}, ${isRequired}, ${defaultValue}, ${description},
+          ${isActive}, ${new Date()}, ${new Date()}
+        ) RETURNING *
+      `);
       
-      res.status(201).json(newParameter);
+      res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error('Error creating URL parameter:', error);
-      if (error instanceof Error && error.name === 'ZodError') {
-        return res.status(400).json({ error: 'Invalid URL parameter data', details: error.message });
-      }
       res.status(500).json({ error: 'Failed to create URL parameter' });
     }
   });
@@ -2047,30 +2060,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { db } = await import('./db');
-      const { urlParameters, insertUrlParameterSchema } = await import('@shared/schema');
-      const { eq } = await import('drizzle-orm');
+      const { sql } = await import('drizzle-orm');
       
-      const validatedData = insertUrlParameterSchema.partial().parse(req.body);
-      const updateData = {
-        ...validatedData,
-        updatedAt: new Date()
-      };
+      const {
+        parameterName,
+        reportingMenuName,
+        reportName,
+        parameterType,
+        isRequired,
+        defaultValue,
+        description,
+        isActive
+      } = req.body;
       
-      const [updatedParameter] = await db.update(urlParameters)
-        .set(updateData)
-        .where(eq(urlParameters.id, parseInt(id)))
-        .returning();
+      const result = await db.execute(sql`
+        UPDATE url_parameters 
+        SET 
+          "parameterName" = ${parameterName},
+          "reportingMenuName" = ${reportingMenuName},
+          "reportName" = ${reportName},
+          "parameterType" = ${parameterType},
+          "isRequired" = ${isRequired},
+          "defaultValue" = ${defaultValue},
+          "description" = ${description},
+          "isActive" = ${isActive},
+          "updatedAt" = ${new Date()}
+        WHERE id = ${parseInt(id)}
+        RETURNING *
+      `);
       
-      if (!updatedParameter) {
+      if (result.rows.length === 0) {
         return res.status(404).json({ error: 'URL parameter not found' });
       }
       
-      res.json(updatedParameter);
+      res.json(result.rows[0]);
     } catch (error) {
       console.error('Error updating URL parameter:', error);
-      if (error instanceof Error && error.name === 'ZodError') {
-        return res.status(400).json({ error: 'Invalid URL parameter data', details: error.message });
-      }
       res.status(500).json({ error: 'Failed to update URL parameter' });
     }
   });
@@ -2079,13 +2104,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { db } = await import('./db');
-      const { urlParameters } = await import('@shared/schema');
-      const { eq } = await import('drizzle-orm');
+      const { sql } = await import('drizzle-orm');
       
-      const result = await db.delete(urlParameters).where(eq(urlParameters.id, parseInt(id)));
-      const deleted = result.rowCount > 0;
+      const result = await db.execute(sql`
+        DELETE FROM url_parameters 
+        WHERE id = ${parseInt(id)}
+      `);
       
-      if (!deleted) {
+      if (result.rowCount === 0) {
         return res.status(404).json({ error: 'URL parameter not found' });
       }
       
