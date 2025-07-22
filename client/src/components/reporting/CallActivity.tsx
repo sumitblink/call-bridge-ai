@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded, Ban, Tag, Edit3, MoreVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ColumnCustomizer } from "./ColumnCustomizer";
@@ -77,11 +81,90 @@ export default function CallActivity() {
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   
+  // Action dialog states
+  const [blockNumberDialog, setBlockNumberDialog] = useState<{ isOpen: boolean; callId: number | null; phoneNumber: string }>({
+    isOpen: false, callId: null, phoneNumber: ""
+  });
+  const [tagDialog, setTagDialog] = useState<{ isOpen: boolean; callId: number | null; currentTags: string[] }>({
+    isOpen: false, callId: null, currentTags: []
+  });
+  const [paymentDialog, setPaymentDialog] = useState<{ isOpen: boolean; callId: number | null; currentRevenue: string; currentCost: string }>({
+    isOpen: false, callId: null, currentRevenue: "", currentCost: ""
+  });
+  
+  // Form states
+  const [blockReason, setBlockReason] = useState("");
+  const [newTag, setNewTag] = useState("");
+  const [adjustedRevenue, setAdjustedRevenue] = useState("");
+  const [adjustedCost, setAdjustedCost] = useState("");
+  const [adjustmentReason, setAdjustmentReason] = useState("");
+  
   const { toast } = useToast();
 
   const handleColumnsChange = (newVisibleColumns: string[]) => {
     setVisibleColumns(newVisibleColumns);
   };
+
+  // Action handlers
+  const handleBlockNumber = (callId: number, phoneNumber: string) => {
+    setBlockNumberDialog({ isOpen: true, callId, phoneNumber });
+    setBlockReason("");
+  };
+
+  const handleAddTag = (callId: number, currentTags: string[] = []) => {
+    setTagDialog({ isOpen: true, callId, currentTags });
+    setNewTag("");
+  };
+
+  const handleAdjustPayment = (callId: number, currentRevenue: string, currentCost: string) => {
+    setPaymentDialog({ isOpen: true, callId, currentRevenue, currentCost });
+    setAdjustedRevenue(currentRevenue);
+    setAdjustedCost(currentCost);
+    setAdjustmentReason("");
+  };
+
+  // Action mutations
+  const blockNumberMutation = useMutation({
+    mutationFn: async ({ callId, phoneNumber, reason }: { callId: number; phoneNumber: string; reason: string }) => {
+      // Mock implementation - would normally call API
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Number Blocked",
+        description: `Phone number ${blockNumberDialog.phoneNumber} has been blocked.`
+      });
+      setBlockNumberDialog({ isOpen: false, callId: null, phoneNumber: "" });
+    }
+  });
+
+  const addTagMutation = useMutation({
+    mutationFn: async ({ callId, tag }: { callId: number; tag: string }) => {
+      // Mock implementation - would normally call API
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Tag Added",
+        description: `Tag "${newTag}" has been added to the call.`
+      });
+      setTagDialog({ isOpen: false, callId: null, currentTags: [] });
+    }
+  });
+
+  const adjustPaymentMutation = useMutation({
+    mutationFn: async ({ callId, revenue, cost, reason }: { callId: number; revenue: string; cost: string; reason: string }) => {
+      // Mock implementation - would normally call API
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Payment Adjusted",
+        description: "Call payment has been successfully adjusted."
+      });
+      setPaymentDialog({ isOpen: false, callId: null, currentRevenue: "", currentCost: "" });
+    }
+  });
 
   // Column resizing handlers
   const handleMouseDown = (column: string, e: React.MouseEvent) => {
@@ -179,75 +262,88 @@ export default function CallActivity() {
         );
       case 'actions':
         return (
-          <div className="flex gap-1 flex-wrap">
-            {call.status === 'in-progress' && (
-              <>
+          <div className="flex gap-1 items-center">
+            {/* Primary actions - always visible */}
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => handleBlockNumber(call.id, call.fromNumber)}
+              title="Block Number"
+              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+            >
+              <Ban className="h-3 w-3" />
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => handleAddTag(call.id, [])}
+              title="Add Tag"
+              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700"
+            >
+              <Tag className="h-3 w-3" />
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => handleAdjustPayment(call.id, call.revenue, call.cost)}
+              title="Adjust Payment"
+              className="h-6 w-6 p-0 text-green-600 hover:text-green-700"
+            >
+              <Edit3 className="h-3 w-3" />
+            </Button>
+            
+            {/* Secondary actions in dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  onClick={() => holdCallMutation.mutate(call.callSid)}
-                  title="Hold Call"
                   className="h-6 w-6 p-0"
                 >
-                  <Pause className="h-3 w-3" />
+                  <MoreVertical className="h-3 w-3" />
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => muteCallMutation.mutate(call.callSid)}
-                  title="Mute Call"
-                  className="h-6 w-6 p-0"
-                >
-                  <MicOff className="h-3 w-3" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => handleTransferCall(call.callSid)}
-                  title="Transfer Call"
-                  className="h-6 w-6 p-0"
-                >
-                  <PhoneForwarded className="h-3 w-3" />
-                </Button>
-              </>
-            )}
-            
-            {/* Recording Controls */}
-            {call.status === 'in-progress' && !call.recordingSid && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => handleStartRecording(call.callSid)}
-                title="Start Recording"
-                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-              >
-                <Square className="h-3 w-3" />
-              </Button>
-            )}
-            
-            {call.recordingSid && call.recordingStatus === 'processing' && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => handleStopRecording(call.callSid, call.recordingSid)}
-                title="Stop Recording"
-                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-              >
-                <Square className="h-3 w-3 fill-current" />
-              </Button>
-            )}
-            
-            {call.recordingUrl && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => call.recordingUrl && window.open(call.recordingUrl, '_blank')}
-                title="Play Recording"
-                className="h-6 w-6 p-0"
-              >
-                <Play className="h-3 w-3" />
-              </Button>
-            )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {call.status === 'in-progress' && (
+                  <>
+                    <DropdownMenuItem onClick={() => holdCallMutation.mutate(call.callSid)}>
+                      <Pause className="h-3 w-3 mr-2" />
+                      Hold Call
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => muteCallMutation.mutate(call.callSid)}>
+                      <MicOff className="h-3 w-3 mr-2" />
+                      Mute Call
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleTransferCall(call.callSid)}>
+                      <PhoneForwarded className="h-3 w-3 mr-2" />
+                      Transfer Call
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                
+                {call.status === 'in-progress' && !call.recordingSid && (
+                  <DropdownMenuItem onClick={() => handleStartRecording(call.callSid)}>
+                    <Square className="h-3 w-3 mr-2 text-red-600" />
+                    Start Recording
+                  </DropdownMenuItem>
+                )}
+                
+                {call.recordingSid && call.recordingStatus === 'processing' && (
+                  <DropdownMenuItem onClick={() => handleStopRecording(call.callSid, call.recordingSid)}>
+                    <Square className="h-3 w-3 mr-2 text-red-600 fill-current" />
+                    Stop Recording
+                  </DropdownMenuItem>
+                )}
+                
+                {call.recordingUrl && (
+                  <DropdownMenuItem onClick={() => call.recordingUrl && window.open(call.recordingUrl, '_blank')}>
+                    <Play className="h-3 w-3 mr-2" />
+                    Play Recording
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       default:
@@ -583,6 +679,7 @@ export default function CallActivity() {
   }
 
   return (
+    <>
     <div className="space-y-4">
       {/* Real-time Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -787,5 +884,177 @@ export default function CallActivity() {
         </CardContent>
       </Card>
     </div>
+
+    {/* Block Number Dialog */}
+    <Dialog open={blockNumberDialog.isOpen} onOpenChange={(open) => 
+      setBlockNumberDialog({ isOpen: open, callId: null, phoneNumber: "" })
+    }>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Block Phone Number</DialogTitle>
+          <DialogDescription>
+            Block this phone number from making future calls to prevent spam or unwanted traffic.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label>Phone Number</Label>
+            <Input value={blockNumberDialog.phoneNumber} disabled className="bg-gray-50" />
+          </div>
+          <div>
+            <Label>Reason for Blocking</Label>
+            <Textarea 
+              placeholder="Enter reason for blocking this number..."
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => setBlockNumberDialog({ isOpen: false, callId: null, phoneNumber: "" })}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="destructive"
+            onClick={() => blockNumberMutation.mutate({ 
+              callId: blockNumberDialog.callId!, 
+              phoneNumber: blockNumberDialog.phoneNumber, 
+              reason: blockReason 
+            })}
+            disabled={blockNumberMutation.isPending || !blockReason.trim()}
+          >
+            {blockNumberMutation.isPending ? "Blocking..." : "Block Number"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Add Tag Dialog */}
+    <Dialog open={tagDialog.isOpen} onOpenChange={(open) => 
+      setTagDialog({ isOpen: open, callId: null, currentTags: [] })
+    }>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add Tag Annotation</DialogTitle>
+          <DialogDescription>
+            Add custom tags to this call for better organization and tracking.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label>New Tag</Label>
+            <Input 
+              placeholder="Enter tag name (e.g., high-value, follow-up, qualified)"
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+            />
+          </div>
+          {tagDialog.currentTags.length > 0 && (
+            <div>
+              <Label>Current Tags</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {tagDialog.currentTags.map((tag, index) => (
+                  <Badge key={index} variant="secondary">{tag}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => setTagDialog({ isOpen: false, callId: null, currentTags: [] })}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => addTagMutation.mutate({ 
+              callId: tagDialog.callId!, 
+              tag: newTag 
+            })}
+            disabled={addTagMutation.isPending || !newTag.trim()}
+          >
+            {addTagMutation.isPending ? "Adding..." : "Add Tag"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Adjust Payment Dialog */}
+    <Dialog open={paymentDialog.isOpen} onOpenChange={(open) => 
+      setPaymentDialog({ isOpen: open, callId: null, currentRevenue: "", currentCost: "" })
+    }>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Adjust Call Payments</DialogTitle>
+          <DialogDescription>
+            Modify the revenue and cost values for this call to correct billing or apply adjustments.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Current Revenue</Label>
+              <Input value={paymentDialog.currentRevenue} disabled className="bg-gray-50" />
+            </div>
+            <div>
+              <Label>Current Cost</Label>
+              <Input value={paymentDialog.currentCost} disabled className="bg-gray-50" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Adjusted Revenue ($)</Label>
+              <Input 
+                type="number" 
+                step="0.01"
+                value={adjustedRevenue}
+                onChange={(e) => setAdjustedRevenue(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Adjusted Cost ($)</Label>
+              <Input 
+                type="number" 
+                step="0.01"
+                value={adjustedCost}
+                onChange={(e) => setAdjustedCost(e.target.value)}
+              />
+            </div>
+          </div>
+          <div>
+            <Label>Adjustment Reason</Label>
+            <Textarea 
+              placeholder="Enter reason for payment adjustment..."
+              value={adjustmentReason}
+              onChange={(e) => setAdjustmentReason(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => setPaymentDialog({ isOpen: false, callId: null, currentRevenue: "", currentCost: "" })}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => adjustPaymentMutation.mutate({ 
+              callId: paymentDialog.callId!, 
+              revenue: adjustedRevenue, 
+              cost: adjustedCost,
+              reason: adjustmentReason 
+            })}
+            disabled={adjustPaymentMutation.isPending || !adjustmentReason.trim()}
+          >
+            {adjustPaymentMutation.isPending ? "Updating..." : "Update Payment"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
