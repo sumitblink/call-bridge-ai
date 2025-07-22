@@ -408,38 +408,78 @@ export default function RingbaStyleReporting() {
     refetchInterval: autoRefresh ? 30000 : false,
   });
 
-  // Fetch real campaign summaries from API
-  const { data: realCampaignSummaries = [], isLoading: isLoadingSummaries } = useQuery<CampaignSummary[]>({
-    queryKey: ["/api/reporting-summaries/campaign-summaries", timeRange],
-    refetchInterval: autoRefresh ? 30000 : false,
-  });
-
-  // Fetch real timeline data from API
-  const { data: timelineChartData = [], isLoading: isLoadingTimeline } = useQuery<{ time: string; calls: number; revenue: number }[]>({
-    queryKey: ["/api/reporting-summaries/timeline-data", timeRange],
-    refetchInterval: autoRefresh ? 30000 : false,
-  });
-
-  // Mock data completely removed - using only authentic data from database
-
-  // Generate timeline chart data from real calls if available
-  const chartData = timelineChartData.length > 0 ? timelineChartData : Array.from({length: 24}, (_, i) => ({
-    time: `${i.toString().padStart(2, '0')}:00`,
-    calls: 0,
-    revenue: 0
-  }));
-
-  // Filter handlers
-  const handleAddFilter = useCallback((field: string, value: string) => {
-    const rule: FilterRule = {
-      field: field,
-      operator: 'contains',
-      value: value
-    };
-    setFilterRules(prev => [...prev.filter(r => r.field !== field), rule]);
-  }, []);
-
-  // Apply filters to the data
+  // Mock data for demonstration (rich data with realistic metrics)
+  const mockCampaignSummaries: CampaignSummary[] = [
+    {
+      campaignId: 'CAMP001',
+      campaignName: 'Healthcare Insurance Lead Generation Campaign',
+      publisher: 'Google Ads Premium',
+      target: 'Insurance Qualified Leads',
+      buyer: 'Allstate Insurance Partners',
+      dialedNumbers: ['+18566441573', '+18568791483', '+18564853922'],
+      numberPool: 'Healthcare Pool 1',
+      lastCallDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      tags: ['healthcare', 'insurance', 'qualified', 'premium'],
+      totalCalls: 127,
+      incoming: 127,
+      live: 23,
+      completed: 89,
+      ended: 104,
+      connected: 89,
+      paid: 67,
+      converted: 43,
+      noConnection: 15,
+      blocked: 8,
+      duplicate: 3,
+      ivrHangup: 5,
+      revenue: 2890.50,
+      payout: 1934.75,
+      profit: 955.75,
+      margin: 33.1,
+      conversionRate: 48.3,
+      rpc: 32.47,
+      tcl: 4567,
+      acl: 51.3,
+      totalCost: 1934.75
+    },
+    {
+      campaignId: 'CAMP002',
+      campaignName: 'Auto Insurance Leads - Facebook Campaign',
+      publisher: 'Facebook Marketing Agency',
+      target: 'Auto Insurance Buyers',
+      buyer: 'State Farm Regional Office',
+      dialedNumbers: ['+18569256411', '+18046079719'],
+      numberPool: 'Auto Insurance Pool 2',
+      lastCallDate: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+      tags: ['auto', 'insurance', 'facebook', 'social'],
+      totalCalls: 84,
+      incoming: 84,
+      live: 12,
+      completed: 58,
+      ended: 72,
+      connected: 58,
+      paid: 45,
+      converted: 28,
+      noConnection: 12,
+      blocked: 2,
+      duplicate: 1,
+      ivrHangup: 3,
+      revenue: 1680.00,
+      payout: 1176.00,
+      profit: 504.00,
+      margin: 30.0,
+      conversionRate: 48.3,
+      rpc: 28.97,
+      tcl: 2934,
+      acl: 50.6,
+      totalCost: 1176.00
+    },
+    {
+      campaignId: 'CAMP003',
+      campaignName: 'Mortgage Refinance - LinkedIn Professional',
+      publisher: 'LinkedIn Ads Professional',
+      target: 'Homeowner Refinance Prospects',
+      buyer: 'QuickenLoans Partnership',
       dialedNumbers: ['+15551234567'],
       numberPool: 'Mortgage Refinance Pool 3',
       lastCallDate: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
@@ -880,8 +920,8 @@ export default function RingbaStyleReporting() {
     });
   };
 
-  // Use real data from API instead of mock data
-  const rawCampaignSummaries: CampaignSummary[] = realCampaignSummaries;
+  // Use mock data for demonstration purposes (to test filtering functionality)
+  const rawCampaignSummaries: CampaignSummary[] = mockCampaignSummaries;
 
   // Alternative: Real data processing (commented out for testing)
   /*
@@ -964,7 +1004,7 @@ export default function RingbaStyleReporting() {
     }
 
     return acc;
-  }, [] as CampaignSummary[]) : realCampaignSummaries;
+  }, [] as CampaignSummary[]) : mockCampaignSummaries;
   */
 
   // Apply filters to get final data - only show filtered data when filter badges exist

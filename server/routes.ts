@@ -5866,9 +5866,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   const columnPreferencesRouter = (await import('./api/column-preferences')).default;
   app.use('/api/column-preferences', columnPreferencesRouter);
-  
-  const reportingSummariesRouter = (await import('./api/reporting-summaries')).default;
-  app.use('/api/reporting-summaries', reportingSummariesRouter);
 
   const httpServer = createServer(app);
   // Test landing page route for RedTrack integration testing
