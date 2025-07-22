@@ -26,6 +26,7 @@ import {
   feedback,
   visitorSessions,
   conversionEvents,
+  redtrackConfigs,
   type User, 
   type InsertUser,
   type UpsertUser,
@@ -65,6 +66,8 @@ import {
   type InsertVisitorSession,
   type ConversionEvent,
   type InsertConversionEvent,
+  type RedtrackConfig,
+  type InsertRedtrackConfig,
 } from '@shared/schema';
 import { db } from './db';
 import { eq, and, sql, inArray } from 'drizzle-orm';
@@ -1467,6 +1470,50 @@ export class DatabaseStorage implements IStorage {
       topSources,
       recentConversions
     };
+  }
+
+  // RedTrack Integration methods
+  async createRedtrackConfig(config: InsertRedtrackConfig): Promise<RedtrackConfig> {
+    const [newConfig] = await db
+      .insert(redtrackConfigs)
+      .values(config)
+      .returning();
+    return newConfig;
+  }
+
+  async getRedtrackConfig(id: number): Promise<RedtrackConfig | undefined> {
+    const [config] = await db
+      .select()
+      .from(redtrackConfigs)
+      .where(eq(redtrackConfigs.id, id));
+    return config || undefined;
+  }
+
+  async getRedtrackConfigs(userId: number): Promise<RedtrackConfig[]> {
+    return await db
+      .select()
+      .from(redtrackConfigs)
+      .where(eq(redtrackConfigs.userId, userId))
+      .orderBy(sql`${redtrackConfigs.createdAt} DESC`);
+  }
+
+  async updateRedtrackConfig(id: number, updates: Partial<InsertRedtrackConfig>): Promise<RedtrackConfig | undefined> {
+    const [updatedConfig] = await db
+      .update(redtrackConfigs)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(redtrackConfigs.id, id))
+      .returning();
+    return updatedConfig || undefined;
+  }
+
+  async deleteRedtrackConfig(id: number): Promise<boolean> {
+    const result = await db
+      .delete(redtrackConfigs)
+      .where(eq(redtrackConfigs.id, id));
+    return result.rowCount > 0;
   }
 }
 

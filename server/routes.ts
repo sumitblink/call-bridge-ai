@@ -356,6 +356,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RedTrack Configuration endpoints
+  app.get("/api/redtrack-configs", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const configs = await storage.getRedtrackConfigs(userId);
+      res.json(configs);
+    } catch (error) {
+      console.error('Error fetching RedTrack configurations:', error);
+      res.status(500).json({ error: 'Failed to fetch configurations' });
+    }
+  });
+
+  app.post("/api/redtrack-configs", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const configData = {
+        ...req.body,
+        userId
+      };
+
+      const config = await storage.createRedtrackConfig(configData);
+      res.status(201).json(config);
+    } catch (error) {
+      console.error('Error creating RedTrack configuration:', error);
+      res.status(500).json({ error: 'Failed to create configuration' });
+    }
+  });
+
   app.post("/api/campaigns/:id/test-routing", requireAuth, async (req: any, res) => {
     try {
       const campaignId = req.params.id;

@@ -1521,6 +1521,14 @@ export const visitorSessions = pgTable("visitor_sessions", {
   utmTerm: varchar("utm_term", { length: 255 }),
   utmContent: varchar("utm_content", { length: 255 }),
   
+  // RedTrack Integration
+  redtrackClickId: varchar("redtrack_clickid", { length: 255 }),
+  redtrackCampaignId: varchar("redtrack_campaign_id", { length: 100 }),
+  redtrackOfferId: varchar("redtrack_offer_id", { length: 100 }),
+  redtrackAffiliateId: varchar("redtrack_affiliate_id", { length: 100 }),
+  redtrackSubId: varchar("redtrack_sub_id", { length: 100 }),
+  redtrackVisitorId: varchar("redtrack_visitor_id", { length: 255 }),
+  
   // Landing Page
   landingPage: text("landing_page"),
   currentPage: text("current_page"),
@@ -1532,6 +1540,32 @@ export const visitorSessions = pgTable("visitor_sessions", {
   // Tracking State
   isActive: boolean("is_active").default(true).notNull(),
   hasConverted: boolean("has_converted").default(false).notNull(),
+});
+
+// RedTrack Configuration Table
+export const redtrackConfigs = pgTable("redtrack_configs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  
+  // Configuration Details
+  name: varchar("name", { length: 256 }).notNull(),
+  domain: varchar("domain", { length: 512 }).notNull(), // RedTrack domain
+  apiKey: varchar("api_key", { length: 512 }),
+  
+  // Postback Settings
+  postbackUrl: varchar("postback_url", { length: 512 }).notNull(),
+  conversionType: varchar("conversion_type", { length: 50 }).default("ConvertedCall").notNull(),
+  
+  // Default Values
+  defaultRevenue: decimal("default_revenue", { precision: 10, scale: 2 }).default("20.00"),
+  currency: varchar("currency", { length: 3 }).default("USD"),
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  lastUsed: timestamp("last_used"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const conversionEvents = pgTable("conversion_events", {
@@ -1553,6 +1587,13 @@ export const conversionEvents = pgTable("conversion_events", {
   // Attribution
   attributionModel: varchar("attribution_model", { length: 50 }).default("last_touch").notNull(),
   
+  // RedTrack Integration
+  redtrackClickId: varchar("redtrack_clickid", { length: 255 }),
+  redtrackPostbackSent: boolean("redtrack_postback_sent").default(false).notNull(),
+  redtrackPostbackUrl: text("redtrack_postback_url"),
+  redtrackPostbackResponse: text("redtrack_postback_response"),
+  redtrackPostbackStatus: varchar("redtrack_postback_status", { length: 20 }), // success, failed, pending
+  
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
   
@@ -1573,10 +1614,27 @@ export const insertConversionEventSchema = createInsertSchema(conversionEvents).
   createdAt: true,
 });
 
+export const insertRedtrackConfigSchema = createInsertSchema(redtrackConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastUsed: true,
+}).extend({
+  userId: z.number().optional(),
+  name: z.string().min(1, "Configuration name is required"),
+  domain: z.string().url("Valid domain URL is required"),
+  postbackUrl: z.string().url("Valid postback URL is required"),
+  conversionType: z.string().optional(),
+  defaultRevenue: z.number().min(0, "Revenue must be positive").optional(),
+  currency: z.string().length(3, "Currency must be 3 characters").optional(),
+});
+
 export type VisitorSession = typeof visitorSessions.$inferSelect;
 export type InsertVisitorSession = z.infer<typeof insertVisitorSessionSchema>;
 export type ConversionEvent = typeof conversionEvents.$inferSelect;
 export type InsertConversionEvent = z.infer<typeof insertConversionEventSchema>;
+export type RedtrackConfig = typeof redtrackConfigs.$inferSelect;
+export type InsertRedtrackConfig = z.infer<typeof insertRedtrackConfigSchema>;
 
 // Call Flow Schemas
 export const insertCallFlowSchema = createInsertSchema(callFlows).omit({

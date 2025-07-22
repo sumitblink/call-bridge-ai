@@ -980,6 +980,42 @@ class HybridStorage implements IStorage {
       }
     );
   }
+
+  // RedTrack Integration methods
+  async createRedtrackConfig(config: any): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.createRedtrackConfig ? this.databaseStorage.createRedtrackConfig(config) : Promise.resolve({ ...config, id: Date.now() }),
+      () => this.memStorage.createRedtrackConfig(config)
+    );
+  }
+
+  async getRedtrackConfig(id: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getRedtrackConfig ? this.databaseStorage.getRedtrackConfig(id) : Promise.resolve(undefined),
+      () => this.memStorage.getRedtrackConfig(id)
+    );
+  }
+
+  async getRedtrackConfigs(userId: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getRedtrackConfigs ? this.databaseStorage.getRedtrackConfigs(userId) : Promise.resolve([]),
+      () => this.memStorage.getRedtrackConfigs(userId)
+    );
+  }
+
+  async updateRedtrackConfig(id: number, updates: any): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.updateRedtrackConfig ? this.databaseStorage.updateRedtrackConfig(id, updates) : Promise.resolve(undefined),
+      () => this.memStorage.updateRedtrackConfig(id, updates)
+    );
+  }
+
+  async deleteRedtrackConfig(id: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.deleteRedtrackConfig ? this.databaseStorage.deleteRedtrackConfig(id) : Promise.resolve(true),
+      () => this.memStorage.deleteRedtrackConfig(id)
+    );
+  }
 }
 
 export const storage = new HybridStorage();

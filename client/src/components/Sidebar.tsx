@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Phone, BarChart3, BellRing, Users, PhoneCall, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut, HelpCircle, Menu, X, Database, Target, MessageCircle, GitBranch, Activity, TrendingUp, ChevronDown, ChevronRight } from "lucide-react";
+import { Phone, BarChart3, BellRing, Users, PhoneCall, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut, HelpCircle, Menu, X, Database, Target, MessageCircle, GitBranch, Activity, TrendingUp, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -19,6 +19,7 @@ const navigation = [
   { name: "RTB Management", href: "/rtb-management", icon: Target, current: false },
   { name: "Call Flows", href: "/call-flows", icon: GitBranch, current: false },
   { name: "Integrations", href: "/integrations", icon: Zap, current: false },
+  { name: "RedTrack Integration", href: "/redtrack", icon: ExternalLink, current: false },
   { name: "Help & Q&A", href: "/help", icon: MessageCircle, current: false },
 
 ];

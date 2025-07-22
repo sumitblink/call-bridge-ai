@@ -15,6 +15,14 @@ export interface TrackingPixelData {
   landing_page?: string;
   user_agent?: string;
   ip_address?: string;
+  // RedTrack parameters
+  clickid?: string;
+  rt_clickid?: string;
+  redtrack_campaign_id?: string;
+  redtrack_offer_id?: string;
+  redtrack_affiliate_id?: string;
+  redtrack_sub_id?: string;
+  redtrack_visitor_id?: string;
 }
 
 export interface ConversionData {
@@ -26,6 +34,16 @@ export interface ConversionData {
   callStatus?: string;
   conversionValue?: number;
   conversionType?: string;
+  // RedTrack specific
+  redtrackClickId?: string;
+  sendRedtrackPostback?: boolean;
+}
+
+export interface RedtrackPostbackData {
+  clickid: string;
+  sum: number;
+  type: string;
+  additional_params?: Record<string, string>;
 }
 
 export class TrackingService {
@@ -71,8 +89,13 @@ export class TrackingService {
         utmContent: trackingData.utm_content,
         landingPage: trackingData.landing_page,
         currentPage: trackingData.landing_page,
-        firstVisit: new Date(),
-        lastActivity: new Date(),
+        // RedTrack parameters
+        redtrackClickId: trackingData.clickid || trackingData.rt_clickid,
+        redtrackCampaignId: trackingData.redtrack_campaign_id,
+        redtrackOfferId: trackingData.redtrack_offer_id,
+        redtrackAffiliateId: trackingData.redtrack_affiliate_id,
+        redtrackSubId: trackingData.redtrack_sub_id,
+        redtrackVisitorId: trackingData.redtrack_visitor_id,
         isActive: true,
         hasConverted: false
       };
@@ -107,12 +130,27 @@ export class TrackingService {
         duration: conversionData.duration || 0,
         callStatus: conversionData.callStatus || 'completed',
         attributionModel: 'last_touch',
-        createdAt: new Date(),
+        redtrackClickId: conversionData.redtrackClickId || session.redtrackClickId,
+        redtrackPostbackSent: false,
         pixelsFired: false,
         pixelData: null
       };
       
       const conversionEvent = await storage.createConversionEvent(eventData);
+      
+      // Send RedTrack postback if configured and clickid is available
+      if (conversionData.sendRedtrackPostback !== false && eventData.redtrackClickId) {
+        await this.sendRedtrackPostback({
+          clickid: eventData.redtrackClickId,
+          sum: conversionData.conversionValue || 20,
+          type: 'ConvertedCall',
+          additional_params: {
+            call_duration: conversionData.duration?.toString() || '0',
+            call_status: conversionData.callStatus || 'completed',
+            campaign_id: conversionData.campaignId?.toString() || ''
+          }
+        }, conversionEvent.id);
+      }
       
       // Update session to mark as converted
       await storage.updateVisitorSession(conversionData.sessionId, {
@@ -308,6 +346,163 @@ export class TrackingService {
 </script>
 <!-- End CallCenter Pro Tracking Code -->
 `.trim();
+  }
+
+  /**
+   * Send RedTrack postback notification
+   */
+  async sendRedtrackPostback(postbackData: RedtrackPostbackData, conversionEventId: number): Promise<void> {
+    try {
+      // Get active RedTrack configurations for the user
+      const configs = await storage.getRedtrackConfigs(1); // TODO: Get actual user ID
+      
+      if (!configs || configs.length === 0) {
+        console.log('No RedTrack configurations found, skipping postback');
+        return;
+      }
+
+      // Use the first active configuration
+      const config = configs.find(c => c.isActive) || configs[0];
+      
+      // Build postback URL
+      const postbackUrl = new URL(config.postbackUrl);
+      postbackUrl.searchParams.set('clickid', postbackData.clickid);
+      postbackUrl.searchParams.set('sum', postbackData.sum.toString());
+      postbackUrl.searchParams.set('type', postbackData.type);
+      
+      // Add additional parameters
+      if (postbackData.additional_params) {
+        Object.entries(postbackData.additional_params).forEach(([key, value]) => {
+          if (value) {
+            postbackUrl.searchParams.set(key, value);
+          }
+        });
+      }
+
+      console.log(`Sending RedTrack postback: ${postbackUrl.toString()}`);
+
+      // Send the postback
+      const response = await fetch(postbackUrl.toString(), {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'CallCenter-Pro-RedTrack-Integration/1.0'
+        },
+        timeout: 10000 // 10 second timeout
+      });
+
+      const responseText = await response.text();
+      const isSuccess = response.ok;
+
+      console.log(`RedTrack postback response: ${response.status} - ${responseText}`);
+
+      // Update conversion event with postback status
+      await storage.updateConversionEvent(conversionEventId, {
+        redtrackPostbackSent: true,
+        redtrackPostbackUrl: postbackUrl.toString(),
+        redtrackPostbackResponse: responseText,
+        redtrackPostbackStatus: isSuccess ? 'success' : 'failed'
+      });
+
+      // Update configuration last used timestamp
+      await storage.updateRedtrackConfig(config.id, {
+        lastUsed: new Date()
+      });
+
+    } catch (error) {
+      console.error('Error sending RedTrack postback:', error);
+      
+      // Update conversion event with error status
+      try {
+        await storage.updateConversionEvent(conversionEventId, {
+          redtrackPostbackSent: false,
+          redtrackPostbackStatus: 'failed',
+          redtrackPostbackResponse: error instanceof Error ? error.message : 'Unknown error'
+        });
+      } catch (updateError) {
+        console.error('Error updating conversion event with postback failure:', updateError);
+      }
+    }
+  }
+
+  /**
+   * Parse RedTrack parameters from URL or tracking data
+   */
+  parseRedtrackParameters(url: string): Partial<TrackingPixelData> {
+    try {
+      const urlObj = new URL(url);
+      const params = urlObj.searchParams;
+      
+      return {
+        clickid: params.get('clickid') || params.get('rt_clickid') || undefined,
+        rt_clickid: params.get('rt_clickid') || params.get('clickid') || undefined,
+        redtrack_campaign_id: params.get('campaign_id') || params.get('rt_campaign_id') || undefined,
+        redtrack_offer_id: params.get('offer_id') || params.get('rt_offer_id') || undefined,
+        redtrack_affiliate_id: params.get('affiliate_id') || params.get('rt_affiliate_id') || undefined,
+        redtrack_sub_id: params.get('sub_id') || params.get('rt_sub_id') || undefined,
+        redtrack_visitor_id: params.get('visitor_id') || params.get('rt_visitor_id') || undefined,
+      };
+    } catch (error) {
+      console.error('Error parsing RedTrack parameters:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Generate enhanced tracking pixel with RedTrack support
+   */
+  generateTrackingPixel(campaignId: string, includeRedtrackParams: boolean = true): string {
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000';
+    
+    let pixelCode = `
+<!-- CallCenter Pro Tracking Pixel with RedTrack Integration -->
+<script>
+(function() {
+  var trackingData = {
+    campaign_id: '${campaignId}',
+    landing_page: window.location.href,
+    referrer: document.referrer,
+    user_agent: navigator.userAgent,
+    timestamp: new Date().toISOString()
+  };
+
+  // Extract UTM parameters
+  var urlParams = new URLSearchParams(window.location.search);
+  var utmParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+  utmParams.forEach(function(param) {
+    var value = urlParams.get(param);
+    if (value) trackingData[param] = value;
+  });
+`;
+
+    if (includeRedtrackParams) {
+      pixelCode += `
+  // Extract RedTrack parameters
+  var redtrackParams = ['clickid', 'rt_clickid', 'campaign_id', 'offer_id', 'affiliate_id', 'sub_id', 'visitor_id'];
+  redtrackParams.forEach(function(param) {
+    var value = urlParams.get(param);
+    if (value) {
+      if (param === 'clickid' || param === 'rt_clickid') {
+        trackingData.clickid = value;
+        trackingData.rt_clickid = value;
+      } else {
+        trackingData['redtrack_' + param] = value;
+      }
+    }
+  });
+`;
+    }
+
+    pixelCode += `
+  // Send tracking data
+  var img = new Image();
+  var params = new URLSearchParams(trackingData);
+  img.src = '${baseUrl}/api/tracking/pixel?' + params.toString();
+  img.style.display = 'none';
+  document.body.appendChild(img);
+})();
+</script>`;
+
+    return pixelCode;
   }
 }
 

@@ -37,6 +37,8 @@ import {
   type InsertVisitorSession,
   type ConversionEvent,
   type InsertConversionEvent,
+  type RedtrackConfig,
+  type InsertRedtrackConfig,
 } from '@shared/schema';
 
 export interface IStorage {
@@ -235,6 +237,13 @@ export interface IStorage {
   
   getEnhancedCallsByUser(userId: number, filters?: any): Promise<any[]>;
   getEnhancedCallById(callId: number, userId: number): Promise<any | undefined>;
+
+  // RedTrack Integration
+  createRedtrackConfig(config: InsertRedtrackConfig): Promise<RedtrackConfig>;
+  getRedtrackConfig(id: number): Promise<RedtrackConfig | undefined>;
+  getRedtrackConfigs(userId: number): Promise<RedtrackConfig[]>;
+  updateRedtrackConfig(id: number, updates: Partial<InsertRedtrackConfig>): Promise<RedtrackConfig | undefined>;
+  deleteRedtrackConfig(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -248,6 +257,7 @@ export class MemStorage implements IStorage {
   private publishers: Map<number, any> = new Map();
   private publisherCampaigns: Map<string, any> = new Map();
   private phoneNumberTags: Map<number, any> = new Map();
+  private redtrackConfigs: Map<number, any> = new Map();
   private currentUserId: number = 1;
   private currentCampaignId: number = 1;
   private currentBuyerId: number = 1;
@@ -256,6 +266,7 @@ export class MemStorage implements IStorage {
   private currentCallLogId: number = 1;
   private currentPublisherId: number = 1;
   private currentTagId: number = 1;
+  private currentRedtrackConfigId: number = 1;
 
   constructor() {
     this.initializeSampleData();
@@ -1530,6 +1541,45 @@ export class MemStorage implements IStorage {
   async getEnhancedCallById(callId: number, userId: number): Promise<any | undefined> {
     const calls = await this.getEnhancedCallsByUser(userId);
     return calls.find(call => call.id === callId);
+  }
+
+  // RedTrack Integration methods
+  async createRedtrackConfig(config: InsertRedtrackConfig): Promise<RedtrackConfig> {
+    const newConfig: RedtrackConfig = {
+      ...config,
+      id: this.currentRedtrackConfigId++,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastUsed: null
+    };
+    this.redtrackConfigs.set(newConfig.id, newConfig);
+    return newConfig;
+  }
+
+  async getRedtrackConfig(id: number): Promise<RedtrackConfig | undefined> {
+    return this.redtrackConfigs.get(id);
+  }
+
+  async getRedtrackConfigs(userId: number): Promise<RedtrackConfig[]> {
+    return Array.from(this.redtrackConfigs.values())
+      .filter(config => config.userId === userId);
+  }
+
+  async updateRedtrackConfig(id: number, updates: Partial<InsertRedtrackConfig>): Promise<RedtrackConfig | undefined> {
+    const config = this.redtrackConfigs.get(id);
+    if (!config) return undefined;
+
+    const updatedConfig = {
+      ...config,
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.redtrackConfigs.set(id, updatedConfig);
+    return updatedConfig;
+  }
+
+  async deleteRedtrackConfig(id: number): Promise<boolean> {
+    return this.redtrackConfigs.delete(id);
   }
 }
 

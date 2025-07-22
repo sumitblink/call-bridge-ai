@@ -19,6 +19,7 @@ import PhoneNumbers from "@/pages/phone-numbers";
 import RTBManagement from "@/pages/rtb-management";
 import Feedback from "@/pages/feedback";
 import CallFlows from "@/pages/call-flows";
+import RedTrackPage from "@/pages/redtrack";
 
 import TrackingDashboard from "@/pages/tracking-dashboard";
 import RealTrackingDashboard from "@/pages/real-tracking-dashboard";
@@ -73,6 +74,7 @@ function Router() {
           <Route path="/ringba-analytics" component={RingbaStyleAnalytics} />
           <Route path="/enhanced-reporting" component={EnhancedReporting} />
           <Route path="/integrations" component={Integrations} />
+          <Route path="/redtrack" component={RedTrackPage} />
           <Route path="/help" component={Feedback} />
 
           <Route component={NotFound} />
