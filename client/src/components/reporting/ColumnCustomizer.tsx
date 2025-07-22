@@ -67,7 +67,14 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
         title: "Columns Updated", 
         description: "Your column preferences have been saved."
       });
-      onColumnsChange(localVisibleColumns);
+      // Ensure actions column is always at the right end
+      const actionsIndex = localVisibleColumns.indexOf('actions');
+      if (actionsIndex > -1) {
+        const columnsWithoutActions = localVisibleColumns.filter(col => col !== 'actions');
+        onColumnsChange([...columnsWithoutActions, 'actions']);
+      } else {
+        onColumnsChange(localVisibleColumns);
+      }
     },
     onError: () => {
       toast({
@@ -96,7 +103,14 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
         title: "Columns Reset",
         description: "Column preferences have been reset to defaults."
       });
-      onColumnsChange(data.visibleColumns);
+      // Ensure actions column is always at the right end
+      const actionsIndex = data.visibleColumns.indexOf('actions');
+      if (actionsIndex > -1) {
+        const columnsWithoutActions = data.visibleColumns.filter(col => col !== 'actions');
+        onColumnsChange([...columnsWithoutActions, 'actions']);
+      } else {
+        onColumnsChange(data.visibleColumns);
+      }
     },
     onError: () => {
       toast({
@@ -112,7 +126,14 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
     if (preferences && preferences.visibleColumns.length > 0) {
       console.log('Loading saved column preferences:', preferences.visibleColumns);
       setLocalVisibleColumns(preferences.visibleColumns);
-      onColumnsChange(preferences.visibleColumns);
+      // Ensure actions column is always at the right end
+      const actionsIndex = preferences.visibleColumns.indexOf('actions');
+      if (actionsIndex > -1) {
+        const columnsWithoutActions = preferences.visibleColumns.filter(col => col !== 'actions');
+        onColumnsChange([...columnsWithoutActions, 'actions']);
+      } else {
+        onColumnsChange(preferences.visibleColumns);
+      }
     } else {
       console.log('Using provided columns:', visibleColumns);
       setLocalVisibleColumns(visibleColumns);

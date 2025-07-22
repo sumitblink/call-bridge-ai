@@ -113,6 +113,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 22, 2025: **CALL DETAILS TABLE IMPROVEMENTS COMPLETE** - Enhanced Enhanced Reporting with proper column display and fixed Actions column positioning
+  - **Campaign ID & Buyer ID Columns**: Fixed Campaign ID and Buyer ID columns to display properly in Call Details table with UUID support and proper TypeScript interfaces
+  - **Actions Column Positioning**: Actions column now always appears at the rightmost position regardless of column customization or saved preferences
+  - **Column Management**: Enhanced column customizer to maintain Actions column at right end during save, reset, and load operations
+  - **Database Integration**: Fixed Call interface types to match UUID campaign IDs and added missing numberPoolId property
+  - **User Experience**: Professional table layout with consistent Actions column positioning matching enterprise call tracking standards
+  - **Status**: Enhanced Reporting now provides complete call data visibility with intuitive column management
 - July 22, 2025: **TRACKING-DASHBOARD PAGE REMOVED AND DATABASE ERRORS FIXED** - Eliminated redundant tracking-dashboard page and completely resolved database column issues
   - **Page Cleanup**: Removed tracking-dashboard.tsx file, import references from App.tsx, and tracking-dashboard route 
   - **Navigation Cleanup**: Removed "Live Tracking" from sidebar navigation menu to prevent access to deleted page

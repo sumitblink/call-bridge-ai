@@ -79,7 +79,14 @@ export default function CallActivity() {
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     // Remove duplicates from default columns to prevent React key issues
-    return [...new Set(getDefaultVisibleColumns())];
+    const defaultColumns = [...new Set(getDefaultVisibleColumns())];
+    // Ensure actions column is always at the right end
+    const actionsIndex = defaultColumns.indexOf('actions');
+    if (actionsIndex > -1) {
+      const columnsWithoutActions = defaultColumns.filter(col => col !== 'actions');
+      return [...columnsWithoutActions, 'actions'];
+    }
+    return defaultColumns;
   });
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
   const [isResizing, setIsResizing] = useState<string | null>(null);
@@ -108,7 +115,14 @@ export default function CallActivity() {
   const handleColumnsChange = (newVisibleColumns: string[]) => {
     // Remove duplicates to fix React key issues
     const uniqueColumns = [...new Set(newVisibleColumns)];
-    setVisibleColumns(uniqueColumns);
+    // Ensure actions column is always at the right end
+    const actionsIndex = uniqueColumns.indexOf('actions');
+    if (actionsIndex > -1) {
+      const columnsWithoutActions = uniqueColumns.filter(col => col !== 'actions');
+      setVisibleColumns([...columnsWithoutActions, 'actions']);
+    } else {
+      setVisibleColumns(uniqueColumns);
+    }
   };
 
   // Action handlers
