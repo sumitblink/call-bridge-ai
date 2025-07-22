@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ColumnCustomizer } from "./ColumnCustomizer";
+import { getDefaultVisibleColumns, getColumnDefinition } from "@shared/column-definitions";
+import { formatDistanceToNow } from "date-fns";
 
 interface Call {
   id: number;
@@ -69,8 +72,190 @@ export default function CallActivity() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(getDefaultVisibleColumns());
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+  const [isResizing, setIsResizing] = useState<string | null>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
   
   const { toast } = useToast();
+
+  const handleColumnsChange = (newVisibleColumns: string[]) => {
+    setVisibleColumns(newVisibleColumns);
+  };
+
+  // Column resizing handlers
+  const handleMouseDown = (column: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(column);
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!tableRef.current) return;
+      
+      const rect = tableRef.current.getBoundingClientRect();
+      const newWidth = Math.max(50, e.clientX - rect.left);
+      setColumnWidths(prev => ({ ...prev, [column]: newWidth }));
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(null);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Render column value based on column definition
+  const renderColumnValue = (column: string, call: Call) => {
+    const columnDef = getColumnDefinition(column);
+    if (!columnDef) return <div className="truncate">-</div>;
+
+    switch (column) {
+      case 'inbound_call_id':
+        return <div className="text-blue-600 font-mono text-xs">{call.id}</div>;
+      case 'call_date':
+        return <div className="text-xs">{formatDistanceToNow(new Date(call.createdAt), { addSuffix: true })}</div>;
+      case 'caller_id':
+        return <div className="font-mono text-xs">{call.fromNumber}</div>;
+      case 'dialed_number':
+        return <div className="font-mono text-xs">{call.toNumber}</div>;
+      case 'call_duration':
+        return <div className="text-center">{Math.floor(call.duration / 60)}:{(call.duration % 60).toString().padStart(2, '0')}</div>;
+      case 'call_status':
+        return (
+          <Badge variant={
+            call.status === 'completed' ? 'default' :
+            call.status === 'failed' ? 'destructive' :
+            call.status === 'busy' ? 'secondary' : 'outline'
+          }>
+            {call.status}
+          </Badge>
+        );
+      case 'call_revenue':
+        return <div className="text-right text-green-600 font-medium">${parseFloat(call.revenue || '0').toFixed(2)}</div>;
+      case 'call_cost':
+        return <div className="text-right text-red-600">${parseFloat(call.cost || '0').toFixed(2)}</div>;
+      case 'call_profit':
+        const profit = parseFloat(call.revenue || '0') - parseFloat(call.cost || '0');
+        return <div className="text-right font-medium">${profit.toFixed(2)}</div>;
+      case 'recording_status':
+        return call.recordingStatus ? <Badge variant="outline">{call.recordingStatus}</Badge> : <span className="text-gray-400">-</span>;
+      case 'call_quality':
+        return call.callQuality ? <Badge variant="secondary">{call.callQuality}</Badge> : <span className="text-gray-400">-</span>;
+      case 'geo_location':
+        return <div className="truncate">{call.geoLocation || '-'}</div>;
+      case 'user_agent':
+        return <div className="truncate text-xs">{call.userAgent || '-'}</div>;
+      case 'recording_url':
+        return call.recordingUrl ? (
+          <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+            <Play className="h-3 w-3" />
+          </Button>
+        ) : <span className="text-gray-400">-</span>;
+      case 'transcription':
+        return call.transcription ? (
+          <div className="truncate max-w-32 text-xs">{call.transcription}</div>
+        ) : <span className="text-gray-400">-</span>;
+      case 'campaign_name':
+        const campaign = campaigns.find((c) => c.id === call.campaignId);
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium text-xs">{campaign?.name || 'Unknown'}</span>
+            <span className="text-xs text-gray-400">ID: {call.campaignId}</span>
+          </div>
+        );
+      case 'buyer_name':
+        const buyer = buyers.find((b) => b.id === call.buyerId);
+        return (
+          <div className="flex flex-col">
+            {buyer ? (
+              <>
+                <span className="font-medium text-xs">{buyer.name}</span>
+                <span className="text-xs text-gray-400">{buyer.phoneNumber}</span>
+              </>
+            ) : (
+              <span className="text-xs text-gray-400">No buyer assigned</span>
+            )}
+          </div>
+        );
+      case 'actions':
+        return (
+          <div className="flex gap-1 flex-wrap">
+            {call.status === 'in-progress' && (
+              <>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => holdCallMutation.mutate(call.callSid)}
+                  title="Hold Call"
+                  className="h-6 w-6 p-0"
+                >
+                  <Pause className="h-3 w-3" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => muteCallMutation.mutate(call.callSid)}
+                  title="Mute Call"
+                  className="h-6 w-6 p-0"
+                >
+                  <MicOff className="h-3 w-3" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => handleTransferCall(call.callSid)}
+                  title="Transfer Call"
+                  className="h-6 w-6 p-0"
+                >
+                  <PhoneForwarded className="h-3 w-3" />
+                </Button>
+              </>
+            )}
+            
+            {/* Recording Controls */}
+            {call.status === 'in-progress' && !call.recordingSid && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => handleStartRecording(call.callSid)}
+                title="Start Recording"
+                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+              >
+                <Square className="h-3 w-3" />
+              </Button>
+            )}
+            
+            {call.recordingSid && call.recordingStatus === 'processing' && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => handleStopRecording(call.callSid, call.recordingSid)}
+                title="Stop Recording"
+                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+              >
+                <Square className="h-3 w-3 fill-current" />
+              </Button>
+            )}
+            
+            {call.recordingUrl && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => call.recordingUrl && window.open(call.recordingUrl, '_blank')}
+                title="Play Recording"
+                className="h-6 w-6 p-0"
+              >
+                <Play className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        );
+      default:
+        return <div className="truncate text-xs">-</div>;
+    }
+  };
 
   const { data: calls = [], isLoading: isLoadingCalls } = useQuery<Call[]>({
     queryKey: ["/api/calls"],
@@ -331,32 +516,63 @@ export default function CallActivity() {
       {/* Call Activity Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Call Activity ({filteredCalls.length})</CardTitle>
-          <CardDescription>
-            Real-time view of all calls with actions and monitoring
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Call Activity ({filteredCalls.length})</CardTitle>
+              <CardDescription>
+                Real-time view of all calls with actions and monitoring
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <ColumnCustomizer 
+                tableType="call_activity"
+                onColumnsChange={handleColumnsChange}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
+          <div className="rounded-md border overflow-auto">
+            <Table ref={tableRef}>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Time</TableHead>
-                  <TableHead>From</TableHead>
-                  <TableHead>To</TableHead>
-                  <TableHead>Campaign</TableHead>
-                  <TableHead>Buyer/Agent</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Recording</TableHead>
-                  <TableHead>Revenue</TableHead>
-                  <TableHead>Actions</TableHead>
+                  {visibleColumns.map((column) => {
+                    const columnDef = getColumnDefinition(column);
+                    if (!columnDef) return null;
+                    const width = columnWidths[column] || columnDef.width || 120;
+                    
+                    return (
+                      <TableHead 
+                        key={column}
+                        className="relative border-r border-gray-200 bg-gray-50"
+                        style={{ width: `${width}px`, minWidth: `${width}px` }}
+                      >
+                        <div className="flex flex-col gap-1">
+                          <div className="truncate pr-2 font-medium text-xs">
+                            {columnDef.label}
+                          </div>
+                        </div>
+                        {/* Resize handle */}
+                        <div
+                          className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 hover:opacity-50"
+                          onMouseDown={(e) => handleMouseDown(column, e)}
+                          style={{
+                            backgroundColor: isResizing === column ? '#3b82f6' : 'transparent'
+                          }}
+                        />
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCalls.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8">
+                    <TableCell colSpan={visibleColumns.length} className="text-center py-8">
                       <div className="text-gray-500">
                         <Phone className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>No calls found matching your filters</p>
@@ -367,126 +583,24 @@ export default function CallActivity() {
                   filteredCalls.map((call) => {
                     const campaign = campaigns.find((c) => c.id === call.campaignId);
                     const buyer = buyers.find((b) => b.id === call.buyerId);
+                    
                     return (
-                      <TableRow key={call.id} className="hover:bg-gray-50">
-                        <TableCell className="text-sm">
-                          {new Date(call.createdAt).toLocaleTimeString()}
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">{call.fromNumber}</TableCell>
-                        <TableCell className="font-mono text-sm">{call.toNumber}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-sm">{campaign?.name || 'Unknown'}</span>
-                            <span className="text-xs text-gray-500">ID: {call.campaignId}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            {buyer ? (
-                              <>
-                                <span className="font-medium text-sm">{buyer.name}</span>
-                                <span className="text-xs text-gray-500">{buyer.phoneNumber}</span>
-                              </>
-                            ) : (
-                              <span className="text-sm text-gray-400">No buyer assigned</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(call.status)}>
-                            {call.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDuration(call.duration)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            {call.recordingStatus && (
-                              <Badge className={getRecordingStatusColor(call.recordingStatus)} variant="outline">
-                                {call.recordingStatus}
-                              </Badge>
-                            )}
-                            {call.recordingUrl && (
-                              <Button size="sm" variant="outline" className="h-6 text-xs">
-                                <Play className="h-2 w-2 mr-1" />
-                                Play
-                              </Button>
-                            )}
-                            {call.transcription && (
-                              <span className="text-xs text-gray-500" title={call.transcription}>
-                                Transcribed
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>${parseFloat(call.revenue || "0").toFixed(2)}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1 flex-wrap">
-                            {call.status === 'in-progress' && (
-                              <>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  onClick={() => holdCallMutation.mutate(call.callSid)}
-                                  title="Hold Call"
-                                >
-                                  <Pause className="h-3 w-3" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  onClick={() => muteCallMutation.mutate(call.callSid)}
-                                  title="Mute Call"
-                                >
-                                  <MicOff className="h-3 w-3" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  onClick={() => handleTransferCall(call.callSid)}
-                                  title="Transfer Call"
-                                >
-                                  <PhoneForwarded className="h-3 w-3" />
-                                </Button>
-                              </>
-                            )}
-                            
-                            {/* Recording Controls */}
-                            {call.status === 'in-progress' && !call.recordingSid && (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => handleStartRecording(call.callSid)}
-                                title="Start Recording"
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Square className="h-3 w-3" />
-                              </Button>
-                            )}
-                            
-                            {call.recordingSid && call.recordingStatus === 'processing' && (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => handleStopRecording(call.callSid, call.recordingSid)}
-                                title="Stop Recording"
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Square className="h-3 w-3 fill-current" />
-                              </Button>
-                            )}
-                            
-                            {call.recordingUrl && (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => call.recordingUrl && window.open(call.recordingUrl, '_blank')}
-                                title="Play Recording"
-                              >
-                                <Play className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
+                      <TableRow key={call.id} className="hover:bg-gray-50/50">
+                        {visibleColumns.map((column) => {
+                          const columnDef = getColumnDefinition(column);
+                          if (!columnDef) return null;
+                          const width = columnWidths[column] || columnDef.width || 120;
+                          
+                          return (
+                            <TableCell 
+                              key={column}
+                              className="py-1 px-2 border-r border-gray-200 truncate text-xs"
+                              style={{ width: `${width}px`, minWidth: `${width}px` }}
+                            >
+                              {renderColumnValue(column, call)}
+                            </TableCell>
+                          );
+                        })}
                       </TableRow>
                     );
                   })
