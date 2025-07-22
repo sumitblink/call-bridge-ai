@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users, Phone, Grid3X3, List, PhoneCall, Info } from "lucide-react";
+import { Plus, Edit, Trash2, Play, Pause, BarChart3, Users, Phone, Grid3X3, List, PhoneCall, Info, Link as LinkIcon, Target } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -286,9 +287,17 @@ function CampaignForm({
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
+    <Tabs defaultValue="general" className="w-full">
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="general">General</TabsTrigger>
+        <TabsTrigger value="url-parameters">URL Parameters</TabsTrigger>
+        <TabsTrigger value="tracking-pixels">Tracking Pixels</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="general">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
@@ -315,7 +324,7 @@ function CampaignForm({
           )}
         />
 
-        <FormField
+            <FormField
           control={form.control}
           name="country"
           render={({ field }) => (
@@ -491,16 +500,26 @@ function CampaignForm({
           )}
         </div>
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="submit" disabled={isPending}>
-            {isPending 
-              ? (campaign ? "Updating..." : "Creating...") 
-              : (campaign ? "Update Campaign" : "Create Campaign")
-            }
-          </Button>
-        </div>
-      </form>
-    </Form>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="submit" disabled={isPending}>
+                {isPending 
+                  ? (campaign ? "Updating..." : "Creating...") 
+                  : (campaign ? "Update Campaign" : "Create Campaign")
+                }
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </TabsContent>
+      
+      <TabsContent value="url-parameters">
+        <CampaignUrlParameters campaignId={campaign?.id} />
+      </TabsContent>
+      
+      <TabsContent value="tracking-pixels">
+        <CampaignTrackingPixels campaignId={campaign?.id} />
+      </TabsContent>
+    </Tabs>
   );
 }
 
