@@ -113,6 +113,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 22, 2025: **CALLS PAGE REMOVED** - Eliminated redundant standalone calls page since functionality exists in Enhanced Reporting section
+  - **Route Cleanup**: Removed /calls route from App.tsx and corresponding navigation link from sidebar
+  - **Import Cleanup**: Removed Calls component import to prevent reference errors
+  - **Navigation Streamlined**: Users now access call data exclusively through Enhanced Reporting with comprehensive Actions column
+  - **Data Visibility Fixed**: Resolved column mapping issues where renderColumnValue function cases didn't match column definition IDs
+  - **Column Resizing Enhanced**: Fixed mouse drag interactions for smooth column width adjustments
+  - **Status**: Call Details table now fully operational with 15 mock records, working Actions column, and proper data display
 - July 22, 2025: **CALL DETAILS COMPREHENSIVE MOCK DATA ADDED** - Enhanced Call Details table with 15 realistic call records showcasing all column customization features
   - **Expanded Dataset**: Added 15 comprehensive mock call records with diverse scenarios (completed, in-progress, failed, busy, no-answer)
   - **Rich Data Variety**: Includes detailed transcriptions, multiple insurance types (healthcare, auto, life, home, business, motorcycle), geographic diversity across US cities

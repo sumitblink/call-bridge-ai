@@ -11,7 +11,7 @@ import { useState } from "react";
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3, current: true },
   { name: "Campaigns", href: "/campaigns", icon: BellRing, current: false },
-  { name: "Calls", href: "/calls", icon: PhoneCall, current: false },
+
   { name: "Phone Numbers", href: "/phone-numbers", icon: Phone, current: false },
   { name: "Buyers", href: "/buyers", icon: DollarSign, current: false },
   { name: "Publishers", href: "/publishers", icon: UserCheck, current: false },
