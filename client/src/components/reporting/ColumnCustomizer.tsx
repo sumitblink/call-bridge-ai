@@ -121,17 +121,24 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
   };
 
   const toggleColumn = (columnId: string) => {
+    console.log('=== TOGGLE COLUMN START ===');
     console.log('Toggling column:', columnId);
     console.log('Current visible columns:', localVisibleColumns);
+    console.log('Current visible length:', localVisibleColumns.length);
     
-    const newVisible = localVisibleColumns.includes(columnId)
+    const isCurrentlyVisible = localVisibleColumns.includes(columnId);
+    console.log('Is currently visible:', isCurrentlyVisible);
+    
+    const newVisible = isCurrentlyVisible
       ? localVisibleColumns.filter(id => id !== columnId)
       : [...localVisibleColumns, columnId];
     
     console.log('New visible columns:', newVisible);
+    console.log('New visible length:', newVisible.length);
     
     // Ensure at least one column remains visible
     if (newVisible.length === 0) {
+      console.log('WARNING: Attempting to hide all columns');
       toast({
         title: "Warning",
         description: "At least one column must remain visible.",
@@ -140,10 +147,12 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
       return;
     }
     
+    console.log('Setting new visible columns...');
     setLocalVisibleColumns(newVisible);
     
-    // Also immediately apply changes to the table (real-time preview)
+    console.log('Calling onColumnsChange...');
     onColumnsChange(newVisible);
+    console.log('=== TOGGLE COLUMN END ===');
   };
 
   const handleSave = () => {
@@ -235,10 +244,15 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
                           id={`checkbox-${column.id}`}
                           checked={localVisibleColumns.includes(column.id)}
                           onChange={(e) => {
-                            console.log('Native checkbox changed:', column.id, 'checked:', e.target.checked);
+                            console.log('=== CHECKBOX CHANGE EVENT ===');
+                            console.log('Column ID:', column.id);
+                            console.log('Target checked:', e.target.checked);
+                            console.log('Current localVisibleColumns:', localVisibleColumns);
+                            console.log('Includes check:', localVisibleColumns.includes(column.id));
+                            e.stopPropagation();
                             toggleColumn(column.id);
                           }}
-                          className="h-4 w-4 rounded border border-input bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                          className="h-4 w-4 accent-blue-600"
                         />
                         <label
                           htmlFor={`checkbox-${column.id}`}
