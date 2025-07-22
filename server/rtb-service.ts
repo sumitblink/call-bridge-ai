@@ -248,7 +248,7 @@ export class RTBService {
 
       // Send bid requests to geographically eligible targets in parallel
       const targetPromises = eligibleTargets.map(assignment => 
-        this.sendBidRequest(assignment.rtbTargetId, bidRequest, router)
+        this.sendBidRequest(assignment.rtbTargetId, bidRequest)
       );
 
       const startTime = Date.now();
@@ -291,7 +291,7 @@ export class RTBService {
             bidAmount: 0,
             bidCurrency: 'USD',
             destinationNumber: '',
-            responseTimeMs: router.biddingTimeoutMs,
+            responseTimeMs: bidRequest.timeoutMs || 5000,
             responseStatus: 'timeout',
             isValid: false,
             isWinningBid: false,
@@ -381,8 +381,7 @@ export class RTBService {
    */
   private static async sendBidRequest(
     targetId: number,
-    bidRequest: BidRequest,
-    router: RtbRouter
+    bidRequest: BidRequest
   ): Promise<BidResponse | null> {
     try {
       const target = await storage.getRtbTarget(targetId);
@@ -423,7 +422,7 @@ export class RTBService {
           callerZip: bidRequest.callerZip,
           callStartTime: bidRequest.callStartTime.toISOString(),
           tags: bidRequest.tags,
-          timeout: router.biddingTimeoutMs,
+          timeoutMs: bidRequest.timeoutMs || 5000,
           minBid: target.minBidAmount,
           maxBid: target.maxBidAmount,
           currency: target.currency

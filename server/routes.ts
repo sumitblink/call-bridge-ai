@@ -1067,7 +1067,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`[Pool Webhook] Found campaign: ${campaign.name} (ID: ${campaign.id}) using pool: ${pool.name}`);
-      console.log(`[Pool Webhook] RTB enabled: ${campaign.enableRtb}, RTB Router ID: ${campaign.rtbRouterId}`);
+      console.log(`[Pool Webhook] RTB enabled: ${campaign.enableRtb}`);
       
       let routingMethod = 'traditional';
       let selectedBuyer = null;
@@ -1126,78 +1126,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Check if RTB is enabled for this campaign
-      if (campaign.enableRtb && campaign.rtbRouterId) {
+      // Check if RTB is enabled for this campaign and has assigned targets
+      if (campaign.enableRtb) {
         try {
-          console.log(`[Pool Webhook] Attempting RTB bidding for router ID: ${campaign.rtbRouterId}`);
+          console.log(`[Pool Webhook] Checking RTB targets for campaign ${campaign.id}`);
           
-          // Import RTB service and conduct bidding
-          const { RTBService } = await import('./rtb-service');
+          // Get RTB targets assigned to this campaign
+          const rtbTargets = await storage.getCampaignRtbTargets(campaign.id);
+          console.log(`[Pool Webhook] Found ${rtbTargets.length} RTB targets assigned to campaign`);
           
-          // Prepare bid request for RTB (use CallSid to ensure same call gets same request ID)
-          const bidRequest = {
-            requestId: `pool_${poolId}_${CallSid}`,
-            campaignId: campaign.id,
-            campaignRtbId: campaign.rtbId || undefined, // Use RTB ID for external bid requests
-            callerId: fromNumber,
-            callerState: req.body.CallerState || null,
-            callerZip: req.body.CallerZip || null,
-            callStartTime: new Date(),
-            timeoutMs: 5000 // 5 second timeout for bidding
-          };
-          
-          console.log(`[Pool Webhook] Conducting bidding with request:`, bidRequest);
-          
-          // Conduct RTB bidding
-          const biddingResult = await RTBService.initiateAuction(
-            campaign,
-            bidRequest
-          );
-          
-          console.log(`[Pool Webhook] Bidding result:`, biddingResult);
-          
-          if (biddingResult.success && biddingResult.winningBid) {
-            // RTB bidding successful - use winning bid
-            routingMethod = 'rtb';
-            rtbRequestId = bidRequest.requestId;
-            winningBidAmount = parseFloat(biddingResult.winningBid.bidAmount);
-            winningTargetId = biddingResult.winningBid.rtbTargetId;
+          if (rtbTargets.length > 0) {
+            console.log(`[Pool Webhook] Attempting RTB bidding with ${rtbTargets.length} targets`);
             
-            // Get the winning target for buyer information and use destination number from bid response
-            const winningTarget = await storage.getRtbTarget(winningTargetId);
-            if (winningTarget && biddingResult.winningBid.destinationNumber) {
-              // Get buyer info but use destination number from bid response
-              const targetBuyer = await storage.getBuyer(winningTarget.buyerId);
-              if (targetBuyer) {
-                // Create a synthetic buyer object with the destination number from the bid
-                selectedBuyer = {
-                  ...targetBuyer,
-                  phoneNumber: biddingResult.winningBid.destinationNumber // Use destination from bid response
-                };
-                
-                routingData = {
-                  ...routingData,
-                  method: 'rtb',
-                  rtbRequestId,
-                  winningBidAmount,
-                  winningTargetId,
-                  targetName: winningTarget.name,
-                  totalTargetsPinged: biddingResult.totalTargetsPinged,
-                  responseTimeMs: biddingResult.totalResponseTime
-                };
-                
-                console.log(`[Pool Webhook] RTB SUCCESS - Winner: ${winningTarget.name}, Bid: $${winningBidAmount}, Routing to: ${biddingResult.winningBid.destinationNumber} [RTB Destination]`);
-              } else {
-                console.log(`[Pool Webhook] RTB winning target buyer not found, falling back to traditional routing`);
-                routingMethod = 'rtb_fallback';
-              }
+            // Import RTB service and conduct bidding
+            const { RTBService } = await import('./rtb-service');
+            
+            // Prepare bid request for RTB (use CallSid to ensure same call gets same request ID)
+            const bidRequest = {
+              requestId: `pool_${poolId}_${CallSid}`,
+              campaignId: campaign.id,
+              campaignRtbId: campaign.rtbId || undefined, // Use RTB ID for external bid requests
+              callerId: fromNumber,
+              callerState: req.body.CallerState || null,
+              callerZip: req.body.CallerZip || null,
+              callStartTime: new Date(),
+              timeoutMs: 5000 // 5 second timeout for bidding
+            };
+            
+            console.log(`[Pool Webhook] Conducting bidding with request:`, bidRequest);
+          
+            // Conduct RTB bidding
+            const biddingResult = await RTBService.initiateAuction(
+              campaign,
+              bidRequest
+            );
+          
+            console.log(`[Pool Webhook] Bidding result:`, biddingResult);
+            
+            if (biddingResult.success && biddingResult.winningBid) {
+              // RTB bidding successful - use winning bid
+              routingMethod = 'rtb';
+              rtbRequestId = bidRequest.requestId;
+              winningBidAmount = parseFloat(biddingResult.winningBid.bidAmount);
+              winningTargetId = biddingResult.winningBid.rtbTargetId;
+              
+              // Create a virtual buyer object with external destination number
+              selectedBuyer = {
+                id: -1, // Virtual buyer ID
+                name: `RTB Winner (${biddingResult.winningBid.targetName || 'External'})`,
+                phoneNumber: biddingResult.winningBid.destinationNumber,
+                email: 'rtb@external.com',
+                priority: 1,
+                maxConcurrentCalls: 999,
+                isActive: true,
+                userId: campaign.userId
+              };
+              
+              routingData = {
+                ...routingData,
+                method: 'rtb',
+                rtbRequestId,
+                winningBidAmount,
+                winningTargetId,
+                targetName: biddingResult.winningBid.targetName || 'External Bidder',
+                totalTargetsPinged: biddingResult.totalTargetsPinged,
+                responseTimeMs: biddingResult.totalResponseTime
+              };
+              
+              console.log(`[Pool Webhook] RTB SUCCESS - Winner: ${biddingResult.winningBid.targetName}, Bid: $${winningBidAmount}, Routing to EXTERNAL: ${biddingResult.winningBid.destinationNumber}`);
             } else {
-              console.log(`[Pool Webhook] RTB winning target not found or missing destination number, falling back to traditional routing`);
+              console.log(`[Pool Webhook] RTB bidding failed or no winning bid: ${biddingResult.error || 'Unknown reason'}`);
               routingMethod = 'rtb_fallback';
             }
           } else {
-            console.log(`[Pool Webhook] RTB bidding failed or no winning bid: ${biddingResult.error || 'Unknown reason'}`);
-            routingMethod = 'rtb_fallback';
+            console.log(`[Pool Webhook] No RTB targets assigned to campaign, falling back to traditional routing`);
+            routingMethod = 'rtb_no_targets';
           }
         } catch (rtbError) {
           console.error(`[Pool Webhook] RTB bidding error:`, rtbError);
@@ -1239,10 +1242,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get phone number record for complete call tracking
       const phoneNumber = await storage.getPhoneNumberByNumber(toNumber);
       
-      // Create call record with complete pool and phone number data
+      // Create call record with complete pool and phone number data  
       const callData = {
         campaignId: campaign.id,
-        buyerId: selectedBuyer.id,
+        buyerId: routingMethod === 'rtb' ? null : selectedBuyer.id, // RTB calls use external routing
         callSid: CallSid,
         fromNumber,
         toNumber,
@@ -1254,6 +1257,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         routingData: JSON.stringify({
           ...routingData,
           routingMethod,
+          externalDestination: routingMethod === 'rtb' ? selectedBuyer.phoneNumber : null,
+          rtbTargetName: routingMethod === 'rtb' ? selectedBuyer.name : null,
           timestamp: new Date().toISOString()
         })
       };
@@ -1341,7 +1346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`[Webhook RTB] Found campaign: ${campaign.name} (ID: ${campaign.id})`);
-      console.log(`[Webhook RTB] RTB enabled: ${campaign.enableRtb}, RTB Router ID: ${campaign.rtbRouterId}`);
+      console.log(`[Webhook RTB] RTB enabled: ${campaign.enableRtb}`);
       
       // Check if campaign has an active call flow first
       console.log(`[Webhook RTB] Checking for call flows for user ${campaign.userId}`);
@@ -1397,84 +1402,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let winningBidAmount = null;
       let winningTargetId = null;
       
-      // Check if RTB is enabled for this campaign
-      if (campaign.enableRtb && campaign.rtbRouterId) {
+      // Check if RTB is enabled for this campaign and has assigned targets
+      if (campaign.enableRtb) {
         try {
-          console.log(`[Webhook RTB] Attempting RTB bidding for router ID: ${campaign.rtbRouterId}`);
+          console.log(`[Webhook RTB] Checking RTB targets for campaign ${campaign.id}`);
           
-          // Import RTB service and conduct bidding
-          const { RTBService } = await import('./rtb-service');
+          // Get RTB targets assigned to this campaign
+          const rtbTargets = await storage.getCampaignRtbTargets(campaign.id);
+          console.log(`[Webhook RTB] Found ${rtbTargets.length} RTB targets assigned to campaign`);
           
-          // Prepare bid request for RTB (use CallSid to ensure same call gets same request ID)
-          const bidRequest = {
-            requestId: `req_${CallSid}`,
-            campaignId: campaign.id,
-            campaignRtbId: campaign.rtbId || undefined, // Use RTB ID for external bid requests
-            callerId: fromNumber,
-            callerState: CallerState || null,
-            callerZip: CallerZip || null,
-            callStartTime: new Date(),
-            timeoutMs: 5000 // 5 second timeout for bidding
-          };
-          
-          console.log(`[Webhook RTB] Conducting bidding with request:`, bidRequest);
-          
-          // Conduct RTB bidding
-          const biddingResult = await RTBService.initiateAuction(
-            campaign,
-            bidRequest
-          );
-          
-          console.log(`[Webhook RTB] Bidding result:`, biddingResult);
-          
-          if (biddingResult.success && biddingResult.winningBid) {
-            // RTB bidding successful - use winning bid
-            routingMethod = 'rtb';
-            rtbRequestId = bidRequest.requestId;
-            winningBidAmount = parseFloat(biddingResult.winningBid.bidAmount);
-            winningTargetId = biddingResult.winningBid.rtbTargetId;
+          if (rtbTargets.length > 0) {
+            console.log(`[Webhook RTB] Attempting RTB bidding with ${rtbTargets.length} targets`);
             
-            // Get the winning target and use external destination number
-            const winningTarget = await storage.getRtbTarget(winningTargetId);
-            if (winningTarget && biddingResult.winningBid.destinationNumber) {
-              // Get buyer info but use destination number from bid response
-              const targetBuyer = await storage.getBuyer(winningTarget.buyerId);
-              if (targetBuyer) {
-                // Create a virtual buyer object with the external destination number
-                selectedBuyer = {
-                  ...targetBuyer,
-                  phoneNumber: biddingResult.winningBid.destinationNumber
-                };
-                
-                routingData = {
-                  method: 'rtb',
-                  rtbRequestId,
-                  winningBidAmount,
-                  winningTargetId,
-                  targetName: winningTarget.name,
-                  totalTargetsPinged: biddingResult.totalTargetsPinged,
-                  responseTimeMs: biddingResult.totalResponseTime,
-                  externalDestination: biddingResult.winningBid.destinationNumber
-                };
-                
-                console.log(`[Webhook RTB] RTB SUCCESS - Winner: ${winningTarget.name}, Bid: $${winningBidAmount}, Routing to EXTERNAL: ${biddingResult.winningBid.destinationNumber}`);
-              } else {
-                console.log(`[Webhook RTB] RTB winning target buyer not found, falling back to traditional routing`);
-                routingMethod = 'rtb_fallback';
-              }
+            // Import RTB service and conduct bidding
+            const { RTBService } = await import('./rtb-service');
+            
+            // Prepare bid request for RTB (use CallSid to ensure same call gets same request ID)
+            const bidRequest = {
+              requestId: `req_${CallSid}`,
+              campaignId: campaign.id,
+              campaignRtbId: campaign.rtbId || undefined, // Use RTB ID for external bid requests
+              callerId: fromNumber,
+              callerState: CallerState || null,
+              callerZip: CallerZip || null,
+              callStartTime: new Date(),
+              timeoutMs: 5000 // 5 second timeout for bidding
+            };
+            
+            console.log(`[Webhook RTB] Conducting bidding with request:`, bidRequest);
+            
+            // Conduct RTB bidding
+            const biddingResult = await RTBService.initiateAuction(
+              campaign,
+              bidRequest
+            );
+            
+            console.log(`[Webhook RTB] Bidding result:`, biddingResult);
+            
+            if (biddingResult.success && biddingResult.winningBid) {
+              // RTB bidding successful - use winning bid
+              routingMethod = 'rtb';
+              rtbRequestId = bidRequest.requestId;
+              winningBidAmount = parseFloat(biddingResult.winningBid.bidAmount);
+              winningTargetId = biddingResult.winningBid.rtbTargetId;
+              
+              // Create a virtual buyer object with external destination number
+              selectedBuyer = {
+                id: -1, // Virtual buyer ID
+                name: `RTB Winner (${biddingResult.winningBid.targetName || 'External'})`,
+                phoneNumber: biddingResult.winningBid.destinationNumber,
+                email: 'rtb@external.com',
+                priority: 1,
+                maxConcurrentCalls: 999,
+                isActive: true,
+                userId: campaign.userId
+              };
+              
+              routingData = {
+                method: 'rtb',
+                rtbRequestId,
+                winningBidAmount,
+                winningTargetId,
+                targetName: biddingResult.winningBid.targetName || 'External Bidder',
+                totalTargetsPinged: biddingResult.totalTargetsPinged,
+                responseTimeMs: biddingResult.totalResponseTime,
+                externalDestination: biddingResult.winningBid.destinationNumber
+              };
+              
+              console.log(`[Webhook RTB] RTB SUCCESS - Winner: ${biddingResult.winningBid.targetName}, Bid: $${winningBidAmount}, Routing to EXTERNAL: ${biddingResult.winningBid.destinationNumber}`);
             } else {
-              console.log(`[Webhook RTB] RTB winning target not found or missing destination number, falling back to traditional routing`);
+              console.log(`[Webhook RTB] RTB bidding failed or no winning bid: ${biddingResult.error || 'Unknown reason'}`);
               routingMethod = 'rtb_fallback';
+              routingData = {
+                method: 'rtb_fallback',
+                rtbAttempted: true,
+                rtbFailureReason: biddingResult.error || 'No winning bid received',
+                totalTargetsPinged: biddingResult.totalTargetsPinged || 0
+              };
             }
           } else {
-            console.log(`[Webhook RTB] RTB bidding failed or no winning bid: ${biddingResult.error || 'Unknown reason'}`);
-            routingMethod = 'rtb_fallback';
-            routingData = {
-              method: 'rtb_fallback',
-              rtbAttempted: true,
-              rtbFailureReason: biddingResult.error || 'No winning bid received',
-              totalTargetsPinged: biddingResult.totalTargetsPinged || 0
-            };
+            console.log(`[Webhook RTB] No RTB targets assigned to campaign, falling back to traditional routing`);
+            routingMethod = 'rtb_no_targets';
           }
         } catch (rtbError) {
           console.error(`[Webhook RTB] RTB bidding error:`, rtbError);
