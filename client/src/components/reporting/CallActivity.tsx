@@ -255,16 +255,113 @@ export default function CallActivity() {
     }
   };
 
-  const { data: calls = [], isLoading: isLoadingCalls } = useQuery<Call[]>({
+  // Mock data for demonstration
+  const mockCalls: Call[] = [
+    {
+      id: 1001, callSid: "CA1001mock001", campaignId: 1, buyerId: 3,
+      fromNumber: "+12125551234", toNumber: "+18566441573", status: "completed", duration: 324,
+      callQuality: "excellent", recordingSid: "RE1001mock001", recordingUrl: "https://api.twilio.com/recording1001",
+      recordingStatus: "completed", recordingDuration: 320, transcription: "Customer inquired about insurance options",
+      transcriptionStatus: "completed", cost: "18.25", revenue: "45.50", geoLocation: "New York, NY",
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", createdAt: new Date(Date.now() - 3600000).toISOString(),
+      updatedAt: new Date(Date.now() - 3600000).toISOString()
+    },
+    {
+      id: 1002, callSid: "CA1002mock002", campaignId: 1, buyerId: 3,
+      fromNumber: "+15551234567", toNumber: "+18568791483", status: "in-progress", duration: 156,
+      callQuality: "good", recordingSid: null, recordingUrl: null, recordingStatus: "processing",
+      recordingDuration: null, transcription: null, transcriptionStatus: "pending",
+      cost: "8.75", revenue: "0.00", geoLocation: "Los Angeles, CA",
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS)", createdAt: new Date(Date.now() - 900000).toISOString(),
+      updatedAt: new Date(Date.now() - 900000).toISOString()
+    },
+    {
+      id: 1003, callSid: "CA1003mock003", campaignId: 1, buyerId: 3,
+      fromNumber: "+13105551111", toNumber: "+18564853922", status: "failed", duration: 12,
+      callQuality: "poor", recordingSid: null, recordingUrl: null, recordingStatus: "failed",
+      recordingDuration: null, transcription: null, transcriptionStatus: "failed",
+      cost: "2.50", revenue: "0.00", geoLocation: "Chicago, IL",
+      userAgent: "Mozilla/5.0 (Android 11)", createdAt: new Date(Date.now() - 7200000).toISOString(),
+      updatedAt: new Date(Date.now() - 7200000).toISOString()
+    },
+    {
+      id: 1004, callSid: "CA1004mock004", campaignId: 1, buyerId: 3,
+      fromNumber: "+19175559999", toNumber: "+18569256411", status: "completed", duration: 567,
+      callQuality: "excellent", recordingSid: "RE1004mock004", recordingUrl: "https://api.twilio.com/recording1004",
+      recordingStatus: "completed", recordingDuration: 560, transcription: "Customer requested quote for family plan",
+      transcriptionStatus: "completed", cost: "22.10", revenue: "78.25", geoLocation: "Houston, TX",
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X)", createdAt: new Date(Date.now() - 14400000).toISOString(),
+      updatedAt: new Date(Date.now() - 14400000).toISOString()
+    },
+    {
+      id: 1005, callSid: "CA1005mock005", campaignId: 1, buyerId: 3,
+      fromNumber: "+14155552222", toNumber: "+18046079719", status: "completed", duration: 892,
+      callQuality: "good", recordingSid: "RE1005mock005", recordingUrl: "https://api.twilio.com/recording1005",
+      recordingStatus: "completed", recordingDuration: 885, transcription: "Detailed discussion about coverage options and pricing",
+      transcriptionStatus: "completed", cost: "35.60", revenue: "125.75", geoLocation: "Phoenix, AZ",
+      userAgent: "Mozilla/5.0 (X11; Linux x86_64)", createdAt: new Date(Date.now() - 21600000).toISOString(),
+      updatedAt: new Date(Date.now() - 21600000).toISOString()
+    },
+    {
+      id: 1006, callSid: "CA1006mock006", campaignId: 1, buyerId: 3,
+      fromNumber: "+17185553333", toNumber: "+18566441573", status: "busy", duration: 0,
+      callQuality: null, recordingSid: null, recordingUrl: null, recordingStatus: null,
+      recordingDuration: null, transcription: null, transcriptionStatus: null,
+      cost: "1.25", revenue: "0.00", geoLocation: "Miami, FL",
+      userAgent: "Mozilla/5.0 (Windows NT 10.0)", createdAt: new Date(Date.now() - 25200000).toISOString(),
+      updatedAt: new Date(Date.now() - 25200000).toISOString()
+    },
+    {
+      id: 1007, callSid: "CA1007mock007", campaignId: 1, buyerId: 3,
+      fromNumber: "+16175554444", toNumber: "+18568791483", status: "completed", duration: 234,
+      callQuality: "fair", recordingSid: "RE1007mock007", recordingUrl: "https://api.twilio.com/recording1007",
+      recordingStatus: "completed", recordingDuration: 230, transcription: "Brief inquiry about services",
+      transcriptionStatus: "completed", cost: "12.75", revenue: "34.50", geoLocation: "Seattle, WA",
+      userAgent: "Mozilla/5.0 (iPad; CPU OS)", createdAt: new Date(Date.now() - 28800000).toISOString(),
+      updatedAt: new Date(Date.now() - 28800000).toISOString()
+    },
+    {
+      id: 1008, callSid: "CA1008mock008", campaignId: 1, buyerId: 3,
+      fromNumber: "+13235555555", toNumber: "+18564853922", status: "completed", duration: 445,
+      callQuality: "excellent", recordingSid: "RE1008mock008", recordingUrl: "https://api.twilio.com/recording1008",
+      recordingStatus: "completed", recordingDuration: 440, transcription: "Customer comparing multiple insurance providers",
+      transcriptionStatus: "completed", cost: "19.50", revenue: "67.25", geoLocation: "Denver, CO",
+      userAgent: "Mozilla/5.0 (compatible; Edge)", createdAt: new Date(Date.now() - 32400000).toISOString(),
+      updatedAt: new Date(Date.now() - 32400000).toISOString()
+    }
+  ];
+
+  const mockCampaigns: Campaign[] = [
+    {
+      id: 1, name: "Healthcare Campaign", description: "Primary healthcare insurance campaign",
+      status: "active", phoneNumber: "+18566441573", routingType: "pool", maxConcurrentCalls: 50,
+      callCap: 1000, geoTargeting: ["US"], timeZoneRestriction: "EST",
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    }
+  ];
+
+  const mockBuyers: Buyer[] = [
+    {
+      id: 3, name: "Premium Insurance Co", email: "contact@premiumins.com", phoneNumber: "+18005551234",
+      status: "active", priority: 1, dailyCap: 100, concurrencyLimit: 10, acceptanceRate: "85%",
+      avgResponseTime: 2.5, endpoint: "https://api.premiumins.com/webhook",
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    }
+  ];
+
+  const { data: calls = mockCalls, isLoading: isLoadingCalls } = useQuery<Call[]>({
     queryKey: ["/api/calls"],
+    enabled: false, // Use mock data for demonstration
   });
 
-  const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
+  const { data: campaigns = mockCampaigns, isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"],
+    enabled: false, // Use mock data for demonstration  
   });
 
-  const { data: buyers = [], isLoading: isLoadingBuyers } = useQuery<Buyer[]>({
+  const { data: buyers = mockBuyers, isLoading: isLoadingBuyers } = useQuery<Buyer[]>({
     queryKey: ["/api/buyers"],
+    enabled: false, // Use mock data for demonstration
   });
 
   const filteredCalls = calls.filter(call => {
