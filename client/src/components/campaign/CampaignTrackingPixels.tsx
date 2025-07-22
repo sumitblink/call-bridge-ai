@@ -4,10 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Plus, Edit, Trash2, Code, ExternalLink, Download } from 'lucide-react';
+import { Copy, Plus, Edit, Trash2, Download, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -19,46 +18,39 @@ interface CampaignTrackingPixelsProps {
 interface TrackingPixel {
   id: number;
   name: string;
-  type: 'javascript' | 'image' | 'iframe';
-  code: string;
-  triggerEvent: 'page_load' | 'form_submit' | 'phone_click' | 'button_click';
+  firePixelOn: 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized';
+  url: string;
+  httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  headers: { key: string; value: string }[];
+  authentication: 'none' | 'basic' | 'bearer' | 'api_key';
+  advancedOptions: boolean;
   active: boolean;
 }
 
 const SAMPLE_PIXELS: TrackingPixel[] = [
   {
     id: 1,
-    name: 'Google Analytics',
-    type: 'javascript',
-    code: `<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'GA_MEASUREMENT_ID');
-</script>`,
-    triggerEvent: 'page_load',
+    name: 'Conversion Tracker',
+    firePixelOn: 'converted',
+    url: 'https://mytracking.tracking.com/conversion?campaign_id={campaign_id}&call_id={call_id}',
+    httpMethod: 'GET',
+    headers: [],
+    authentication: 'none',
+    advancedOptions: false,
     active: true
   },
   {
     id: 2,
-    name: 'Facebook Pixel',
-    type: 'javascript',
-    code: `<!-- Facebook Pixel Code -->
-<script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', 'YOUR_PIXEL_ID');
-fbq('track', 'PageView');
-</script>`,
-    triggerEvent: 'page_load',
+    name: 'Call Completion Pixel',
+    firePixelOn: 'completed',
+    url: 'https://analytics.example.com/postback',
+    httpMethod: 'POST',
+    headers: [
+      { key: 'Authorization', value: 'Bearer {token}' },
+      { key: 'Content-Type', value: 'application/json' }
+    ],
+    authentication: 'bearer',
+    advancedOptions: true,
     active: true
   }
 ];
@@ -71,15 +63,21 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   const [selectedGlobalPixels, setSelectedGlobalPixels] = useState<number[]>([]);
   const [formData, setFormData] = useState<{
     name: string;
-    type: 'javascript' | 'image' | 'iframe';
-    code: string;
-    triggerEvent: 'page_load' | 'form_submit' | 'phone_click' | 'button_click';
+    firePixelOn: 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized';
+    url: string;
+    httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    headers: { key: string; value: string }[];
+    authentication: 'none' | 'basic' | 'bearer' | 'api_key';
+    advancedOptions: boolean;
     active: boolean;
   }>({
     name: '',
-    type: 'javascript',
-    code: '',
-    triggerEvent: 'page_load',
+    firePixelOn: 'incoming',
+    url: '',
+    httpMethod: 'GET',
+    headers: [],
+    authentication: 'none',
+    advancedOptions: false,
     active: true
   });
   
@@ -94,9 +92,12 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   const resetForm = () => {
     setFormData({
       name: '',
-      type: 'javascript',
-      code: '',
-      triggerEvent: 'page_load',
+      firePixelOn: 'incoming',
+      url: '',
+      httpMethod: 'GET',
+      headers: [],
+      authentication: 'none',
+      advancedOptions: false,
       active: true
     });
     setEditingPixel(null);
@@ -137,9 +138,12 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     setEditingPixel(pixel);
     setFormData({
       name: pixel.name,
-      type: pixel.type,
-      code: pixel.code,
-      triggerEvent: pixel.triggerEvent,
+      firePixelOn: pixel.firePixelOn,
+      url: pixel.url,
+      httpMethod: pixel.httpMethod,
+      headers: pixel.headers,
+      authentication: pixel.authentication,
+      advancedOptions: pixel.advancedOptions,
       active: pixel.active
     });
     setIsDialogOpen(true);
@@ -161,14 +165,6 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     ));
   };
 
-  const copyToClipboard = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast({
-      title: 'Copied!',
-      description: 'Tracking pixel code copied to clipboard'
-    });
-  };
-
   const handleImportPixels = () => {
     if (!globalPixels || !Array.isArray(globalPixels) || selectedGlobalPixels.length === 0) return;
 
@@ -180,9 +176,12 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     const newPixels = pixelsToImport.map((pixel: any, index: number) => ({
       id: highestId + index + 1,
       name: pixel.name,
-      type: pixel.pixelType,
-      code: pixel.pixelCode,
-      triggerEvent: pixel.triggerEvent,
+      firePixelOn: pixel.firePixelOn || 'incoming',
+      url: pixel.url || '',
+      httpMethod: pixel.httpMethod || 'GET',
+      headers: pixel.headers || [],
+      authentication: pixel.authentication || 'none',
+      advancedOptions: pixel.advancedOptions || false,
       active: true
     }));
 
@@ -204,16 +203,19 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     );
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'javascript':
-        return <Code className="h-4 w-4" />;
-      case 'image':
-        return <ExternalLink className="h-4 w-4" />;
-      case 'iframe':
-        return <ExternalLink className="h-4 w-4" />;
-      default:
-        return <Code className="h-4 w-4" />;
+  const getEventBadgeColor = (event: string) => {
+    switch (event) {
+      case 'converted': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-blue-100 text-blue-800';
+      case 'connected': return 'bg-yellow-100 text-yellow-800';
+      case 'incoming': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const insertToken = (field: string, token: string) => {
+    if (field === 'url') {
+      setFormData({ ...formData, url: formData.url + token });
     }
   };
 
@@ -224,7 +226,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
           <div>
             <CardTitle>Tracking Pixels</CardTitle>
             <CardDescription>
-              Add tracking pixels and conversion codes for your campaigns
+              Configure tracking pixels to fire on specific call events
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -257,8 +259,8 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                             <TableRow>
                               <TableHead className="w-12">Select</TableHead>
                               <TableHead>Pixel Name</TableHead>
-                              <TableHead>Type</TableHead>
-                              <TableHead>Trigger Event</TableHead>
+                              <TableHead>Fire On</TableHead>
+                              <TableHead>Method</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -274,10 +276,10 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                                 </TableCell>
                                 <TableCell>{pixel.name}</TableCell>
                                 <TableCell>
-                                  <Badge variant="outline">{pixel.pixelType}</Badge>
+                                  <Badge variant="outline">{pixel.firePixelOn || 'incoming'}</Badge>
                                 </TableCell>
                                 <TableCell>
-                                  <Badge variant="secondary">{pixel.triggerEvent}</Badge>
+                                  <Badge variant="secondary">{pixel.httpMethod || 'GET'}</Badge>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -307,96 +309,228 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
-          
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingPixel(null)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Pixel
-            </Button>
-          </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingPixel ? 'Edit' : 'Add'} Tracking Pixel
-                </DialogTitle>
-                <DialogDescription>
-                  Configure tracking pixels to fire on specific events
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+            
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setEditingPixel(null)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Pixel
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingPixel ? 'Edit' : 'Add'} Tracking Pixel
+                  </DialogTitle>
+                  <DialogDescription>
+                    Configure tracking pixels to fire on specific call events
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Name Field */}
                   <div>
-                    <Label htmlFor="name">Pixel Name</Label>
+                    <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g., Google Analytics"
+                      placeholder="Enter name"
                       required
+                      className="bg-gray-50 dark:bg-gray-800"
                     />
+                    <span className="text-xs text-gray-500 mt-1">Required</span>
                   </div>
+                  
+                  {/* Fire Pixel On */}
                   <div>
-                    <Label htmlFor="type">Pixel Type</Label>
-                    <Select 
-                      value={formData.type} 
-                      onValueChange={(value: any) => setFormData({ ...formData, type: value })}
+                    <Label htmlFor="firePixelOn">Fire Pixel On <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={formData.firePixelOn}
+                      onValueChange={(value: 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized') => 
+                        setFormData({ ...formData, firePixelOn: value })}
                     >
-                      <SelectTrigger>
-                        <SelectValue />
+                      <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
+                        <SelectValue placeholder="Choose Event Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="javascript">JavaScript</SelectItem>
-                        <SelectItem value="image">Image Pixel</SelectItem>
-                        <SelectItem value="iframe">iFrame</SelectItem>
+                        <SelectItem value="incoming">Incoming</SelectItem>
+                        <SelectItem value="connected">Connected (Answered)</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="converted">Converted</SelectItem>
+                        <SelectItem value="error">Error</SelectItem>
+                        <SelectItem value="payout">Payout</SelectItem>
+                        <SelectItem value="recording">Recording</SelectItem>
+                        <SelectItem value="finalized">Finalized</SelectItem>
                       </SelectContent>
                     </Select>
+                    <span className="text-xs text-gray-500 mt-1">Required</span>
                   </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="triggerEvent">Trigger Event</Label>
-                  <Select 
-                    value={formData.triggerEvent} 
-                    onValueChange={(value: any) => setFormData({ ...formData, triggerEvent: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="page_load">Page Load</SelectItem>
-                      <SelectItem value="form_submit">Form Submit</SelectItem>
-                      <SelectItem value="phone_click">Phone Click</SelectItem>
-                      <SelectItem value="button_click">Button Click</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
 
-                <div>
-                  <Label htmlFor="code">Tracking Code</Label>
-                  <Textarea
-                    id="code"
-                    value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    placeholder="Paste your tracking pixel code here..."
-                    rows={8}
-                    className="font-mono text-sm"
-                    required
-                  />
-                </div>
+                  {/* URL Field with TOKEN button */}
+                  <div>
+                    <Label htmlFor="url">URL <span className="text-red-500">*</span></Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="url"
+                        value={formData.url}
+                        onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                        placeholder="http://mytracking.tracking.com"
+                        required
+                        className="bg-gray-50 dark:bg-gray-800 flex-1"
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => insertToken('url', '{call_id}')}
+                      >
+                        TOKEN
+                      </Button>
+                    </div>
+                    <span className="text-xs text-gray-500 mt-1">Required</span>
+                  </div>
 
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={resetForm}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {editingPixel ? 'Update' : 'Create'} Pixel
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  {/* Advanced Options Toggle */}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="advancedOptions"
+                      checked={formData.advancedOptions}
+                      onChange={(e) => setFormData({ ...formData, advancedOptions: e.target.checked })}
+                      className="rounded"
+                    />
+                    <Label htmlFor="advancedOptions">Advanced Options</Label>
+                  </div>
+
+                  {/* Advanced Options Section */}
+                  {formData.advancedOptions && (
+                    <div className="space-y-4 border-t pt-4">
+                      {/* HTTP Method */}
+                      <div>
+                        <Label htmlFor="httpMethod">HTTP Method <span className="text-red-500">*</span></Label>
+                        <Select
+                          value={formData.httpMethod}
+                          onValueChange={(value: 'GET' | 'POST' | 'PUT' | 'DELETE') => 
+                            setFormData({ ...formData, httpMethod: value })}
+                        >
+                          <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
+                            <SelectValue placeholder="Choose Method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="GET">GET</SelectItem>
+                            <SelectItem value="POST">POST</SelectItem>
+                            <SelectItem value="PUT">PUT</SelectItem>
+                            <SelectItem value="DELETE">DELETE</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <span className="text-xs text-gray-500 mt-1">Required</span>
+                      </div>
+
+                      {/* Headers */}
+                      <div>
+                        <Label>Headers</Label>
+                        <div className="space-y-2">
+                          {formData.headers.map((header, index) => (
+                            <div key={index} className="flex gap-2 items-center">
+                              <Input
+                                placeholder="key"
+                                value={header.key}
+                                onChange={(e) => {
+                                  const newHeaders = [...formData.headers];
+                                  newHeaders[index].key = e.target.value;
+                                  setFormData({ ...formData, headers: newHeaders });
+                                }}
+                                className="bg-gray-50 dark:bg-gray-800"
+                              />
+                              <span className="text-gray-500">:</span>
+                              <Input
+                                placeholder="value"
+                                value={header.value}
+                                onChange={(e) => {
+                                  const newHeaders = [...formData.headers];
+                                  newHeaders[index].value = e.target.value;
+                                  setFormData({ ...formData, headers: newHeaders });
+                                }}
+                                className="bg-gray-50 dark:bg-gray-800"
+                              />
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  const newHeaders = [...formData.headers];
+                                  newHeaders[index].value += '{token}';
+                                  setFormData({ ...formData, headers: newHeaders });
+                                }}
+                              >
+                                TOKEN
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => {
+                                  const newHeaders = formData.headers.filter((_, i) => i !== index);
+                                  setFormData({ ...formData, headers: newHeaders });
+                                }}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          ))}
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setFormData({ 
+                                ...formData, 
+                                headers: [...formData.headers, { key: '', value: '' }] 
+                              });
+                            }}
+                          >
+                            ADD
+                          </Button>
+                          {formData.headers.length === 0 && (
+                            <p className="text-xs text-gray-500">No Headers</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Authentication */}
+                      <div>
+                        <Label htmlFor="authentication">Authentication</Label>
+                        <Select
+                          value={formData.authentication}
+                          onValueChange={(value: 'none' | 'basic' | 'bearer' | 'api_key') => 
+                            setFormData({ ...formData, authentication: value })}
+                        >
+                          <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
+                            <SelectValue placeholder="Choose Authentication" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="basic">Basic Auth</SelectItem>
+                            <SelectItem value="bearer">Bearer Token</SelectItem>
+                            <SelectItem value="api_key">API Key</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={resetForm}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      {editingPixel ? 'Update' : 'Create'} Pixel
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -409,8 +543,9 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Trigger Event</TableHead>
+                <TableHead>Fire Pixel On</TableHead>
+                <TableHead>URL</TableHead>
+                <TableHead>Method</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -418,34 +553,34 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
             <TableBody>
               {pixels.map((pixel) => (
                 <TableRow key={pixel.id}>
+                  <TableCell className="font-medium">{pixel.name}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getTypeIcon(pixel.type)}
-                      {pixel.name}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {pixel.type}
+                    <Badge className={getEventBadgeColor(pixel.firePixelOn)}>
+                      {pixel.firePixelOn}
                     </Badge>
                   </TableCell>
-                  <TableCell>{pixel.triggerEvent.replace('_', ' ')}</TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    <a href={pixel.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                      {pixel.url}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </TableCell>
                   <TableCell>
-                    <Badge 
-                      variant={pixel.active ? "default" : "secondary"}
-                      className={pixel.active ? 'bg-green-100 text-green-800' : ''}
-                    >
+                    <Badge variant="outline">{pixel.httpMethod}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={pixel.active ? 'default' : 'secondary'}>
                       {pixel.active ? 'Active' : 'Inactive'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex justify-end gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => copyToClipboard(pixel.code)}
+                        onClick={() => handleEdit(pixel)}
                       >
-                        <Copy className="h-4 w-4" />
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -457,14 +592,8 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEdit(pixel)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
                         onClick={() => handleDelete(pixel.id)}
+                        className="text-red-600 hover:text-red-800"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
