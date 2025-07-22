@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Plus, Edit, Trash2, Link, ExternalLink } from 'lucide-react';
+import { Copy, Plus, Edit, Trash2, Link, ExternalLink, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -81,8 +82,10 @@ const DEFAULT_PARAMETERS: UrlParameter[] = [
 
 export default function CampaignUrlParameters({ campaignId }: CampaignUrlParametersProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingParameter, setEditingParameter] = useState<UrlParameter | null>(null);
   const [parameters, setParameters] = useState<UrlParameter[]>(DEFAULT_PARAMETERS);
+  const [selectedGlobalParameters, setSelectedGlobalParameters] = useState<number[]>([]);
   const [formData, setFormData] = useState<{
     name: string;
     parameterName: string;
@@ -102,6 +105,12 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
   });
   
   const { toast } = useToast();
+
+  // Fetch global URL parameters from Integrations
+  const { data: globalParameters, isLoading: isLoadingGlobal } = useQuery({
+    queryKey: ['/api/integrations/url-parameters'],
+    retry: false,
+  });
 
   const resetForm = () => {
     setFormData({
@@ -198,6 +207,43 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
     });
   };
 
+  const handleImportParameters = () => {
+    if (!globalParameters || !Array.isArray(globalParameters) || selectedGlobalParameters.length === 0) return;
+
+    const parametersToImport = globalParameters.filter((param: any) => 
+      selectedGlobalParameters.includes(param.id)
+    );
+
+    const highestId = Math.max(...parameters.map(p => p.id), 0);
+    const newParameters = parametersToImport.map((param: any, index: number) => ({
+      id: highestId + index + 1,
+      name: param.parameterName,
+      parameterName: param.parameterName,
+      reportingMenuName: param.reportingMenuName,
+      reportName: param.reportName,
+      parameterType: param.parameterType,
+      required: param.required,
+      active: true
+    }));
+
+    setParameters(prev => [...prev, ...newParameters]);
+    setSelectedGlobalParameters([]);
+    setIsImportDialogOpen(false);
+    
+    toast({
+      title: 'Parameters Imported!',
+      description: `${newParameters.length} parameter(s) imported from Integrations`
+    });
+  };
+
+  const handleToggleParameterSelection = (paramId: number) => {
+    setSelectedGlobalParameters(prev => 
+      prev.includes(paramId) 
+        ? prev.filter(id => id !== paramId)
+        : [...prev, paramId]
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Parameter Configuration */}
@@ -210,13 +256,104 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                 Configure which URL parameters to track and how they appear in reports
               </CardDescription>
             </div>
+            <div className="flex gap-2">
+              <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Import from Integrations
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Import URL Parameters</DialogTitle>
+                    <DialogDescription>
+                      Select URL parameters from your Integrations to add to this campaign
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {isLoadingGlobal ? (
+                      <div className="text-center py-8">Loading parameters...</div>
+                    ) : !globalParameters || !Array.isArray(globalParameters) || globalParameters.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No URL parameters found in Integrations. Create some parameters in the Integrations section first.
+                      </div>
+                    ) : (
+                      <>
+                        <div className="max-h-64 overflow-y-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-12">Select</TableHead>
+                                <TableHead>Parameter Name</TableHead>
+                                <TableHead>URL Parameter</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Required</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {globalParameters.map((param: any) => (
+                                <TableRow key={param.id}>
+                                  <TableCell>
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedGlobalParameters.includes(param.id)}
+                                      onChange={() => handleToggleParameterSelection(param.id)}
+                                      className="rounded"
+                                    />
+                                  </TableCell>
+                                  <TableCell>{param.parameterName}</TableCell>
+                                  <TableCell>
+                                    <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm">
+                                      {param.parameterName}
+                                    </code>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">{param.parameterType}</Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    {param.required ? 
+                                      <Badge variant="default" className="bg-orange-100 text-orange-800">Required</Badge> : 
+                                      <Badge variant="secondary">Optional</Badge>
+                                    }
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setSelectedGlobalParameters([]);
+                              setIsImportDialogOpen(false);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={handleImportParameters}
+                            disabled={selectedGlobalParameters.length === 0}
+                          >
+                            Import {selectedGlobalParameters.length} Parameter(s)
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => setEditingParameter(null)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Parameter
-                </Button>
-              </DialogTrigger>
+                <DialogTrigger asChild>
+                  <Button onClick={() => setEditingParameter(null)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New Parameter
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
                   <DialogTitle>
