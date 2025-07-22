@@ -2001,11 +2001,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // URL Parameters routes
+  // URL Parameters routes - Direct database access
   app.get('/api/integrations/url-parameters', requireAuth, async (req, res) => {
     try {
       const user = req.user as any;
-      const parameters = await storage.getUrlParameters(user.id);
+      const { db } = await import('./db');
+      const { urlParameters } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      
+      const parameters = await db.select().from(urlParameters).where(eq(urlParameters.userId, user.id));
       res.json(parameters);
     } catch (error) {
       console.error('Error fetching URL parameters:', error);
@@ -2016,15 +2020,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/integrations/url-parameters', requireAuth, async (req, res) => {
     try {
       const user = req.user as any;
-      const { insertUrlParameterSchema } = await import('@shared/schema');
+      const { db } = await import('./db');
+      const { urlParameters, insertUrlParameterSchema } = await import('@shared/schema');
       
       const dataWithUserId = {
         ...req.body,
-        userId: user.id
+        userId: user.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
       const validatedData = insertUrlParameterSchema.parse(dataWithUserId);
-      const newParameter = await storage.createUrlParameter(validatedData);
+      const [newParameter] = await db.insert(urlParameters).values(validatedData).returning();
       
       res.status(201).json(newParameter);
     } catch (error) {
@@ -2039,10 +2046,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/integrations/url-parameters/:id', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const { insertUrlParameterSchema } = await import('@shared/schema');
-      const validatedData = insertUrlParameterSchema.partial().parse(req.body);
+      const { db } = await import('./db');
+      const { urlParameters, insertUrlParameterSchema } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
       
-      const updatedParameter = await storage.updateUrlParameter(parseInt(id), validatedData);
+      const validatedData = insertUrlParameterSchema.partial().parse(req.body);
+      const updateData = {
+        ...validatedData,
+        updatedAt: new Date()
+      };
+      
+      const [updatedParameter] = await db.update(urlParameters)
+        .set(updateData)
+        .where(eq(urlParameters.id, parseInt(id)))
+        .returning();
       
       if (!updatedParameter) {
         return res.status(404).json({ error: 'URL parameter not found' });
@@ -2061,7 +2078,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/integrations/url-parameters/:id', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const deleted = await storage.deleteUrlParameter(parseInt(id));
+      const { db } = await import('./db');
+      const { urlParameters } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      
+      const result = await db.delete(urlParameters).where(eq(urlParameters.id, parseInt(id)));
+      const deleted = result.rowCount > 0;
       
       if (!deleted) {
         return res.status(404).json({ error: 'URL parameter not found' });
