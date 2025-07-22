@@ -255,24 +255,24 @@ export default function CallActivity() {
     }
   };
 
-  // Mock data for demonstration
+  // Comprehensive mock data for demonstration
   const mockCalls: Call[] = [
     {
       id: 1001, callSid: "CA1001mock001", campaignId: 1, buyerId: 3,
       fromNumber: "+12125551234", toNumber: "+18566441573", status: "completed", duration: 324,
       callQuality: "excellent", recordingSid: "RE1001mock001", recordingUrl: "https://api.twilio.com/recording1001",
-      recordingStatus: "completed", recordingDuration: 320, transcription: "Customer inquired about insurance options",
+      recordingStatus: "completed", recordingDuration: 320, transcription: "Customer inquired about insurance options for family of 4, interested in premium plan",
       transcriptionStatus: "completed", cost: "18.25", revenue: "45.50", geoLocation: "New York, NY",
-      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", createdAt: new Date(Date.now() - 3600000).toISOString(),
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", createdAt: new Date(Date.now() - 3600000).toISOString(),
       updatedAt: new Date(Date.now() - 3600000).toISOString()
     },
     {
       id: 1002, callSid: "CA1002mock002", campaignId: 1, buyerId: 3,
       fromNumber: "+15551234567", toNumber: "+18568791483", status: "in-progress", duration: 156,
-      callQuality: "good", recordingSid: null, recordingUrl: null, recordingStatus: "processing",
+      callQuality: "good", recordingSid: "RE1002mock002", recordingUrl: null, recordingStatus: "processing",
       recordingDuration: null, transcription: null, transcriptionStatus: "pending",
       cost: "8.75", revenue: "0.00", geoLocation: "Los Angeles, CA",
-      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS)", createdAt: new Date(Date.now() - 900000).toISOString(),
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0)", createdAt: new Date(Date.now() - 900000).toISOString(),
       updatedAt: new Date(Date.now() - 900000).toISOString()
     },
     {
@@ -281,25 +281,25 @@ export default function CallActivity() {
       callQuality: "poor", recordingSid: null, recordingUrl: null, recordingStatus: "failed",
       recordingDuration: null, transcription: null, transcriptionStatus: "failed",
       cost: "2.50", revenue: "0.00", geoLocation: "Chicago, IL",
-      userAgent: "Mozilla/5.0 (Android 11)", createdAt: new Date(Date.now() - 7200000).toISOString(),
+      userAgent: "Mozilla/5.0 (Android 11; Mobile)", createdAt: new Date(Date.now() - 7200000).toISOString(),
       updatedAt: new Date(Date.now() - 7200000).toISOString()
     },
     {
       id: 1004, callSid: "CA1004mock004", campaignId: 1, buyerId: 3,
       fromNumber: "+19175559999", toNumber: "+18569256411", status: "completed", duration: 567,
       callQuality: "excellent", recordingSid: "RE1004mock004", recordingUrl: "https://api.twilio.com/recording1004",
-      recordingStatus: "completed", recordingDuration: 560, transcription: "Customer requested quote for family plan",
+      recordingStatus: "completed", recordingDuration: 560, transcription: "Customer requested detailed quote for family plan, discussed deductibles and coverage options",
       transcriptionStatus: "completed", cost: "22.10", revenue: "78.25", geoLocation: "Houston, TX",
-      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X)", createdAt: new Date(Date.now() - 14400000).toISOString(),
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", createdAt: new Date(Date.now() - 14400000).toISOString(),
       updatedAt: new Date(Date.now() - 14400000).toISOString()
     },
     {
       id: 1005, callSid: "CA1005mock005", campaignId: 1, buyerId: 3,
       fromNumber: "+14155552222", toNumber: "+18046079719", status: "completed", duration: 892,
       callQuality: "good", recordingSid: "RE1005mock005", recordingUrl: "https://api.twilio.com/recording1005",
-      recordingStatus: "completed", recordingDuration: 885, transcription: "Detailed discussion about coverage options and pricing",
+      recordingStatus: "completed", recordingDuration: 885, transcription: "Detailed discussion about coverage options and pricing, customer comparing with other providers",
       transcriptionStatus: "completed", cost: "35.60", revenue: "125.75", geoLocation: "Phoenix, AZ",
-      userAgent: "Mozilla/5.0 (X11; Linux x86_64)", createdAt: new Date(Date.now() - 21600000).toISOString(),
+      userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36", createdAt: new Date(Date.now() - 21600000).toISOString(),
       updatedAt: new Date(Date.now() - 21600000).toISOString()
     },
     {
@@ -308,26 +308,89 @@ export default function CallActivity() {
       callQuality: null, recordingSid: null, recordingUrl: null, recordingStatus: null,
       recordingDuration: null, transcription: null, transcriptionStatus: null,
       cost: "1.25", revenue: "0.00", geoLocation: "Miami, FL",
-      userAgent: "Mozilla/5.0 (Windows NT 10.0)", createdAt: new Date(Date.now() - 25200000).toISOString(),
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; rv:91.0)", createdAt: new Date(Date.now() - 25200000).toISOString(),
       updatedAt: new Date(Date.now() - 25200000).toISOString()
     },
     {
       id: 1007, callSid: "CA1007mock007", campaignId: 1, buyerId: 3,
       fromNumber: "+16175554444", toNumber: "+18568791483", status: "completed", duration: 234,
       callQuality: "fair", recordingSid: "RE1007mock007", recordingUrl: "https://api.twilio.com/recording1007",
-      recordingStatus: "completed", recordingDuration: 230, transcription: "Brief inquiry about services",
+      recordingStatus: "completed", recordingDuration: 230, transcription: "Brief inquiry about services and pricing",
       transcriptionStatus: "completed", cost: "12.75", revenue: "34.50", geoLocation: "Seattle, WA",
-      userAgent: "Mozilla/5.0 (iPad; CPU OS)", createdAt: new Date(Date.now() - 28800000).toISOString(),
+      userAgent: "Mozilla/5.0 (iPad; CPU OS 15_0)", createdAt: new Date(Date.now() - 28800000).toISOString(),
       updatedAt: new Date(Date.now() - 28800000).toISOString()
     },
     {
       id: 1008, callSid: "CA1008mock008", campaignId: 1, buyerId: 3,
       fromNumber: "+13235555555", toNumber: "+18564853922", status: "completed", duration: 445,
       callQuality: "excellent", recordingSid: "RE1008mock008", recordingUrl: "https://api.twilio.com/recording1008",
-      recordingStatus: "completed", recordingDuration: 440, transcription: "Customer comparing multiple insurance providers",
+      recordingStatus: "completed", recordingDuration: 440, transcription: "Customer comparing multiple insurance providers, seeking best rates for auto coverage",
       transcriptionStatus: "completed", cost: "19.50", revenue: "67.25", geoLocation: "Denver, CO",
-      userAgent: "Mozilla/5.0 (compatible; Edge)", createdAt: new Date(Date.now() - 32400000).toISOString(),
+      userAgent: "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT)", createdAt: new Date(Date.now() - 32400000).toISOString(),
       updatedAt: new Date(Date.now() - 32400000).toISOString()
+    },
+    {
+      id: 1009, callSid: "CA1009mock009", campaignId: 1, buyerId: 3,
+      fromNumber: "+19495556666", toNumber: "+18569256411", status: "no-answer", duration: 0,
+      callQuality: null, recordingSid: null, recordingUrl: null, recordingStatus: null,
+      recordingDuration: null, transcription: null, transcriptionStatus: null,
+      cost: "0.75", revenue: "0.00", geoLocation: "San Diego, CA",
+      userAgent: "Mozilla/5.0 (Android 12; SM-G991B)", createdAt: new Date(Date.now() - 36000000).toISOString(),
+      updatedAt: new Date(Date.now() - 36000000).toISOString()
+    },
+    {
+      id: 1010, callSid: "CA1010mock010", campaignId: 1, buyerId: 3,
+      fromNumber: "+15105557777", toNumber: "+18046079719", status: "completed", duration: 678,
+      callQuality: "excellent", recordingSid: "RE1010mock010", recordingUrl: "https://api.twilio.com/recording1010",
+      recordingStatus: "completed", recordingDuration: 675, transcription: "Customer interested in life insurance policy, discussed term vs whole life options extensively",
+      transcriptionStatus: "completed", cost: "28.25", revenue: "98.75", geoLocation: "Austin, TX",
+      userAgent: "Mozilla/5.0 (Windows NT 11.0; Win64; x64)", createdAt: new Date(Date.now() - 39600000).toISOString(),
+      updatedAt: new Date(Date.now() - 39600000).toISOString()
+    },
+    {
+      id: 1011, callSid: "CA1011mock011", campaignId: 1, buyerId: 3,
+      fromNumber: "+16468881111", toNumber: "+18566441573", status: "completed", duration: 189,
+      callQuality: "good", recordingSid: "RE1011mock011", recordingUrl: "https://api.twilio.com/recording1011",
+      recordingStatus: "completed", recordingDuration: 185, transcription: "Quick quote request for home insurance",
+      transcriptionStatus: "completed", cost: "9.50", revenue: "28.75", geoLocation: "Boston, MA",
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0)", createdAt: new Date(Date.now() - 43200000).toISOString(),
+      updatedAt: new Date(Date.now() - 43200000).toISOString()
+    },
+    {
+      id: 1012, callSid: "CA1012mock012", campaignId: 1, buyerId: 3,
+      fromNumber: "+14044442222", toNumber: "+18568791483", status: "completed", duration: 756,
+      callQuality: "excellent", recordingSid: "RE1012mock012", recordingUrl: "https://api.twilio.com/recording1012",
+      recordingStatus: "completed", recordingDuration: 750, transcription: "Comprehensive discussion about business insurance needs, multiple policies quoted",
+      transcriptionStatus: "completed", cost: "32.75", revenue: "115.25", geoLocation: "Atlanta, GA",
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", createdAt: new Date(Date.now() - 46800000).toISOString(),
+      updatedAt: new Date(Date.now() - 46800000).toISOString()
+    },
+    {
+      id: 1013, callSid: "CA1013mock013", campaignId: 1, buyerId: 3,
+      fromNumber: "+12025553333", toNumber: "+18564853922", status: "failed", duration: 8,
+      callQuality: "poor", recordingSid: null, recordingUrl: null, recordingStatus: "failed",
+      recordingDuration: null, transcription: null, transcriptionStatus: "failed",
+      cost: "1.75", revenue: "0.00", geoLocation: "Washington, DC",
+      userAgent: "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0)", createdAt: new Date(Date.now() - 50400000).toISOString(),
+      updatedAt: new Date(Date.now() - 50400000).toISOString()
+    },
+    {
+      id: 1014, callSid: "CA1014mock014", campaignId: 1, buyerId: 3,
+      fromNumber: "+15037774444", toNumber: "+18569256411", status: "completed", duration: 423,
+      callQuality: "good", recordingSid: "RE1014mock014", recordingUrl: "https://api.twilio.com/recording1014",
+      recordingStatus: "completed", recordingDuration: 420, transcription: "Customer seeking motorcycle insurance quote, discussed coverage options and rates",
+      transcriptionStatus: "completed", cost: "18.90", revenue: "62.50", geoLocation: "Portland, OR",
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0)", createdAt: new Date(Date.now() - 54000000).toISOString(),
+      updatedAt: new Date(Date.now() - 54000000).toISOString()
+    },
+    {
+      id: 1015, callSid: "CA1015mock015", campaignId: 1, buyerId: 3,
+      fromNumber: "+18015555555", toNumber: "+18046079719", status: "completed", duration: 345,
+      callQuality: "fair", recordingSid: "RE1015mock015", recordingUrl: "https://api.twilio.com/recording1015",
+      recordingStatus: "completed", recordingDuration: 340, transcription: "Health insurance inquiry, customer comparing ACA marketplace options",
+      transcriptionStatus: "completed", cost: "15.25", revenue: "48.75", geoLocation: "Salt Lake City, UT",
+      userAgent: "Mozilla/5.0 (compatible; Safari/17.0)", createdAt: new Date(Date.now() - 57600000).toISOString(),
+      updatedAt: new Date(Date.now() - 57600000).toISOString()
     }
   ];
 
@@ -337,6 +400,12 @@ export default function CallActivity() {
       status: "active", phoneNumber: "+18566441573", routingType: "pool", maxConcurrentCalls: 50,
       callCap: 1000, geoTargeting: ["US"], timeZoneRestriction: "EST",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    },
+    {
+      id: 2, name: "Auto Insurance Campaign", description: "Auto insurance leads campaign",
+      status: "active", phoneNumber: "+18568791483", routingType: "pool", maxConcurrentCalls: 30,
+      callCap: 500, geoTargeting: ["US", "CA"], timeZoneRestriction: "PST",
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
     }
   ];
 
@@ -345,6 +414,18 @@ export default function CallActivity() {
       id: 3, name: "Premium Insurance Co", email: "contact@premiumins.com", phoneNumber: "+18005551234",
       status: "active", priority: 1, dailyCap: 100, concurrencyLimit: 10, acceptanceRate: "85%",
       avgResponseTime: 2.5, endpoint: "https://api.premiumins.com/webhook",
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    },
+    {
+      id: 4, name: "SecureLife Partners", email: "leads@securelife.com", phoneNumber: "+18005552345",
+      status: "active", priority: 2, dailyCap: 75, concurrencyLimit: 8, acceptanceRate: "92%",
+      avgResponseTime: 1.8, endpoint: "https://api.securelife.com/webhook",
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    },
+    {
+      id: 5, name: "QuickQuote Insurance", email: "api@quickquote.com", phoneNumber: "+18005553456",
+      status: "active", priority: 3, dailyCap: 150, concurrencyLimit: 15, acceptanceRate: "78%",
+      avgResponseTime: 3.2, endpoint: "https://api.quickquote.com/webhook",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
     }
   ];

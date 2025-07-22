@@ -113,7 +113,15 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
-- July 22, 2025: **CALL ACTIVITY COLUMN CUSTOMIZATION COMPLETE** - Successfully implemented comprehensive column customization system for Call Activity table per user requirements
+- July 22, 2025: **CALL DETAILS COMPREHENSIVE MOCK DATA ADDED** - Enhanced Call Details table with 15 realistic call records showcasing all column customization features
+  - **Expanded Dataset**: Added 15 comprehensive mock call records with diverse scenarios (completed, in-progress, failed, busy, no-answer)
+  - **Rich Data Variety**: Includes detailed transcriptions, multiple insurance types (healthcare, auto, life, home, business, motorcycle), geographic diversity across US cities
+  - **Quality Metrics**: Call quality ratings (excellent, good, fair, poor), recording status, transcription data, financial metrics (revenue/cost/profit)
+  - **Technical Details**: Diverse user agents (Windows, iPhone, Android, Mac, iPad, Linux), realistic phone numbers, SID tracking
+  - **Multiple Buyers**: Added SecureLife Partners and QuickQuote Insurance to demonstrate buyer assignment variety
+  - **Campaign Diversity**: Healthcare and Auto Insurance campaigns with different routing configurations
+  - **Professional Demonstration**: Perfect showcase for column customization system with 100+ available columns across 9 categories
+- July 22, 2025: **CALL ACTIVITY RENAMED TO CALL DETAILS** - Successfully renamed "Call Activity" to "Call Details" per user request and implemented comprehensive column customization system
   - **Column Customization System**: Applied 100+ column definitions with 9 categories (Popular, Call, Impression, Time, Performance, Adjustment, ICP, Custom Data Enrichment, Tags) to Call Activity table
   - **Enhanced CallActivity Component**: Added ColumnCustomizer to Call Activity table header with dynamic column rendering and database persistence
   - **Reverted Summary Table**: Restored Summary table to original simple state as requested by user - column customization only applies to Call Activity
