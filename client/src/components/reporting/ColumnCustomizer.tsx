@@ -33,16 +33,33 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
 
   const columnsByCategory = getColumnsByCategory();
 
-  // Fetch user's column preferences (disabled for demonstration)
+  // Fetch user's column preferences from localStorage
   const { data: preferences, isLoading } = useQuery<ColumnPreferences>({
     queryKey: ['/api/column-preferences', 'call_details'],
-    enabled: false // Disable to avoid auth issues in demonstration
+    queryFn: async () => {
+      const saved = localStorage.getItem('call-details-column-preferences');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      return {
+        visibleColumns: ['campaign', 'buyer', 'callDate', 'callerId', 'dialedNumber', 'duration', 'status', 'actions'],
+        columnOrder: null,
+        columnWidths: {}
+      };
+    }
   });
 
-  // Save preferences mutation (disabled for demonstration)
+  // Save preferences mutation with localStorage persistence
   const saveMutation = useMutation({
     mutationFn: async (data: Partial<ColumnPreferences>) => {
-      // Mock save for demonstration
+      const currentPrefs = preferences || {
+        visibleColumns: [],
+        columnOrder: null,
+        columnWidths: {}
+      };
+      
+      const updatedPrefs = { ...currentPrefs, ...data };
+      localStorage.setItem('call-details-column-preferences', JSON.stringify(updatedPrefs));
       return { success: true };
     },
     onSuccess: () => {
@@ -61,15 +78,16 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
     }
   });
 
-  // Reset preferences mutation (disabled for demonstration)
+  // Reset preferences mutation with localStorage
   const resetMutation = useMutation({
     mutationFn: async (): Promise<ColumnPreferences> => {
-      // Mock reset for demonstration
-      return { 
-        visibleColumns: ['inbound_call_id', 'call_date', 'caller_id', 'dialed_number', 'call_duration', 'call_status'],
-        columnOrder: [],
+      const defaultPrefs = { 
+        visibleColumns: ['campaign', 'buyer', 'callDate', 'callerId', 'dialedNumber', 'duration', 'status', 'actions'],
+        columnOrder: null,
         columnWidths: {}
       };
+      localStorage.setItem('call-details-column-preferences', JSON.stringify(defaultPrefs));
+      return defaultPrefs;
     },
     onSuccess: (data: ColumnPreferences) => {
       setLocalVisibleColumns(data.visibleColumns);
@@ -89,11 +107,17 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
     }
   });
 
-  // Initialize with provided visible columns
+  // Initialize with saved preferences or provided visible columns
   useEffect(() => {
-    console.log('Initializing ColumnCustomizer with provided columns:', visibleColumns);
-    setLocalVisibleColumns(visibleColumns);
-  }, [visibleColumns]);
+    if (preferences && preferences.visibleColumns.length > 0) {
+      console.log('Loading saved column preferences:', preferences.visibleColumns);
+      setLocalVisibleColumns(preferences.visibleColumns);
+      onColumnsChange(preferences.visibleColumns);
+    } else {
+      console.log('Using provided columns:', visibleColumns);
+      setLocalVisibleColumns(visibleColumns);
+    }
+  }, [preferences, visibleColumns, onColumnsChange]);
 
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -135,8 +159,17 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
     console.log('Setting new visible columns...');
     setLocalVisibleColumns(newVisible);
     
+    // Auto-save the column preferences immediately
+    const updatedPrefs = {
+      visibleColumns: newVisible,
+      columnOrder: preferences?.columnOrder || null,
+      columnWidths: preferences?.columnWidths || {}
+    };
+    localStorage.setItem('call-details-column-preferences', JSON.stringify(updatedPrefs));
+    queryClient.invalidateQueries({ queryKey: ['/api/column-preferences', 'call_details'] });
+    
     console.log('Calling onColumnsChange...');
-    // Use setTimeout to ensure state update completes first
+    // Apply changes immediately to the table
     setTimeout(() => {
       onColumnsChange(newVisible);
     }, 0);
