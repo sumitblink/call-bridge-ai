@@ -565,6 +565,24 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     filterable: true
   },
   {
+    id: 'duplicate',
+    label: 'Duplicate',
+    category: 'Call',
+    dataType: 'string',
+    defaultVisible: true,
+    width: 100,
+    filterable: true
+  },
+  {
+    id: 'previouslyConnected',
+    label: 'Previously Connected',
+    category: 'Call',
+    dataType: 'string',
+    defaultVisible: true,
+    width: 140,
+    filterable: true
+  },
+  {
     id: 'actions',
     label: 'Actions',
     category: 'Call',

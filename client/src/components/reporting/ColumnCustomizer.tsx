@@ -25,7 +25,12 @@ interface ColumnPreferences {
 
 export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomizerProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Popular', 'Call']));
-  const [localVisibleColumns, setLocalVisibleColumns] = useState<string[]>([]);
+  // Initialize with the actual default visible columns from CallActivity
+  const [localVisibleColumns, setLocalVisibleColumns] = useState<string[]>([
+    'campaign', 'publisher', 'target', 'buyer', 'callDate', 'callerId', 'dialedNumber',
+    'duration', 'connectedCallLength', 'duplicate', 'previouslyConnected', 'revenue', 
+    'profit', 'status', 'fromNumber', 'toNumber', 'actions'
+  ]);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -88,12 +93,22 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
     }
   });
 
-  // Initialize local state when preferences load
+  // Initialize local state when preferences load or on component mount
   useEffect(() => {
     if (preferences) {
       setLocalVisibleColumns(preferences.visibleColumns);
+    } else {
+      // Set default visible columns based on what's actually shown in the table
+      const defaultColumns = [
+        'campaign', 'publisher', 'target', 'buyer', 'callDate', 'callerId', 'dialedNumber',
+        'duration', 'connectedCallLength', 'duplicate', 'previouslyConnected', 'revenue', 
+        'profit', 'status', 'fromNumber', 'toNumber', 'actions'
+      ];
+      setLocalVisibleColumns(defaultColumns);
+      // Notify parent component about the initial columns
+      onColumnsChange(defaultColumns);
     }
-  }, [preferences]);
+  }, [preferences, onColumnsChange]);
 
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
