@@ -804,98 +804,49 @@ export default function IntegrationsPage() {
 
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="parameter-name">Parameter Name *</Label>
+                      <Label htmlFor="parameter-name">URL Parameter <span className="text-red-500">*</span></Label>
                       <Input
                         id="parameter-name"
                         placeholder="utm_campaign"
                         value={urlParameterForm.parameterName}
                         onChange={(e) => setUrlParameterForm(prev => ({ ...prev, parameterName: e.target.value }))}
+                        required
                       />
+                      <span className="text-xs text-gray-500 mt-1">Required</span>
                     </div>
 
                     <div>
-                      <Label htmlFor="reporting-menu">Reporting Menu Name *</Label>
+                      <Label htmlFor="reporting-menu">Reporting Menu Name <span className="text-red-500">*</span></Label>
                       <Input
                         id="reporting-menu"
-                        placeholder="Campaign"
+                        placeholder="User"
                         value={urlParameterForm.reportingMenuName}
                         onChange={(e) => setUrlParameterForm(prev => ({ ...prev, reportingMenuName: e.target.value }))}
+                        required
                       />
+                      <span className="text-xs text-gray-500 mt-1">Required</span>
                     </div>
 
                     <div>
-                      <Label htmlFor="report-name">Report Column Name *</Label>
+                      <Label htmlFor="report-name">Report Name <span className="text-red-500">*</span></Label>
                       <Input
                         id="report-name"
                         placeholder="Campaign Name"
                         value={urlParameterForm.reportName}
                         onChange={(e) => setUrlParameterForm(prev => ({ ...prev, reportName: e.target.value }))}
+                        required
                       />
+                      <span className="text-xs text-gray-500 mt-1">Required</span>
                     </div>
 
-                    <div>
-                      <Label htmlFor="parameter-type">Data Type</Label>
-                      <Select 
-                        value={urlParameterForm.parameterType} 
-                        onValueChange={(value: 'string' | 'integer' | 'decimal') => 
-                          setUrlParameterForm(prev => ({ ...prev, parameterType: value }))
-                        }
+                    <div className="flex justify-center space-x-3 pt-6">
+                      <Button
+                        onClick={handleUrlParameterSubmit}
+                        disabled={createUrlParameterMutation.isPending || updateUrlParameterMutation.isPending}
+                        className="px-8"
                       >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="string">String</SelectItem>
-                          <SelectItem value="integer">Integer</SelectItem>
-                          <SelectItem value="decimal">Decimal</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="default-value">Default Value</Label>
-                      <Input
-                        id="default-value"
-                        placeholder="direct"
-                        value={urlParameterForm.defaultValue}
-                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, defaultValue: e.target.value }))}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Describe what this parameter tracks..."
-                        value={urlParameterForm.description}
-                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, description: e.target.value }))}
-                        rows={2}
-                      />
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="is-required"
-                        checked={urlParameterForm.isRequired}
-                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, isRequired: e.target.checked }))}
-                        className="rounded border-gray-300"
-                      />
-                      <Label htmlFor="is-required">Required Parameter</Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="is-active"
-                        checked={urlParameterForm.isActive}
-                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, isActive: e.target.checked }))}
-                        className="rounded border-gray-300"
-                      />
-                      <Label htmlFor="is-active">Active</Label>
-                    </div>
-
-                    <div className="flex justify-end space-x-2 pt-4">
+                        CREATE
+                      </Button>
                       <Button
                         variant="outline"
                         onClick={() => {
@@ -903,14 +854,9 @@ export default function IntegrationsPage() {
                           setEditingItem(null);
                           resetUrlParameterForm();
                         }}
+                        className="px-8"
                       >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleUrlParameterSubmit}
-                        disabled={createUrlParameterMutation.isPending || updateUrlParameterMutation.isPending}
-                      >
-                        {editingItem ? 'Update Parameter' : 'Create Parameter'}
+                        CANCEL
                       </Button>
                     </div>
                   </div>

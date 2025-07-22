@@ -88,21 +88,13 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
   const [parameters, setParameters] = useState<UrlParameter[]>(DEFAULT_PARAMETERS);
   const [selectedGlobalParameters, setSelectedGlobalParameters] = useState<number[]>([]);
   const [formData, setFormData] = useState<{
-    name: string;
     parameterName: string;
     reportingMenuName: string;
     reportName: string;
-    parameterType: 'string' | 'integer' | 'decimal';
-    required: boolean;
-    active: boolean;
   }>({
-    name: '',
     parameterName: '',
     reportingMenuName: '',
-    reportName: '',
-    parameterType: 'string',
-    required: false,
-    active: true
+    reportName: ''
   });
   
   const { toast } = useToast();
@@ -115,13 +107,9 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
 
   const resetForm = () => {
     setFormData({
-      name: '',
       parameterName: '',
       reportingMenuName: '',
-      reportName: '',
-      parameterType: 'string',
-      required: false,
-      active: true
+      reportName: ''
     });
     setEditingParameter(null);
     setIsDialogOpen(false);
@@ -134,7 +122,13 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
       // Update existing parameter
       setParameters(prev => prev.map(param => 
         param.id === editingParameter.id 
-          ? { ...param, ...formData }
+          ? { 
+              ...param, 
+              name: formData.parameterName,
+              parameterName: formData.parameterName,
+              reportingMenuName: formData.reportingMenuName,
+              reportName: formData.reportName
+            }
           : param
       ));
       toast({
@@ -145,7 +139,13 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
       // Create new parameter
       const newParameter: UrlParameter = {
         id: Date.now(),
-        ...formData
+        name: formData.parameterName,
+        parameterName: formData.parameterName,
+        reportingMenuName: formData.reportingMenuName,
+        reportName: formData.reportName,
+        parameterType: 'string',
+        required: true,
+        active: true
       };
       setParameters(prev => [...prev, newParameter]);
       toast({
@@ -160,13 +160,9 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
   const handleEdit = (parameter: UrlParameter) => {
     setEditingParameter(parameter);
     setFormData({
-      name: parameter.name,
       parameterName: parameter.parameterName,
       reportingMenuName: parameter.reportingMenuName,
-      reportName: parameter.reportName,
-      parameterType: parameter.parameterType,
-      required: parameter.required,
-      active: parameter.active
+      reportName: parameter.reportName
     });
     setIsDialogOpen(true);
   };
@@ -368,28 +364,7 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                   <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="name">Parameter Name</Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>A descriptive name for this parameter (e.g., "Campaign Source", "Ad Group")</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g., Campaign Source"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="parameterName">URL Parameter</Label>
+                      <Label htmlFor="parameterName">URL Parameter <span className="text-red-500">*</span></Label>
                       <Tooltip>
                         <TooltipTrigger>
                           <Info className="h-4 w-4 text-gray-400" />
@@ -406,106 +381,59 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                       placeholder="e.g., utm_source"
                       required
                     />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="reportingMenuName">Reporting Menu</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-gray-400" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>The section name where this parameter will appear in reports (e.g., "Traffic Source", "Campaign Performance")</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Input
-                        id="reportingMenuName"
-                        value={formData.reportingMenuName}
-                        onChange={(e) => setFormData({ ...formData, reportingMenuName: e.target.value })}
-                        placeholder="e.g., Traffic Source"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="reportName">Report Column</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-gray-400" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>The column header name that will be displayed in reports (e.g., "Source", "Campaign", "Medium")</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Input
-                        id="reportName"
-                        value={formData.reportName}
-                        onChange={(e) => setFormData({ ...formData, reportName: e.target.value })}
-                        placeholder="e.g., Source"
-                        required
-                      />
-                    </div>
+                    <span className="text-xs text-gray-500 mt-1">Required</span>
                   </div>
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="parameterType">Parameter Type</Label>
+                      <Label htmlFor="reportingMenuName">Reporting Menu Name <span className="text-red-500">*</span></Label>
                       <Tooltip>
                         <TooltipTrigger>
                           <Info className="h-4 w-4 text-gray-400" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Data type for this parameter:<br/>
-                          • String: Text values (utm_source, campaign names)<br/>
-                          • Integer: Whole numbers (campaign IDs)<br/>
-                          • Decimal: Numbers with decimals (bid amounts)</p>
+                          <p>The section name where this parameter will appear in reports (e.g., "User", "Campaign Performance")</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
-                    <Select 
-                      value={formData.parameterType} 
-                      onValueChange={(value: any) => setFormData({ ...formData, parameterType: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="string">String</SelectItem>
-                        <SelectItem value="integer">Integer</SelectItem>
-                        <SelectItem value="decimal">Decimal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="required"
-                      checked={formData.required}
-                      onChange={(e) => setFormData({ ...formData, required: e.target.checked })}
-                      className="rounded"
+                    <Input
+                      id="reportingMenuName"
+                      value={formData.reportingMenuName}
+                      onChange={(e) => setFormData({ ...formData, reportingMenuName: e.target.value })}
+                      placeholder="e.g., User"
+                      required
                     />
-                    <Label htmlFor="required">Required parameter</Label>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="h-4 w-4 text-gray-400" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>If checked, this parameter must be present in the URL for proper tracking. Recommended for critical attribution data.</p>
-                      </TooltipContent>
-                    </Tooltip>
+                    <span className="text-xs text-gray-500 mt-1">Required</span>
                   </div>
 
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={resetForm}>
-                      Cancel
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="reportName">Report Name <span className="text-red-500">*</span></Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>The column header name that will be displayed in reports (e.g., "Source", "Campaign", "Medium")</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Input
+                      id="reportName"
+                      value={formData.reportName}
+                      onChange={(e) => setFormData({ ...formData, reportName: e.target.value })}
+                      placeholder="e.g., Source"
+                      required
+                    />
+                    <span className="text-xs text-gray-500 mt-1">Required</span>
+                  </div>
+
+                  <div className="flex justify-center space-x-3 pt-6">
+                    <Button type="submit" className="px-8">
+                      {editingParameter ? 'UPDATE' : 'CREATE'}
                     </Button>
-                    <Button type="submit">
-                      {editingParameter ? 'Update' : 'Create'} Parameter
+                    <Button type="button" variant="outline" onClick={resetForm} className="px-8">
+                      CANCEL
                     </Button>
                   </div>
                 </form>
