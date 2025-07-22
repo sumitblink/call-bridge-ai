@@ -53,11 +53,11 @@ export interface IStorage {
 
   // Campaigns
   getCampaigns(): Promise<Campaign[]>;
-  getCampaign(id: number): Promise<Campaign | undefined>;
+  getCampaign(id: string | number): Promise<Campaign | undefined>;
   getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
-  updateCampaign(id: number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined>;
-  deleteCampaign(id: number): Promise<boolean>;
+  updateCampaign(id: string | number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined>;
+  deleteCampaign(id: string | number): Promise<boolean>;
 
   // Buyers
   getBuyers(): Promise<Buyer[]>;
@@ -67,10 +67,10 @@ export interface IStorage {
   deleteBuyer(id: number): Promise<boolean>;
   
   // Campaign-Buyer Relations
-  getCampaignBuyers(campaignId: number): Promise<Buyer[]>;
+  getCampaignBuyers(campaignId: string | number): Promise<Buyer[]>;
   getBuyerCampaignAssignments(buyerId: number): Promise<Campaign[]>;
-  addBuyerToCampaign(campaignId: number, buyerId: number, priority?: number): Promise<CampaignBuyer>;
-  removeBuyerFromCampaign(campaignId: number, buyerId: number): Promise<boolean>;
+  addBuyerToCampaign(campaignId: string | number, buyerId: number, priority?: number): Promise<CampaignBuyer>;
+  removeBuyerFromCampaign(campaignId: string | number, buyerId: number): Promise<boolean>;
   
   // Call Routing & Ping/Post
   pingBuyersForCall(campaignId: number, callData: any): Promise<Buyer[]>;

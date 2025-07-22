@@ -111,7 +111,7 @@ export class SupabaseStorage implements IStorage {
     return await db.select().from(campaigns).orderBy(desc(campaigns.createdAt));
   }
 
-  async getCampaign(id: number): Promise<Campaign | undefined> {
+  async getCampaign(id: string | number): Promise<Campaign | undefined> {
     const result = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
     return result[0];
   }
@@ -129,7 +129,7 @@ export class SupabaseStorage implements IStorage {
     return result[0];
   }
 
-  async updateCampaign(id: number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
+  async updateCampaign(id: string | number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
     const result = await db.update(campaigns)
       .set({
         ...campaign,
@@ -140,7 +140,7 @@ export class SupabaseStorage implements IStorage {
     return result[0];
   }
 
-  async deleteCampaign(id: number): Promise<boolean> {
+  async deleteCampaign(id: string | number): Promise<boolean> {
     // Delete all related records first to avoid foreign key constraint violations
     
     // Delete call logs for calls related to this campaign
@@ -219,7 +219,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   // Campaign-Buyer Relations
-  async getCampaignBuyers(campaignId: number): Promise<Buyer[]> {
+  async getCampaignBuyers(campaignId: string | number): Promise<Buyer[]> {
     const result = await db
       .select({
         id: buyers.id,
@@ -266,7 +266,7 @@ export class SupabaseStorage implements IStorage {
     return result;
   }
 
-  async addBuyerToCampaign(campaignId: number, buyerId: number, priority = 1): Promise<CampaignBuyer> {
+  async addBuyerToCampaign(campaignId: string | number, buyerId: number, priority = 1): Promise<CampaignBuyer> {
     const result = await db.insert(campaignBuyers).values({
       campaignId,
       buyerId,
@@ -275,7 +275,7 @@ export class SupabaseStorage implements IStorage {
     return result[0];
   }
 
-  async removeBuyerFromCampaign(campaignId: number, buyerId: number): Promise<boolean> {
+  async removeBuyerFromCampaign(campaignId: string | number, buyerId: number): Promise<boolean> {
     const result = await db.delete(campaignBuyers)
       .where(and(
         eq(campaignBuyers.campaignId, campaignId),
