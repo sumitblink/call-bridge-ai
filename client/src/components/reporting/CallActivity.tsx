@@ -107,7 +107,7 @@ export default function CallActivity() {
   };
 
   // Render column value based on column definition
-  const renderColumnValue = (column: string, call: Call) => {
+  const renderColumnValue = (column: string, call: Call, campaign?: Campaign, buyer?: Buyer) => {
     const columnDef = getColumnDefinition(column);
     if (!columnDef) return <div className="truncate">-</div>;
 
@@ -158,7 +158,6 @@ export default function CallActivity() {
           <div className="truncate max-w-32 text-xs">{call.transcription}</div>
         ) : <span className="text-gray-400">-</span>;
       case 'campaign_name':
-        const campaign = campaigns.find((c) => c.id === call.campaignId);
         return (
           <div className="flex flex-col">
             <span className="font-medium text-xs">{campaign?.name || 'Unknown'}</span>
@@ -166,7 +165,6 @@ export default function CallActivity() {
           </div>
         );
       case 'buyer_name':
-        const buyer = buyers.find((b) => b.id === call.buyerId);
         return (
           <div className="flex flex-col">
             {buyer ? (
@@ -597,7 +595,7 @@ export default function CallActivity() {
                               className="py-1 px-2 border-r border-gray-200 truncate text-xs"
                               style={{ width: `${width}px`, minWidth: `${width}px` }}
                             >
-                              {renderColumnValue(column, call)}
+                              {renderColumnValue(column, call, campaign, buyer)}
                             </TableCell>
                           );
                         })}
