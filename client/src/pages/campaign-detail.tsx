@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings, Users, Phone, Globe, BarChart3, Zap, Target, Link, Database, MousePointer } from "lucide-react";
+import { ArrowLeft, Settings, Users, Phone, Globe, Zap, Target, Database, MousePointer } from "lucide-react";
 import Layout from "@/components/Layout";
 
 // Individual tab components
@@ -15,10 +15,8 @@ import CampaignNumbers from "@/components/campaign/CampaignNumbers";
 import CampaignPools from "@/components/campaign/CampaignPools";
 import CampaignTracking from "@/components/campaign/CampaignTracking";
 import CampaignPublishers from "@/components/campaign/CampaignPublishers";
-import CampaignAnalytics from "@/components/campaign/CampaignAnalytics";
 import { CampaignReadinessDashboard } from "@/components/campaign/CampaignReadinessDashboard";
 import { RTBTargetAssignment } from "@/components/campaign/RTBTargetAssignment";
-import CampaignUrlBuilder from "@/components/campaign/CampaignUrlBuilder";
 import CampaignUrlParameters from "@/components/campaign/CampaignUrlParameters";
 import CampaignTrackingPixels from "@/components/campaign/CampaignTrackingPixels";
 
@@ -98,10 +96,6 @@ export default function CampaignDetail() {
               <Zap className="h-4 w-4 mr-2" />
               Test Call
             </Button>
-            <Button variant="outline" size="sm">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              View Reports
-            </Button>
           </div>
         </div>
 
@@ -113,7 +107,7 @@ export default function CampaignDetail() {
 
         {/* Campaign Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-10" : "grid-cols-9") : (campaign.routingType === "pool" ? "grid-cols-9" : "grid-cols-8")}`}>
+          <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-8" : "grid-cols-7") : (campaign.routingType === "pool" ? "grid-cols-7" : "grid-cols-6")}`}>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
@@ -146,17 +140,9 @@ export default function CampaignDetail() {
               <MousePointer className="h-4 w-4" />
               <span className="hidden sm:inline">Tracking Pixels</span>
             </TabsTrigger>
-            <TabsTrigger value="url-builder" className="flex items-center space-x-2">
-              <Link className="h-4 w-4" />
-              <span className="hidden sm:inline">URL Builder</span>
-            </TabsTrigger>
             <TabsTrigger value="publishers" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Publishers</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center space-x-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
           </TabsList>
 
@@ -186,16 +172,8 @@ export default function CampaignDetail() {
             <CampaignTrackingPixels campaignId={Number(campaign.id)} />
           </TabsContent>
 
-          <TabsContent value="url-builder">
-            <CampaignUrlBuilder campaignName={campaign.name} />
-          </TabsContent>
-
           <TabsContent value="publishers">
             <CampaignPublishers campaignId={campaign.id} />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <CampaignAnalytics campaignId={campaign.id} campaign={campaign} />
           </TabsContent>
 
           {campaign.enableRtb && (
