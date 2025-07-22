@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Plus, Edit, Trash2, Link, ExternalLink, Download } from 'lucide-react';
+import { Copy, Plus, Edit, Trash2, Link, ExternalLink, Download, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 
@@ -363,9 +364,20 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                     Configure how this parameter appears in tracking and reports
                   </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <TooltipProvider>
+                  <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Parameter Name</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="name">Parameter Name</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>A descriptive name for this parameter (e.g., "Campaign Source", "Ad Group")</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Input
                       id="name"
                       value={formData.name}
@@ -376,7 +388,17 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                   </div>
                   
                   <div>
-                    <Label htmlFor="parameterName">URL Parameter</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="parameterName">URL Parameter</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>The actual URL parameter name that will be captured (e.g., utm_source, utm_campaign, gclid)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Input
                       id="parameterName"
                       value={formData.parameterName}
@@ -388,7 +410,17 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="reportingMenuName">Reporting Menu</Label>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="reportingMenuName">Reporting Menu</Label>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>The section name where this parameter will appear in reports (e.g., "Traffic Source", "Campaign Performance")</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <Input
                         id="reportingMenuName"
                         value={formData.reportingMenuName}
@@ -398,7 +430,17 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                       />
                     </div>
                     <div>
-                      <Label htmlFor="reportName">Report Column</Label>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="reportName">Report Column</Label>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>The column header name that will be displayed in reports (e.g., "Source", "Campaign", "Medium")</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <Input
                         id="reportName"
                         value={formData.reportName}
@@ -410,7 +452,20 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                   </div>
 
                   <div>
-                    <Label htmlFor="parameterType">Parameter Type</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="parameterType">Parameter Type</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Data type for this parameter:<br/>
+                          • String: Text values (utm_source, campaign names)<br/>
+                          • Integer: Whole numbers (campaign IDs)<br/>
+                          • Decimal: Numbers with decimals (bid amounts)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Select 
                       value={formData.parameterType} 
                       onValueChange={(value: any) => setFormData({ ...formData, parameterType: value })}
@@ -435,6 +490,14 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                       className="rounded"
                     />
                     <Label htmlFor="required">Required parameter</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>If checked, this parameter must be present in the URL for proper tracking. Recommended for critical attribution data.</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
 
                   <div className="flex justify-end gap-2">
@@ -446,6 +509,7 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                     </Button>
                   </div>
                 </form>
+                </TooltipProvider>
               </DialogContent>
             </Dialog>
           </div>

@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Plus, Edit, Trash2, Download, ExternalLink } from 'lucide-react';
+import { Copy, Plus, Edit, Trash2, Download, ExternalLink, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 
@@ -326,10 +327,21 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                     Configure tracking pixels to fire on specific call events
                   </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <TooltipProvider>
+                  <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Name Field */}
                   <div>
-                    <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>A descriptive name for this tracking pixel (e.g., "Conversion Tracker", "Lead Pixel")</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Input
                       id="name"
                       value={formData.name}
@@ -343,7 +355,21 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                   
                   {/* Fire Pixel On */}
                   <div>
-                    <Label htmlFor="firePixelOn">Fire Pixel On <span className="text-red-500">*</span></Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="firePixelOn">Fire Pixel On <span className="text-red-500">*</span></Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Choose when this pixel should fire during the call lifecycle:<br/>
+                          • Incoming: When call is received<br/>
+                          • Connected: When call is answered<br/>
+                          • Completed: When call ends<br/>
+                          • Converted: When caller takes desired action</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Select
                       value={formData.firePixelOn}
                       onValueChange={(value: 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized') => 
@@ -368,7 +394,17 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
 
                   {/* URL Field with TOKEN button */}
                   <div>
-                    <Label htmlFor="url">URL <span className="text-red-500">*</span></Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="url">URL <span className="text-red-500">*</span></Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>The endpoint URL to send tracking data to. Use TOKEN button to insert dynamic values like {'{call_id}'}, {'{campaign_id}'}, etc.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <div className="flex gap-2">
                       <Input
                         id="url"
@@ -407,7 +443,21 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                     <div className="space-y-4 border-t pt-4">
                       {/* HTTP Method */}
                       <div>
-                        <Label htmlFor="httpMethod">HTTP Method <span className="text-red-500">*</span></Label>
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="httpMethod">HTTP Method <span className="text-red-500">*</span></Label>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-4 w-4 text-gray-400" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>HTTP method for the tracking request:<br/>
+                              • GET: Simple URL-based tracking<br/>
+                              • POST: Send data in request body<br/>
+                              • PUT: Update existing data<br/>
+                              • DELETE: Remove tracking data</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
                         <Select
                           value={formData.httpMethod}
                           onValueChange={(value: 'GET' | 'POST' | 'PUT' | 'DELETE') => 
@@ -428,7 +478,20 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
 
                       {/* Headers */}
                       <div>
-                        <Label>Headers</Label>
+                        <div className="flex items-center gap-2">
+                          <Label>Headers</Label>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-4 w-4 text-gray-400" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Custom HTTP headers to send with the tracking request. Common examples:<br/>
+                              • Authorization: Bearer token or API key<br/>
+                              • Content-Type: application/json<br/>
+                              • User-Agent: Your application name</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
                         <div className="space-y-2">
                           {formData.headers.map((header, index) => (
                             <div key={index} className="flex gap-2 items-center">
@@ -502,7 +565,21 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
 
                   {/* Authentication - Outside Advanced Options like Ringba */}
                   <div>
-                    <Label htmlFor="authentication">Authentication</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="authentication">Authentication</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Authentication method for the tracking endpoint:<br/>
+                          • None: No authentication required<br/>
+                          • Basic Auth: Username/password authentication<br/>
+                          • Bearer Token: OAuth or API token<br/>
+                          • API Key: Custom API key authentication</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Select
                       value={formData.authentication}
                       onValueChange={(value: 'none' | 'basic' | 'bearer' | 'api_key') => 
@@ -529,6 +606,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                     </Button>
                   </div>
                 </form>
+                </TooltipProvider>
               </DialogContent>
             </Dialog>
           </div>
