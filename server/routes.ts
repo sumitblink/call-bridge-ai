@@ -2966,10 +2966,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Use direct database access with Drizzle ORM for cleanup
         const { db } = await import('./db');
-        const { callTrackingTags, campaignPoolAssignments, campaigns, numberPoolAssignments, calls } = await import('../shared/schema');
+        const { callTrackingTags, campaignPoolAssignments, campaigns, numberPoolAssignments, calls, dniSessions, dniSnippets } = await import('../shared/schema');
         const { eq } = await import('drizzle-orm');
         
-        // 1. Remove call_tracking_tags that reference this pool
+        // 1. Remove call_tracking_tags and their dependencies (dni_sessions, dni_snippets reference call_tracking_tags)
+        console.log('Cleaning up dni_sessions and dni_snippets that reference call_tracking_tags...');
+        // First clean up DNI tables that reference call_tracking_tags
+        const trackingTagsToDelete = await db.select({ id: callTrackingTags.id })
+          .from(callTrackingTags)
+          .where(eq(callTrackingTags.poolId, poolId));
+        
+        for (const tag of trackingTagsToDelete) {
+          // Clean up dni_sessions using Drizzle ORM
+          await db.delete(dniSessions).where(eq(dniSessions.tagId, tag.id));
+          // Clean up dni_snippets using Drizzle ORM
+          await db.delete(dniSnippets).where(eq(dniSnippets.tagId, tag.id));
+          console.log(`Cleaned up dni_sessions and dni_snippets for tag ${tag.id}`);
+        }
+        
+        // Now we can safely delete call_tracking_tags
         console.log('Cleaning up call_tracking_tags...');
         await db.delete(callTrackingTags).where(eq(callTrackingTags.poolId, poolId));
         
