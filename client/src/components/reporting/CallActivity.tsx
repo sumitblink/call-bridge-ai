@@ -220,6 +220,8 @@ export default function CallActivity() {
         return <div className="text-xs">{call.numberPoolId ? 'Yes' : 'No'}</div>;
       case 'campaignId':
         return <div className="font-mono text-xs">{call.campaignId}</div>;
+      case 'buyerId':
+        return <div className="font-mono text-xs">{call.buyerId || 'N/A'}</div>;
       case 'actions':
         return (
           <div className="flex items-center space-x-1">
@@ -278,6 +280,8 @@ export default function CallActivity() {
               return campaigns.find(c => c.id === call.campaignId)?.name || 'Unknown';
             case 'campaignId':
               return call.campaignId;
+            case 'buyerId':
+              return call.buyerId || 'N/A';
             case 'buyer':
               return buyers.find(b => b.id === call.buyerId)?.name || 'No Buyer';
             default:
