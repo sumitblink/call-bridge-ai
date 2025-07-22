@@ -357,18 +357,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // RedTrack Configuration endpoints
-  app.get("/api/redtrack-configs", requireAuth, async (req: any, res) => {
+  // RedTrack Tracking - Session tracking (no auth for external pages)
+  app.post('/api/tracking/redtrack/session', async (req, res) => {
     try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: 'Authentication required' });
+      const {
+        clickid,
+        campaign_id,
+        offer_id,
+        source,
+        medium,
+        campaign,
+        url,
+        referrer,
+        userAgent,
+        timestamp
+      } = req.body;
+
+      // Only track if we have a clickid (RedTrack parameter)
+      if (!clickid) {
+        return res.json({ 
+          success: false, 
+          message: 'No RedTrack clickid provided' 
+        });
       }
 
-      const configs = await storage.getRedtrackConfigs(userId);
-      res.json(configs);
+      // Create session tracking data
+      const sessionId = `rt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const sessionData = {
+        sessionId,
+        userId: 2, // Default to system user for external tracking
+        source: source || 'redtrack',
+        medium: medium || 'cpc',
+        campaign: campaign || `rt_${campaign_id}`,
+        content: offer_id || null,
+        term: null,
+        clickid: clickid,
+        url: url || '',
+        referrer: referrer || 'direct',
+        userAgent: userAgent || '',
+        ipAddress: req.ip || req.connection.remoteAddress || '',
+        utmSource: source,
+        utmMedium: medium,
+        utmCampaign: campaign,
+        utmContent: offer_id,
+        gclid: null,
+        fbclid: null,
+        landingPage: url || '',
+        deviceType: 'desktop',
+        location: null,
+        redtrackData: {
+          clickid,
+          campaign_id,
+          offer_id,
+          timestamp
+        }
+      };
+
+      // Store the session
+      await storage.createVisitorSession(sessionData);
+
+      console.log('RedTrack session tracked:', { sessionId, clickid, campaign_id });
+
+      res.json({
+        success: true,
+        sessionId,
+        message: 'RedTrack session tracked successfully'
+      });
+
     } catch (error) {
-      console.error('Error fetching RedTrack configurations:', error);
-      res.status(500).json({ error: 'Failed to fetch configurations' });
+      console.error('Error tracking RedTrack session:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to track session' 
+      });
+    }
+  });
+
+  // RedTrack Tracking - Conversion tracking (no auth for external pages)
+  app.post('/api/tracking/redtrack/conversion', async (req, res) => {
+    try {
+      const {
+        clickid,
+        campaign_id,
+        offer_id,
+        eventType,
+        phoneNumber,
+        conversionValue,
+        userAgent,
+        url
+      } = req.body;
+
+      if (!clickid) {
+        return res.json({ 
+          success: false, 
+          message: 'No RedTrack clickid provided' 
+        });
+      }
+
+      // Find existing session by clickid
+      const sessions = await storage.getVisitorSessions(2); // System user
+      const session = sessions.find(s => s.redtrackData && s.redtrackData.clickid === clickid);
+
+      const sessionId = session?.sessionId || `rt_conv_${Date.now()}`;
+
+      // Create conversion event
+      const conversionData = {
+        sessionId,
+        eventType: eventType || 'phone_click',
+        eventValue: conversionValue || 25.00,
+        phoneNumber: phoneNumber || '',
+        metadata: {
+          clickid,
+          campaign_id,
+          offer_id,
+          redtrack_attribution: true,
+          url,
+          userAgent
+        }
+      };
+
+      await storage.createConversionEvent(conversionData);
+
+      console.log('RedTrack conversion tracked:', { sessionId, clickid, eventType, value: conversionValue });
+
+      res.json({
+        success: true,
+        sessionId,
+        conversionValue,
+        message: 'RedTrack conversion tracked successfully'
+      });
+
+    } catch (error) {
+      console.error('Error tracking RedTrack conversion:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to track conversion' 
+      });
     }
   });
 
