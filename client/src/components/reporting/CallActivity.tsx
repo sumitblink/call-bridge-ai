@@ -76,7 +76,10 @@ export default function CallActivity() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(getDefaultVisibleColumns());
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    // Remove duplicates from default columns to prevent React key issues
+    return [...new Set(getDefaultVisibleColumns())];
+  });
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -102,7 +105,9 @@ export default function CallActivity() {
   const { toast } = useToast();
 
   const handleColumnsChange = (newVisibleColumns: string[]) => {
-    setVisibleColumns(newVisibleColumns);
+    // Remove duplicates to fix React key issues
+    const uniqueColumns = [...new Set(newVisibleColumns)];
+    setVisibleColumns(uniqueColumns);
   };
 
   // Action handlers
@@ -371,11 +376,11 @@ export default function CallActivity() {
             <Table ref={tableRef}>
               <TableHeader>
                 <TableRow>
-                  {visibleColumns.map(column => {
+                  {visibleColumns.map((column, columnIndex) => {
                     const columnDef = getColumnDefinition(column);
                     return (
                       <TableHead 
-                        key={column} 
+                        key={`header-${columnIndex}-${column}`} 
                         className="text-xs font-medium relative bg-muted/50"
                         style={{ 
                           width: columnWidths[column] || columnDef?.width || 'auto',
@@ -393,11 +398,11 @@ export default function CallActivity() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCalls.map(call => (
-                  <TableRow key={call.id} className="hover:bg-muted/30">
-                    {visibleColumns.map(column => (
+                {filteredCalls.map((call, callIndex) => (
+                  <TableRow key={`call-row-${callIndex}`} className="hover:bg-muted/30">
+                    {visibleColumns.map((column, columnIndex) => (
                       <TableCell 
-                        key={`${call.id}-${column}`} 
+                        key={`cell-${callIndex}-${columnIndex}`} 
                         className="py-2"
                         style={{ 
                           width: columnWidths[column] || getColumnDefinition(column)?.width || 'auto',

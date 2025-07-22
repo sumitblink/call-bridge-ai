@@ -13,7 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface ColumnCustomizerProps {
-  tableType: string;
+  visibleColumns: string[];
   onColumnsChange: (visibleColumns: string[]) => void;
 }
 
@@ -23,7 +23,7 @@ interface ColumnPreferences {
   columnWidths: Record<string, number>;
 }
 
-export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomizerProps) {
+export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCustomizerProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Popular', 'Call']));
   // Initialize with the actual default visible columns from CallActivity
   const [localVisibleColumns, setLocalVisibleColumns] = useState<string[]>([]);
@@ -35,7 +35,7 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
 
   // Fetch user's column preferences (disabled for demonstration)
   const { data: preferences, isLoading } = useQuery<ColumnPreferences>({
-    queryKey: ['/api/column-preferences', tableType],
+    queryKey: ['/api/column-preferences', 'call_details'],
     enabled: false // Disable to avoid auth issues in demonstration
   });
 
@@ -73,7 +73,7 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
     },
     onSuccess: (data: ColumnPreferences) => {
       setLocalVisibleColumns(data.visibleColumns);
-      queryClient.invalidateQueries({ queryKey: ['/api/column-preferences', tableType] });
+      queryClient.invalidateQueries({ queryKey: ['/api/column-preferences', 'call_details'] });
       toast({
         title: "Columns Reset",
         description: "Column preferences have been reset to defaults."
@@ -89,18 +89,11 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
     }
   });
 
-  // Initialize with default visible columns on mount
+  // Initialize with provided visible columns
   useEffect(() => {
-    const defaultColumns = [
-      'campaign', 'publisher', 'target', 'buyer', 'callDate', 'callerId', 'dialedNumber',
-      'duration', 'connectedCallLength', 'duplicate', 'previouslyConnected', 'revenue', 
-      'profit', 'status', 'fromNumber', 'toNumber', 'actions'
-    ];
-    
-    console.log('Initializing ColumnCustomizer with default columns:', defaultColumns);
-    setLocalVisibleColumns(defaultColumns);
-    onColumnsChange(defaultColumns);
-  }, []); // Run only once on mount
+    console.log('Initializing ColumnCustomizer with provided columns:', visibleColumns);
+    setLocalVisibleColumns(visibleColumns);
+  }, [visibleColumns]);
 
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -188,7 +181,7 @@ export function ColumnCustomizer({ tableType, onColumnsChange }: ColumnCustomize
         <SheetHeader>
           <SheetTitle>Customize Columns</SheetTitle>
           <SheetDescription>
-            Select which columns to display in your {tableType.replace('_', ' ')} table.
+            Select which columns to display in your call details table.
           </SheetDescription>
         </SheetHeader>
 
