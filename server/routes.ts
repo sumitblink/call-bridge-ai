@@ -5581,6 +5581,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   const reportingRouter = (await import('./api/reporting')).default;
   app.use('/api/reporting', reportingRouter);
+  
+  const columnPreferencesRouter = (await import('./api/column-preferences')).default;
+  app.use('/api/column-preferences', columnPreferencesRouter);
 
   const httpServer = createServer(app);
   return httpServer;

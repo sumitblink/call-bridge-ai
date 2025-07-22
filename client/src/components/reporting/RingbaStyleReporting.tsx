@@ -28,6 +28,8 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import CallActivity from "./CallActivity";
+import { ColumnCustomizer } from "./ColumnCustomizer";
+import { getDefaultVisibleColumns, getColumnDefinition } from "@shared/column-definitions";
 
 interface CallData {
   id: number;
@@ -355,36 +357,7 @@ export default function RingbaStyleReporting() {
   const [showFilterDialog, setShowFilterDialog] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [selectedTags, setSelectedTags] = useState<Array<{ column: string; tag: string; category: string }>>([]);
-  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
-    campaign: true,
-    publisher: true,
-    target: true,
-    buyer: true,
-    dialedNumber: true,
-    numberPool: true,
-    date: true,
-    duplicate: true,
-    tags: true,
-    incoming: true,
-    live: true,
-    completed: true,
-    ended: true,
-    connected: true,
-    paid: true,
-    converted: true,
-    noConnection: true,
-    blocked: true,
-    ivrHangup: true,
-    rpc: true,
-    revenue: true,
-    payout: true,
-    profit: true,
-    margin: true,
-    conversionRate: true,
-    tcl: true,
-    acl: true,
-    totalCost: true
-  });
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(getDefaultVisibleColumns());
 
   // Auto-switching handler
   const handleAutoSwitch = useCallback((newTab: string, value: string) => {
@@ -1210,11 +1183,8 @@ export default function RingbaStyleReporting() {
     );
   };
 
-  const toggleColumn = (columnId: string) => {
-    setVisibleColumns(prev => ({
-      ...prev,
-      [columnId]: !prev[columnId]
-    }));
+  const handleColumnsChange = (newVisibleColumns: string[]) => {
+    setVisibleColumns(newVisibleColumns);
   };
 
   const exportToCSV = () => {
@@ -1524,6 +1494,10 @@ export default function RingbaStyleReporting() {
             <Button size="sm" variant="outline" className="h-7 px-2 text-xs">
               📧
             </Button>
+            <ColumnCustomizer 
+              tableType="enhanced_reporting"
+              onColumnsChange={handleColumnsChange}
+            />
           </div>
         </div>
       </div>
@@ -1925,7 +1899,7 @@ export default function RingbaStyleReporting() {
 // Report Summary Table Component
 interface ReportSummaryTableProps {
   summaries: CampaignSummary[];
-  visibleColumns: Record<string, boolean>;
+  visibleColumns: string[];
   isLoading: boolean;
   activeTab: string;
   selectedTags: Array<{ column: string; tag: string; category: string }>;
@@ -1989,66 +1963,99 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab, s
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  const getColumnLabel = (column: string) => {
-    const labels: Record<string, string> = {
-      campaign: 'Campaign',
-      publisher: 'Publisher',
-      target: 'Target',
-      buyer: 'Buyer',
-      dialedNumber: 'Dialed #',
-      numberPool: 'Number Pool',
-      date: 'Date',
-      duplicate: 'Duplicate',
-      tags: 'Tags',
-      incoming: 'Incoming',
-      live: 'Live',
-      completed: 'Completed',
-      ended: 'Ended',
-      connected: 'Connected',
-      paid: 'Paid',
-      converted: 'Converted',
-      noConnection: 'No Connection',
-      blocked: 'Blocked',
-      ivrHangup: 'IVR Hangup',
-      rpc: 'RPC',
-      revenue: 'Revenue',
-      payout: 'Payout',
-      profit: 'Profit',
-      margin: 'Margin',
-      conversionRate: 'Conversion Rate',
-      tcl: 'TCL',
-      acl: 'ACL',
-      totalCost: 'Total Cost'
-    };
-    return labels[column] || column;
-  };
-  // Define which columns to show for each tab
-  const getColumnsForTab = (tab: string) => {
-    const baseColumns = ['incoming', 'live', 'completed', 'ended', 'connected', 'paid', 'converted', 'noConnection', 'blocked', 'ivrHangup', 'rpc', 'revenue', 'payout', 'profit', 'margin', 'conversionRate', 'tcl', 'acl', 'totalCost'];
-    
-    switch (tab) {
-      case 'campaign':
-        return ['campaign', ...baseColumns];
-      case 'publisher':
-        return ['publisher', ...baseColumns];
-      case 'target':
-        return ['target', ...baseColumns];
-      case 'buyer':
-        return ['buyer', ...baseColumns];
-      case 'dialed':
-        return ['dialedNumber', ...baseColumns];
-      case 'pool':
-        return ['numberPool', ...baseColumns];
-      case 'date':
-        return ['date', ...baseColumns];
-      case 'duplicate':
-        return ['duplicate', ...baseColumns];
+  const renderColumnValue = (column: string, summary: CampaignSummary) => {
+    const columnDef = getColumnDefinition(column);
+    if (!columnDef) return null;
+
+    // Get value from summary based on column mapping
+    switch (column) {
+      case 'campaign_name':
+        return <div className="text-blue-600 font-medium truncate">{summary.campaignName}</div>;
+      case 'publisher_name':
+        return <div className="truncate">{summary.publisher}</div>;
+      case 'target_name':
+        return <div className="truncate">{summary.target}</div>;
+      case 'buyer_name':
+        return <div className="truncate">{summary.buyer}</div>;
+      case 'dialed_number':
+        return <div className="truncate font-mono text-xs">{summary.dialedNumbers.join(', ')}</div>;
+      case 'number_pool':
+        return <div className="truncate">{summary.numberPool}</div>;
+      case 'call_date':
+        return <div className="truncate text-xs">{formatDistanceToNow(new Date(summary.lastCallDate), { addSuffix: true })}</div>;
+      case 'duplicate_calls':
+        return <div className="text-center">{summary.duplicate}</div>;
+      case 'incoming_calls':
+        return <div className="text-center">{summary.incoming}</div>;
+      case 'live_calls':
+        return <div className="text-center">{summary.live}</div>;
+      case 'completed_calls':
+        return <div className="text-center">{summary.completed}</div>;
+      case 'connected_calls':
+        return <div className="text-center">{summary.connected}</div>;
+      case 'paid_calls':
+        return <div className="text-center">{summary.paid}</div>;
+      case 'converted_calls':
+        return <div className="text-center">{summary.converted}</div>;
+      case 'call_revenue':
+        return <div className="text-right text-green-600 font-medium">{formatCurrency(summary.revenue)}</div>;
+      case 'call_payout':
+        return <div className="text-right">{formatCurrency(summary.payout)}</div>;
+      case 'call_profit':
+        return <div className="text-right font-medium">{formatCurrency(summary.profit)}</div>;
+      case 'profit_margin':
+        return <div className="text-right">{summary.margin.toFixed(1)}%</div>;
+      case 'conversion_rate':
+        return <div className="text-right">{summary.conversionRate.toFixed(1)}%</div>;
+      case 'revenue_per_call':
+        return <div className="text-right">{formatCurrency(summary.rpc)}</div>;
+      case 'total_call_length':
+        return <div className="text-right">{formatDuration(summary.tcl)}</div>;
+      case 'average_call_length':
+        return <div className="text-right">{formatDuration(summary.acl)}</div>;
+      case 'total_cost':
+        return <div className="text-right">{formatCurrency(summary.totalCost)}</div>;
       default:
-        return ['campaign', 'publisher', 'target', 'buyer', 'dialedNumber', 'numberPool', 'date', 'duplicate', ...baseColumns];
+        return <div className="truncate">-</div>;
     }
   };
+  // Use visible columns from user preferences, but filter to show only columns that make sense for the active tab
+  const getRelevantColumns = () => {
+    // Start with user's visible columns
+    let columns = visibleColumns.slice();
+    
+    // For specific tabs, ensure the primary column is visible
+    switch (activeTab) {
+      case 'campaign':
+        if (!columns.includes('campaign_name')) columns.unshift('campaign_name');
+        break;
+      case 'publisher':
+        if (!columns.includes('publisher_name')) columns.unshift('publisher_name');
+        break;
+      case 'target':
+        if (!columns.includes('target_name')) columns.unshift('target_name');
+        break;
+      case 'buyer':
+        if (!columns.includes('buyer_name')) columns.unshift('buyer_name');
+        break;
+      case 'dialed':
+        if (!columns.includes('dialed_number')) columns.unshift('dialed_number');
+        break;
+      case 'pool':
+        if (!columns.includes('number_pool')) columns.unshift('number_pool');
+        break;
+      case 'date':
+        if (!columns.includes('call_date')) columns.unshift('call_date');
+        break;
+      case 'duplicate':
+        if (!columns.includes('duplicate_calls')) columns.unshift('duplicate_calls');
+        break;
+    }
+    
+    return columns;
+  };
 
-  const activeColumns = getColumnsForTab(activeTab);
+  const activeColumns = getRelevantColumns();
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -2093,7 +2100,7 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab, s
                   style={{ width: `${columnWidths[column]}px` }}
                 >
                   <div className="flex flex-col gap-1">
-                    <div className="truncate pr-2">{getColumnLabel(column)}</div>
+                    <div className="truncate pr-2">{getColumnDefinition(column)?.label || column}</div>
                     {/* Show selected tags for this column */}
                     {selectedTags.filter(tag => tag.column === column).map(tag => (
                       <Badge 
@@ -2144,77 +2151,7 @@ function ReportSummaryTable({ summaries, visibleColumns, isLoading, activeTab, s
                       className="py-1 px-2 border-r border-gray-200 truncate"
                       style={{ width: `${columnWidths[column]}px` }}
                     >
-                      {(() => {
-                        switch (column) {
-                          case 'campaign':
-                            return <div className="text-blue-600 font-medium truncate">{summary.campaignName}</div>;
-                          case 'publisher':
-                            return <div className="truncate">{summary.publisher}</div>;
-                          case 'target':
-                            return <div className="truncate">{summary.target}</div>;
-                          case 'buyer':
-                            return <div className="truncate">{summary.buyer}</div>;
-                          case 'dialedNumber':
-                            return <div className="text-xs font-mono truncate">{summary.dialedNumbers.join(', ')}</div>;
-                          case 'numberPool':
-                            return <div className="truncate">{summary.numberPool}</div>;
-                          case 'date':
-                            return <div className="text-xs text-gray-500">{new Date(summary.lastCallDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} {new Date(summary.lastCallDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}</div>;
-                          case 'duplicate':
-                            return <div className="text-center">{summary.duplicate}</div>;
-                          case 'tags':
-                            return (
-                              <div className="flex flex-wrap gap-1">
-                                {summary.tags.slice(0, 2).map((tag, i) => (
-                                  <Badge key={i} variant="secondary" className="text-xs px-1 py-0">{tag}</Badge>
-                                ))}
-                                {summary.tags.length > 2 && (
-                                  <Badge variant="outline" className="text-xs px-1 py-0">+{summary.tags.length - 2}</Badge>
-                                )}
-                              </div>
-                            );
-                          case 'incoming':
-                            return <div className="text-center font-medium">{summary.incoming}</div>;
-                          case 'live':
-                            return <div className="text-center text-green-600 font-medium">{summary.live}</div>;
-                          case 'completed':
-                            return <div className="text-center text-blue-600 font-medium">{summary.completed}</div>;
-                          case 'ended':
-                            return <div className="text-center text-gray-600">{summary.ended}</div>;
-                          case 'connected':
-                            return <div className="text-center text-green-600 font-medium">{summary.connected}</div>;
-                          case 'paid':
-                            return <div className="text-center text-purple-600 font-medium">{summary.paid}</div>;
-                          case 'converted':
-                            return <div className="text-center text-emerald-600 font-medium">{summary.converted}</div>;
-                          case 'noConnection':
-                            return <div className="text-center text-red-600">{summary.noConnection}</div>;
-                          case 'blocked':
-                            return <div className="text-center text-red-600">{summary.blocked}</div>;
-                          case 'ivrHangup':
-                            return <div className="text-center text-orange-600">{summary.ivrHangup}</div>;
-                          case 'rpc':
-                            return <div className="text-center text-green-600 font-medium">${summary.rpc.toFixed(2)}</div>;
-                          case 'revenue':
-                            return <div className="text-center text-green-600 font-medium">${summary.revenue.toFixed(2)}</div>;
-                          case 'payout':
-                            return <div className="text-center text-orange-600">${summary.payout.toFixed(2)}</div>;
-                          case 'profit':
-                            return <div className="text-center text-emerald-600 font-medium">${summary.profit.toFixed(2)}</div>;
-                          case 'margin':
-                            return <div className="text-center text-blue-600 font-medium">{summary.margin.toFixed(1)}%</div>;
-                          case 'conversionRate':
-                            return <div className="text-center text-purple-600 font-medium">{summary.conversionRate.toFixed(1)}%</div>;
-                          case 'tcl':
-                            return <div className="text-center text-gray-600">{Math.floor(summary.tcl / 60)}m {summary.tcl % 60}s</div>;
-                          case 'acl':
-                            return <div className="text-center text-gray-600">{summary.acl.toFixed(0)}s</div>;
-                          case 'totalCost':
-                            return <div className="text-center text-red-600">${summary.totalCost.toFixed(2)}</div>;
-                          default:
-                            return null;
-                        }
-                      })()}
+                      {renderColumnValue(column, summary)}
                     </TableCell>
                   ))}
                 </TableRow>

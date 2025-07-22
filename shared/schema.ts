@@ -141,7 +141,7 @@ export const calls = pgTable("calls", {
   connectionTime: integer("connection_time"), // milliseconds to connect
   audioQuality: varchar("audio_quality", { length: 20 }), // excellent, good, poor
   isDuplicate: boolean("is_duplicate").default(false), // duplicate call detection
-  duplicateOfCallId: integer("duplicate_of_call_id").references(() => calls.id),
+  duplicateOfCallId: integer("duplicate_of_call_id"),
   
   // Financial Tracking
   cost: decimal("cost", { precision: 10, scale: 4 }).default("0.0000"), // Actual cost (Twilio charges)
@@ -613,6 +613,22 @@ export const campaignPublishers = pgTable("campaign_publishers", {
   pk: primaryKey({ columns: [table.campaignId, table.publisherId] })
 }));
 
+// User Column Preferences for Call Activity customization
+export const userColumnPreferences = pgTable("user_column_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  tableType: varchar("table_type", { length: 50 }).default("call_activity").notNull(), // call_activity, enhanced_reporting, etc.
+  visibleColumns: text("visible_columns").array().notNull(), // Array of column IDs that are visible
+  columnOrder: text("column_order").array(), // Custom column ordering
+  columnWidths: json("column_widths"), // Column width preferences as JSON object
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  // Ensure one preference row per user per table type
+  unique: primaryKey({ columns: [table.userId, table.tableType] })
+}));
+
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
@@ -719,6 +735,18 @@ export const insertCampaignPoolAssignmentSchema = createInsertSchema(campaignPoo
   assignedAt: true,
 });
 
+export const insertUserColumnPreferencesSchema = createInsertSchema(userColumnPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  userId: z.number().optional(),
+  tableType: z.string().optional(),
+  visibleColumns: z.array(z.string()).min(1, "At least one column must be visible"),
+  columnOrder: z.array(z.string()).optional(),
+  columnWidths: z.record(z.string(), z.number()).optional(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
@@ -758,6 +786,9 @@ export type InsertNumberPoolAssignment = z.infer<typeof insertNumberPoolAssignme
 
 export type CampaignPoolAssignment = typeof campaignPoolAssignments.$inferSelect;
 export type InsertCampaignPoolAssignment = z.infer<typeof insertCampaignPoolAssignmentSchema>;
+
+export type UserColumnPreferences = typeof userColumnPreferences.$inferSelect;
+export type InsertUserColumnPreferences = z.infer<typeof insertUserColumnPreferencesSchema>;
 
 // New table schemas
 export const insertPhoneNumberTagSchema = createInsertSchema(phoneNumberTags).omit({
