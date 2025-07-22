@@ -1236,13 +1236,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[Pool Webhook] Final routing decision - Method: ${routingMethod}, Buyer: ${selectedBuyer.name} (${selectedBuyer.phoneNumber})`);
 
-      // Create call record with RTB data
+      // Get phone number record for complete call tracking
+      const phoneNumber = await storage.getPhoneNumberByNumber(toNumber);
+      
+      // Create call record with complete pool and phone number data
       const callData = {
         campaignId: campaign.id,
         buyerId: selectedBuyer.id,
         callSid: CallSid,
         fromNumber,
         toNumber,
+        dialedNumber: toNumber,
+        numberPoolId: parseInt(poolId),
+        phoneNumberId: phoneNumber?.id || null,
         status: 'initiated',
         startTime: new Date(),
         routingData: JSON.stringify({
