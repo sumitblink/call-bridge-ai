@@ -91,6 +91,10 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     queryKey: ['/api/integrations/pixels'],
     enabled: shouldFetchGlobalPixels,
     retry: false,
+    select: (data: any[]) => {
+      console.log('Raw integration pixels data:', data);
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   // Delete campaign pixel mutation
@@ -275,7 +279,10 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => setIsImportDialogOpen(true)}
+                onClick={() => {
+                  setIsImportDialogOpen(true);
+                  setShouldFetchGlobalPixels(true);
+                }}
               >
                 <Download className="w-4 h-4 mr-2" />
                 Import Existing
@@ -612,7 +619,11 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
         {/* Import Pixels Dialog */}
         <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
           setIsImportDialogOpen(open);
-          if (!open) setShouldFetchGlobalPixels(false);
+          if (open) {
+            setShouldFetchGlobalPixels(true);
+          } else {
+            setShouldFetchGlobalPixels(false);
+          }
         }}>
           <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
             <DialogHeader className="shrink-0">
