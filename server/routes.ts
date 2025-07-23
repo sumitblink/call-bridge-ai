@@ -4714,24 +4714,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const tagId = parseInt(id);
       
+      // First check if tag exists and belongs to user
+      const existingTag = await db.query.callTrackingTags.findFirst({
+        where: and(
+          eq(callTrackingTags.id, tagId),
+          eq(callTrackingTags.userId, userId)
+        )
+      });
+      
+      if (!existingTag) {
+        return res.status(404).json({ error: 'Tracking tag not found' });
+      }
+      
+      // Delete dependent records first to handle foreign key constraints
+      await db.delete(dniSnippets).where(eq(dniSnippets.tagId, tagId));
+      await db.delete(dniSessions).where(eq(dniSessions.tagId, tagId));
+      
+      // Now delete the tracking tag
       const deletedTag = await db
-        .update(callTrackingTags)
-        .set({
-          isActive: false,
-          updatedAt: new Date()
-        })
+        .delete(callTrackingTags)
         .where(and(
-          eq(callTrackingTags.id, parseInt(id)),
+          eq(callTrackingTags.id, tagId),
           eq(callTrackingTags.userId, userId)
         ))
         .returning();
       
-      if (deletedTag.length === 0) {
-        return res.status(404).json({ error: 'Tracking tag not found' });
-      }
-      
-      res.json({ success: true });
+      res.json({ success: true, deletedCount: deletedTag.length });
     } catch (error) {
       console.error('Error deleting tracking tag:', error);
       res.status(500).json({ error: 'Failed to delete tracking tag' });
