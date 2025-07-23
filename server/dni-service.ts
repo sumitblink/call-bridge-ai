@@ -8,7 +8,7 @@ import type { Campaign, PhoneNumber, NumberPool } from '@shared/schema';
 
 export interface DNIRequest {
   tagCode?: string;
-  campaignId?: number;
+  campaignId?: string;
   campaignName?: string;
   source?: string;
   medium?: string;
@@ -74,8 +74,8 @@ export class DNIService {
       }
       // Fallback: Find campaign by ID or name
       else if (request.campaignId) {
-        const [foundCampaign] = await db.select().from(campaigns).where(eq(campaigns.id, request.campaignId));
-        campaign = foundCampaign;
+        const foundCampaigns = await db.select().from(campaigns).where(eq(campaigns.id, request.campaignId));
+        campaign = foundCampaigns[0];
       } else if (request.campaignName) {
         const allCampaigns = await db.select().from(campaigns);
         campaign = allCampaigns.find(c => c.name.toLowerCase() === (request.campaignName || '').toLowerCase());
@@ -130,8 +130,22 @@ export class DNIService {
         // Direct number routing: Use campaign's assigned phone number
         selectedPhone = {
           id: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          userId: 0,
           phoneNumber: campaign.phoneNumber,
-          status: 'active'
+          country: 'US',
+          numberType: 'local',
+          isActive: true,
+          campaignId: campaign.id,
+          friendlyName: 'Direct Campaign Number',
+          poolId: null,
+          sid: null,
+          statusCallbackUrl: null,
+          voiceUrl: null,
+          fallbackUrl: null,
+          cost: null,
+          purchaseDate: new Date()
         } as PhoneNumber;
       } else {
         // No valid routing configuration
@@ -495,7 +509,7 @@ export class DNIService {
         campaignName: campaignRecord.name
       };
 
-      return await this.trackVisitor(trackingRequest);
+      return await DNIService.getTrackingNumber(trackingRequest);
       
     } catch (error) {
       console.error('DNI Campaign ID tracking error:', error);

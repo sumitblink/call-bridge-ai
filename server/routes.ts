@@ -68,6 +68,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Serve static files from public directory
+  app.use(express.static('public'));
+  
+  // Override for tracking script to ensure correct content-type
+  app.get('/js/t.js', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    next();
+  });
+
   // Add CORS headers for tracking endpoints
   app.use('/api/tracking', (req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
