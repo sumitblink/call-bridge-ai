@@ -283,11 +283,24 @@ export default function CallActivity() {
         );
       default:
         // Handle dynamic URL parameter columns
-        const paramValue = (call as any)[column];
-        if (paramValue !== undefined && paramValue !== null) {
+        // Map URL parameter names to database column names
+        const columnMappings: Record<string, string> = {
+          'clickid': 'click_id',
+          'utm_campaign': 'utm_campaign',
+          'utm_source': 'utm_source',
+          'utm_medium': 'utm_medium',
+          'utm_content': 'utm_content',
+          'utm_term': 'utm_term',
+          'parameter': 'custom_parameters'
+        };
+        
+        const dbColumnName = columnMappings[column] || column;
+        const paramValue = (call as any)[dbColumnName];
+        
+        if (paramValue !== undefined && paramValue !== null && paramValue !== '') {
           return <div className="truncate text-xs">{paramValue}</div>;
         }
-        console.log('Unknown column:', column, 'returning fallback');
+        console.log('Unknown column:', column, 'mapped to:', dbColumnName, 'value:', paramValue);
         return <div className="truncate text-xs">-</div>;
     }
   };

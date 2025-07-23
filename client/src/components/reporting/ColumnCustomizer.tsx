@@ -40,14 +40,14 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
   // Convert URL parameters to column definitions
   const urlParameterColumns: ColumnDefinition[] = (urlParameters || []).map((param: any) => ({
     id: param.parameterName,
-    label: param.reportName,
+    label: param.reportName, // This should display the "Report Name" from database
     category: param.reportingMenuName,
     dataType: param.parameterType as any,
     defaultVisible: false,
     width: 150,
     sortable: true,
     filterable: true,
-    description: param.description || `Custom URL parameter: ${param.parameterName}`
+    description: `URL parameter: ${param.parameterName}`
   }));
 
   // Merge static columns with dynamic URL parameter columns
