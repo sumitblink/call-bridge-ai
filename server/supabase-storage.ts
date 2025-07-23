@@ -884,22 +884,55 @@ export class SupabaseStorage implements IStorage {
       finalUserId: userId || 2
     });
     
-    const insertData = {
-      userId: userId || 2, // Use provided userId or fallback  
-      publisherId,
-      campaignId: campaignIdStr,
-      payout: customPayout ? customPayout : "0.00",
-      payoutModel: "per_call",
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      assignedAt: new Date(),
-    };
-    
-    console.log('About to insert:', insertData);
-    
-    const [result] = await db.insert(campaignPublishers).values(insertData).returning();
-    return result;
+    // First check if the assignment already exists
+    const existingAssignment = await db
+      .select()
+      .from(campaignPublishers)
+      .where(and(
+        eq(campaignPublishers.campaignId, campaignIdStr),
+        eq(campaignPublishers.publisherId, publisherId)
+      ))
+      .limit(1);
+
+    if (existingAssignment.length > 0) {
+      // Update existing assignment
+      const updateData = {
+        payout: customPayout ? customPayout : "0.00",
+        payoutModel: "per_call",
+        isActive: true,
+        updatedAt: new Date(),
+      };
+      
+      console.log('Updating existing assignment:', updateData);
+      
+      const [result] = await db
+        .update(campaignPublishers)
+        .set(updateData)
+        .where(and(
+          eq(campaignPublishers.campaignId, campaignIdStr),
+          eq(campaignPublishers.publisherId, publisherId)
+        ))
+        .returning();
+      return result;
+    } else {
+      // Create new assignment
+      const insertData = {
+        userId: userId || 2,
+        publisherId,
+        campaignId: campaignIdStr,
+        payout: customPayout ? customPayout : "0.00",
+        payoutModel: "per_call",
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        assignedAt: new Date(),
+      };
+      
+      console.log('Creating new assignment:', insertData);
+      
+      const [result] = await db.insert(campaignPublishers).values(insertData).returning();
+      return result;
+    }
   }
 
   async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
