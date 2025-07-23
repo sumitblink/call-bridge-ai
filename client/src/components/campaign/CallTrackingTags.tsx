@@ -892,12 +892,8 @@ ${generateJavaScriptCode(tag)}`;
             </TabsList>
             <TabsContent value="simple" className="space-y-4">
               <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">You only need to add this once per campaign</span>
-                </div>
                 <p className="text-sm text-blue-600 dark:text-blue-400">
-                  Copy and paste this snippet in your page header. It will search for phone numbers to replace and swap them with Pool Numbers.
+                  Copy and paste this snippet on your page header, it will search for phone numbers to replace and swap them with Pool Numbers.
                 </p>
               </div>
               <div>
@@ -916,77 +912,7 @@ ${generateJavaScriptCode(tag)}`;
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <h4 className="font-medium">How it works:</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• Automatically detects phone numbers on your page</li>
-                      <li>• Replaces them with tracking numbers from your pool</li>
-                      <li>• Captures all URL parameters (publisher, UTM, click IDs)</li>
-                      <li>• Works on any website without configuration</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      Recommended CSS Classes for Call Buttons
-                    </h4>
-                    <div className="mt-3 space-y-3">
-                      <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
-                        <h5 className="text-sm font-medium mb-2">For Enhanced Tracking:</h5>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="font-mono">tracking-number</Badge>
-                            <span className="text-muted-foreground">Main tracking element</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="font-mono">data-tracking-number</Badge>
-                            <span className="text-muted-foreground">Alternative tracking attribute</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                        <h5 className="text-sm font-medium mb-2 text-green-700 dark:text-green-300">Works with Common Button Classes:</h5>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="font-mono">btn-call</Badge>
-                            <span className="text-muted-foreground">Bootstrap call buttons</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="font-mono">call-button</Badge>
-                            <span className="text-muted-foreground">Generic call buttons</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="font-mono">phone-number</Badge>
-                            <span className="text-muted-foreground">Phone number displays</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="font-mono">tel-link</Badge>
-                            <span className="text-muted-foreground">Telephone links</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <h5 className="text-sm font-medium mb-2 text-blue-700 dark:text-blue-300">Example HTML (matches your code):</h5>
-                        <div className="font-mono text-xs bg-white dark:bg-gray-800 p-2 rounded border">
-                          {`<!-- Bootstrap style (like your working code) -->
-<a href="tel:+15551234567" class="btn btn-success btn-call">
-  Get Started: (555) 123-4567
-</a>
 
-<!-- Simple tracking -->
-<strong class="phone-number">(555) 123-4567</strong>
-
-<!-- Manual tracking -->
-<span class="tracking-number">(555) 123-4567</span>`}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </TabsContent>
             <TabsContent value="javascript" className="space-y-4">
