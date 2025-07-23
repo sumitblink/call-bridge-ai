@@ -3121,10 +3121,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Resetting webhooks for ${poolNumbers.length} numbers from deleted pool ${id}`);
           
           const { TwilioWebhookService } = await import('./twilio-webhook-service');
-          const resetResult = await TwilioWebhookService.resetNumbersToUnassigned(poolNumbers);
+          const resetResult = await TwilioWebhookService.removeWebhooks(poolNumbers);
           
           if (resetResult.success) {
             console.log(`Successfully reset webhooks for ${resetResult.updated.length} numbers`);
+            
+            // Update database friendly names to Unassigned for all former pool numbers
+            for (const phoneNumber of poolNumbers) {
+              try {
+                await storage.updatePhoneNumberFriendlyName(phoneNumber.id, 'Unassigned');
+                console.log(`Updated database friendly name for ${phoneNumber.phoneNumber} to Unassigned`);
+              } catch (updateError) {
+                console.error(`Error updating friendly name for ${phoneNumber.phoneNumber}:`, updateError);
+              }
+            }
           }
           
           if (resetResult.failed.length > 0) {
