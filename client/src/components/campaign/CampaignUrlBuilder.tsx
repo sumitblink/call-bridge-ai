@@ -12,7 +12,7 @@ interface CampaignUrlBuilderProps {
   campaignName: string;
 }
 
-const STORAGE_KEY = 'campaign_url_builder_data';
+const getStorageKey = (campaignName: string) => `campaign_url_builder_${campaignName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
 export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderProps) {
   const [baseUrl, setBaseUrl] = useState('https://your-website.com');
@@ -26,7 +26,8 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
   // Load saved data from localStorage on component mount
   useEffect(() => {
     try {
-      const savedData = localStorage.getItem(STORAGE_KEY);
+      const campaignStorageKey = getStorageKey(campaignName);
+      const savedData = localStorage.getItem(campaignStorageKey);
       if (savedData) {
         const parsed = JSON.parse(savedData);
         setBaseUrl(parsed.baseUrl || 'https://your-website.com');
@@ -34,8 +35,8 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
         setUtmMedium(parsed.utmMedium || '');
         setUtmContent(parsed.utmContent || '');
         setUtmTerm(parsed.utmTerm || '');
-        // Only restore campaign name if it matches current campaign
-        if (parsed.utmCampaign && parsed.campaignContext === campaignName) {
+        // Restore campaign name from saved data
+        if (parsed.utmCampaign) {
           setUtmCampaign(parsed.utmCampaign);
         }
       }
@@ -53,11 +54,12 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
       utmCampaign,
       utmContent,
       utmTerm,
-      campaignContext: campaignName
+      campaignName: campaignName // Store campaign name for reference
     };
     
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      const campaignStorageKey = getStorageKey(campaignName);
+      localStorage.setItem(campaignStorageKey, JSON.stringify(dataToSave));
     } catch (error) {
       console.log('Failed to save URL builder data to localStorage');
     }
