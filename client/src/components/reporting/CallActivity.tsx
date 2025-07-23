@@ -120,11 +120,7 @@ export default function CallActivity() {
 
   // Create dynamic column definition lookup that includes URL parameters
   const getDynamicColumnDefinition = (columnId: string) => {
-    // First check static columns
-    const staticColumn = getColumnDefinition(columnId);
-    if (staticColumn) return staticColumn;
-    
-    // Then check URL parameters
+    // First check if there's a URL parameter for this column ID
     const urlParam = urlParameters?.find((param: any) => param.parameterName === columnId);
     if (urlParam) {
       return {
@@ -139,6 +135,10 @@ export default function CallActivity() {
         description: `URL parameter: ${urlParam.parameterName}`
       };
     }
+    
+    // Then check static columns
+    const staticColumn = getColumnDefinition(columnId);
+    if (staticColumn) return staticColumn;
     
     // Fallback to column ID if no definition found
     return { id: columnId, label: columnId, category: 'Unknown', dataType: 'string', defaultVisible: false };
@@ -317,7 +317,8 @@ export default function CallActivity() {
         // Handle dynamic URL parameter columns
         // Map URL parameter names to database column names
         const columnMappings: Record<string, string> = {
-          'clickid': 'click_id',
+          'clickid': 'clickId',
+          'publisher': 'publisherName',
           'utm_campaign': 'utm_campaign',
           'utm_source': 'utm_source',
           'utm_medium': 'utm_medium',
