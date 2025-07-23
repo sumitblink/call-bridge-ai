@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
 interface CampaignTrackingPixelsProps {
-  campaignId?: number;
+  campaignId?: string;
 }
 
 interface TrackingPixel {
@@ -58,9 +58,10 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch actual tracking pixels instead of using hardcoded sample data
+  // Fetch campaign-specific tracking pixels only
   const { data: pixels = [], isLoading: isLoadingPixels } = useQuery<TrackingPixel[]>({
-    queryKey: ['/api/integrations/pixels'],
+    queryKey: ['/api/campaigns', campaignId, 'tracking-pixels'],
+    enabled: !!campaignId,
     select: (data: any[]) => data.map((pixel: any) => ({
       id: pixel.id,
       name: pixel.name,
@@ -83,17 +84,17 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     retry: false,
   });
 
-  // Delete pixel mutation
+  // Delete campaign pixel mutation
   const deletePixelMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest(`/api/integrations/pixels/${id}`, 'DELETE');
+      const response = await apiRequest(`/api/campaigns/${campaignId}/tracking-pixels/${id}`, 'DELETE');
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'tracking-pixels'] });
       toast({
         title: "Success",
-        description: "Tracking pixel deleted successfully"
+        description: "Campaign tracking pixel deleted successfully"
       });
     },
     onError: (error: any) => {
@@ -220,6 +221,20 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
       }
     });
   };
+
+  if (!campaignId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Tracking Pixels</CardTitle>
+          <CardDescription>Configure tracking pixels to fire on specific call events</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-gray-500">Campaign ID not available</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (isLoadingPixels) {
     return (
