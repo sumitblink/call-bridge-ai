@@ -39,7 +39,7 @@ const publisherSchema = z.object({
   payoutType: z.enum(["per_call", "per_minute", "revenue_share"]),
   payoutAmount: z.number().min(0, "Payout amount must be positive").default(0),
   minCallDuration: z.number().min(0, "Duration must be positive").default(0),
-  allowedTargets: z.array(z.number()).optional().default([]),
+  allowedTargets: z.array(z.string()).optional().default([]), // Campaign IDs are UUID strings
   enableTracking: z.boolean().default(true),
   trackingSettings: z.string().optional(),
   customParameters: z.string().optional(),
@@ -56,7 +56,7 @@ interface Publisher {
   payoutType: string;
   payoutAmount: string;
   minCallDuration: number;
-  allowedTargets?: number[];
+  allowedTargets?: string[]; // Campaign IDs are UUID strings
   enableTracking?: boolean;
   trackingSettings?: string;
   customParameters?: string;
@@ -67,7 +67,7 @@ interface Publisher {
 }
 
 interface Campaign {
-  id: number;
+  id: string; // Campaign IDs are UUIDs (strings), not numbers
   name: string;
   status: string;
 }
@@ -566,7 +566,7 @@ export default function Publishers() {
                                         if (checked) {
                                           field.onChange([...currentValue, campaign.id]);
                                         } else {
-                                          field.onChange(currentValue.filter((id: number) => id !== campaign.id));
+                                          field.onChange(currentValue.filter((id: string) => id !== campaign.id));
                                         }
                                       }}
                                     />
