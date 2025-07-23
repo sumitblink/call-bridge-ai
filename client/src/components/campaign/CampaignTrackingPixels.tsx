@@ -34,6 +34,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingPixel, setEditingPixel] = useState<TrackingPixel | null>(null);
   const [selectedGlobalPixels, setSelectedGlobalPixels] = useState<number[]>([]);
+  const [selectedTab, setSelectedTab] = useState<'existing' | 'create'>('existing');
   const [formData, setFormData] = useState<{
     name: string;
     firePixelOn: 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized';
@@ -114,6 +115,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
       active: true
     });
     setEditingPixel(null);
+    setSelectedTab('existing');
     setIsDialogOpen(false);
   };
 
@@ -320,38 +322,100 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
           )}
         </CardContent>
 
-        {/* Create/Edit Pixel Dialog */}
+        {/* Ringba-Style Unified Pixel Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>
-                {editingPixel ? 'Edit Tracking Pixel' : 'Create New Tracking Pixel'}
-              </DialogTitle>
-              <DialogDescription>
-                For full pixel management, please use the Integrations page. This creates a simplified pixel.
-              </DialogDescription>
+              <DialogTitle>Tracking Pixels</DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            {/* Ringba-Style Tabs */}
+            <div className="flex border-b">
+              <Button
+                variant={selectedTab === 'existing' ? 'default' : 'ghost'}
+                className="rounded-none border-b-2 border-transparent hover:border-blue-500 data-[state=active]:border-blue-500"
+                onClick={() => setSelectedTab('existing')}
+              >
+                Select Existing
+              </Button>
+              <Button
+                variant={selectedTab === 'create' ? 'default' : 'ghost'}
+                className="rounded-none border-b-2 border-transparent hover:border-blue-500 data-[state=active]:border-blue-500"
+                onClick={() => setSelectedTab('create')}
+              >
+                Create New
+              </Button>
+            </div>
+
+            {/* Select Existing Tab */}
+            {selectedTab === 'existing' && (
+              <div className="space-y-4 py-4">
                 <div>
-                  <Label htmlFor="name">Pixel Name</Label>
+                  <Label>Choose Option</Label>
+                  <div className="mt-2">
+                    {globalPixels && globalPixels.length > 0 ? (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {globalPixels.map((pixel: any) => (
+                          <div key={pixel.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                            <div>
+                              <div className="font-medium">{pixel.name}</div>
+                              <div className="text-sm text-gray-500">
+                                Fires on: {pixel.fireOnEvent || pixel.fire_on_event}
+                              </div>
+                              <div className="text-xs text-blue-600 truncate max-w-md">
+                                {pixel.code}
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                toast({
+                                  title: 'Pixel Available',
+                                  description: 'This pixel is already available in your campaign. All pixels from Integrations are automatically available.'
+                                });
+                                setIsDialogOpen(false);
+                              }}
+                            >
+                              Use This Pixel
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <ExternalLink className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                        <p className="text-sm">No existing pixels found</p>
+                        <p className="text-xs">Create pixels in Integrations page first</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Create New Tab - Ringba Style Form */}
+            {selectedTab === 'create' && (
+              <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                <div>
+                  <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g., Conversion Tracker"
+                    placeholder="Enter name"
+                    className="bg-gray-700 text-white border-gray-600"
                   />
+                  <span className="text-xs text-gray-500">Required</span>
                 </div>
 
                 <div>
-                  <Label htmlFor="firePixelOn">Fire Pixel On</Label>
+                  <Label htmlFor="firePixelOn">Fire Pixel On <span className="text-red-500">*</span></Label>
                   <Select
                     value={formData.firePixelOn}
                     onValueChange={(value: any) => setFormData({ ...formData, firePixelOn: value })}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select event" />
+                    <SelectTrigger className="bg-gray-700 text-white border-gray-600">
+                      <SelectValue placeholder="Choose Event Type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="incoming">Incoming</SelectItem>
@@ -359,33 +423,72 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="converted">Converted</SelectItem>
                       <SelectItem value="error">Error</SelectItem>
+                      <SelectItem value="payout">Payout</SelectItem>
+                      <SelectItem value="recording">Recording</SelectItem>
+                      <SelectItem value="finalized">Finalized</SelectItem>
                     </SelectContent>
                   </Select>
+                  <span className="text-xs text-gray-500">Required</span>
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="url">Pixel URL</Label>
-                <Input
-                  id="url"
-                  value={formData.url}
-                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  placeholder="https://example.com/pixel?campaign_id={campaign_id}&call_id={call_id}"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Use tokens: {'{campaign_id}'}, {'{call_id}'}, {'{phone_number}'}, {'{timestamp}'}, {'{status}'}
-                </p>
-              </div>
+                <div>
+                  <Label htmlFor="url">URL</Label>
+                  <Input
+                    id="url"
+                    value={formData.url}
+                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                    placeholder="http://mytracking.tracking.com"
+                    className="bg-gray-700 text-white border-gray-600"
+                  />
+                </div>
 
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  Create in Integrations
-                </Button>
-              </div>
-            </form>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Label>Advanced Options</Label>
+                  </div>
+                  <div className="flex items-center">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setFormData({ ...formData, advancedOptions: !formData.advancedOptions })}
+                      className="w-12 h-6 rounded-full bg-gray-600 relative"
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-white transition-transform ${formData.advancedOptions ? 'translate-x-3' : 'translate-x-0'}`} />
+                    </Button>
+                  </div>
+                </div>
+
+                {formData.advancedOptions && (
+                  <div>
+                    <Label htmlFor="authentication">Authentication</Label>
+                    <Select
+                      value={formData.authentication}
+                      onValueChange={(value: any) => setFormData({ ...formData, authentication: value })}
+                    >
+                      <SelectTrigger className="bg-gray-700 text-white border-gray-600">
+                        <SelectValue placeholder="Choose Authentication" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="basic">Basic Auth</SelectItem>
+                        <SelectItem value="bearer">Bearer Token</SelectItem>
+                        <SelectItem value="api_key">API Key</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    Create in Integrations
+                  </Button>
+                </div>
+              </form>
+            )}
           </DialogContent>
         </Dialog>
 
