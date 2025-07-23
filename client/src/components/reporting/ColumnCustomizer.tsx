@@ -34,8 +34,40 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
   // Fetch URL parameters to add as dynamic column options
   const { data: urlParameters } = useQuery({
     queryKey: ['/api/integrations/url-parameters'],
-    queryFn: () => fetch('/api/integrations/url-parameters').then(res => res.json())
+    queryFn: () => fetch('/api/integrations/url-parameters').then(res => res.json()),
+    refetchOnWindowFocus: true,
+    staleTime: 0 // Always refetch to ensure deleted parameters are removed immediately
   });
+
+  // Filter out deleted URL parameters from visible columns
+  useEffect(() => {
+    if (urlParameters !== undefined) { // Only run when data is loaded (including empty array)
+      // Get current URL parameter IDs to detect deletions
+      const currentUrlParameterIds = (urlParameters || []).map((param: any) => param.parameterName);
+      
+      const filteredColumns = localVisibleColumns.filter(columnId => {
+        // Keep static columns and currently existing URL parameters
+        const isStaticColumn = COLUMN_DEFINITIONS.some(col => col.id === columnId);
+        const isExistingUrlParam = currentUrlParameterIds.includes(columnId);
+        return isStaticColumn || isExistingUrlParam;
+      });
+      
+      if (filteredColumns.length !== localVisibleColumns.length) {
+        console.log('Removing deleted URL parameter columns from visible columns:', 
+          localVisibleColumns.filter(col => !filteredColumns.includes(col)));
+        setLocalVisibleColumns(filteredColumns);
+        onColumnsChange(filteredColumns);
+        
+        // Also update localStorage immediately
+        const saved = localStorage.getItem('call-details-column-preferences');
+        if (saved) {
+          const prefs = JSON.parse(saved);
+          prefs.visibleColumns = filteredColumns;
+          localStorage.setItem('call-details-column-preferences', JSON.stringify(prefs));
+        }
+      }
+    }
+  }, [urlParameters, localVisibleColumns.length]);
 
   // Convert URL parameters to column definitions
   const urlParameterColumns: ColumnDefinition[] = (urlParameters || []).map((param: any) => {
