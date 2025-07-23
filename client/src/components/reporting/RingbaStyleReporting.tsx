@@ -405,7 +405,7 @@ export default function RingbaStyleReporting() {
   // Fetch enhanced calls data
   const { data: calls = [], isLoading, refetch } = useQuery<CallData[]>({
     queryKey: ["/api/calls/enhanced"],
-    refetchInterval: autoRefresh ? 30000 : false,
+    refetchInterval: autoRefresh ? 120000 : false, // 2 minutes instead of 30 seconds
   });
 
   // No mock data - use real call data only

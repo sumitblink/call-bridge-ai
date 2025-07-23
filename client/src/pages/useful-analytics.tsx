@@ -24,7 +24,7 @@ export default function UsefulAnalytics() {
   const { data: sessionData, isLoading, refetch } = useQuery({
     queryKey: ['/api/tracking/live-sessions'],
     staleTime: 5000, // Refresh every 5 seconds
-    refetchInterval: 10000, // Auto-refetch every 10 seconds
+    refetchInterval: 300000, // Auto-refetch every 5 minutes (was 10 seconds - too aggressive)
   });
 
   const sessions = sessionData?.sessions || [];

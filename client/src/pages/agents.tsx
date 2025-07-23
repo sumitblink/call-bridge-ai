@@ -83,7 +83,7 @@ export default function AgentsPage() {
 
   const { data: dashboard, isLoading: isDashboardLoading } = useQuery<AgentDashboard>({
     queryKey: ["/api/agents/dashboard"],
-    refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
+    refetchInterval: 120000, // Refresh every 2 minutes (was 30 seconds - too aggressive)
   });
 
   const createMutation = useMutation({

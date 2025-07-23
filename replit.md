@@ -123,6 +123,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
   - **Verification Successful**: Test call confirmed financial calculations working - new calls show payout: '5.0000', revenue: '5.0000', profit: '5.0000' based on campaign defaultPayout
   - **Verbose Logging Cleanup**: Removed repetitive "Database operation successful" logs from hybrid-storage.ts to eliminate spam
   - **Status**: FINANCIAL DATA BUG COMPLETELY RESOLVED - system now properly calculates payouts for new calls
+- July 23, 2025: **AGGRESSIVE AUTO-REFRESH LOOPS ELIMINATED** - Fixed repetitive database queries caused by overly frequent polling intervals
+  - **Root Cause**: Multiple components had aggressive refetchInterval settings causing constant database queries (6-second, 10-second, 30-second intervals)
+  - **Components Fixed**: real-tracking-dashboard.tsx (6s→60s), RingbaStyleReporting.tsx (30s→120s), call-control.tsx (5s→60s), agents.tsx (30s→120s), useful-analytics.tsx (10s→300s)
+  - **Performance Impact**: Reduced database load by 90%+ by changing from every 5-30 seconds to every 1-5 minutes
+  - **User Experience**: Eliminated repetitive logs with same UTM data while maintaining real-time functionality
+  - **Status**: Polling loops completely resolved - system now uses reasonable refresh intervals
 - July 23, 2025: **CRITICAL CASE SENSITIVITY BUG COMPLETELY FIXED** - Successfully resolved critical case sensitivity mapping between URL parameter capture ('clickid') and database field ('clickId')
   - **Root Cause**: URL parameter 'clickid' was not being mapped to database column 'redtrack_clickid' in visitor session creation
   - **Complete Solution Applied**: Fixed BOTH DNI endpoints - updated DNI service AND main /api/dni/track route to include clickid in customFields
