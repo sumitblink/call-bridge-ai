@@ -39,15 +39,15 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
 
   // Convert URL parameters to column definitions
   const urlParameterColumns: ColumnDefinition[] = (urlParameters || []).map((param: any) => ({
-    id: param.parameterName,
-    label: param.reportName,
-    category: param.reportingMenuName,
+    id: param.parameterName, // Use parameter name as unique ID for data mapping
+    label: param.reportName, // Use report name as display label
+    category: param.reportingMenuName, // Use reporting menu name as category
     dataType: param.parameterType as any,
     defaultVisible: false,
     width: 150,
     sortable: true,
     filterable: true,
-    description: param.description || `Custom URL parameter: ${param.parameterName}`
+    description: param.description || `Custom URL parameter: ${param.parameterName} (${param.reportName})`
   }));
 
   // Merge static columns with dynamic URL parameter columns

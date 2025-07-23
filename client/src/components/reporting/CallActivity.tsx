@@ -282,9 +282,15 @@ export default function CallActivity() {
           </div>
         );
       default:
-        // Handle dynamic URL parameter columns
-        const paramValue = (call as any)[column];
-        if (paramValue !== undefined && paramValue !== null) {
+        // Handle dynamic URL parameter columns (clickId maps to clickId field, etc.)
+        let paramValue = (call as any)[column];
+        
+        // Special mapping for clickid parameter
+        if (column === 'clickid' || column === 'clickId') {
+          paramValue = (call as any).clickId;
+        }
+        
+        if (paramValue !== undefined && paramValue !== null && paramValue !== '') {
           return <div className="truncate text-xs">{paramValue}</div>;
         }
         console.log('Unknown column:', column, 'returning fallback');
