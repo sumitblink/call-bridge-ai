@@ -67,17 +67,20 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
       if (!Array.isArray(data)) {
         return [];
       }
-      return data.map((pixel: any) => ({
-        id: pixel.id,
-        name: pixel.name,
-        firePixelOn: pixel.fireOnEvent || pixel.fire_on_event || 'incoming',
-        url: pixel.code || pixel.url || '',
-        httpMethod: (pixel.httpMethod || pixel.http_method || 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH',
-        headers: [],
-        authentication: (pixel.authenticationType || pixel.authentication_type || 'none') as 'none' | 'basic' | 'bearer' | 'api_key',
-        advancedOptions: pixel.advancedOptions || pixel.advanced_options || false,
-        active: pixel.active !== false && pixel.isActive !== false
-      }));
+      
+      return data
+        .filter((pixel: any) => pixel && typeof pixel.id === 'number') // Only include pixels with valid numeric IDs
+        .map((pixel: any) => ({
+          id: pixel.id,
+          name: pixel.name,
+          firePixelOn: pixel.fireOnEvent || pixel.fire_on_event || 'incoming',
+          url: pixel.code || pixel.url || '',
+          httpMethod: (pixel.httpMethod || pixel.http_method || 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH',
+          headers: [],
+          authentication: (pixel.authenticationType || pixel.authentication_type || 'none') as 'none' | 'basic' | 'bearer' | 'api_key',
+          advancedOptions: pixel.advancedOptions || pixel.advanced_options || false,
+          active: pixel.active !== false && pixel.isActive !== false
+        }));
     },
     retry: false,
   });

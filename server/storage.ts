@@ -967,7 +967,9 @@ export class MemStorage implements IStorage {
 
   // Campaign-specific Tracking Pixels
   async getCampaignTrackingPixels(campaignId: string): Promise<any[]> {
-    return this.campaignTrackingPixels.get(campaignId) || [];
+    const pixels = this.campaignTrackingPixels.get(campaignId) || [];
+    // Filter out any corrupted pixels with invalid IDs
+    return pixels.filter(pixel => pixel && typeof pixel.id === 'number');
   }
 
   async createCampaignTrackingPixel(data: any): Promise<any> {
