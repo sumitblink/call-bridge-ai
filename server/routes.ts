@@ -904,10 +904,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/campaigns/:id/publishers', async (req, res) => {
+  app.post('/api/campaigns/:id/publishers', requireAuth, async (req: any, res) => {
     try {
       const campaignId = req.params.id;
       const { publisherId, customPayout } = req.body;
+      const userId = req.user?.id;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
       
       const assignment = await storage.addPublisherToCampaign(
         publisherId,
