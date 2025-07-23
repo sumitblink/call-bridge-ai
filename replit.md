@@ -114,6 +114,21 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 23, 2025: **INTEGRATIONS PIXEL FORM ENHANCED WITH CUSTOM URL FIELD** - Added custom URL input field to Integrations > Tracking Pixels form to support RedTrack postback URLs and other external tracking services
+  - **Custom URL Field**: Added optional custom URL input field in Integrations pixel creation form
+  - **Smart Form Handling**: When custom URL is entered, form uses custom URL instead of auto-generated code
+  - **RedTrack Support**: Users can now paste RedTrack postback URLs like "https://test.offer.com/postback?clickid={call_id}&campaign={campaign_id}"
+  - **Token Support**: Custom URLs support all tracking tokens ({call_id}, {phone_number}, {campaign_id}, {timestamp}, etc.)
+  - **Edit Support**: When editing existing pixels, form detects custom URLs vs auto-generated code and populates correctly
+  - **User Experience**: Resolves issue where users couldn't find URL field in Integrations form but could in campaign-specific form
+  - **Status**: Both Integrations and Campaign forms now have consistent custom URL input capabilities
+- July 23, 2025: **CAMPAIGN TRACKING PIXELS HARDCODED DATA ISSUE FIXED** - Fixed critical persistence bug where deleted tracking pixels reappeared when switching campaign tabs
+  - **Root Cause**: CampaignTrackingPixels component used hardcoded SAMPLE_PIXELS instead of API data
+  - **Solution**: Replaced hardcoded data with real API calls to `/api/integrations/pixels` endpoint
+  - **Proper Cache Invalidation**: Delete mutations now properly invalidate cache preventing phantom pixels
+  - **Real Data Display**: Component now shows actual database pixels instead of sample "Conversion Tracker" and "Call Completion Pixel"
+  - **Persistence Fixed**: Deleted pixels stay deleted when switching between campaign tabs
+  - **Status**: Tracking pixel persistence issue completely resolved with authentic data display
 - July 23, 2025: **TRACKING PIXELS TAB PERSISTENCE FIXED** - Fixed critical issue where tracking pixel form data disappeared when switching between campaign tabs
   - **Root Cause**: CallTrackingTags component used non-persistent useState that reset on component unmount
   - **Solution**: Implemented campaign-specific localStorage persistence with keys like `campaign_tracking_tags_123`
