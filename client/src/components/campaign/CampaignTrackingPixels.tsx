@@ -34,7 +34,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingPixel, setEditingPixel] = useState<TrackingPixel | null>(null);
   const [selectedGlobalPixels, setSelectedGlobalPixels] = useState<number[]>([]);
-  const [selectedTab, setSelectedTab] = useState<'existing' | 'create'>('existing');
+  const [selectedTab, setSelectedTab] = useState<'existing' | 'create'>('create');
   const [formData, setFormData] = useState<{
     name: string;
     firePixelOn: 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized';
@@ -115,7 +115,6 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
       active: true
     });
     setEditingPixel(null);
-    setSelectedTab('existing');
     setIsDialogOpen(false);
   };
 
@@ -322,79 +321,14 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
           )}
         </CardContent>
 
-        {/* Ringba-Style Unified Pixel Dialog */}
+        {/* Create New Pixel Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Tracking Pixels</DialogTitle>
+              <DialogTitle>Create New Tracking Pixel</DialogTitle>
             </DialogHeader>
 
-            {/* Ringba-Style Tabs */}
-            <div className="flex border-b">
-              <Button
-                variant={selectedTab === 'existing' ? 'default' : 'ghost'}
-                className="rounded-none border-b-2 border-transparent hover:border-blue-500 data-[state=active]:border-blue-500"
-                onClick={() => setSelectedTab('existing')}
-              >
-                Select Existing
-              </Button>
-              <Button
-                variant={selectedTab === 'create' ? 'default' : 'ghost'}
-                className="rounded-none border-b-2 border-transparent hover:border-blue-500 data-[state=active]:border-blue-500"
-                onClick={() => setSelectedTab('create')}
-              >
-                Create New
-              </Button>
-            </div>
-
-            {/* Select Existing Tab */}
-            {selectedTab === 'existing' && (
-              <div className="space-y-4 py-4">
-                <div>
-                  <Label>Choose Option</Label>
-                  <div className="mt-2">
-                    {globalPixels && globalPixels.length > 0 ? (
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {globalPixels.map((pixel: any) => (
-                          <div key={pixel.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                            <div>
-                              <div className="font-medium">{pixel.name}</div>
-                              <div className="text-sm text-gray-500">
-                                Fires on: {pixel.fireOnEvent || pixel.fire_on_event}
-                              </div>
-                              <div className="text-xs text-blue-600 truncate max-w-md">
-                                {pixel.code}
-                              </div>
-                            </div>
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                toast({
-                                  title: 'Pixel Available',
-                                  description: 'This pixel is already available in your campaign. All pixels from Integrations are automatically available.'
-                                });
-                                setIsDialogOpen(false);
-                              }}
-                            >
-                              Use This Pixel
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <ExternalLink className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                        <p className="text-sm">No existing pixels found</p>
-                        <p className="text-xs">Create pixels in Integrations page first</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Create New Tab - Enhanced Form with HTTP Options */}
-            {selectedTab === 'create' && (
+            {/* Enhanced Form with HTTP Options */}
               <form onSubmit={handleSubmit} className="space-y-4 py-4">
                 <div>
                   <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
@@ -611,7 +545,6 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                   </Button>
                 </div>
               </form>
-            )}
           </DialogContent>
         </Dialog>
 
