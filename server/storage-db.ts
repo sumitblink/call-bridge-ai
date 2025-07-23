@@ -796,10 +796,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
-    const result = await db.delete(publisherCampaigns)
+    const result = await db.delete(campaignPublishers)
       .where(and(
-        eq(publisherCampaigns.publisherId, publisherId),
-        eq(publisherCampaigns.campaignId, campaignId)
+        eq(campaignPublishers.publisherId, publisherId),
+        eq(campaignPublishers.campaignId, campaignId)
       ));
     return result.rowCount > 0;
   }
@@ -822,12 +822,12 @@ export class DatabaseStorage implements IStorage {
         totalPayout: publishers.totalPayout,
         createdAt: publishers.createdAt,
         updatedAt: publishers.updatedAt,
-        customPayout: publisherCampaigns.customPayout,
-        isActive: publisherCampaigns.isActive,
+        customPayout: campaignPublishers.payout,
+        isActive: campaignPublishers.isActive,
       })
       .from(publishers)
-      .innerJoin(publisherCampaigns, eq(publishers.id, publisherCampaigns.publisherId))
-      .where(eq(publisherCampaigns.campaignId, campaignId));
+      .innerJoin(campaignPublishers, eq(publishers.id, campaignPublishers.publisherId))
+      .where(eq(campaignPublishers.campaignId, campaignId));
     return result;
   }
 
