@@ -363,6 +363,7 @@ export default function IntegrationsPage() {
   };
 
   const handleUrlParameterSubmit = () => {
+    // Basic validation
     if (!urlParameterForm.parameterName || !urlParameterForm.reportingMenuName || !urlParameterForm.reportName) {
       toast({
         title: "Validation Error",
@@ -372,6 +373,37 @@ export default function IntegrationsPage() {
       return;
     }
 
+    // Check for existing Parameter Name (excluding current item if editing)
+    const existingParameter = urlParameters.find(param => 
+      param.parameterName.toLowerCase() === urlParameterForm.parameterName.toLowerCase() && 
+      (!editingItem || param.id !== editingItem.id)
+    );
+    
+    if (existingParameter) {
+      toast({
+        title: "Parameter Already Exists",
+        description: `A parameter with name "${urlParameterForm.parameterName}" already exists. Please choose a different parameter name.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check for existing Report Name (excluding current item if editing)
+    const existingReportName = urlParameters.find(param => 
+      param.reportName.toLowerCase() === urlParameterForm.reportName.toLowerCase() && 
+      (!editingItem || param.id !== editingItem.id)
+    );
+    
+    if (existingReportName) {
+      toast({
+        title: "Report Name Already Exists",
+        description: `A parameter with Report Name "${urlParameterForm.reportName}" already exists. Please choose a different report name.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Proceed with submission
     if (editingItem) {
       updateUrlParameterMutation.mutate({ id: editingItem.id, ...urlParameterForm });
     } else {
@@ -933,8 +965,23 @@ export default function IntegrationsPage() {
                         value={urlParameterForm.parameterName}
                         onChange={(e) => setUrlParameterForm(prev => ({ ...prev, parameterName: e.target.value }))}
                         required
+                        className={
+                          urlParameterForm.parameterName && 
+                          urlParameters.find(param => 
+                            param.parameterName.toLowerCase() === urlParameterForm.parameterName.toLowerCase() && 
+                            (!editingItem || param.id !== editingItem.id)
+                          ) ? "border-red-500" : ""
+                        }
                       />
-                      <span className="text-xs text-gray-500 mt-1">Required</span>
+                      {urlParameterForm.parameterName && 
+                       urlParameters.find(param => 
+                         param.parameterName.toLowerCase() === urlParameterForm.parameterName.toLowerCase() && 
+                         (!editingItem || param.id !== editingItem.id)
+                       ) ? (
+                        <span className="text-xs text-red-500 mt-1">⚠️ Parameter name already exists</span>
+                      ) : (
+                        <span className="text-xs text-gray-500 mt-1">Required</span>
+                      )}
                     </div>
 
                     <div>
@@ -957,8 +1004,23 @@ export default function IntegrationsPage() {
                         value={urlParameterForm.reportName}
                         onChange={(e) => setUrlParameterForm(prev => ({ ...prev, reportName: e.target.value }))}
                         required
+                        className={
+                          urlParameterForm.reportName && 
+                          urlParameters.find(param => 
+                            param.reportName.toLowerCase() === urlParameterForm.reportName.toLowerCase() && 
+                            (!editingItem || param.id !== editingItem.id)
+                          ) ? "border-red-500" : ""
+                        }
                       />
-                      <span className="text-xs text-gray-500 mt-1">Required</span>
+                      {urlParameterForm.reportName && 
+                       urlParameters.find(param => 
+                         param.reportName.toLowerCase() === urlParameterForm.reportName.toLowerCase() && 
+                         (!editingItem || param.id !== editingItem.id)
+                       ) ? (
+                        <span className="text-xs text-red-500 mt-1">⚠️ Report name already exists</span>
+                      ) : (
+                        <span className="text-xs text-gray-500 mt-1">Required - appears as column header</span>
+                      )}
                     </div>
 
                     <div className="flex justify-center space-x-3 pt-6">
