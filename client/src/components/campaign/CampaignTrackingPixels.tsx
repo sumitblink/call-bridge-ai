@@ -584,32 +584,33 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
           setIsImportDialogOpen(open);
           if (!open) setShouldFetchGlobalPixels(false);
         }}>
-          <DialogContent>
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+            <DialogHeader className="shrink-0">
               <DialogTitle>Import Integration Pixels</DialogTitle>
               <DialogDescription>
                 Select pixels from your Integrations to import into this campaign.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="py-4">
+            <div className="py-4 min-h-0 flex-1">
               {isLoadingGlobal ? (
-                <div className="text-center py-4">Loading integration pixels...</div>
+                <div className="text-center py-8">Loading integration pixels...</div>
               ) : globalPixels.length > 0 ? (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
                   {globalPixels.map((pixel: any) => (
-                    <div key={pixel.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                      <div>
-                        <div className="font-medium">{pixel.name}</div>
-                        <div className="text-sm text-gray-500">
+                    <div key={pixel.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex-1 min-w-0 mr-4">
+                        <div className="font-medium text-sm mb-1 truncate">{pixel.name}</div>
+                        <div className="text-xs text-gray-500 mb-2">
                           Fires on: {pixel.fireOnEvent || pixel.fire_on_event}
                         </div>
-                        <div className="text-xs text-blue-600 truncate max-w-md">
+                        <div className="text-xs text-blue-600 break-all bg-blue-50 p-2 rounded text-wrap">
                           {pixel.code}
                         </div>
                       </div>
                       <Button
                         size="sm"
+                        className="shrink-0"
                         onClick={async () => {
                           try {
                             await apiRequest(`/api/campaigns/${campaignId}/tracking-pixels`, 'POST', {
@@ -644,15 +645,15 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <ExternalLink className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm">No integration pixels found</p>
-                  <p className="text-xs">Create pixels in Integrations page first</p>
+                <div className="text-center py-12 text-gray-500">
+                  <ExternalLink className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                  <p className="text-sm font-medium mb-1">No integration pixels found</p>
+                  <p className="text-xs text-gray-400">Create pixels in Integrations page first</p>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-4 border-t">
               <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
                 Close
               </Button>
