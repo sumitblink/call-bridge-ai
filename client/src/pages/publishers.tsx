@@ -51,17 +51,25 @@ interface Publisher {
   id: number;
   name: string;
   email: string;
-  phone?: string;
+  phoneNumber?: string; // Database field name
   status: string;
-  payoutType: string;
-  payoutAmount: string;
-  minCallDuration: number;
-  allowedTargets?: string[]; // Campaign IDs are UUID strings
-  enableTracking?: boolean;
-  trackingSettings?: string;
-  customParameters?: string;
-  totalCalls: number;
+  payoutModel: string; // Database field name (not payoutType)
+  defaultPayout: string; // Database field name (not payoutAmount)
+  // Additional database fields
+  company?: string;
+  publisherType?: string;
+  trafficSource?: string;
+  quality?: string;
+  currency?: string;
+  callsGenerated: number;
+  conversions: number;
   totalPayout: string;
+  avgCallDuration: number;
+  conversionRate: string;
+  postbackUrl?: string;
+  webhookUrl?: string;
+  apiKey?: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -109,13 +117,12 @@ export default function Publishers() {
   const createPublisher = useMutation({
     mutationFn: async (data: PublisherFormData) => {
       const response = await apiRequest("/api/publishers", "POST", {
-        ...data,
-        payoutAmount: data.payoutAmount.toString(),
-        minCallDuration: data.minCallDuration,
-        allowedTargets: data.allowedTargets,
-        enableTracking: data.enableTracking,
-        customParameters: data.customParameters || null,
-        trackingSettings: data.enableTracking ? (data.trackingSettings || null) : null,
+        name: data.name,
+        email: data.email,
+        phoneNumber: data.phone || null, // Map to database field
+        status: data.status,
+        payoutModel: data.payoutType, // Map to database field
+        defaultPayout: data.payoutAmount.toString(), // Map to database field
       });
       return response.json();
     },
@@ -139,13 +146,12 @@ export default function Publishers() {
   const updatePublisher = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: PublisherFormData }) => {
       const response = await apiRequest(`/api/publishers/${id}`, "PUT", {
-        ...data,
-        payoutAmount: data.payoutAmount.toString(),
-        minCallDuration: data.minCallDuration,
-        allowedTargets: data.allowedTargets,
-        enableTracking: data.enableTracking,
-        customParameters: data.customParameters || null,
-        trackingSettings: data.enableTracking ? (data.trackingSettings || null) : null,
+        name: data.name,
+        email: data.email,
+        phoneNumber: data.phone || null, // Map to database field
+        status: data.status,
+        payoutModel: data.payoutType, // Map to database field
+        defaultPayout: data.payoutAmount.toString(), // Map to database field
       });
       return response.json();
     },
@@ -187,13 +193,17 @@ export default function Publishers() {
   };
 
   const handleEdit = (publisher: Publisher) => {
-    // Safely parse payout amount with fallback
-    const payoutAmount = publisher.payoutAmount ? parseFloat(publisher.payoutAmount) : 0;
+    // Map database fields to form fields
+    const dbPublisher = publisher as any; // Cast to access database field names
+    
+    // Safely parse payout amount from defaultPayout field
+    const payoutAmount = dbPublisher.defaultPayout ? parseFloat(dbPublisher.defaultPayout) : 0;
     const safePayoutAmount = isNaN(payoutAmount) ? 0 : payoutAmount;
     
     console.log("Setting form data for edit:", {
       publisher,
-      payoutAmount: publisher.payoutAmount,
+      defaultPayout: dbPublisher.defaultPayout,
+      payoutModel: dbPublisher.payoutModel,
       parsed: payoutAmount,
       safe: safePayoutAmount
     });
@@ -202,15 +212,15 @@ export default function Publishers() {
     form.reset({
       name: publisher.name,
       email: publisher.email,
-      phone: publisher.phone || "",
+      phone: dbPublisher.phoneNumber || "",
       status: publisher.status as "active" | "paused" | "suspended",
-      payoutType: publisher.payoutType as "per_call" | "per_minute" | "revenue_share",
+      payoutType: dbPublisher.payoutModel as "per_call" | "per_minute" | "revenue_share",
       payoutAmount: safePayoutAmount,
-      minCallDuration: publisher.minCallDuration,
-      allowedTargets: publisher.allowedTargets || [],
-      enableTracking: publisher.enableTracking ?? true,
-      trackingSettings: publisher.trackingSettings || "",
-      customParameters: publisher.customParameters || "",
+      minCallDuration: 0, // Not stored in publishers table
+      allowedTargets: [], // Not stored in publishers table directly
+      enableTracking: true, // Default value
+      trackingSettings: "",
+      customParameters: "",
     });
     
     // Then open dialog
@@ -312,20 +322,20 @@ export default function Publishers() {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Payout</p>
                       <p className="text-lg font-semibold">
-                        ${publisher.payoutAmount} {getPayoutTypeLabel(publisher.payoutType)}
+                        ${publisher.defaultPayout} {getPayoutTypeLabel(publisher.payoutModel)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Total Calls</p>
-                      <p className="text-lg font-semibold">{publisher.totalCalls}</p>
+                      <p className="text-lg font-semibold">{publisher.callsGenerated}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Total Payout</p>
                       <p className="text-lg font-semibold">${publisher.totalPayout}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Min Duration</p>
-                      <p className="text-lg font-semibold">{publisher.minCallDuration}s</p>
+                      <p className="text-sm font-medium text-muted-foreground">Avg Duration</p>
+                      <p className="text-lg font-semibold">{publisher.avgCallDuration}s</p>
                     </div>
                   </div>
                   
