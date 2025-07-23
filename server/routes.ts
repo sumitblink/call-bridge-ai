@@ -910,13 +910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { publisherId, customPayout } = req.body;
       const userId = req.user?.id;
       
-      console.log('Adding publisher to campaign:', {
-        campaignId,
-        publisherId,
-        customPayout,
-        userId,
-        userObject: req.user
-      });
+
       
       // Check if campaign exists and belongs to user
       const campaign = await storage.getCampaign(campaignId);

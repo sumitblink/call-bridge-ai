@@ -876,13 +876,7 @@ export class SupabaseStorage implements IStorage {
   async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string, userId?: number): Promise<any> {
     const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
     
-    console.log('SupabaseStorage.addPublisherToCampaign called with:', {
-      publisherId,
-      campaignId: campaignIdStr,
-      customPayout,
-      userId,
-      finalUserId: userId || 2
-    });
+
     
     // First check if the assignment already exists
     const existingAssignment = await db
@@ -903,7 +897,7 @@ export class SupabaseStorage implements IStorage {
         updatedAt: new Date(),
       };
       
-      console.log('Updating existing assignment:', updateData);
+
       
       const [result] = await db
         .update(campaignPublishers)
@@ -928,7 +922,7 @@ export class SupabaseStorage implements IStorage {
         assignedAt: new Date(),
       };
       
-      console.log('Creating new assignment:', insertData);
+
       
       const [result] = await db.insert(campaignPublishers).values(insertData).returning();
       return result;
