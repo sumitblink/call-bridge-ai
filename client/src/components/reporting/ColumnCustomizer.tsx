@@ -31,7 +31,43 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const columnsByCategory = getColumnsByCategory();
+  // Fetch URL parameters to add as dynamic column options
+  const { data: urlParameters } = useQuery({
+    queryKey: ['/api/integrations/url-parameters'],
+    queryFn: () => fetch('/api/integrations/url-parameters').then(res => res.json())
+  });
+
+  // Convert URL parameters to column definitions
+  const urlParameterColumns: ColumnDefinition[] = (urlParameters || []).map((param: any) => ({
+    id: param.parameterName,
+    label: param.reportName,
+    category: param.reportingMenuName,
+    dataType: param.parameterType as any,
+    defaultVisible: false,
+    width: 150,
+    sortable: true,
+    filterable: true,
+    description: param.description || `Custom URL parameter: ${param.parameterName}`
+  }));
+
+  // Merge static columns with dynamic URL parameter columns
+  const allColumnDefinitions = [...COLUMN_DEFINITIONS, ...urlParameterColumns];
+  
+  // Get columns by category with dynamic columns included
+  const getColumnsByCategoryWithDynamic = () => {
+    const categories: Record<string, ColumnDefinition[]> = {};
+    
+    allColumnDefinitions.forEach(column => {
+      if (!categories[column.category]) {
+        categories[column.category] = [];
+      }
+      categories[column.category].push(column);
+    });
+    
+    return categories;
+  };
+
+  const columnsByCategory = getColumnsByCategoryWithDynamic();
 
   // Fetch user's column preferences from localStorage
   const { data: preferences, isLoading } = useQuery<ColumnPreferences>({

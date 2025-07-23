@@ -282,6 +282,11 @@ export default function CallActivity() {
           </div>
         );
       default:
+        // Handle dynamic URL parameter columns
+        const paramValue = (call as any)[column];
+        if (paramValue !== undefined && paramValue !== null) {
+          return <div className="truncate text-xs">{paramValue}</div>;
+        }
         console.log('Unknown column:', column, 'returning fallback');
         return <div className="truncate text-xs">-</div>;
     }
