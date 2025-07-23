@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 interface CampaignTrackingPixelsProps {
   campaignId?: number;
@@ -28,39 +29,10 @@ interface TrackingPixel {
   active: boolean;
 }
 
-const SAMPLE_PIXELS: TrackingPixel[] = [
-  {
-    id: 1,
-    name: 'Conversion Tracker',
-    firePixelOn: 'converted',
-    url: 'https://mytracking.tracking.com/conversion?campaign_id={campaign_id}&call_id={call_id}',
-    httpMethod: 'GET',
-    headers: [],
-    authentication: 'none',
-    advancedOptions: false,
-    active: true
-  },
-  {
-    id: 2,
-    name: 'Call Completion Pixel',
-    firePixelOn: 'completed',
-    url: 'https://analytics.example.com/postback',
-    httpMethod: 'POST',
-    headers: [
-      { key: 'Authorization', value: 'Bearer {token}' },
-      { key: 'Content-Type', value: 'application/json' }
-    ],
-    authentication: 'bearer',
-    advancedOptions: true,
-    active: true
-  }
-];
-
 export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingPixelsProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingPixel, setEditingPixel] = useState<TrackingPixel | null>(null);
-  const [pixels, setPixels] = useState<TrackingPixel[]>(SAMPLE_PIXELS);
   const [selectedGlobalPixels, setSelectedGlobalPixels] = useState<number[]>([]);
   const [formData, setFormData] = useState<{
     name: string;
@@ -83,11 +55,51 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   });
   
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch actual tracking pixels instead of using hardcoded sample data
+  const { data: pixels = [], isLoading: isLoadingPixels } = useQuery<TrackingPixel[]>({
+    queryKey: ['/api/integrations/pixels'],
+    select: (data: any[]) => data.map((pixel: any) => ({
+      id: pixel.id,
+      name: pixel.name,
+      firePixelOn: pixel.fireOnEvent || pixel.fire_on_event || 'incoming',
+      url: pixel.code,
+      httpMethod: 'GET' as const,
+      headers: [],
+      authentication: 'none' as const,
+      advancedOptions: false,
+      active: pixel.isActive !== false
+    })),
+    retry: false,
+  });
 
   // Fetch global tracking pixels from Integrations
   const { data: globalPixels, isLoading: isLoadingGlobal } = useQuery({
     queryKey: ['/api/integrations/pixels'],
     retry: false,
+  });
+
+  // Delete pixel mutation
+  const deletePixelMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest(`/api/integrations/pixels/${id}`, 'DELETE');
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
+      toast({
+        title: "Success",
+        description: "Tracking pixel deleted successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete pixel",
+        variant: "destructive"
+      });
+    }
   });
 
   const resetForm = () => {
@@ -108,582 +120,299 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingPixel) {
-      // Update existing pixel
-      setPixels(prev => prev.map(pixel => 
-        pixel.id === editingPixel.id 
-          ? { ...pixel, ...formData }
-          : pixel
-      ));
-      toast({
-        title: 'Success',
-        description: 'Tracking pixel updated successfully'
-      });
-    } else {
-      // Create new pixel
-      const newPixel: TrackingPixel = {
-        id: Date.now(),
-        ...formData
-      };
-      setPixels(prev => [...prev, newPixel]);
-      toast({
-        title: 'Success',
-        description: 'Tracking pixel created successfully'
-      });
-    }
+    // Direct users to the Integrations page for pixel management
+    toast({
+      title: 'Create pixels in Integrations',
+      description: 'Please use the Integrations page to create and manage tracking pixels. They will appear here automatically.',
+    });
     
     resetForm();
   };
 
   const handleEdit = (pixel: TrackingPixel) => {
-    setEditingPixel(pixel);
-    setFormData({
-      name: pixel.name,
-      firePixelOn: pixel.firePixelOn,
-      url: pixel.url,
-      httpMethod: pixel.httpMethod,
-      headers: pixel.headers,
-      authentication: pixel.authentication,
-      advancedOptions: pixel.advancedOptions,
-      active: pixel.active
+    // Direct users to the Integrations page for editing
+    toast({
+      title: 'Edit in Integrations',
+      description: 'Please use the Integrations page to edit tracking pixels.',
     });
-    setIsDialogOpen(true);
   };
 
   const handleDelete = (id: number) => {
-    setPixels(prev => prev.filter(pixel => pixel.id !== id));
-    toast({
-      title: 'Success',
-      description: 'Tracking pixel deleted successfully'
-    });
+    if (confirm("Are you sure you want to delete this tracking pixel?")) {
+      deletePixelMutation.mutate(id);
+    }
   };
 
   const handleToggleActive = (id: number) => {
-    setPixels(prev => prev.map(pixel => 
-      pixel.id === id 
-        ? { ...pixel, active: !pixel.active }
-        : pixel
-    ));
-  };
-
-  const handleImportPixels = () => {
-    if (!globalPixels || !Array.isArray(globalPixels) || selectedGlobalPixels.length === 0) return;
-
-    const pixelsToImport = globalPixels.filter((pixel: any) => 
-      selectedGlobalPixels.includes(pixel.id)
-    );
-
-    const highestId = Math.max(...pixels.map(p => p.id), 0);
-    const newPixels = pixelsToImport.map((pixel: any, index: number) => ({
-      id: highestId + index + 1,
-      name: pixel.name,
-      firePixelOn: pixel.firePixelOn || 'incoming',
-      url: pixel.url || '',
-      httpMethod: pixel.httpMethod || 'GET',
-      headers: pixel.headers || [],
-      authentication: pixel.authentication || 'none',
-      advancedOptions: pixel.advancedOptions || false,
-      active: true
-    }));
-
-    setPixels(prev => [...prev, ...newPixels]);
-    setSelectedGlobalPixels([]);
-    setIsImportDialogOpen(false);
-    
     toast({
-      title: 'Pixels Imported!',
-      description: `${newPixels.length} tracking pixel(s) imported from Integrations`
+      title: 'Manage in Integrations',
+      description: 'Please use the Integrations page to activate/deactivate pixels.',
     });
   };
 
-  const handleTogglePixelSelection = (pixelId: number) => {
-    setSelectedGlobalPixels(prev => 
-      prev.includes(pixelId) 
-        ? prev.filter(id => id !== pixelId)
-        : [...prev, pixelId]
+  const handleImportPixels = () => {
+    toast({
+      title: 'Pixels are automatically available',
+      description: 'All pixels created in Integrations are automatically available here.',
+    });
+    setIsImportDialogOpen(false);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: 'Copied!',
+      description: 'Pixel URL copied to clipboard'
+    });
+  };
+
+  const generateTokenizedUrl = (baseUrl: string, campaignId?: number) => {
+    return baseUrl.replace(/{([^}]+)}/g, (match, token) => {
+      switch (token) {
+        case 'campaign_id':
+          return campaignId?.toString() || '{campaign_id}';
+        case 'call_id':
+          return '{call_id}';
+        case 'phone_number':
+          return '{phone_number}';
+        case 'timestamp':
+          return '{timestamp}';
+        case 'status':
+          return '{status}';
+        case 'duration':
+          return '{duration}';
+        case 'buyer_id':
+          return '{buyer_id}';
+        default:
+          return match;
+      }
+    });
+  };
+
+  if (isLoadingPixels) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Tracking Pixels</CardTitle>
+          <CardDescription>Configure tracking pixels to fire on specific call events</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">Loading tracking pixels...</div>
+        </CardContent>
+      </Card>
     );
-  };
-
-  const getEventBadgeColor = (event: string) => {
-    switch (event) {
-      case 'converted': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'connected': return 'bg-yellow-100 text-yellow-800';
-      case 'incoming': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const insertToken = (field: string, token: string) => {
-    if (field === 'url') {
-      setFormData({ ...formData, url: formData.url + token });
-    }
-  };
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Tracking Pixels</CardTitle>
-            <CardDescription>
-              Configure tracking pixels to fire on specific call events
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Import Existing
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Import Tracking Pixels</DialogTitle>
-                  <DialogDescription>
-                    Select tracking pixels from your Integrations to add to this campaign
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  {isLoadingGlobal ? (
-                    <div className="text-center py-8">Loading pixels...</div>
-                  ) : !globalPixels || !Array.isArray(globalPixels) || globalPixels.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No tracking pixels found in Integrations. Create some pixels in the Integrations section first.
-                    </div>
-                  ) : (
-                    <>
-                      <div className="max-h-64 overflow-y-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-12">Select</TableHead>
-                              <TableHead>Pixel Name</TableHead>
-                              <TableHead>Fire On</TableHead>
-                              <TableHead>Method</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {globalPixels.map((pixel: any) => (
-                              <TableRow key={pixel.id}>
-                                <TableCell>
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedGlobalPixels.includes(pixel.id)}
-                                    onChange={() => handleTogglePixelSelection(pixel.id)}
-                                    className="rounded"
-                                  />
-                                </TableCell>
-                                <TableCell>{pixel.name}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline">{pixel.firePixelOn || 'incoming'}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="secondary">{pixel.httpMethod || 'GET'}</Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          onClick={() => {
-                            setSelectedGlobalPixels([]);
-                            setIsImportDialogOpen(false);
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          onClick={handleImportPixels}
-                          disabled={selectedGlobalPixels.length === 0}
-                        >
-                          Import {selectedGlobalPixels.length} Pixel(s)
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-            
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => setEditingPixel(null)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add New Pixel
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingPixel ? 'Edit' : 'Add'} Tracking Pixel
-                  </DialogTitle>
-                  <DialogDescription>
-                    Configure tracking pixels to fire on specific call events
-                  </DialogDescription>
-                </DialogHeader>
-                <TooltipProvider>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Name Field */}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>A descriptive name for this tracking pixel (e.g., "Conversion Tracker", "Lead Pixel")</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Enter name"
-                      required
-                      className="bg-gray-50 dark:bg-gray-800"
-                    />
-                    <span className="text-xs text-gray-500 mt-1">Required</span>
-                  </div>
-                  
-                  {/* Fire Pixel On */}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="firePixelOn">Fire Pixel On <span className="text-red-500">*</span></Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Choose when this pixel should fire during the call lifecycle:<br/>
-                          • Incoming: When call is received<br/>
-                          • Connected: When call is answered<br/>
-                          • Completed: When call ends<br/>
-                          • Converted: When caller takes desired action</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Select
-                      value={formData.firePixelOn}
-                      onValueChange={(value: 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized') => 
-                        setFormData({ ...formData, firePixelOn: value })}
-                    >
-                      <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                        <SelectValue placeholder="Choose Event Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="incoming">Incoming</SelectItem>
-                        <SelectItem value="connected">Connected (Answered)</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="converted">Converted</SelectItem>
-                        <SelectItem value="error">Error</SelectItem>
-                        <SelectItem value="payout">Payout</SelectItem>
-                        <SelectItem value="recording">Recording</SelectItem>
-                        <SelectItem value="finalized">Finalized</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <span className="text-xs text-gray-500 mt-1">Required</span>
-                  </div>
+    <TooltipProvider>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Tracking Pixels</span>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsImportDialogOpen(true)}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Import Existing
+              </Button>
+              <Button 
+                size="sm"
+                onClick={() => setIsDialogOpen(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Pixel
+              </Button>
+            </div>
+          </CardTitle>
+          <CardDescription>
+            Configure tracking pixels to fire on specific call events
+          </CardDescription>
+        </CardHeader>
 
-                  {/* URL Field with TOKEN button */}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="url">URL <span className="text-red-500">*</span></Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>The endpoint URL to send tracking data to. Use TOKEN button to insert dynamic values like {'{call_id}'}, {'{campaign_id}'}, etc.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="flex gap-2">
-                      <Input
-                        id="url"
-                        value={formData.url}
-                        onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                        placeholder="http://mytracking.tracking.com"
-                        required
-                        className="bg-gray-50 dark:bg-gray-800 flex-1"
-                      />
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => insertToken('url', '{call_id}')}
-                      >
-                        TOKEN
-                      </Button>
-                    </div>
-                    <span className="text-xs text-gray-500 mt-1">Required</span>
-                  </div>
-
-                  {/* Advanced Options Toggle */}
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="advancedOptions"
-                      checked={formData.advancedOptions}
-                      onChange={(e) => setFormData({ ...formData, advancedOptions: e.target.checked })}
-                      className="rounded"
-                    />
-                    <Label htmlFor="advancedOptions">Advanced Options</Label>
-                  </div>
-
-                  {/* Advanced Options Section */}
-                  {formData.advancedOptions && (
-                    <div className="space-y-4 border-t pt-4">
-                      {/* HTTP Method */}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Label htmlFor="httpMethod">HTTP Method <span className="text-red-500">*</span></Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="h-4 w-4 text-gray-400" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>HTTP method for the tracking request:<br/>
-                              • GET: Simple URL-based tracking<br/>
-                              • POST: Send data in request body<br/>
-                              • PUT: Update existing data<br/>
-                              • DELETE: Remove tracking data</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Select
-                          value={formData.httpMethod}
-                          onValueChange={(value: 'GET' | 'POST' | 'PUT' | 'DELETE') => 
-                            setFormData({ ...formData, httpMethod: value })}
-                        >
-                          <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                            <SelectValue placeholder="Choose Method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="GET">GET</SelectItem>
-                            <SelectItem value="POST">POST</SelectItem>
-                            <SelectItem value="PUT">PUT</SelectItem>
-                            <SelectItem value="DELETE">DELETE</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <span className="text-xs text-gray-500 mt-1">Required</span>
-                      </div>
-
-                      {/* Headers */}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Label>Headers</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="h-4 w-4 text-gray-400" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Custom HTTP headers to send with the tracking request. Common examples:<br/>
-                              • Authorization: Bearer token or API key<br/>
-                              • Content-Type: application/json<br/>
-                              • User-Agent: Your application name</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <div className="space-y-2">
-                          {formData.headers.map((header, index) => (
-                            <div key={index} className="flex gap-2 items-center">
-                              <Input
-                                placeholder="key"
-                                value={header.key}
-                                onChange={(e) => {
-                                  const newHeaders = [...formData.headers];
-                                  newHeaders[index].key = e.target.value;
-                                  setFormData({ ...formData, headers: newHeaders });
-                                }}
-                                className="bg-gray-50 dark:bg-gray-800"
-                              />
-                              <span className="text-gray-500">:</span>
-                              <Input
-                                placeholder="value"
-                                value={header.value}
-                                onChange={(e) => {
-                                  const newHeaders = [...formData.headers];
-                                  newHeaders[index].value = e.target.value;
-                                  setFormData({ ...formData, headers: newHeaders });
-                                }}
-                                className="bg-gray-50 dark:bg-gray-800"
-                              />
-                              <Button 
-                                type="button" 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  const newHeaders = [...formData.headers];
-                                  newHeaders[index].value += '{token}';
-                                  setFormData({ ...formData, headers: newHeaders });
-                                }}
-                              >
-                                TOKEN
-                              </Button>
-                              <Button 
-                                type="button" 
-                                variant="destructive" 
-                                size="sm"
-                                onClick={() => {
-                                  const newHeaders = formData.headers.filter((_, i) => i !== index);
-                                  setFormData({ ...formData, headers: newHeaders });
-                                }}
-                              >
-                                ×
-                              </Button>
-                            </div>
-                          ))}
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              setFormData({ 
-                                ...formData, 
-                                headers: [...formData.headers, { key: '', value: '' }] 
-                              });
-                            }}
-                          >
-                            ADD
-                          </Button>
-                          {formData.headers.length === 0 && (
-                            <p className="text-xs text-gray-500">No Headers</p>
-                          )}
-                        </div>
-                      </div>
-
-                    </div>
-                  )}
-
-                  {/* Authentication - Outside Advanced Options like Ringba */}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="authentication">Authentication</Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Authentication method for the tracking endpoint:<br/>
-                          • None: No authentication required<br/>
-                          • Basic Auth: Username/password authentication<br/>
-                          • Bearer Token: OAuth or API token<br/>
-                          • API Key: Custom API key authentication</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Select
-                      value={formData.authentication}
-                      onValueChange={(value: 'none' | 'basic' | 'bearer' | 'api_key') => 
-                        setFormData({ ...formData, authentication: value })}
-                    >
-                      <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                        <SelectValue placeholder="Choose Authentication" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="basic">Basic Auth</SelectItem>
-                        <SelectItem value="bearer">Bearer Token</SelectItem>
-                        <SelectItem value="api_key">API Key</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={resetForm}>
-                      Cancel
-                    </Button>
-                    <Button type="submit">
-                      {editingPixel ? 'Update' : 'Create'} Pixel
-                    </Button>
-                  </div>
-                </form>
-                </TooltipProvider>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {pixels.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No tracking pixels configured yet. Add your first pixel to get started.
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Fire Pixel On</TableHead>
-                <TableHead>URL</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pixels.map((pixel) => (
-                <TableRow key={pixel.id}>
-                  <TableCell className="font-medium">{pixel.name}</TableCell>
-                  <TableCell>
-                    <Badge className={getEventBadgeColor(pixel.firePixelOn)}>
-                      {pixel.firePixelOn}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    <a href={pixel.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                      {pixel.url}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{pixel.httpMethod}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={pixel.active ? 'default' : 'secondary'}>
-                      {pixel.active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(pixel)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleActive(pixel.id)}
-                      >
-                        {pixel.active ? 'Disable' : 'Enable'}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(pixel.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+        <CardContent>
+          {pixels.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <div className="mb-4">
+                <ExternalLink className="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                <p className="text-sm">No tracking pixels created yet</p>
+                <p className="text-xs text-gray-400">Create pixels in the Integrations page and they'll appear here automatically</p>
+              </div>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                Add Your First Pixel
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Fire Pixel On</TableHead>
+                  <TableHead>URL</TableHead>
+                  <TableHead>Method</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+              </TableHeader>
+              <TableBody>
+                {pixels.map((pixel) => (
+                  <TableRow key={pixel.id}>
+                    <TableCell className="font-medium">{pixel.name}</TableCell>
+                    <TableCell>
+                      <Badge variant={pixel.firePixelOn === 'converted' ? 'default' : 'secondary'}>
+                        {pixel.firePixelOn}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="max-w-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm text-blue-600">
+                          {generateTokenizedUrl(pixel.url, campaignId)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(generateTokenizedUrl(pixel.url, campaignId))}
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{pixel.httpMethod}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={pixel.active ? 'default' : 'secondary'}>
+                        {pixel.active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(pixel)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleActive(pixel.id)}
+                        >
+                          {pixel.active ? 'Disable' : 'Enable'}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(pixel.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+
+        {/* Create/Edit Pixel Dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {editingPixel ? 'Edit Tracking Pixel' : 'Create New Tracking Pixel'}
+              </DialogTitle>
+              <DialogDescription>
+                For full pixel management, please use the Integrations page. This creates a simplified pixel.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Pixel Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g., Conversion Tracker"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="firePixelOn">Fire Pixel On</Label>
+                  <Select
+                    value={formData.firePixelOn}
+                    onValueChange={(value: any) => setFormData({ ...formData, firePixelOn: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="incoming">Incoming</SelectItem>
+                      <SelectItem value="connected">Connected</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="converted">Converted</SelectItem>
+                      <SelectItem value="error">Error</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="url">Pixel URL</Label>
+                <Input
+                  id="url"
+                  value={formData.url}
+                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                  placeholder="https://example.com/pixel?campaign_id={campaign_id}&call_id={call_id}"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Use tokens: {'{campaign_id}'}, {'{call_id}'}, {'{phone_number}'}, {'{timestamp}'}, {'{status}'}
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Create in Integrations
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Import Pixels Dialog */}
+        <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Import Existing Pixels</DialogTitle>
+              <DialogDescription>
+                All pixels created in Integrations are automatically available here.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              <p className="text-sm text-gray-600">
+                No import needed - all tracking pixels from the Integrations page are automatically available in this campaign.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </Card>
+    </TooltipProvider>
   );
 }
