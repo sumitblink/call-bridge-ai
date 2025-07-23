@@ -597,8 +597,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = insertCampaignSchema.partial().parse(req.body);
       
-      // Validate campaign activation requirements
-      if (validatedData.status === 'active') {
+      // Validate campaign activation requirements - check if campaign will be active after update
+      const finalStatus = validatedData.status !== undefined ? validatedData.status : existingCampaign.status;
+      if (finalStatus === 'active') {
         const campaignBuyers = await storage.getCampaignBuyers(id);
         
         if (campaignBuyers.length === 0) {
@@ -608,9 +609,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // Check if campaign has phone number or pool assignment
-        const hasPhoneNumber = existingCampaign.phoneNumber && existingCampaign.phoneNumber.trim() !== '';
-        const hasPoolAssignment = existingCampaign.poolId !== null;
+        // Check if campaign has phone number or pool assignment (use new data if provided)
+        const finalPhoneNumber = validatedData.phoneNumber !== undefined ? validatedData.phoneNumber : existingCampaign.phoneNumber;
+        const finalPoolId = validatedData.poolId !== undefined ? validatedData.poolId : existingCampaign.poolId;
+        
+        const hasPhoneNumber = finalPhoneNumber && finalPhoneNumber.trim() !== '';
+        const hasPoolAssignment = finalPoolId !== null;
         
         if (!hasPhoneNumber && !hasPoolAssignment) {
           return res.status(400).json({ 
@@ -650,8 +654,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = insertCampaignSchema.partial().parse(req.body);
       
-      // Validate campaign activation requirements
-      if (validatedData.status === 'active') {
+      // Validate campaign activation requirements - check if campaign will be active after update
+      const finalStatus = validatedData.status !== undefined ? validatedData.status : existingCampaign.status;
+      if (finalStatus === 'active') {
         const campaignBuyers = await storage.getCampaignBuyers(id);
         
         if (campaignBuyers.length === 0) {
@@ -661,9 +666,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // Check if campaign has phone number or pool assignment
-        const hasPhoneNumber = existingCampaign.phoneNumber && existingCampaign.phoneNumber.trim() !== '';
-        const hasPoolAssignment = existingCampaign.poolId !== null;
+        // Check if campaign has phone number or pool assignment (use new data if provided)
+        const finalPhoneNumber = validatedData.phoneNumber !== undefined ? validatedData.phoneNumber : existingCampaign.phoneNumber;
+        const finalPoolId = validatedData.poolId !== undefined ? validatedData.poolId : existingCampaign.poolId;
+        
+        const hasPhoneNumber = finalPhoneNumber && finalPhoneNumber.trim() !== '';
+        const hasPoolAssignment = finalPoolId !== null;
         
         if (!hasPhoneNumber && !hasPoolAssignment) {
           return res.status(400).json({ 
