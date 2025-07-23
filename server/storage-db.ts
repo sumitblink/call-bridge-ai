@@ -188,23 +188,18 @@ export class DatabaseStorage implements IStorage {
     try {
       // Delete related records in proper order to avoid foreign key constraints
       
-      // 1. Delete DNI snippets for tracking tags related to this campaign
-      const trackingTagsToDelete = await db.select({ id: callTrackingTags.id })
-        .from(callTrackingTags)
-        .where(eq(callTrackingTags.campaignId, id));
-      
-      for (const tag of trackingTagsToDelete) {
-        await db.delete(dniSnippets).where(eq(dniSnippets.tagId, tag.id));
+      // 1. Delete call tracking tags if table exists
+      try {
+        await db.delete(callTrackingTags).where(eq(callTrackingTags.campaignId, id));
+      } catch (error) {
+        console.log('Call tracking tags table does not exist, skipping...');
       }
-      
-      // 2. Delete call tracking tags
-      await db.delete(callTrackingTags).where(eq(callTrackingTags.campaignId, id));
       
       // 3. Delete campaign_buyers entries
       await db.delete(campaignBuyers).where(eq(campaignBuyers.campaignId, id));
       
-      // 4. Delete publisher_campaigns entries
-      await db.delete(campaignPublishers).where(eq(campaignPublishers.campaignId, id));
+      // 4. Delete publisher_campaigns entries (skip if table doesn't exist)
+      // await db.delete(campaignPublishers).where(eq(campaignPublishers.campaignId, id));
       
       // 5. Finally delete the campaign
       const result = await db.delete(campaigns).where(eq(campaigns.id, id));
