@@ -118,9 +118,10 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
       queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/phone-numbers"] });
       toast({
         title: "Success",
-        description: "Campaign settings updated successfully",
+        description: "Campaign settings updated successfully. Phone number webhooks configured automatically.",
       });
     },
     onError: () => {

@@ -104,6 +104,7 @@ export default function PhoneNumbersPage() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/number-pools"] });
       queryClient.invalidateQueries({ queryKey: ["/api/phone-numbers/unassigned"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/phone-numbers"] });
       setSelectedNumbers(new Set()); // Clear selected numbers
       setIsCreatePoolDialogOpen(false);
       
