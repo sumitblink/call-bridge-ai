@@ -165,12 +165,23 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
         description: "Call tracking tag created successfully",
       });
     },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create tracking tag",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      console.error("Create tag error:", error);
+      
+      // Handle specific duplicate tag code error
+      if (error?.response?.status === 409 || error?.message?.includes('duplicate') || error?.message?.includes('already exists')) {
+        toast({
+          title: "Tag Code Already Exists",
+          description: `The tag code "${formData.tagCode}" is already in use. Please choose a different tag code.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create tracking tag",
+          variant: "destructive",
+        });
+      }
     },
   });
 
