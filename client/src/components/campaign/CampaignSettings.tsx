@@ -311,16 +311,23 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                                 disabled={phone.status === 'assigned' && phone.assignedTo !== campaign?.name}
                               >
                                 <div className="flex items-center justify-between w-full">
-                                  <span>{phone.phoneNumber} ({phone.friendlyName || phone.country})</span>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{phone.phoneNumber}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {phone.friendlyName === 'Unassigned' ? 'Unassigned' : 
+                                       phone.friendlyName?.startsWith('Pool') ? phone.friendlyName : 
+                                       phone.country || phone.friendlyName}
+                                    </span>
+                                  </div>
                                   <div className="flex items-center gap-2">
                                     {phone.status === 'available' && (
-                                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">
                                         Available
                                       </span>
                                     )}
                                     {phone.status === 'assigned' && (
-                                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
-                                        {phone.assignedType === 'campaign' ? 'Campaign' : 'Pool'}: {phone.assignedTo}
+                                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-medium">
+                                        In Use
                                       </span>
                                     )}
                                   </div>
