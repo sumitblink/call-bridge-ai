@@ -321,44 +321,7 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     const port = window.location.port ? `:${window.location.port}` : '';
     const baseUrl = `${protocol}//${currentDomain}${port}`;
     
-    // Generate URL parameter capture code dynamically
-    const urlParamCapture = `
-        // Standard UTM parameters
-        requestData.utmSource = urlParams.get('utm_source');
-        requestData.utmMedium = urlParams.get('utm_medium');
-        requestData.utmCampaign = urlParams.get('utm_campaign');
-        requestData.utmContent = urlParams.get('utm_content');
-        requestData.utmTerm = urlParams.get('utm_term');
-        
-        // Custom URL parameters (auto-generated from configuration)
-        requestData.publisher = urlParams.get('publisher');
-        requestData.gclid = urlParams.get('gclid');
-        requestData.fbclid = urlParams.get('fbclid');
-        requestData.msclkid = urlParams.get('msclkid');
-        requestData.ttclid = urlParams.get('ttclid');
-        requestData.twclid = urlParams.get('twclid');
-        requestData.liclid = urlParams.get('liclid');
-        requestData.subid = urlParams.get('subid');
-        requestData.clickid = urlParams.get('clickid');
-        requestData.affid = urlParams.get('affid');
-        requestData.pubid = urlParams.get('pubid');
-        requestData.source = urlParams.get('source');
-        requestData.medium = urlParams.get('medium');
-        requestData.campaign = urlParams.get('campaign');
-        requestData.content = urlParams.get('content');
-        requestData.term = urlParams.get('term');
-        requestData.keyword = urlParams.get('keyword');
-        requestData.placement = urlParams.get('placement');
-        requestData.adgroup = urlParams.get('adgroup');
-        requestData.creative = urlParams.get('creative');
-        requestData.device = urlParams.get('device');
-        requestData.network = urlParams.get('network');
-        requestData.matchtype = urlParams.get('matchtype');
-        requestData.adposition = urlParams.get('adposition');
-        requestData.target = urlParams.get('target');
-        requestData.targetid = urlParams.get('targetid');
-        requestData.loc_physical_ms = urlParams.get('loc_physical_ms');
-        requestData.loc_interest_ms = urlParams.get('loc_interest_ms');`;
+
     
     return `<script>
 (function() {
@@ -411,7 +374,43 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
       };
       
       if (this.config.captureUserData) {
-        var urlParams = new URLSearchParams(window.location.search);${urlParamCapture}
+        var urlParams = new URLSearchParams(window.location.search);
+        // Standard UTM parameters
+        requestData.utmSource = urlParams.get('utm_source');
+        requestData.utmMedium = urlParams.get('utm_medium');
+        requestData.utmCampaign = urlParams.get('utm_campaign');
+        requestData.utmContent = urlParams.get('utm_content');
+        requestData.utmTerm = urlParams.get('utm_term');
+        
+        // Custom URL parameters (auto-generated from configuration)
+        requestData.publisher = urlParams.get('publisher');
+        requestData.gclid = urlParams.get('gclid');
+        requestData.fbclid = urlParams.get('fbclid');
+        requestData.msclkid = urlParams.get('msclkid');
+        requestData.ttclid = urlParams.get('ttclid');
+        requestData.twclid = urlParams.get('twclid');
+        requestData.liclid = urlParams.get('liclid');
+        requestData.subid = urlParams.get('subid');
+        requestData.clickid = urlParams.get('clickid');
+        requestData.affid = urlParams.get('affid');
+        requestData.pubid = urlParams.get('pubid');
+        requestData.source = urlParams.get('source');
+        requestData.medium = urlParams.get('medium');
+        requestData.campaign = urlParams.get('campaign');
+        requestData.content = urlParams.get('content');
+        requestData.term = urlParams.get('term');
+        requestData.keyword = urlParams.get('keyword');
+        requestData.placement = urlParams.get('placement');
+        requestData.adgroup = urlParams.get('adgroup');
+        requestData.creative = urlParams.get('creative');
+        requestData.device = urlParams.get('device');
+        requestData.network = urlParams.get('network');
+        requestData.matchtype = urlParams.get('matchtype');
+        requestData.adposition = urlParams.get('adposition');
+        requestData.target = urlParams.get('target');
+        requestData.targetid = urlParams.get('targetid');
+        requestData.loc_physical_ms = urlParams.get('loc_physical_ms');
+        requestData.loc_interest_ms = urlParams.get('loc_interest_ms');
       }
       
       fetch(this.config.apiUrl, {
