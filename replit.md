@@ -114,6 +114,14 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 23, 2025: **PUBLISHER FORM DATA RETENTION AND DELETION FIXES COMPLETE** - Resolved all form validation and database constraint issues for comprehensive publisher management
+  - **Form Data Retention Fixed**: Publisher edit forms now properly retain all field values including dropdowns, numeric inputs, and status selections
+  - **Controlled Form Components**: Converted Select components from defaultValue to controlled value props with unique keys for proper re-rendering
+  - **Database Constraint Resolution**: Fixed publisher deletion foreign key violations by adding cascade deletion for call_tracking_tags and campaign_publishers tables
+  - **NaN Input Value Prevention**: Fixed numeric input fields to prevent NaN values and display proper monetary amounts
+  - **Complete Deletion Chain**: Publishers can now be deleted successfully with proper cleanup of all dependent records
+  - **Professional UX**: Form validation improved with proper error handling and data persistence across edit sessions
+  - **Status**: Publisher management now fully operational with working create, edit, update, and delete functionality
 - July 23, 2025: **CAMPAIGN URL PARAMETERS UPGRADED TO FULL DATABASE FUNCTIONALITY** - Completely rebuilt Campaign URL Parameters to match Integrations functionality with real-time validation and database persistence
   - **Database Integration**: Replaced localStorage-only system with full API integration using same endpoints as Integrations
   - **Real-time Validation**: Added comprehensive validation with visual feedback for duplicate parameter/report names

@@ -15,6 +15,7 @@ import {
   platformIntegrations,
   publishers,
   campaignPublishers,
+  callTrackingTags,
   phoneNumbers,
   numberPools,
   numberPoolAssignments,
@@ -834,10 +835,13 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deletePublisher(id: number): Promise<boolean> {
-    // First delete all publisher-campaign relationships
+    // First delete all call tracking tags that reference this publisher
+    await db.delete(callTrackingTags).where(eq(callTrackingTags.publisherId, id));
+    
+    // Then delete all publisher-campaign relationships
     await db.delete(campaignPublishers).where(eq(campaignPublishers.publisherId, id));
     
-    // Then delete the publisher
+    // Finally delete the publisher
     const result = await db.delete(publishers).where(eq(publishers.id, id));
     return result.rowCount > 0;
   }
