@@ -121,7 +121,10 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
   - **Enhanced User Experience**: Red border validation, warning messages, and frontend duplicate prevention
   - **Shared Data**: Campaign parameters now create actual database records and reporting columns like Integrations
   - **Complete API Coverage**: Full CRUD operations with proper error handling and cache invalidation
-  - **Status**: Campaign URL Parameters now provides same professional functionality as Integrations with database persistence
+  - **Mode Selection**: Added ability to either "Create New Parameter" or "Use Existing Parameter" from Integrations
+  - **Campaign Isolation**: Parameters created in Integrations do NOT auto-assign to campaigns - must be manually selected
+  - **Selective Assignment**: Each campaign maintains its own independent parameter assignments via localStorage
+  - **Status**: Campaign URL Parameters now provides same professional functionality as Integrations with database persistence and selective parameter assignment
 - July 23, 2025: **FINANCIAL DATA BUG COMPLETELY FIXED** - Successfully resolved $0.00 financial data issue by implementing comprehensive payout configuration system throughout all call creation endpoints
   - **Root Cause**: Call creation in twilio-webhooks.ts and routes.ts was hardcoding cost: '0.0000', revenue: '0.0000' and missing payout/profit fields instead of using campaign financial settings
   - **Complete Solution**: Updated all 3 call creation endpoints (main webhook, pool webhook, RTB webhook) to calculate actual financial values from campaign.defaultPayout
