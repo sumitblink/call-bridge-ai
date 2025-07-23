@@ -967,18 +967,30 @@ export class MemStorage implements IStorage {
 
   // Campaign-specific Tracking Pixels
   async getCampaignTrackingPixels(campaignId: string): Promise<any[]> {
+    console.log('Getting campaign tracking pixels for campaign:', campaignId);
+    console.log('Available campaigns in storage:', Array.from(this.campaignTrackingPixels.keys()));
+    
     const pixels = this.campaignTrackingPixels.get(campaignId) || [];
+    console.log('Raw pixels for campaign:', pixels);
+    
     // Filter out any corrupted pixels with invalid IDs
-    return pixels.filter(pixel => pixel && typeof pixel.id === 'number');
+    const validPixels = pixels.filter(pixel => pixel && typeof pixel.id === 'number');
+    console.log('Valid pixels after filtering:', validPixels);
+    
+    return validPixels;
   }
 
   async createCampaignTrackingPixel(data: any): Promise<any> {
     const id = this.currentPixelId++;
     const pixel = { id, ...data };
     
+    console.log('Creating campaign tracking pixel:', pixel);
+    
     const campaignPixels = this.campaignTrackingPixels.get(data.campaignId) || [];
     campaignPixels.push(pixel);
     this.campaignTrackingPixels.set(data.campaignId, campaignPixels);
+    
+    console.log('Campaign pixels after creation:', this.campaignTrackingPixels.get(data.campaignId));
     
     return pixel;
   }
