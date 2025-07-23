@@ -2207,6 +2207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate required fields
       if (!name || !fire_on_event || !code) {
+        console.error('Missing required fields:', { name, fire_on_event, code, requestBody: req.body });
         return res.status(400).json({ error: "Missing required fields: name, fire_on_event, code" });
       }
 

@@ -645,12 +645,12 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                           try {
                             await apiRequest(`/api/campaigns/${campaignId}/tracking-pixels`, 'POST', {
                               name: pixel.name,
-                              fire_on_event: pixel.fire_on_event,
-                              code: pixel.code,
-                              http_method: pixel.http_method || 'GET',
+                              fire_on_event: pixel.fireOnEvent || pixel.fire_on_event || 'completed',
+                              code: pixel.code || pixel.url,
+                              http_method: pixel.httpMethod || pixel.http_method || 'GET',
                               headers: pixel.headers || '[]',
-                              authentication_type: pixel.authentication_type || 'none',
-                              advanced_options: pixel.advanced_options || false,
+                              authentication_type: pixel.authenticationType || pixel.authentication_type || 'none',
+                              advanced_options: pixel.advancedOptions || pixel.advanced_options || false,
                               active: pixel.active !== false
                             });
                             
@@ -660,10 +660,11 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                               title: 'Success',
                               description: `Imported "${pixel.name}" to campaign`
                             });
-                          } catch (error) {
+                          } catch (error: any) {
+                            console.error('Import pixel error:', error);
                             toast({
                               title: 'Error',
-                              description: 'Failed to import pixel',
+                              description: error.message || 'Failed to import pixel',
                               variant: 'destructive'
                             });
                           }
