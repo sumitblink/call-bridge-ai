@@ -2458,19 +2458,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user?.id;
       const numbers = await storage.getPhoneNumbers(userId);
       
+      // Import necessary database objects
+      const { db } = await import('./db');
+      const { numberPoolAssignments, numberPools } = await import('../shared/schema');
+      const { eq } = await import('drizzle-orm');
+      
       // Get all campaigns and pools to check assignments
       const campaigns = await storage.getCampaigns();
       const pools = await storage.getNumberPools();
       
+      // Get pool assignments from database
+      const poolAssignments = await db
+        .select({
+          phoneNumberId: numberPoolAssignments.phoneNumberId,
+          poolId: numberPoolAssignments.poolId,
+          poolName: numberPools.name
+        })
+        .from(numberPoolAssignments)
+        .innerJoin(numberPools, eq(numberPoolAssignments.poolId, numberPools.id));
+
       // Enhance each number with availability status
       const enhancedNumbers = numbers.map(number => {
-        // Check if assigned to campaign
+        // Check if assigned to campaign (direct assignment)
         const assignedCampaign = campaigns.find(c => c.phoneNumber === number.phoneNumber);
         
-        // Check if assigned to pool
-        const assignedPool = pools.find(p => 
-          p.phoneNumbers && p.phoneNumbers.includes(number.phoneNumber)
-        );
+        // Check if assigned to pool (via number_pool_assignments table)
+        const poolAssignment = poolAssignments.find(pa => pa.phoneNumberId === number.id);
         
         let status = 'available';
         let assignedTo = null;
@@ -2480,9 +2493,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status = 'assigned';
           assignedTo = assignedCampaign.name;
           assignedType = 'campaign';
-        } else if (assignedPool) {
+        } else if (poolAssignment) {
           status = 'assigned';
-          assignedTo = assignedPool.name;
+          assignedTo = poolAssignment.poolName;
           assignedType = 'pool';
         }
         
