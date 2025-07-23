@@ -124,8 +124,8 @@
       }
     });
     
-    // Find elements with tracking classes/attributes
-    var trackingElements = document.querySelectorAll('.tracking-number, [data-tracking-number]');
+    // Find elements with tracking classes/attributes (includes recommended button classes)
+    var trackingElements = document.querySelectorAll('.tracking-number, [data-tracking-number], .call-now-btn, .phone-cta, .contact-phone');
     trackingElements.forEach(function(element) {
       element.textContent = formattedNumber;
       if (element.tagName === 'A') {
