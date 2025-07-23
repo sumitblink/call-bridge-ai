@@ -29,7 +29,7 @@ const campaignFormSchema = insertCampaignSchema.extend({
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
 
 interface CampaignSettingsProps {
-  campaignId: number;
+  campaignId: string;
   campaign: Campaign;
 }
 
