@@ -1380,6 +1380,11 @@ export class SupabaseStorage implements IStorage {
     return storage.getVisitorSession(sessionId);
   }
 
+  async getVisitorSessions(userId: number): Promise<VisitorSession[]> {
+    const { storage } = await import('./storage-db');
+    return storage.getVisitorSessions(userId);
+  }
+
   async updateVisitorSession(sessionId: string, updates: Partial<InsertVisitorSession>): Promise<VisitorSession | undefined> {
     const { storage } = await import('./storage-db');
     return storage.updateVisitorSession(sessionId, updates);

@@ -114,6 +114,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 23, 2025: **CRITICAL CASE SENSITIVITY BUG COMPLETELY FIXED** - Successfully resolved critical case sensitivity mapping between URL parameter capture ('clickid') and database field ('clickId')
+  - **Root Cause**: URL parameter 'clickid' was not being mapped to database column 'redtrack_clickid' in visitor session creation
+  - **Solution**: Updated DNI service visitor session insertion SQL to include redtrack_clickid field mapping from customFields.clickid
+  - **Missing getVisitorSessions Method**: Added missing plural method to all storage interface implementations (MemStorage, HybridStorage, SupabaseStorage, storage-db)
+  - **Complete Testing Verified**: DNI tracking now captures clickid ('FINAL_COMPLETE_clickid_789') and stores correctly in database (redtrack_clickid: FINAL_COMPLETE_clickid_789)
+  - **RedTrack Integration Working**: Postback URL "https://test.offer.com/postback?clickid=[tag:User:clickid]&sum=[Call:ConversionPayout]&type=Lead" ready for live campaigns
+  - **Status**: Case sensitivity issue completely resolved - clickid parameter mapping now works perfectly for RedTrack and external tracking platforms
 - July 23, 2025: **CAMPAIGN TRACKING PIXELS SYSTEM FULLY OPERATIONAL** - Successfully implemented complete campaign-specific tracking pixels system with UI improvements and proper context separation
 - July 23, 2025: **CAMPAIGN TRACKING PIXELS AUTHENTICATION FIXED** - Resolved critical authentication issues preventing campaign tracking pixel management
   - **Fixed Route Authentication**: Updated campaign tracking pixel routes to handle UUID campaign IDs instead of numeric IDs

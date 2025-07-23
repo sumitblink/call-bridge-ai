@@ -1356,8 +1356,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get phone number record for complete call tracking
       const phoneNumber = await storage.getPhoneNumberByNumber(toNumber);
       
-      // Create call record with complete pool and phone number data  
-      const callData = {
+      // Create call record with complete pool and phone number data plus visitor session enrichment
+      console.log('[Pool Webhook] Looking for visitor session data for attribution...');
+      let callData: any = {
         campaignId: campaign.id,
         buyerId: routingMethod === 'rtb' ? null : selectedBuyer.id, // RTB calls use external routing
         callSid: CallSid,
@@ -1376,10 +1377,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
           timestamp: new Date().toISOString()
         })
       };
-      
-      // RTB data is stored in routingData JSON field above
+
+      try {
+        // Get recent visitor sessions to find attribution data
+        const recentSessions = await storage.getVisitorSessions(2); // System user for DNI sessions
+        console.log('[Pool Webhook] Found', recentSessions.length, 'recent visitor sessions');
+        
+        // Find the most recent session with tracking data (within last 30 minutes)
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+        const matchingSession = recentSessions
+          .filter(session => session.createdAt && session.createdAt > thirtyMinutesAgo)
+          .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0))
+          .find(session => session.utmSource || session.clickId || session.redtrackClickId);
+        
+        if (matchingSession) {
+          console.log('[Pool Webhook] Found matching visitor session:', matchingSession.sessionId);
+          console.log('[Pool Webhook] Session clickid:', matchingSession.clickId || matchingSession.redtrackClickId);
+          
+          // Enrich call data with visitor session attribution
+          callData = {
+            ...callData,
+            sessionId: matchingSession.sessionId,
+            clickId: matchingSession.clickId || matchingSession.redtrackClickId, // FIX: Map clickid to clickId
+            utmSource: matchingSession.utmSource,
+            utmMedium: matchingSession.utmMedium,
+            utmCampaign: matchingSession.utmCampaign,
+            utmContent: matchingSession.utmContent,
+            utmTerm: matchingSession.utmTerm,
+            referrer: matchingSession.referrer,
+            landingPage: matchingSession.landingPage,
+            userAgent: matchingSession.userAgent,
+            ipAddress: matchingSession.ipAddress,
+            geoLocation: matchingSession.location,
+          };
+          
+          console.log('[Pool Webhook] Call enriched with session data - clickId:', callData.clickId);
+        } else {
+          console.log('[Pool Webhook] No recent visitor session found for attribution');
+        }
+      } catch (error) {
+        console.error('[Pool Webhook] Error enriching call with visitor session:', error);
+      }
       
       await storage.createCall(callData);
+      console.log('[Pool Webhook] Call record created with clickId:', callData.clickId);
 
       // Generate TwiML to forward the call with appropriate messaging
       const connectMessage = routingMethod === 'rtb' 

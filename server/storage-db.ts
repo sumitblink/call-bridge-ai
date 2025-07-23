@@ -1398,6 +1398,11 @@ export class DatabaseStorage implements IStorage {
     return session;
   }
 
+  async getVisitorSessions(userId: number): Promise<VisitorSession[]> {
+    const sessions = await db.select().from(visitorSessions).where(eq(visitorSessions.userId, userId));
+    return sessions;
+  }
+
   async updateVisitorSession(sessionId: string, updates: Partial<InsertVisitorSession>): Promise<VisitorSession | undefined> {
     const [updatedSession] = await db
       .update(visitorSessions)

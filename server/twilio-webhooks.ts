@@ -119,20 +119,67 @@ export async function handleIncomingCall(req: Request, res: Response) {
     const selectedBuyer = routingResult.selectedBuyer;
     console.log('[Webhook] Selected buyer:', selectedBuyer.name, 'Phone:', selectedBuyer.phoneNumber);
 
-    // Create call record
+    // Create call record with visitor session enrichment
     console.log('[Webhook] Creating call record...');
-    const callRecord = await storage.createCall({
+    console.log('[Webhook] Looking for visitor session data for phone:', callData.To);
+    
+    // Try to find recent visitor session for attribution
+    let enrichedCallData: any = {
       campaignId: campaign.id,
       buyerId: selectedBuyer.id,
       callSid: callData.CallSid,
       fromNumber: callData.From,
       toNumber: callData.To,
+      dialedNumber: callData.To,
       status: 'ringing',
       duration: 0,
       cost: '0.0000',
       revenue: '0.0000',
-    });
-    console.log('[Webhook] Call record created:', callRecord.id);
+    };
+
+    try {
+      // Get recent visitor sessions to find attribution data
+      const recentSessions = await storage.getVisitorSessions(2); // System user for DNI sessions
+      console.log('[Webhook] Found', recentSessions.length, 'recent visitor sessions');
+      
+      // Find the most recent session with tracking data (within last 30 minutes)
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+      const matchingSession = recentSessions
+        .filter(session => session.createdAt && session.createdAt > thirtyMinutesAgo)
+        .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0))
+        .find(session => session.utmSource || session.clickId || session.redtrackClickId);
+      
+      if (matchingSession) {
+        console.log('[Webhook] Found matching visitor session:', matchingSession.sessionId);
+        console.log('[Webhook] Session clickid:', matchingSession.clickId || matchingSession.redtrackClickId);
+        
+        // Enrich call data with visitor session attribution
+        enrichedCallData = {
+          ...enrichedCallData,
+          sessionId: matchingSession.sessionId,
+          clickId: matchingSession.clickId || matchingSession.redtrackClickId, // FIX: Map clickid to clickId
+          utmSource: matchingSession.utmSource,
+          utmMedium: matchingSession.utmMedium,
+          utmCampaign: matchingSession.utmCampaign,
+          utmContent: matchingSession.utmContent,
+          utmTerm: matchingSession.utmTerm,
+          referrer: matchingSession.referrer,
+          landingPage: matchingSession.landingPage,
+          userAgent: matchingSession.userAgent,
+          ipAddress: matchingSession.ipAddress,
+          geoLocation: matchingSession.location,
+        };
+        
+        console.log('[Webhook] Call enriched with session data - clickId:', enrichedCallData.clickId);
+      } else {
+        console.log('[Webhook] No recent visitor session found for attribution');
+      }
+    } catch (error) {
+      console.error('[Webhook] Error enriching call with visitor session:', error);
+    }
+
+    const callRecord = await storage.createCall(enrichedCallData);
+    console.log('[Webhook] Call record created:', callRecord.id, 'with clickId:', callRecord.clickId);
 
     // Log routing decision
     console.log('[Webhook] Creating call log...');
