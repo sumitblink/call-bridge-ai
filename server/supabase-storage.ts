@@ -743,13 +743,42 @@ export class SupabaseStorage implements IStorage {
 
   // Campaign-specific Tracking Pixels (using integration pixels table for now)
   async getCampaignTrackingPixels(campaignId: string): Promise<any[]> {
-    // For now, return empty array until we have a separate campaign_tracking_pixels table
-    return [];
+    console.log('SupabaseStorage: Getting campaign tracking pixels for campaign:', campaignId);
+    
+    try {
+      // Query tracking pixels where the campaignId exists in assignedCampaigns array
+      const result = await db.select()
+        .from(trackingPixels)
+        .where(sql`${campaignId} = ANY(${trackingPixels.assignedCampaigns})`);
+      
+      console.log('SupabaseStorage: Campaign tracking pixels query result:', result);
+      return result || [];
+    } catch (error) {
+      console.error('SupabaseStorage: Error getting campaign tracking pixels:', error);
+      return [];
+    }
   }
 
   async createCampaignTrackingPixel(data: any): Promise<any> {
-    // For now, return the data with an ID until we have a separate table
-    return { id: Date.now(), ...data };
+    console.log('SupabaseStorage: Creating campaign tracking pixel:', data);
+    
+    try {
+      // Insert into tracking_pixels table with campaignId in assignedCampaigns array
+      const [result] = await db.insert(trackingPixels).values({
+        name: data.name,
+        pixelType: data.pixelType || 'postback',
+        fireOnEvent: data.fire_on_event || data.fireOnEvent || 'incoming',
+        code: data.code || data.url,
+        assignedCampaigns: [data.campaignId], // Store campaign ID in array
+        isActive: data.is_active !== false && data.active !== false,
+      }).returning();
+      
+      console.log('SupabaseStorage: Campaign tracking pixel created:', result);
+      return result;
+    } catch (error) {
+      console.error('SupabaseStorage: Error creating campaign tracking pixel:', error);
+      throw error;
+    }
   }
 
   async deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean> {
