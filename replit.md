@@ -114,6 +114,11 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 23, 2025: **WEBHOOK CONFIGURATION BUG FIXED** - Resolved critical phone number webhook routing issue preventing proper call handling
+  - **Root Cause**: Phone number +18565290287 had mismatched webhook URLs (voice: pool/3, status: pool/23)
+  - **Database Fix**: Updated status callback URL to correct pool 3 endpoint for consistent routing
+  - **Tracking Tag Error Handling**: Improved duplicate tag code error messages with proper HTTP 409 status
+  - **Status**: Phone number webhook configuration now properly aligned with pool assignments
 - July 23, 2025: **ALL CRITICAL BUGS COMPLETELY FIXED** - Successfully resolved 77 TypeScript compilation errors and major system issues preventing application functionality
   - **Sample Data Population Fixed**: Corrected string userId to integer userId conversion preventing database initialization
   - **Authentication System Restored**: Fixed session-based authentication allowing proper API access for frontend
