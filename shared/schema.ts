@@ -592,6 +592,7 @@ export const publishers = pgTable("publishers", {
 // Campaign Publisher Assignments - Link publishers to campaigns with specific payouts
 export const campaignPublishers = pgTable("campaign_publishers", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   publisherId: integer("publisher_id").references(() => publishers.id).notNull(),
   

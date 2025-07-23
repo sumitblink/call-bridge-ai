@@ -875,14 +875,30 @@ export class SupabaseStorage implements IStorage {
 
   async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string, userId?: number): Promise<any> {
     const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
-    const [result] = await db.insert(campaignPublishers).values({
-      userId: userId || 2, // Use provided userId or fallback
+    
+    console.log('SupabaseStorage.addPublisherToCampaign called with:', {
+      publisherId,
+      campaignId: campaignIdStr,
+      customPayout,
+      userId,
+      finalUserId: userId || 2
+    });
+    
+    const insertData = {
+      userId: userId || 2, // Use provided userId or fallback  
       publisherId,
       campaignId: campaignIdStr,
       payout: customPayout ? customPayout : "0.00",
       payoutModel: "per_call",
       isActive: true,
-    }).returning();
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      assignedAt: new Date(),
+    };
+    
+    console.log('About to insert:', insertData);
+    
+    const [result] = await db.insert(campaignPublishers).values(insertData).returning();
     return result;
   }
 
