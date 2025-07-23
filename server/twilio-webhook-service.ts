@@ -70,7 +70,7 @@ export class TwilioWebhookService {
             voiceMethod: 'POST',
             statusCallback: statusCallbackUrl,
             statusCallbackMethod: 'POST',
-            friendlyName: `Pool-${poolId}-${phoneNumber.phoneNumber}`
+            friendlyName: `Pool ${poolId}`
           });
 
           result.updated.push(phoneNumber.phoneNumber);
@@ -115,7 +115,7 @@ export class TwilioWebhookService {
         voiceMethod: 'POST',
         statusCallback: statusCallbackUrl,
         statusCallbackMethod: 'POST',
-        friendlyName: `Campaign-${campaignId}-${phoneNumber.phoneNumber}`
+        friendlyName: `Campaign ${campaignId}`
       });
 
       console.log(`Updated campaign webhook for ${phoneNumber.phoneNumber}`);
