@@ -120,6 +120,7 @@ export const calls = pgTable("calls", {
   campaignId: uuid("campaign_id").references(() => campaigns.id),
   buyerId: integer("buyer_id").references(() => buyers.id),
   publisherId: integer("publisher_id").references(() => publishers.id), // Publisher/affiliate who generated the call
+  publisherName: varchar("publisher_name", { length: 255 }), // Publisher name from DNI tracking
   callSid: varchar("call_sid", { length: 100 }),
   fromNumber: varchar("from_number", { length: 20 }).notNull(),
   toNumber: varchar("to_number", { length: 20 }).notNull(),
@@ -1530,6 +1531,7 @@ export const visitorSessions = pgTable("visitor_sessions", {
   source: varchar("source", { length: 255 }), // google, facebook, direct
   medium: varchar("medium", { length: 255 }), // organic, cpc, email, social
   campaign: varchar("campaign", { length: 255 }), // campaign name
+  publisher: varchar("publisher", { length: 255 }), // publisher/affiliate name
   utmSource: varchar("utm_source", { length: 255 }),
   utmMedium: varchar("utm_medium", { length: 255 }),
   utmCampaign: varchar("utm_campaign", { length: 255 }),

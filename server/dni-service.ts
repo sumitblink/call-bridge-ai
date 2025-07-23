@@ -231,13 +231,13 @@ export class DNIService {
       const insertResult = await sql`
         INSERT INTO visitor_sessions (
           session_id, user_id, ip_address, user_agent, referrer,
-          source, medium, campaign, utm_source, utm_medium, utm_campaign, 
+          source, medium, campaign, publisher, utm_source, utm_medium, utm_campaign, 
           utm_term, utm_content, landing_page, current_page,
           first_visit, last_activity, is_active, has_converted,
           redtrack_clickid
         ) VALUES (
           ${uniqueSessionId}, ${userId}, ${request.ipAddress || '127.0.0.1'}, ${request.userAgent || 'unknown'}, ${request.referrer || ''},
-          ${request.source || ''}, ${request.medium || ''}, ${request.campaign || ''}, 
+          ${request.source || ''}, ${request.medium || ''}, ${request.campaign || ''}, ${request.customFields?.publisher || null},
           ${request.source || ''}, ${request.medium || ''}, ${request.campaign || ''},
           ${request.term || null}, ${request.content || null}, ${request.customFields?.domain || 'unknown'}, ${request.customFields?.domain || 'unknown'},
           NOW(), NOW(), true, false,
@@ -252,6 +252,7 @@ export class DNIService {
           source = EXCLUDED.source,
           medium = EXCLUDED.medium,
           campaign = EXCLUDED.campaign,
+          publisher = EXCLUDED.publisher,
           redtrack_clickid = EXCLUDED.redtrack_clickid
       `;
       

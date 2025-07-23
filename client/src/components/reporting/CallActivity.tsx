@@ -236,6 +236,14 @@ export default function CallActivity() {
         return <div className="font-mono text-xs">{call.campaignId}</div>;
       case 'buyerId':
         return <div className="font-mono text-xs">{call.buyerId || 'N/A'}</div>;
+      case 'publisher':
+        return <div className="truncate text-xs">{(call as any).publisherName || 'No Publisher'}</div>;
+      case 'payout':
+        return <div className="text-xs font-medium text-blue-600">${(call as any).payout || '0.00'}</div>;
+      case 'timeToCall':
+        return <div className="text-xs">{(call as any).ringTime || 0}s</div>;
+      case 'timeToConnect':
+        return <div className="text-xs">{(call as any).connectionTime || 0}s</div>;
       case 'actions':
         return (
           <div className="flex items-center space-x-1">

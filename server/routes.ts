@@ -1413,6 +1413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...callData,
             sessionId: matchingSession.sessionId,
             clickId: matchingSession.clickId || matchingSession.redtrackClickId, // FIX: Map clickid to clickId
+            publisherName: matchingSession.publisher || matchingSession.source, // Extract publisher attribution
             utmSource: matchingSession.utmSource,
             utmMedium: matchingSession.utmMedium,
             utmCampaign: matchingSession.utmCampaign,
