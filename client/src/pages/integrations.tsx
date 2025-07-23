@@ -77,7 +77,9 @@ export default function IntegrationsPage() {
     assignedCampaigns: [] as string[],
     isActive: true,
     advancedOptions: false,
-    authentication: 'none' as string
+    authentication: 'none' as string,
+    httpMethod: 'GET' as string,
+    headers: [] as Array<{key: string, value: string}>
   });
 
   const [selectedTemplate, setSelectedTemplate] = useState("");
@@ -286,7 +288,9 @@ export default function IntegrationsPage() {
       assignedCampaigns: [],
       isActive: true,
       advancedOptions: false,
-      authentication: 'none'
+      authentication: 'none',
+      httpMethod: 'GET',
+      headers: []
     });
     setSelectedTemplate("");
     setCustomUrl("");
@@ -321,7 +325,9 @@ export default function IntegrationsPage() {
       assignedCampaigns: pixel.assignedCampaigns || [],
       isActive: pixel.isActive,
       advancedOptions: false,
-      authentication: 'none'
+      authentication: 'none',
+      httpMethod: 'GET',
+      headers: []
     });
     
     // If the pixel code doesn't match auto-generated format, it's likely a custom URL
@@ -603,6 +609,12 @@ export default function IntegrationsPage() {
                             size="sm"
                             variant="outline"
                             className="text-xs h-6 px-2"
+                            onClick={() => {
+                              toast({
+                                title: 'Available Tokens',
+                                description: 'Use these tokens in your URL: {call_id}, {phone_number}, {campaign_id}, {timestamp}, {duration}, {status}'
+                              });
+                            }}
                           >
                             TOKENS
                           </Button>
@@ -641,22 +653,109 @@ export default function IntegrationsPage() {
                       </div>
 
                       {pixelForm.advancedOptions && (
-                        <div>
-                          <Label htmlFor="authentication">Authentication</Label>
-                          <Select
-                            value={pixelForm.authentication || 'none'}
-                            onValueChange={(value) => setPixelForm(prev => ({ ...prev, authentication: value }))}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Choose Authentication" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              <SelectItem value="basic">Basic Auth</SelectItem>
-                              <SelectItem value="bearer">Bearer Token</SelectItem>
-                              <SelectItem value="api_key">API Key</SelectItem>
-                            </SelectContent>
-                          </Select>
+                        <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                          <div>
+                            <Label htmlFor="http-method">HTTP Method</Label>
+                            <Select
+                              value={pixelForm.httpMethod}
+                              onValueChange={(value) => setPixelForm(prev => ({ ...prev, httpMethod: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose Method" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="GET">GET</SelectItem>
+                                <SelectItem value="POST">POST</SelectItem>
+                                <SelectItem value="PUT">PUT</SelectItem>
+                                <SelectItem value="PATCH">PATCH</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <span className="text-xs text-gray-500">Required</span>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <Label>Headers</Label>
+                              <div className="flex gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-xs h-6 px-2"
+                                  onClick={() => {
+                                    // TOKEN button functionality - show available tokens
+                                    toast({
+                                      title: 'Available Tokens',
+                                      description: 'Use these tokens in header values: {call_id}, {phone_number}, {campaign_id}, {timestamp}, {duration}, {status}'
+                                    });
+                                  }}
+                                >
+                                  TOKEN
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-xs h-6 px-2"
+                                  onClick={() => {
+                                    setPixelForm(prev => ({
+                                      ...prev,
+                                      headers: [...prev.headers, { key: '', value: '' }]
+                                    }));
+                                  }}
+                                >
+                                  ADD
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            {pixelForm.headers.length === 0 ? (
+                              <div className="text-center py-4 text-gray-500 bg-white rounded border-2 border-dashed">
+                                <p className="text-sm">No Headers</p>
+                                <p className="text-xs">Click ADD to add headers</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {pixelForm.headers.map((header, index) => (
+                                  <div key={index} className="flex gap-2 items-center">
+                                    <Input
+                                      placeholder="key"
+                                      value={header.key}
+                                      onChange={(e) => {
+                                        const newHeaders = [...pixelForm.headers];
+                                        newHeaders[index].key = e.target.value;
+                                        setPixelForm(prev => ({ ...prev, headers: newHeaders }));
+                                      }}
+                                      className="flex-1"
+                                    />
+                                    <span className="text-gray-500">:</span>
+                                    <Input
+                                      placeholder="value"
+                                      value={header.value}
+                                      onChange={(e) => {
+                                        const newHeaders = [...pixelForm.headers];
+                                        newHeaders[index].value = e.target.value;
+                                        setPixelForm(prev => ({ ...prev, headers: newHeaders }));
+                                      }}
+                                      className="flex-1"
+                                    />
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-red-500 hover:text-red-700 h-8 w-8 p-0"
+                                      onClick={() => {
+                                        const newHeaders = pixelForm.headers.filter((_, i) => i !== index);
+                                        setPixelForm(prev => ({ ...prev, headers: newHeaders }));
+                                      }}
+                                    >
+                                      ×
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 
