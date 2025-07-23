@@ -420,6 +420,9 @@ export class MemStorage implements IStorage {
     this.currentCampaignId = 3;
     this.currentBuyerId = 3;
     this.currentAgentId = 3;
+    
+    // Clear any sample campaign tracking pixels to prevent interference
+    this.campaignTrackingPixels.clear();
   }
 
   // Users
@@ -990,13 +993,7 @@ export class MemStorage implements IStorage {
     return true;
   }
 
-  async updateTrackingPixel(id: number, data: any): Promise<any> {
-    return { id, ...data };
-  }
 
-  async deleteTrackingPixel(id: number): Promise<boolean> {
-    return true;
-  }
 
   async getWebhookConfigs(): Promise<any[]> {
     return [];
