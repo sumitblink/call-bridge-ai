@@ -114,6 +114,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 23, 2025: **URL PARAMETERS TAB PERSISTENCE FIXED** - Fixed critical issue where user-created URL parameters disappeared when switching between campaign tabs
+  - **Root Cause**: CampaignUrlParameters component used non-persistent local state that reset on component unmount
+  - **Solution**: Implemented campaign-specific localStorage persistence with keys like `campaign_url_parameters_123`
+  - **User Experience**: Custom parameters (like "publisher") now persist when switching between URL Parameters ↔ Tracking Pixels tabs
+  - **Campaign Isolation**: Each campaign maintains its own independent URL parameter configuration
+  - **Status**: URL parameter configuration now properly persists during tab navigation within campaign interface
 - July 23, 2025: **RINGBA-STYLE SIMPLIFIED UI** - Streamlined tracking code generator to match Ringba's simple copy-paste approach
   - **Simplified Instructions**: Changed to Ringba's exact wording "Copy and paste this snippet on your page header, it will search for phone numbers to replace and swap them with Pool Numbers"
   - **Removed Manual Complexity**: Eliminated detailed CSS class documentation and lengthy explanations to match Ringba's simplicity

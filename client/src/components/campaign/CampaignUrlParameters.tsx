@@ -81,11 +81,26 @@ const DEFAULT_PARAMETERS: UrlParameter[] = [
   }
 ];
 
+const getParametersStorageKey = (campaignId?: number) => 
+  campaignId ? `campaign_url_parameters_${campaignId}` : 'campaign_url_parameters_default';
+
 export default function CampaignUrlParameters({ campaignId }: CampaignUrlParametersProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingParameter, setEditingParameter] = useState<UrlParameter | null>(null);
-  const [parameters, setParameters] = useState<UrlParameter[]>(DEFAULT_PARAMETERS);
+  const [parameters, setParameters] = useState<UrlParameter[]>(() => {
+    // Load saved parameters from localStorage on initialization
+    try {
+      const storageKey = getParametersStorageKey(campaignId);
+      const savedParameters = localStorage.getItem(storageKey);
+      if (savedParameters) {
+        return JSON.parse(savedParameters);
+      }
+    } catch (error) {
+      console.log('Failed to load saved URL parameters');
+    }
+    return DEFAULT_PARAMETERS;
+  });
   const [selectedGlobalParameters, setSelectedGlobalParameters] = useState<number[]>([]);
   const [formData, setFormData] = useState<{
     parameterName: string;
@@ -98,6 +113,16 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
   });
   
   const { toast } = useToast();
+
+  // Save parameters to localStorage whenever they change
+  useEffect(() => {
+    try {
+      const storageKey = getParametersStorageKey(campaignId);
+      localStorage.setItem(storageKey, JSON.stringify(parameters));
+    } catch (error) {
+      console.log('Failed to save URL parameters');
+    }
+  }, [parameters, campaignId]);
 
   // Fetch global URL parameters from Integrations
   const { data: globalParameters, isLoading: isLoadingGlobal } = useQuery({
