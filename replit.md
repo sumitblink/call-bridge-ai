@@ -114,14 +114,16 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
-- July 23, 2025: **RINGBA-STYLE UNIFIED TRACKING PIXEL FORMS COMPLETE** - Implemented consistent Ringba-style interface across both Integrations and Campaign tracking pixel forms
-  - **Custom URL Field**: Added optional custom URL input field in Integrations pixel creation form
-  - **Smart Form Handling**: When custom URL is entered, form uses custom URL instead of auto-generated code
-  - **RedTrack Support**: Users can now paste RedTrack postback URLs like "https://test.offer.com/postback?clickid={call_id}&campaign={campaign_id}"
-  - **Token Support**: Custom URLs support all tracking tokens ({call_id}, {phone_number}, {campaign_id}, {timestamp}, etc.)
-  - **Edit Support**: When editing existing pixels, form detects custom URLs vs auto-generated code and populates correctly
-  - **User Experience**: Resolves issue where users couldn't find URL field in Integrations form but could in campaign-specific form
-  - **Status**: Both Integrations and Campaign forms now have consistent custom URL input capabilities
+- July 23, 2025: **UNIFIED TRACKING PIXEL FORMS WITH CONSISTENT UI** - Implemented consistent unified form interface across both Integrations and Campaign tracking pixel areas while maintaining website's existing design theme
+  - **Unified Tab Interface**: Both locations now feature "Select Existing" / "Create New" tab-based forms for consistent user experience
+  - **Website Theme Maintained**: Kept existing light theme styling consistent with website design rather than changing to external platform appearance
+  - **Essential Fields Only**: Streamlined form to core fields - Name, Fire Pixel On, Custom URL, and optional Advanced Options
+  - **Custom URL Integration**: Full support for RedTrack postback URLs and external tracking platforms with token replacement
+  - **Token Support**: Complete token system with {call_id}, {phone_number}, {campaign_id}, {timestamp}, {duration}, {status} availability
+  - **Advanced Options**: Toggle for Authentication settings (None, Basic Auth, Bearer Token, API Key) when needed
+  - **Select Existing**: Professional listing of existing pixels with "Use This Pixel" functionality for easy reuse
+  - **Consistent Experience**: Identical form behavior and capabilities in both Integrations page and Campaign tracking tabs
+  - **Status**: Complete unified interface with website-consistent styling across all tracking pixel management areas
 - July 23, 2025: **CAMPAIGN TRACKING PIXELS HARDCODED DATA ISSUE FIXED** - Fixed critical persistence bug where deleted tracking pixels reappeared when switching campaign tabs
   - **Root Cause**: CampaignTrackingPixels component used hardcoded SAMPLE_PIXELS instead of API data
   - **Solution**: Replaced hardcoded data with real API calls to `/api/integrations/pixels` endpoint

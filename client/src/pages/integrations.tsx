@@ -550,39 +550,26 @@ export default function IntegrationsPage() {
                       Add Pixel
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl bg-gray-800 text-white border-gray-700">
+                  <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                      <div className="flex items-center justify-between">
-                        <DialogTitle className="text-white">Tracking Pixels</DialogTitle>
-                        <button 
-                          onClick={() => setIsPixelDialogOpen(false)}
-                          className="text-gray-400 hover:text-white"
-                        >
-                          ✕
-                        </button>
-                      </div>
+                      <DialogTitle>Tracking Pixels</DialogTitle>
+                      <DialogDescription>
+                        Manage tracking pixels with unified form interface
+                      </DialogDescription>
                     </DialogHeader>
 
-                    {/* Ringba-Style Tabs */}
-                    <div className="flex border-b border-gray-600 mb-6">
+                    {/* Tab Navigation */}
+                    <div className="flex border-b mb-6">
                       <Button
-                        variant="ghost"
-                        className={`px-6 py-2 rounded-none border-b-2 ${
-                          selectedPixelTab === 'existing' 
-                            ? 'border-blue-500 bg-blue-600 text-white' 
-                            : 'border-transparent text-gray-400 hover:text-white'
-                        }`}
+                        variant={selectedPixelTab === 'existing' ? 'default' : 'ghost'}
+                        className="px-6 py-2 rounded-none border-b-2 border-transparent hover:border-blue-500 data-[state=active]:border-blue-500"
                         onClick={() => setSelectedPixelTab('existing')}
                       >
                         Select Existing
                       </Button>
                       <Button
-                        variant="ghost"
-                        className={`px-6 py-2 rounded-none border-b-2 ${
-                          selectedPixelTab === 'create' 
-                            ? 'border-blue-500 bg-blue-600 text-white' 
-                            : 'border-transparent text-gray-400 hover:text-white'
-                        }`}
+                        variant={selectedPixelTab === 'create' ? 'default' : 'ghost'}
+                        className="px-6 py-2 rounded-none border-b-2 border-transparent hover:border-blue-500 data-[state=active]:border-blue-500"
                         onClick={() => setSelectedPixelTab('create')}
                       >
                         Create New
@@ -593,24 +580,23 @@ export default function IntegrationsPage() {
                     {selectedPixelTab === 'existing' && (
                       <div className="space-y-4">
                         <div>
-                          <Label className="text-white">Choose Option</Label>
+                          <Label>Choose Option</Label>
                           <div className="mt-2">
                             {pixels && pixels.length > 0 ? (
                               <div className="space-y-2 max-h-60 overflow-y-auto">
                                 {pixels.map((pixel: any) => (
-                                  <div key={pixel.id} className="flex items-center justify-between p-3 border border-gray-600 rounded-lg bg-gray-700">
+                                  <div key={pixel.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                                     <div>
-                                      <div className="font-medium text-white">{pixel.name}</div>
-                                      <div className="text-sm text-gray-400">
+                                      <div className="font-medium">{pixel.name}</div>
+                                      <div className="text-sm text-gray-500">
                                         Fires on: {pixel.fireOnEvent || pixel.fire_on_event}
                                       </div>
-                                      <div className="text-xs text-blue-400 truncate max-w-md">
+                                      <div className="text-xs text-blue-600 truncate max-w-md">
                                         {pixel.code}
                                       </div>
                                     </div>
                                     <Button
                                       size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700"
                                       onClick={() => {
                                         toast({
                                           title: 'Pixel Available',
@@ -625,8 +611,8 @@ export default function IntegrationsPage() {
                                 ))}
                               </div>
                             ) : (
-                              <div className="text-center py-8 text-gray-400">
-                                <Code className="w-8 h-8 mx-auto text-gray-500 mb-2" />
+                              <div className="text-center py-8 text-gray-500">
+                                <Code className="w-8 h-8 mx-auto text-gray-400 mb-2" />
                                 <p className="text-sm">No existing pixels found</p>
                                 <p className="text-xs">Create your first pixel below</p>
                               </div>
@@ -638,30 +624,29 @@ export default function IntegrationsPage() {
 
                     {/* Create New Tab - Ringba Style */}
                     {selectedPixelTab === 'create' && (
-                      <div className="space-y-6">
+                      <div className="space-y-4">
                         <div>
-                          <Label htmlFor="name" className="text-white">Name <span className="text-red-500">*</span></Label>
+                          <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
                           <Input
                             id="name"
                             value={pixelForm.name}
                             onChange={(e) => setPixelForm(prev => ({ ...prev, name: e.target.value }))}
                             placeholder="Enter name"
-                            className="bg-gray-700 text-white border-gray-600 mt-1"
                             required
                           />
                           <span className="text-xs text-gray-500">Required</span>
                         </div>
 
                         <div>
-                          <Label htmlFor="fire-event" className="text-white">Fire Pixel On <span className="text-red-500">*</span></Label>
+                          <Label htmlFor="fire-event">Fire Pixel On <span className="text-red-500">*</span></Label>
                           <Select 
                             value={pixelForm.fireOnEvent} 
                             onValueChange={(value) => setPixelForm(prev => ({ ...prev, fireOnEvent: value }))}
                           >
-                            <SelectTrigger className="bg-gray-700 text-white border-gray-600 mt-1">
+                            <SelectTrigger>
                               <SelectValue placeholder="Choose Event Type" />
                             </SelectTrigger>
-                            <SelectContent className="bg-gray-700 border-gray-600">
+                            <SelectContent>
                               <SelectItem value="incoming">Incoming</SelectItem>
                               <SelectItem value="connected">Connected</SelectItem>
                               <SelectItem value="completed">Completed</SelectItem>
@@ -676,16 +661,15 @@ export default function IntegrationsPage() {
 
                         <div>
                           <div className="flex items-center gap-2">
-                            <Label htmlFor="custom-url" className="text-white">URL</Label>
+                            <Label htmlFor="custom-url">Custom Pixel URL</Label>
                             <Button
                               type="button"
                               size="sm"
                               variant="outline"
-                              className="text-xs h-6 px-2 bg-blue-600 text-white border-blue-500 hover:bg-blue-700"
+                              className="text-xs h-6 px-2"
                             >
-                              TOKEN
+                              TOKENS
                             </Button>
-                            <span className="text-xs text-gray-500">Required</span>
                           </div>
                           <Input
                             id="custom-url"
@@ -694,37 +678,43 @@ export default function IntegrationsPage() {
                               setCustomUrl(e.target.value);
                               setPixelForm(prev => ({ ...prev, code: e.target.value.trim() }));
                             }}
-                            placeholder="http://mytracking.tracking.com"
-                            className="bg-gray-700 text-white border-gray-600 mt-1"
+                            placeholder="https://example.com/postback?clickid={call_id}&campaign={campaign_id}"
                           />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Available tokens: {'{call_id}'}, {'{phone_number}'}, {'{campaign_id}'}, {'{timestamp}'}, {'{duration}'}, {'{status}'}
+                          </p>
                         </div>
 
                         <div className="flex items-center justify-between">
-                          <Label className="text-white">Advanced Options</Label>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setPixelForm(prev => ({ ...prev, advancedOptions: !prev.advancedOptions }))}
-                            className="w-12 h-6 rounded-full bg-gray-600 relative p-0"
-                          >
-                            <div className={`w-5 h-5 rounded-full bg-white absolute transition-transform ${
-                              pixelForm.advancedOptions ? 'translate-x-3' : 'translate-x-0'
-                            }`} />
-                          </Button>
+                          <Label>Advanced Options</Label>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={pixelForm.advancedOptions}
+                              onChange={(e) => setPixelForm(prev => ({ ...prev, advancedOptions: e.target.checked }))}
+                            />
+                            <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer ${
+                              pixelForm.advancedOptions ? 'bg-blue-600' : 'bg-gray-200'
+                            }`}>
+                              <div className={`w-5 h-5 bg-white rounded-full shadow transform transition ${
+                                pixelForm.advancedOptions ? 'translate-x-5' : 'translate-x-0'
+                              }`} />
+                            </div>
+                          </label>
                         </div>
 
                         {pixelForm.advancedOptions && (
                           <div>
-                            <Label htmlFor="authentication" className="text-white">Authentication</Label>
+                            <Label htmlFor="authentication">Authentication</Label>
                             <Select
                               value={pixelForm.authentication || 'none'}
                               onValueChange={(value) => setPixelForm(prev => ({ ...prev, authentication: value }))}
                             >
-                              <SelectTrigger className="bg-gray-700 text-white border-gray-600 mt-1">
+                              <SelectTrigger>
                                 <SelectValue placeholder="Choose Authentication" />
                               </SelectTrigger>
-                              <SelectContent className="bg-gray-700 border-gray-600">
+                              <SelectContent>
                                 <SelectItem value="none">None</SelectItem>
                                 <SelectItem value="basic">Basic Auth</SelectItem>
                                 <SelectItem value="bearer">Bearer Token</SelectItem>
@@ -739,14 +729,12 @@ export default function IntegrationsPage() {
                             type="button" 
                             variant="outline" 
                             onClick={() => setIsPixelDialogOpen(false)}
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700"
                           >
                             Cancel
                           </Button>
                           <Button 
                             onClick={handlePixelSubmit}
                             disabled={createPixelMutation.isPending || updatePixelMutation.isPending}
-                            className="bg-blue-600 hover:bg-blue-700"
                           >
                             {editingItem ? 'Update' : 'Create'} Pixel
                           </Button>
