@@ -681,6 +681,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Handle phone number assignment automation for direct routing
+      if (validatedData.phoneNumber && validatedData.phoneNumber !== existingCampaign.phoneNumber) {
+        try {
+          console.log(`Configuring direct phone number assignment: ${validatedData.phoneNumber}`);
+          
+          // Get all phone numbers to find the specific one being assigned
+          const phoneNumbers = await storage.getPhoneNumbers();
+          const phoneNumber = phoneNumbers.find(p => p.phoneNumber === validatedData.phoneNumber);
+          
+          if (phoneNumber) {
+            // Update the phone number to be assigned to this campaign
+            await storage.updatePhoneNumber(phoneNumber.id, { campaignId: id });
+            await storage.updatePhoneNumberFriendlyName(phoneNumber.id, 'Campaign Direct');
+            console.log(`Updated phone number ${validatedData.phoneNumber} assignment to campaign ${id}`);
+            
+            // Configure Twilio webhook for direct assignment
+            if (phoneNumber.phoneNumberSid) {
+              const { TwilioWebhookService } = await import('./twilio-webhook-service');
+              const webhookResult = await TwilioWebhookService.updateCampaignWebhook(id, phoneNumber);
+              
+              if (webhookResult) {
+                console.log(`Successfully configured direct webhook for ${validatedData.phoneNumber}`);
+              } else {
+                console.warn(`Failed to configure webhook for ${validatedData.phoneNumber}`);
+              }
+            }
+          }
+          
+          // Clear previous phone number assignment if there was one
+          if (existingCampaign.phoneNumber && existingCampaign.phoneNumber !== validatedData.phoneNumber) {
+            const oldPhoneNumber = phoneNumbers.find(p => p.phoneNumber === existingCampaign.phoneNumber);
+            if (oldPhoneNumber) {
+              await storage.updatePhoneNumber(oldPhoneNumber.id, { campaignId: null });
+              await storage.updatePhoneNumberFriendlyName(oldPhoneNumber.id, 'Unassigned');
+              console.log(`Cleared previous phone number assignment: ${existingCampaign.phoneNumber}`);
+              
+              if (oldPhoneNumber.phoneNumberSid) {
+                const { TwilioWebhookService } = await import('./twilio-webhook-service');
+                await TwilioWebhookService.removeWebhooks([oldPhoneNumber]);
+              }
+            }
+          }
+        } catch (webhookError) {
+          console.error('Error configuring direct number webhook:', webhookError);
+          // Don't fail campaign update if webhook configuration fails
+        }
+      }
+
       const campaign = await storage.updateCampaign(id, validatedData);
       if (!campaign) {
         return res.status(404).json({ error: "Campaign not found" });
