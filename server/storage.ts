@@ -57,7 +57,7 @@ export interface IStorage {
   getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
   updateCampaign(id: string | number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined>;
-  deleteCampaign(id: string | number): Promise<boolean>;
+  deleteCampaign(id: string): Promise<boolean>;
 
   // Buyers
   getBuyers(): Promise<Buyer[]>;

@@ -140,7 +140,7 @@ export class SupabaseStorage implements IStorage {
     return result[0];
   }
 
-  async deleteCampaign(id: string | number): Promise<boolean> {
+  async deleteCampaign(id: string): Promise<boolean> {
     // Delete all related records first to avoid foreign key constraint violations
     
     // Delete call logs for calls related to this campaign
@@ -152,17 +152,11 @@ export class SupabaseStorage implements IStorage {
     // Delete calls related to this campaign
     await db.delete(calls).where(eq(calls.campaignId, id));
     
-    // Delete URL parameters related to this campaign
-    await db.delete(urlParameters).where(eq(urlParameters.campaignId, id));
-    
-    // Delete tracking pixels related to this campaign
-    // Note: tracking pixels use campaigns array, so we skip this for now
-    
     // Delete campaign-buyer relationships
     await db.delete(campaignBuyers).where(eq(campaignBuyers.campaignId, id));
     
     // Delete publisher-campaign relationships
-    await db.delete(publisherCampaigns).where(eq(publisherCampaigns.campaignId, id));
+    await db.delete(campaignPublishers).where(eq(campaignPublishers.campaignId, id));
     
     // Finally delete the campaign
     const result = await db.delete(campaigns).where(eq(campaigns.id, id));
