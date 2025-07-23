@@ -289,7 +289,7 @@ export class MemStorage implements IStorage {
     // Sample campaigns
     this.campaigns.set(1, {
       id: 1,
-      userId: "demo-user-1",
+      userId: 1,
       name: "Home Insurance Lead Gen",
       description: "Insurance leads for homeowners",
       status: "active",
@@ -305,7 +305,7 @@ export class MemStorage implements IStorage {
 
     this.campaigns.set(2, {
       id: 2,
-      userId: "demo-user-1",
+      userId: 1,
       name: "Auto Insurance Campaign",
       description: "Auto insurance quote generation",
       status: "active",
@@ -322,7 +322,7 @@ export class MemStorage implements IStorage {
     // Sample buyers - using correct schema fields
     this.buyers.set(1, {
       id: 1,
-      userId: "demo-user-1",
+      userId: 1,
       name: "LeadGen Pro",
       email: "contact@leadgenpro.com",
       phoneNumber: "+12125551234",
@@ -339,7 +339,7 @@ export class MemStorage implements IStorage {
 
     this.buyers.set(2, {
       id: 2,
-      userId: "demo-user-1",
+      userId: 1,
       name: "Insurance Direct",
       email: "leads@insurancedirect.com",
       phoneNumber: "+13235556789",
@@ -354,23 +354,45 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     });
 
-    // Sample agents
+    // Sample agents - using correct schema fields
     this.agents.set(1, {
       id: 1,
+      userId: 1,
       name: "Sarah Johnson",
       email: "sarah@company.com",
+      phoneNumber: "+12125551111",
       status: "active",
-      callsHandled: 45,
+      priority: 1,
+      maxConcurrentCalls: 3,
+      skillLevel: "senior",
+      department: "sales",
+      averageCallDuration: 300,
+      successRate: 85,
+      totalCallsHandled: 45,
+      totalRevenue: 12500,
+      lastActivity: new Date(),
+      isOnline: true,
       createdAt: new Date(),
       updatedAt: new Date()
     });
 
     this.agents.set(2, {
       id: 2,
+      userId: 1,
       name: "Mike Chen",
       email: "mike@company.com",
+      phoneNumber: "+12125552222",
       status: "active",
-      callsHandled: 32,
+      priority: 2,
+      maxConcurrentCalls: 2,
+      skillLevel: "intermediate",
+      department: "support",
+      averageCallDuration: 250,
+      successRate: 78,
+      totalCallsHandled: 32,
+      totalRevenue: 8900,
+      lastActivity: new Date(),
+      isOnline: true,
       createdAt: new Date(),
       updatedAt: new Date()
     });
@@ -476,8 +498,9 @@ export class MemStorage implements IStorage {
     return newCampaign;
   }
 
-  async updateCampaign(id: number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
-    const existing = this.campaigns.get(id);
+  async updateCampaign(id: string | number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
+    const campaignId = typeof id === 'string' ? parseInt(id) : id;
+    const existing = this.campaigns.get(campaignId);
     if (!existing) return undefined;
     
     const updated: Campaign = {
@@ -485,17 +508,18 @@ export class MemStorage implements IStorage {
       ...campaign,
       updatedAt: new Date()
     };
-    this.campaigns.set(id, updated);
+    this.campaigns.set(campaignId, updated);
     return updated;
   }
 
-  async deleteCampaign(id: number): Promise<boolean> {
+  async deleteCampaign(id: string): Promise<boolean> {
+    const campaignId = parseInt(id.toString());
     // Delete all related records first to avoid foreign key constraint violations
     
     // Delete call logs for calls related to this campaign
     const callsToRemove: number[] = [];
     for (const [callId, call] of this.calls.entries()) {
-      if (call.campaignId === id) {
+      if (call.campaignId === campaignId.toString()) {
         callsToRemove.push(callId);
       }
     }
@@ -517,7 +541,7 @@ export class MemStorage implements IStorage {
     // Remove campaign-buyer relationships
     const campaignBuyersToRemove: string[] = [];
     for (const [key, cb] of this.campaignBuyers.entries()) {
-      if (cb.campaignId === id) {
+      if (cb.campaignId === campaignId.toString()) {
         campaignBuyersToRemove.push(key);
       }
     }
@@ -526,14 +550,14 @@ export class MemStorage implements IStorage {
     // Remove publisher-campaign relationships
     const publisherCampaignsToRemove: string[] = [];
     for (const [key, pc] of this.publisherCampaigns.entries()) {
-      if (pc.campaignId === id) {
+      if (pc.campaignId === campaignId.toString()) {
         publisherCampaignsToRemove.push(key);
       }
     }
     publisherCampaignsToRemove.forEach(key => this.publisherCampaigns.delete(key));
     
     // Finally delete the campaign
-    return this.campaigns.delete(id);
+    return this.campaigns.delete(campaignId);
   }
 
   // Agents
@@ -556,7 +580,18 @@ export class MemStorage implements IStorage {
       name: agent.name,
       email: agent.email,
       status: agent.status ?? "active",
-      callsHandled: agent.callsHandled ?? 0,
+      userId: agent.userId,
+      phoneNumber: agent.phoneNumber,
+      priority: agent.priority ?? 1,
+      maxConcurrentCalls: agent.maxConcurrentCalls ?? 1,
+      skillLevel: agent.skillLevel,
+      department: agent.department,
+      averageCallDuration: agent.averageCallDuration ?? 0,
+      successRate: agent.successRate ?? 0,
+      totalCallsHandled: agent.totalCallsHandled ?? 0,
+      totalRevenue: agent.totalRevenue ?? 0,
+      lastActivity: agent.lastActivity ?? new Date(),
+      isOnline: agent.isOnline ?? false,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -860,7 +895,7 @@ export class MemStorage implements IStorage {
     
     let totalResponseTime = 0;
     for (const buyer of this.buyers.values()) {
-      totalResponseTime += buyer.avgResponseTime;
+      totalResponseTime += buyer.avgResponseTime || 0;
     }
     const avgResponseTime = this.buyers.size > 0 ? totalResponseTime / this.buyers.size : 0;
 

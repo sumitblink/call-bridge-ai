@@ -61,6 +61,17 @@ class HybridStorage implements IStorage {
 
   private async populateDatabase() {
     try {
+      // First create sample user if it doesn't exist
+      try {
+        await this.databaseStorage.getUser("1");
+      } catch {
+        await this.databaseStorage.createUser({
+          username: "demo-user",
+          email: "demo@example.com",
+          password: "demo123"
+        });
+      }
+
       // Add sample campaigns
       const campaigns = await this.memStorage.getCampaigns();
       for (const campaign of campaigns) {

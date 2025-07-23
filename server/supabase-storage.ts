@@ -790,7 +790,7 @@ export class SupabaseStorage implements IStorage {
 
   async deletePublisher(id: number): Promise<boolean> {
     // First delete all publisher-campaign relationships
-    await db.delete(publisherCampaigns).where(eq(publisherCampaigns.publisherId, id));
+    await db.delete(campaignPublishers).where(eq(campaignPublishers.publisherId, id));
     
     // Then delete the publisher
     const result = await db.delete(publishers).where(eq(publishers.id, id));
@@ -813,15 +813,15 @@ export class SupabaseStorage implements IStorage {
         createdAt: campaigns.createdAt,
         updatedAt: campaigns.updatedAt,
       })
-      .from(publisherCampaigns)
-      .innerJoin(campaigns, eq(publisherCampaigns.campaignId, campaigns.id))
-      .where(eq(publisherCampaigns.publisherId, publisherId));
+      .from(campaignPublishers)
+      .innerJoin(campaigns, eq(campaignPublishers.campaignId, campaigns.id))
+      .where(eq(campaignPublishers.publisherId, publisherId));
     return result;
   }
 
   async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any> {
     const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
-    const [result] = await db.insert(publisherCampaigns).values({
+    const [result] = await db.insert(campaignPublishers).values({
       publisherId,
       campaignId: campaignIdStr,
       customPayout,
@@ -832,10 +832,10 @@ export class SupabaseStorage implements IStorage {
 
   async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
     const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
-    const result = await db.delete(publisherCampaigns)
+    const result = await db.delete(campaignPublishers)
       .where(and(
-        eq(publisherCampaigns.publisherId, publisherId),
-        eq(publisherCampaigns.campaignId, campaignIdStr)
+        eq(campaignPublishers.publisherId, publisherId),
+        eq(campaignPublishers.campaignId, campaignIdStr)
       ));
     return result.rowCount > 0;
   }
