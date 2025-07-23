@@ -22,7 +22,7 @@ export interface ValidationStep {
   required: boolean;
 }
 
-export function useCampaignValidation(campaignId: number) {
+export function useCampaignValidation(campaignId: string | number) {
   // Fetch campaign data
   const { data: campaign } = useQuery<Campaign>({
     queryKey: [`/api/campaigns/${campaignId}`],
@@ -61,6 +61,17 @@ function validateCampaign(
       steps: [],
     };
   }
+
+  // Debug logging for campaign validation
+  console.log('Campaign validation data:', {
+    routingType: campaign.routingType,
+    phoneNumber: campaign.phoneNumber,
+    poolId: campaign.poolId,
+    callRoutingStrategy: campaign.callRoutingStrategy,
+    maxConcurrentCalls: campaign.maxConcurrentCalls,
+    callCap: campaign.callCap,
+    buyersCount: buyers.length
+  });
 
   const issues: ValidationIssue[] = [];
   const steps: ValidationStep[] = [];
