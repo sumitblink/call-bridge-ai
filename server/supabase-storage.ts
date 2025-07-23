@@ -221,6 +221,14 @@ export class SupabaseStorage implements IStorage {
       console.log('DNI sessions table error, skipping...');
     }
     
+    // Delete DNI snippets (they reference call_tracking_tags)
+    try {
+      const snippetsResult = await db.execute(sql`DELETE FROM dni_snippets WHERE tag_id IN (SELECT id FROM call_tracking_tags WHERE campaign_id = ${id})`);
+      console.log(`Deleted ${snippetsResult.rowCount || 0} DNI snippets for campaign ${id}`);
+    } catch (error) {
+      console.log('DNI snippets table error, skipping...');
+    }
+    
     // Delete call tracking tags using raw SQL (must be before campaign deletion)
     try {
       const result = await db.execute(sql`DELETE FROM call_tracking_tags WHERE campaign_id = ${id}`);
