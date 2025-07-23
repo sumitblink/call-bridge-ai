@@ -31,13 +31,9 @@ export interface TwilioCallStatusRequest extends TwilioCallRequest {
 export async function handleIncomingCall(req: Request, res: Response) {
   try {
     console.log('[Webhook] === INCOMING CALL RECEIVED ===');
-    console.log('[Webhook] Request method:', req.method);
-    console.log('[Webhook] Request URL:', req.url);
-    console.log('[Webhook] Request headers:', JSON.stringify(req.headers, null, 2));
     
     const callData: TwilioCallRequest = req.body;
-    console.log('[Webhook] *** CALL DATA ***:', JSON.stringify(callData, null, 2));
-    console.log('[Webhook] Looking for campaign with phone number:', callData.To);
+    console.log('[Webhook] Call from', callData.From, 'to', callData.To, 'CallSid:', callData.CallSid);
 
     // Find campaign by phone number
     const campaign = await storage.getCampaignByPhoneNumber(callData.To);
@@ -123,6 +119,15 @@ export async function handleIncomingCall(req: Request, res: Response) {
     console.log('[Webhook] Creating call record...');
     console.log('[Webhook] Looking for visitor session data for phone:', callData.To);
     
+    // Calculate financial values based on campaign configuration
+    const defaultPayout = parseFloat(campaign.defaultPayout || '0.00');
+    const cost = '0.0000'; // Keep cost as 0 for now
+    const payout = defaultPayout.toFixed(4);
+    const revenue = defaultPayout.toFixed(4); // For per_call model, revenue = payout
+    const profit = (defaultPayout - 0).toFixed(4); // profit = revenue - cost
+    
+    console.log('[Webhook] Financial calculation - Payout:', payout, 'Revenue:', revenue, 'Profit:', profit);
+    
     // Try to find recent visitor session for attribution
     let enrichedCallData: any = {
       campaignId: campaign.id,
@@ -133,8 +138,10 @@ export async function handleIncomingCall(req: Request, res: Response) {
       dialedNumber: callData.To,
       status: 'ringing',
       duration: 0,
-      cost: '0.0000',
-      revenue: '0.0000',
+      cost,
+      payout,
+      revenue,
+      profit,
     };
 
     try {
@@ -150,8 +157,7 @@ export async function handleIncomingCall(req: Request, res: Response) {
         .find(session => session.utmSource || session.clickId || session.redtrackClickId);
       
       if (matchingSession) {
-        console.log('[Webhook] Found matching visitor session:', matchingSession.sessionId);
-        console.log('[Webhook] Session clickid:', matchingSession.clickId || matchingSession.redtrackClickId);
+        console.log('[Webhook] Found matching visitor session with clickId:', matchingSession.clickId || matchingSession.redtrackClickId);
         
         // Enrich call data with visitor session attribution
         enrichedCallData = {
@@ -169,8 +175,7 @@ export async function handleIncomingCall(req: Request, res: Response) {
           ipAddress: matchingSession.ipAddress,
           geoLocation: matchingSession.location,
         };
-        
-        console.log('[Webhook] Call enriched with session data - clickId:', enrichedCallData.clickId);
+
       } else {
         console.log('[Webhook] No recent visitor session found for attribution');
       }
@@ -182,14 +187,12 @@ export async function handleIncomingCall(req: Request, res: Response) {
     console.log('[Webhook] Call record created:', callRecord.id, 'with clickId:', callRecord.clickId);
 
     // Log routing decision
-    console.log('[Webhook] Creating call log...');
     await storage.createCallLog({
       callId: callRecord.id,
       buyerId: selectedBuyer.id,
       action: 'route',
       response: `Routed to ${selectedBuyer.name} (Priority: ${selectedBuyer.priority})`,
     });
-    console.log('[Webhook] Call log created');
 
     // Return TwiML to forward call to buyer
     const buyerNumber = selectedBuyer.phoneNumber;

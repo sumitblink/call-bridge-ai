@@ -1358,6 +1358,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create call record with complete pool and phone number data plus visitor session enrichment
       console.log('[Pool Webhook] Looking for visitor session data for attribution...');
+      
+      // Calculate financial values based on campaign configuration
+      const defaultPayout = parseFloat(campaign.defaultPayout || '0.00');
+      const cost = '0.0000'; // Keep cost as 0 for now
+      const payout = defaultPayout.toFixed(4);
+      const revenue = defaultPayout.toFixed(4); // For per_call model, revenue = payout
+      const profit = (defaultPayout - 0).toFixed(4); // profit = revenue - cost
+      
+      console.log('[Pool Webhook] Campaign financial config - Payout:', payout, 'Revenue:', revenue, 'Profit:', profit);
+      
       let callData: any = {
         campaignId: campaign.id,
         buyerId: routingMethod === 'rtb' ? null : selectedBuyer.id, // RTB calls use external routing
@@ -1369,6 +1379,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phoneNumberId: phoneNumber?.id || null,
         status: 'initiated',
         startTime: new Date(),
+        cost,
+        payout,
+        revenue,
+        profit,
         routingData: JSON.stringify({
           ...routingData,
           routingMethod,
@@ -1715,6 +1729,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[Webhook RTB] Final routing decision - Method: ${routingMethod}, Buyer: ${selectedBuyer.name}`);
       
+      // Calculate financial values based on campaign configuration
+      const defaultPayout = parseFloat(campaign.defaultPayout || '0.00');
+      const cost = '0.0000'; // Keep cost as 0 for now
+      const payout = defaultPayout.toFixed(4);
+      const revenue = defaultPayout.toFixed(4); // For per_call model, revenue = payout
+      const profit = (defaultPayout - 0).toFixed(4); // profit = revenue - cost
+      
+      console.log('[Webhook RTB] Campaign financial config - Payout:', payout, 'Revenue:', revenue, 'Profit:', profit);
+      
       // Create call record with RTB data
       const callData = {
         campaignId: campaign.id,
@@ -1724,6 +1747,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         toNumber,
         status: 'ringing',
         startTime: new Date(),
+        cost,
+        payout,
+        revenue,
+        profit,
         routingData: JSON.stringify({
           ...routingData,
           routingMethod,
