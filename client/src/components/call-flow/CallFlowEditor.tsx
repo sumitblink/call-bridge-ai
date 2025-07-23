@@ -691,10 +691,7 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             </Button>
           </div>
           
-          <Button variant="outline" className="flex items-center gap-2">
-            <Play className="h-4 w-4" />
-            Test Flow
-          </Button>
+
           <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
             <Save className="h-4 w-4" />
             Save Flow
