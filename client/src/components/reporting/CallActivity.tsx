@@ -315,10 +315,10 @@ export default function CallActivity() {
         );
       default:
         // Handle dynamic URL parameter columns
-        // Map URL parameter names to database column names
+        // Map URL parameter names to database column names (snake_case)
         const columnMappings: Record<string, string> = {
-          'clickid': 'clickId',
-          'publisher': 'publisherName',
+          'clickid': 'click_id',
+          'publisher': 'publisher_name',
           'utm_campaign': 'utm_campaign',
           'utm_source': 'utm_source',
           'utm_medium': 'utm_medium',
