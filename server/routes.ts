@@ -6051,6 +6051,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const columnPreferencesRouter = (await import('./api/column-preferences')).default;
   app.use('/api/column-preferences', columnPreferencesRouter);
 
+  // Cleanup all Twilio webhooks
+  app.post('/api/admin/cleanup-twilio-webhooks', requireAuth, async (req, res) => {
+    try {
+      const { TwilioCleanupService } = await import('./cleanup-twilio-webhooks');
+      const result = await TwilioCleanupService.cleanupAllPhoneNumbers();
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error cleaning up Twilio webhooks:', error);
+      res.status(500).json({ 
+        error: 'Failed to cleanup Twilio webhooks',
+        details: error.message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   // Test landing page route for RedTrack integration testing
   app.get('/redtrack-test-lander.html', (req, res) => {
