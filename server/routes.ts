@@ -4433,10 +4433,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error creating tracking tag:', error);
+      
+      // Handle duplicate tag code error
+      if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+        return res.status(409).json({ 
+          error: 'Tag code already exists',
+          message: 'A tracking tag with this code already exists. Please choose a different tag code.',
+          code: 'DUPLICATE_TAG_CODE'
+        });
+      }
+      
       if (error instanceof Error && error.name === 'ZodError') {
         return res.status(400).json({ error: 'Invalid tracking tag data', details: error.message });
       }
-      res.status(500).json({ error: 'Failed to create tracking tag' });
+      
+      res.status(500).json({ 
+        error: 'Failed to create tracking tag',
+        message: error instanceof Error ? error.message : 'Unknown error occurred while creating tracking tag'
+      });
     }
   });
 
