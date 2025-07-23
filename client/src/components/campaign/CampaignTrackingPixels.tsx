@@ -66,12 +66,12 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
       id: pixel.id,
       name: pixel.name,
       firePixelOn: pixel.fireOnEvent || pixel.fire_on_event || 'incoming',
-      url: pixel.code,
-      httpMethod: 'GET' as const,
+      url: pixel.code || pixel.url || '',
+      httpMethod: (pixel.httpMethod || pixel.http_method || 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH',
       headers: [],
-      authentication: 'none' as const,
-      advancedOptions: false,
-      active: pixel.isActive !== false
+      authentication: (pixel.authenticationType || pixel.authentication_type || 'none') as 'none' | 'basic' | 'bearer' | 'api_key',
+      advancedOptions: pixel.advancedOptions || pixel.advanced_options || false,
+      active: pixel.active !== false && pixel.isActive !== false
     })),
     retry: false,
   });
@@ -199,11 +199,12 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     });
   };
 
-  const generateTokenizedUrl = (baseUrl: string, campaignId?: number) => {
+  const generateTokenizedUrl = (baseUrl: string, campaignId?: string) => {
+    if (!baseUrl) return '';
     return baseUrl.replace(/{([^}]+)}/g, (match, token) => {
       switch (token) {
         case 'campaign_id':
-          return campaignId?.toString() || '{campaign_id}';
+          return campaignId || '{campaign_id}';
         case 'call_id':
           return '{call_id}';
         case 'phone_number':

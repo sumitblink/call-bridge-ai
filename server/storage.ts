@@ -115,6 +115,12 @@ export interface IStorage {
   createTrackingPixel(data: any): Promise<any>;
   updateTrackingPixel(id: number, data: any): Promise<any>;
   deleteTrackingPixel(id: number): Promise<boolean>;
+  
+  // Campaign-specific Tracking Pixels
+  getCampaignTrackingPixels(campaignId: string): Promise<any[]>;
+  createCampaignTrackingPixel(data: any): Promise<any>;
+  deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean>;
+  
   getWebhookConfigs(): Promise<any[]>;
   createWebhookConfig(data: any): Promise<any>;
   getApiAuthentications(): Promise<any[]>;
