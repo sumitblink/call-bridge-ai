@@ -597,6 +597,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = insertCampaignSchema.partial().parse(req.body);
       
+      // Validate campaign activation requirements
+      if (validatedData.status === 'active') {
+        const campaignBuyers = await storage.getCampaignBuyers(id);
+        
+        if (campaignBuyers.length === 0) {
+          return res.status(400).json({ 
+            error: "Cannot activate campaign", 
+            message: "Campaign must have at least one buyer assigned before it can be activated. Please add buyers to this campaign first."
+          });
+        }
+        
+        // Check if campaign has phone number or pool assignment
+        const hasPhoneNumber = existingCampaign.phoneNumber && existingCampaign.phoneNumber.trim() !== '';
+        const hasPoolAssignment = existingCampaign.poolId !== null;
+        
+        if (!hasPhoneNumber && !hasPoolAssignment) {
+          return res.status(400).json({ 
+            error: "Cannot activate campaign", 
+            message: "Campaign must have either a direct phone number or be assigned to a number pool before it can be activated."
+          });
+        }
+      }
+      
       // Generate RTB ID if RTB is being enabled and campaign doesn't have one
       if (validatedData.enableRtb && !existingCampaign.rtbId) {
         validatedData.rtbId = await RTBIdGenerator.generateUniqueRTBId();
@@ -626,6 +649,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const validatedData = insertCampaignSchema.partial().parse(req.body);
+      
+      // Validate campaign activation requirements
+      if (validatedData.status === 'active') {
+        const campaignBuyers = await storage.getCampaignBuyers(id);
+        
+        if (campaignBuyers.length === 0) {
+          return res.status(400).json({ 
+            error: "Cannot activate campaign", 
+            message: "Campaign must have at least one buyer assigned before it can be activated. Please add buyers to this campaign first."
+          });
+        }
+        
+        // Check if campaign has phone number or pool assignment
+        const hasPhoneNumber = existingCampaign.phoneNumber && existingCampaign.phoneNumber.trim() !== '';
+        const hasPoolAssignment = existingCampaign.poolId !== null;
+        
+        if (!hasPhoneNumber && !hasPoolAssignment) {
+          return res.status(400).json({ 
+            error: "Cannot activate campaign", 
+            message: "Campaign must have either a direct phone number or be assigned to a number pool before it can be activated."
+          });
+        }
+      }
+      
       const campaign = await storage.updateCampaign(id, validatedData);
       if (!campaign) {
         return res.status(404).json({ error: "Campaign not found" });
