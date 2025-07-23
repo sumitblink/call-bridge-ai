@@ -187,23 +187,34 @@ export default function Publishers() {
   };
 
   const handleEdit = (publisher: Publisher) => {
+    // Safely parse payout amount with fallback
+    const payoutAmount = publisher.payoutAmount ? parseFloat(publisher.payoutAmount) : 0;
+    const safePayoutAmount = isNaN(payoutAmount) ? 0 : payoutAmount;
+    
+    console.log("Setting form data for edit:", {
+      publisher,
+      payoutAmount: publisher.payoutAmount,
+      parsed: payoutAmount,
+      safe: safePayoutAmount
+    });
+    
+    // Set form values BEFORE opening dialog to avoid reset issues
+    form.reset({
+      name: publisher.name,
+      email: publisher.email,
+      phone: publisher.phone || "",
+      status: publisher.status as "active" | "paused" | "suspended",
+      payoutType: publisher.payoutType as "per_call" | "per_minute" | "revenue_share",
+      payoutAmount: safePayoutAmount,
+      minCallDuration: publisher.minCallDuration,
+      allowedTargets: publisher.allowedTargets || [],
+      enableTracking: publisher.enableTracking ?? true,
+      trackingSettings: publisher.trackingSettings || "",
+      customParameters: publisher.customParameters || "",
+    });
+    
+    // Then open dialog
     setEditingPublisher(publisher);
-    // Use setTimeout to ensure dialog is open and form is rendered before populating data
-    setTimeout(() => {
-      form.reset({
-        name: publisher.name,
-        email: publisher.email,
-        phone: publisher.phone || "",
-        status: publisher.status as "active" | "paused" | "suspended",
-        payoutType: publisher.payoutType as "per_call" | "per_minute" | "revenue_share",
-        payoutAmount: parseFloat(publisher.payoutAmount),
-        minCallDuration: publisher.minCallDuration,
-        allowedTargets: publisher.allowedTargets || [],
-        enableTracking: publisher.enableTracking ?? true,
-        trackingSettings: publisher.trackingSettings || "",
-        customParameters: publisher.customParameters || "",
-      });
-    }, 100);
   };
 
   const handleDelete = (id: number) => {
@@ -377,7 +388,20 @@ export default function Publishers() {
             if (!open) {
               setIsCreateOpen(false);
               setEditingPublisher(null);
-              form.reset();
+              // Only reset form to defaults when closing, not when switching between edit states
+              form.reset({
+                name: "",
+                email: "",
+                phone: "",
+                status: "active",
+                payoutType: "per_call",
+                payoutAmount: 0,
+                minCallDuration: 0,
+                allowedTargets: [],
+                enableTracking: true,
+                trackingSettings: "",
+                customParameters: "",
+              });
             }
           }}
         >
