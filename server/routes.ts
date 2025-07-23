@@ -5160,8 +5160,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`DNI: Processing validated tracking request from: ${origin}`);
       
-      // Extract the request data properly
-      const { tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId } = req.body;
+      // Extract the request data properly including clickid
+      const { tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId, clickid } = req.body;
       
       if (!tagCode) {
         return res.status(400).json({
@@ -5188,7 +5188,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ipAddress: req.ip || req.connection.remoteAddress,
         customFields: {
           domain,
-          visitorId
+          visitorId,
+          clickid  // FIX: Include clickid in customFields
         }
       };
       
