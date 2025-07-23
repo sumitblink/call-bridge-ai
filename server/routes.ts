@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./hybrid-storage";
-import { insertCampaignSchema, insertBuyerSchema, insertAgentSchema } from "@shared/schema";
+import { insertCampaignSchema, insertBuyerSchema, insertAgentSchema, insertNumberPoolSchema } from "@shared/schema";
 import { twilioService } from "./twilio-service";
 import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
 import { CallRouter } from "./call-routing";
@@ -2910,10 +2910,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         insertNumberPoolSchema.parse(poolDataWithUser);
       } catch (validationError: any) {
-        console.error('Pool validation error:', validationError.errors);
+        console.error('Pool validation error:', validationError);
+        const details = validationError?.issues || validationError?.errors || [validationError.message];
         return res.status(400).json({ 
           error: 'Invalid pool data', 
-          details: validationError.errors 
+          details: details
         });
       }
       
