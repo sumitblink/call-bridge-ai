@@ -948,33 +948,40 @@ ${generateJavaScriptCode(tag)}`;
                       </div>
                       
                       <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                        <h5 className="text-sm font-medium mb-2 text-green-700 dark:text-green-300">Suggested Call Button Classes:</h5>
+                        <h5 className="text-sm font-medium mb-2 text-green-700 dark:text-green-300">Works with Common Button Classes:</h5>
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="font-mono">call-now-btn</Badge>
-                            <span className="text-muted-foreground">Primary call buttons</span>
+                            <Badge variant="secondary" className="font-mono">btn-call</Badge>
+                            <span className="text-muted-foreground">Bootstrap call buttons</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="font-mono">phone-cta</Badge>
-                            <span className="text-muted-foreground">Call-to-action buttons</span>
+                            <Badge variant="secondary" className="font-mono">call-button</Badge>
+                            <span className="text-muted-foreground">Generic call buttons</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="font-mono">contact-phone</Badge>
-                            <span className="text-muted-foreground">Contact section numbers</span>
+                            <Badge variant="secondary" className="font-mono">phone-number</Badge>
+                            <span className="text-muted-foreground">Phone number displays</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="font-mono">tel-link</Badge>
+                            <span className="text-muted-foreground">Telephone links</span>
                           </div>
                         </div>
                       </div>
                       
                       <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <h5 className="text-sm font-medium mb-2 text-blue-700 dark:text-blue-300">Example HTML:</h5>
+                        <h5 className="text-sm font-medium mb-2 text-blue-700 dark:text-blue-300">Example HTML (matches your code):</h5>
                         <div className="font-mono text-xs bg-white dark:bg-gray-800 p-2 rounded border">
-                          {`<a href="tel:5551234567" class="call-now-btn tracking-number">
-  📞 Call (555) 123-4567
+                          {`<!-- Bootstrap style (like your working code) -->
+<a href="tel:+15551234567" class="btn btn-success btn-call">
+  Get Started: (555) 123-4567
 </a>
 
-<button class="phone-cta" data-tracking-number>
-  Call Now: (555) 123-4567
-</button>`}
+<!-- Simple tracking -->
+<strong class="phone-number">(555) 123-4567</strong>
+
+<!-- Manual tracking -->
+<span class="tracking-number">(555) 123-4567</span>`}
                         </div>
                       </div>
                     </div>
