@@ -508,7 +508,7 @@ export default function Publishers() {
                                   step="0.01"
                                   min="0"
                                   placeholder="0.00"
-                                  value={field.value}
+                                  value={field.value || ""}
                                   onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                 />
                               </FormControl>
