@@ -510,10 +510,10 @@ class HybridStorage implements IStorage {
     );
   }
 
-  async addPublisherToCampaign(publisherId: number, campaignId: string | number, customPayout?: string): Promise<any> {
+  async addPublisherToCampaign(publisherId: number, campaignId: string | number, customPayout?: string, userId?: number): Promise<any> {
     return this.executeOperation(
-      () => this.databaseStorage.addPublisherToCampaign(publisherId, campaignId, customPayout),
-      () => this.memStorage.addPublisherToCampaign ? this.memStorage.addPublisherToCampaign(publisherId, campaignId, customPayout) : {}
+      () => this.databaseStorage.addPublisherToCampaign(publisherId, campaignId, customPayout, userId),
+      () => this.memStorage.addPublisherToCampaign ? this.memStorage.addPublisherToCampaign(publisherId, campaignId, customPayout, userId) : {}
     );
   }
 

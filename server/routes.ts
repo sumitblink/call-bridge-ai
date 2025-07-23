@@ -919,7 +919,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const assignment = await storage.addPublisherToCampaign(
         publisherId,
         campaignId,
-        customPayout
+        customPayout,
+        userId
       );
       
       res.status(200).json(assignment);

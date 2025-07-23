@@ -873,10 +873,10 @@ export class SupabaseStorage implements IStorage {
     return result;
   }
 
-  async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any> {
+  async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string, userId?: number): Promise<any> {
     const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
     const [result] = await db.insert(campaignPublishers).values({
-      userId: 2, // TODO: Get from session context
+      userId: userId || 2, // Use provided userId or fallback
       publisherId,
       campaignId: campaignIdStr,
       payout: customPayout ? customPayout : "0.00",

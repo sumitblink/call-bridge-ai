@@ -138,7 +138,7 @@ export interface IStorage {
   // Publisher-Campaign Relations
   getPublisherCampaigns(publisherId: number): Promise<any[]>;
   getCampaignPublishers(campaignId: number): Promise<any[]>;
-  addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any>;
+  addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string, userId?: number): Promise<any>;
   removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean>;
 
   // Phone Numbers
