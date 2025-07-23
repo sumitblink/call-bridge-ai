@@ -878,7 +878,7 @@ export class SupabaseStorage implements IStorage {
     const [result] = await db.insert(campaignPublishers).values({
       publisherId,
       campaignId: campaignIdStr,
-      customPayout,
+      payout: customPayout, // Fixed field name from customPayout to payout
       isActive: true,
     }).returning();
     return result;

@@ -510,17 +510,17 @@ class HybridStorage implements IStorage {
     );
   }
 
-  async addPublisherToCampaign(campaignId: string | number, publisherId: number, customPayout?: string): Promise<any> {
+  async addPublisherToCampaign(publisherId: number, campaignId: string | number, customPayout?: string): Promise<any> {
     return this.executeOperation(
-      () => this.databaseStorage.addPublisherToCampaign(campaignId, publisherId, customPayout),
-      () => this.memStorage.addPublisherToCampaign ? this.memStorage.addPublisherToCampaign(campaignId, publisherId, customPayout) : {}
+      () => this.databaseStorage.addPublisherToCampaign(publisherId, campaignId, customPayout),
+      () => this.memStorage.addPublisherToCampaign ? this.memStorage.addPublisherToCampaign(publisherId, campaignId, customPayout) : {}
     );
   }
 
-  async removePublisherFromCampaign(campaignId: string | number, publisherId: number): Promise<boolean> {
+  async removePublisherFromCampaign(publisherId: number, campaignId: string | number): Promise<boolean> {
     return this.executeOperation(
-      () => this.databaseStorage.removePublisherFromCampaign(campaignId, publisherId),
-      () => this.memStorage.removePublisherFromCampaign ? this.memStorage.removePublisherFromCampaign(campaignId, publisherId) : true
+      () => this.databaseStorage.removePublisherFromCampaign(publisherId, campaignId),
+      () => this.memStorage.removePublisherFromCampaign ? this.memStorage.removePublisherFromCampaign(publisherId, campaignId) : true
     );
   }
 
