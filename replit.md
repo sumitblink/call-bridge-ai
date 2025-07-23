@@ -114,6 +114,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 23, 2025: **DYNAMIC URL PARAMETER TRACKING ENHANCED** - Updated tracking code generator to automatically capture all configured URL parameters including publisher tracking
+  - **Dynamic Parameter Capture**: Tracking code now includes publisher, gclid, fbclid, and 25+ common tracking parameters
+  - **Publisher Attribution**: Publisher parameter now captured and stored with call data for proper attribution
+  - **Comprehensive Tracking**: Supports Google Ads, Facebook, Microsoft, TikTok, Twitter, LinkedIn click IDs
+  - **No Code Regeneration Needed**: Existing tracking tags automatically capture newly configured parameters
+  - **Enhanced Call Reports**: Publisher field will now populate correctly when publisher parameter is present in URLs
+  - **Status**: URL parameter system now fully operational with dynamic tracking code generation
 - July 23, 2025: **CAMPAIGN SETUP UI MADE COMPACT** - Significantly reduced vertical space usage of Campaign Setup Progress section
   - **Smaller Cards**: Reduced padding from pb-4 to pb-2, CardContent space-y-4 to space-y-3
   - **Compact Progress Bar**: Progress bar height reduced from h-2 to h-1.5, text from text-sm to text-xs
