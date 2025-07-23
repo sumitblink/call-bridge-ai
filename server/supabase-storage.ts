@@ -835,13 +835,18 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deletePublisher(id: number): Promise<boolean> {
-    // First delete all call tracking tags that reference this publisher
-    await db.delete(callTrackingTags).where(eq(callTrackingTags.publisherId, id));
+    // Soft delete approach: Set publisher references to null instead of deleting historical data
+    // This preserves historical call data while removing the publisher entity
     
-    // Then delete all publisher-campaign relationships
+    // Update call tracking tags to remove publisher reference (preserves tags for historical calls)
+    await db.update(callTrackingTags)
+      .set({ publisherId: null })
+      .where(eq(callTrackingTags.publisherId, id));
+    
+    // Delete publisher-campaign relationships (these can be safely removed)
     await db.delete(campaignPublishers).where(eq(campaignPublishers.publisherId, id));
     
-    // Finally delete the publisher
+    // Finally delete the publisher entity
     const result = await db.delete(publishers).where(eq(publishers.id, id));
     return result.rowCount > 0;
   }
