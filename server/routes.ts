@@ -4774,6 +4774,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // OPTIONS handler for CORS preflight requests (DNI simple tracking)
+  app.options('/api/dni/track-simple', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.sendStatus(200);
+  });
+
   // Simple DNI tracking endpoint (Ringba-style)
   app.post('/api/dni/track-simple', async (req, res) => {
     // Additional CORS headers for DNI endpoint
@@ -4887,6 +4895,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Simple DNI tracking error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
+  });
+
+  // OPTIONS handler for CORS preflight requests (DNI tracking)
+  app.options('/api/dni/track', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
+    res.sendStatus(200);
   });
 
   // DNI tracking endpoint for website integration (with API key authentication)
