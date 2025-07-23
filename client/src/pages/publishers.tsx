@@ -188,19 +188,22 @@ export default function Publishers() {
 
   const handleEdit = (publisher: Publisher) => {
     setEditingPublisher(publisher);
-    form.reset({
-      name: publisher.name,
-      email: publisher.email,
-      phone: publisher.phone || "",
-      status: publisher.status as any,
-      payoutType: publisher.payoutType as any,
-      payoutAmount: parseFloat(publisher.payoutAmount),
-      minCallDuration: publisher.minCallDuration,
-      allowedTargets: publisher.allowedTargets || [],
-      enableTracking: publisher.enableTracking ?? true,
-      trackingSettings: publisher.trackingSettings || "",
-      customParameters: publisher.customParameters || "",
-    });
+    // Use setTimeout to ensure dialog is open and form is rendered before populating data
+    setTimeout(() => {
+      form.reset({
+        name: publisher.name,
+        email: publisher.email,
+        phone: publisher.phone || "",
+        status: publisher.status as any,
+        payoutType: publisher.payoutType as any,
+        payoutAmount: parseFloat(publisher.payoutAmount),
+        minCallDuration: publisher.minCallDuration,
+        allowedTargets: publisher.allowedTargets || [],
+        enableTracking: publisher.enableTracking ?? true,
+        trackingSettings: publisher.trackingSettings || "",
+        customParameters: publisher.customParameters || "",
+      });
+    }, 100);
   };
 
   const handleDelete = (id: number) => {
