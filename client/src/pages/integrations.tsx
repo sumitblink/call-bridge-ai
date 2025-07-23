@@ -652,6 +652,24 @@ export default function IntegrationsPage() {
                         </label>
                       </div>
 
+                      <div>
+                        <Label htmlFor="authentication">Authentication</Label>
+                        <Select
+                          value={pixelForm.authentication || 'none'}
+                          onValueChange={(value) => setPixelForm(prev => ({ ...prev, authentication: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose Authentication" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="basic">Basic Auth</SelectItem>
+                            <SelectItem value="bearer">Bearer Token</SelectItem>
+                            <SelectItem value="api_key">API Key</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       {pixelForm.advancedOptions && (
                         <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
                           <div>

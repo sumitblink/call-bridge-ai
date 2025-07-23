@@ -114,15 +114,16 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
-- July 23, 2025: **SIMPLIFIED TRACKING PIXEL FORM IN INTEGRATIONS** - Streamlined Integrations tracking pixel form to focus on creation only, removing "Select Existing" functionality
-  - **Creation-Only Form**: Removed "Select Existing" tab from Integrations form since existing pixel selection is only needed within campaigns
-  - **Clean Interface**: Simplified to direct creation form with essential fields - Name, Fire Pixel On, Custom URL, and Advanced Options
-  - **Website Theme Maintained**: Kept existing light theme styling consistent with website design
+- July 23, 2025: **ENHANCED TRACKING PIXEL FORM WITH ADVANCED HTTP OPTIONS** - Implemented comprehensive tracking pixel form with Ringba-style Advanced Options including HTTP method selection and headers management
+  - **Advanced HTTP Configuration**: Added HTTP Method dropdown (GET, POST, PUT, PATCH) for complete request customization
+  - **Headers Management**: Dynamic key/value header pairs with add/remove functionality and TOKEN support in header values
+  - **Authentication Field**: Dedicated Authentication dropdown (None, Basic Auth, Bearer Token, API Key) below Advanced Options toggle
+  - **TOKEN Functionality**: Functional TOKEN buttons that display available tokens when clicked for both URL and header values
+  - **Professional Layout**: Gray background Advanced Options section with proper spacing and empty state handling
   - **Custom URL Integration**: Full support for RedTrack postback URLs and external tracking platforms with token replacement
   - **Token Support**: Complete token system with {call_id}, {phone_number}, {campaign_id}, {timestamp}, {duration}, {status} availability
-  - **Advanced Options**: Toggle for Authentication settings (None, Basic Auth, Bearer Token, API Key) when needed
-  - **Focused UX**: Integrations form now purely for creating new pixels, while campaigns retain "Select Existing" functionality for reuse
-  - **Status**: Clean, purpose-focused tracking pixel creation interface in Integrations area
+  - **Clean Interface**: Streamlined creation-only form matching website theme with essential fields
+  - **Status**: Complete HTTP request configuration matching professional call tracking platform standards
 - July 23, 2025: **CAMPAIGN TRACKING PIXELS HARDCODED DATA ISSUE FIXED** - Fixed critical persistence bug where deleted tracking pixels reappeared when switching campaign tabs
   - **Root Cause**: CampaignTrackingPixels component used hardcoded SAMPLE_PIXELS instead of API data
   - **Solution**: Replaced hardcoded data with real API calls to `/api/integrations/pixels` endpoint
