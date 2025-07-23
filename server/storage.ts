@@ -72,6 +72,8 @@ export interface IStorage {
   addBuyerToCampaign(campaignId: string | number, buyerId: number, priority?: number): Promise<CampaignBuyer>;
   removeBuyerFromCampaign(campaignId: string | number, buyerId: number): Promise<boolean>;
   
+
+  
   // Call Routing & Ping/Post
   pingBuyersForCall(campaignId: number, callData: any): Promise<Buyer[]>;
   postCallToBuyer(buyerId: number, callData: any): Promise<boolean>;
