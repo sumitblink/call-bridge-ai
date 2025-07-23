@@ -430,7 +430,7 @@ export default function PhoneNumbersPage() {
                                 if (campaignId && campaignId !== "unassigned") {
                                   assignMutation.mutate({
                                     phoneNumberId: number.id,
-                                    campaignId: parseInt(campaignId),
+                                    campaignId: campaignId,
                                   });
                                 }
                               }}

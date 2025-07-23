@@ -113,7 +113,7 @@ function CampaignCard({ campaign, onDelete, onEdit }: {
                 <p className="text-gray-500 mb-1">Buyers</p>
                 <div className="flex items-center justify-center gap-1">
                   <Users className="h-4 w-4 text-gray-400" />
-                  <BuyerCount campaignId={Number(campaign.id)} />
+                  <BuyerCount campaignId={campaign.id} />
                 </div>
               </div>
             </div>
@@ -722,7 +722,7 @@ export default function Campaigns() {
                       <TableCell className="text-center font-medium">0</TableCell>
                       <TableCell className="text-center font-medium">0</TableCell>
                       <TableCell className="text-center">
-                        <BuyerCount campaignId={Number(campaign.id)} />
+                        <BuyerCount campaignId={campaign.id} />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">

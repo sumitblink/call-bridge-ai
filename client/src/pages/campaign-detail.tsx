@@ -165,11 +165,11 @@ export default function CampaignDetail() {
           </TabsContent>
 
           <TabsContent value="url-parameters">
-            <CampaignUrlParameters campaignId={Number(campaign.id)} />
+            <CampaignUrlParameters campaignId={campaign.id} />
           </TabsContent>
 
           <TabsContent value="tracking-pixels">
-            <CampaignTrackingPixels campaignId={Number(campaign.id)} />
+            <CampaignTrackingPixels campaignId={campaign.id} />
           </TabsContent>
 
           <TabsContent value="publishers">

@@ -810,7 +810,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/campaigns/:campaignId/publishers/:publisherId', async (req, res) => {
     try {
-      const campaignId = parseInt(req.params.campaignId);
+      const campaignId = req.params.campaignId; // UUID string, no parsing needed
       const publisherId = parseInt(req.params.publisherId);
       const success = await storage.removePublisherFromCampaign(publisherId, campaignId);
       if (!success) {
