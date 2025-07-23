@@ -448,7 +448,7 @@ export default function Publishers() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Status</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <Select onValueChange={field.onChange} value={field.value} key={`status-${editingPublisher?.id || 'create'}`}>
                                 <FormControl>
                                   <SelectTrigger>
                                     <SelectValue placeholder="Select status" />
@@ -480,7 +480,7 @@ export default function Publishers() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Payout Type</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <Select onValueChange={field.onChange} value={field.value} key={`payoutType-${editingPublisher?.id || 'create'}`}>
                                 <FormControl>
                                   <SelectTrigger>
                                     <SelectValue placeholder="Select type" />
@@ -508,7 +508,7 @@ export default function Publishers() {
                                   step="0.01"
                                   min="0"
                                   placeholder="0.00"
-                                  {...field}
+                                  value={field.value}
                                   onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                 />
                               </FormControl>
