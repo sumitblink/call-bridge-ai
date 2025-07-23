@@ -152,44 +152,51 @@ export class SupabaseStorage implements IStorage {
     // Delete calls related to this campaign
     await db.delete(calls).where(eq(calls.campaignId, id));
     
-    // Delete conversion events
+    // Delete conversion events using raw SQL
     try {
-      await db.delete(conversionEvents).where(eq(conversionEvents.campaignId, id));
+      await db.execute(sql`DELETE FROM conversion_events WHERE campaign_id = ${id}`);
     } catch (error) {
       console.log('Conversion events table error, skipping...');
     }
     
-    // Delete RTB bid requests
+    // Delete RTB bid responses first (they reference bid requests)
     try {
-      await db.delete(rtbBidRequests).where(eq(rtbBidRequests.campaignId, id));
+      await db.execute(sql`DELETE FROM rtb_bid_responses WHERE request_id IN (SELECT request_id FROM rtb_bid_requests WHERE campaign_id = ${id})`);
+    } catch (error) {
+      console.log('RTB bid responses table error, skipping...');
+    }
+    
+    // Delete RTB bid requests using raw SQL
+    try {
+      await db.execute(sql`DELETE FROM rtb_bid_requests WHERE campaign_id = ${id}`);
     } catch (error) {
       console.log('RTB bid requests table error, skipping...');
     }
     
-    // Delete campaign pool assignments
+    // Delete campaign pool assignments using raw SQL
     try {
-      await db.delete(campaignPoolAssignments).where(eq(campaignPoolAssignments.campaignId, id));
+      await db.execute(sql`DELETE FROM campaign_pool_assignments WHERE campaign_id = ${id}`);
     } catch (error) {
       console.log('Campaign pool assignments table error, skipping...');
     }
     
-    // Delete agent campaigns
+    // Delete agent campaigns using raw SQL
     try {
-      await db.delete(agentCampaigns).where(eq(agentCampaigns.campaignId, id));
+      await db.execute(sql`DELETE FROM agent_campaigns WHERE campaign_id = ${id}`);
     } catch (error) {
       console.log('Agent campaigns table error, skipping...');
     }
     
-    // Delete call flows
+    // Delete call flows using raw SQL
     try {
-      await db.delete(callFlows).where(eq(callFlows.campaignId, id));
+      await db.execute(sql`DELETE FROM call_flows WHERE campaign_id = ${id}`);
     } catch (error) {
       console.log('Call flows table error, skipping...');
     }
     
-    // Delete call tracking tags
+    // Delete call tracking tags using raw SQL
     try {
-      await db.delete(callTrackingTags).where(eq(callTrackingTags.campaignId, id));
+      await db.execute(sql`DELETE FROM call_tracking_tags WHERE campaign_id = ${id}`);
     } catch (error) {
       console.log('Call tracking tags table error, skipping...');
     }
