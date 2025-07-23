@@ -213,11 +213,22 @@ export class SupabaseStorage implements IStorage {
       console.log('Call flows table error, skipping...');
     }
     
-    // Delete call tracking tags using raw SQL
+    // Delete DNI sessions first (they reference call_tracking_tags)
     try {
-      await db.execute(sql`DELETE FROM call_tracking_tags WHERE campaign_id = ${id}`);
+      const dniResult = await db.execute(sql`DELETE FROM dni_sessions WHERE tag_id IN (SELECT id FROM call_tracking_tags WHERE campaign_id = ${id})`);
+      console.log(`Deleted ${dniResult.rowCount || 0} DNI sessions for campaign ${id}`);
     } catch (error) {
-      console.log('Call tracking tags table error, skipping...');
+      console.log('DNI sessions table error, skipping...');
+    }
+    
+    // Delete call tracking tags using raw SQL (must be before campaign deletion)
+    try {
+      const result = await db.execute(sql`DELETE FROM call_tracking_tags WHERE campaign_id = ${id}`);
+      console.log(`Deleted ${result.rowCount || 0} call tracking tags for campaign ${id}`);
+    } catch (error) {
+      console.log('Call tracking tags table error:', error);
+      // This is critical - if we can't delete tracking tags, we can't delete the campaign
+      throw new Error(`Cannot delete campaign: call tracking tags deletion failed - ${error}`);
     }
     
     // Delete campaign-buyer relationships
