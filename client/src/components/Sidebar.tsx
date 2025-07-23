@@ -25,7 +25,6 @@ const navigation = [
 
 const reportingNavigation = [
   { name: "Traffic Analytics", href: "/analytics", icon: BarChart3, current: false },
-  { name: "Professional Analytics", href: "/ringba-analytics", icon: TrendingUp, current: false },
   { name: "Enhanced Reporting", href: "/enhanced-reporting", icon: PhoneCall, current: false },
 ];
 

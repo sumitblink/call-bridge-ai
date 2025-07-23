@@ -24,7 +24,7 @@ import RedTrackPage from "@/pages/redtrack";
 import RealTrackingDashboard from "@/pages/real-tracking-dashboard";
 import AdvancedAnalyticsPage from "@/pages/advanced-analytics";
 import UsefulAnalytics from "@/pages/useful-analytics";
-import RingbaStyleAnalytics from "@/pages/ringba-style-analytics";
+
 import EnhancedReporting from "@/pages/enhanced-reporting";
 
 
@@ -70,7 +70,6 @@ function Router() {
 
 
           <Route path="/analytics" component={UsefulAnalytics} />
-          <Route path="/ringba-analytics" component={RingbaStyleAnalytics} />
           <Route path="/enhanced-reporting" component={EnhancedReporting} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/redtrack" component={RedTrackPage} />
