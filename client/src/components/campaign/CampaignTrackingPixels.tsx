@@ -22,7 +22,7 @@ interface TrackingPixel {
   name: string;
   firePixelOn: 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized';
   url: string;
-  httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  httpMethod: 'GET' | 'POST' | 'PUT' | 'PATCH';
   headers: { key: string; value: string }[];
   authentication: 'none' | 'basic' | 'bearer' | 'api_key';
   advancedOptions: boolean;
@@ -39,14 +39,14 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     name: string;
     firePixelOn: 'incoming' | 'connected' | 'completed' | 'converted' | 'error' | 'payout' | 'recording' | 'finalized';
     url: string;
-    httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    httpMethod: 'GET' | 'POST' | 'PUT' | 'PATCH';
     headers: { key: string; value: string }[];
     authentication: 'none' | 'basic' | 'bearer' | 'api_key';
     advancedOptions: boolean;
     active: boolean;
   }>({
     name: '',
-    firePixelOn: 'incoming',
+    firePixelOn: 'completed',
     url: '',
     httpMethod: 'GET',
     headers: [],
@@ -76,7 +76,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   });
 
   // Fetch global tracking pixels from Integrations
-  const { data: globalPixels, isLoading: isLoadingGlobal } = useQuery({
+  const { data: globalPixels = [], isLoading: isLoadingGlobal } = useQuery<any[]>({
     queryKey: ['/api/integrations/pixels'],
     retry: false,
   });
@@ -106,7 +106,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   const resetForm = () => {
     setFormData({
       name: '',
-      firePixelOn: 'incoming',
+      firePixelOn: 'completed',
       url: '',
       httpMethod: 'GET',
       headers: [],
@@ -393,7 +393,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
               </div>
             )}
 
-            {/* Create New Tab - Ringba Style Form */}
+            {/* Create New Tab - Enhanced Form with HTTP Options */}
             {selectedTab === 'create' && (
               <form onSubmit={handleSubmit} className="space-y-4 py-4">
                 <div>
@@ -403,7 +403,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Enter name"
-                    className="bg-gray-700 text-white border-gray-600"
+                    required
                   />
                   <span className="text-xs text-gray-500">Required</span>
                 </div>
@@ -414,7 +414,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                     value={formData.firePixelOn}
                     onValueChange={(value: any) => setFormData({ ...formData, firePixelOn: value })}
                   >
-                    <SelectTrigger className="bg-gray-700 text-white border-gray-600">
+                    <SelectTrigger>
                       <SelectValue placeholder="Choose Event Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -422,7 +422,6 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                       <SelectItem value="connected">Connected</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="converted">Converted</SelectItem>
-                      <SelectItem value="error">Error</SelectItem>
                       <SelectItem value="payout">Payout</SelectItem>
                       <SelectItem value="recording">Recording</SelectItem>
                       <SelectItem value="finalized">Finalized</SelectItem>
@@ -432,50 +431,174 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                 </div>
 
                 <div>
-                  <Label htmlFor="url">URL</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="url">Custom Pixel URL</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-6 px-2"
+                      onClick={() => {
+                        toast({
+                          title: 'Available Tokens',
+                          description: 'Use these tokens in your URL: {call_id}, {phone_number}, {campaign_id}, {timestamp}, {duration}, {status}'
+                        });
+                      }}
+                    >
+                      TOKENS
+                    </Button>
+                  </div>
                   <Input
                     id="url"
                     value={formData.url}
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                    placeholder="http://mytracking.tracking.com"
-                    className="bg-gray-700 text-white border-gray-600"
+                    placeholder="https://example.com/postback?clickid={call_id}&campaign={campaign_id}"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Available tokens: {'{call_id}'}, {'{phone_number}'}, {'{campaign_id}'}, {'{timestamp}'}, {'{duration}'}, {'{status}'}
+                  </p>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Label>Advanced Options</Label>
-                  </div>
-                  <div className="flex items-center">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setFormData({ ...formData, advancedOptions: !formData.advancedOptions })}
-                      className="w-12 h-6 rounded-full bg-gray-600 relative"
-                    >
-                      <div className={`w-5 h-5 rounded-full bg-white transition-transform ${formData.advancedOptions ? 'translate-x-3' : 'translate-x-0'}`} />
-                    </Button>
-                  </div>
+                  <Label>Advanced Options</Label>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={formData.advancedOptions}
+                      onChange={(e) => setFormData({ ...formData, advancedOptions: e.target.checked })}
+                    />
+                    <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer ${
+                      formData.advancedOptions ? 'bg-blue-600' : 'bg-gray-200'
+                    }`}>
+                      <div className={`w-5 h-5 bg-white rounded-full shadow transform transition ${
+                        formData.advancedOptions ? 'translate-x-5' : 'translate-x-0'
+                      }`} />
+                    </div>
+                  </label>
+                </div>
+
+                <div>
+                  <Label htmlFor="authentication">Authentication</Label>
+                  <Select
+                    value={formData.authentication || 'none'}
+                    onValueChange={(value: 'none' | 'basic' | 'bearer' | 'api_key') => setFormData({ ...formData, authentication: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose Authentication" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="basic">Basic Auth</SelectItem>
+                      <SelectItem value="bearer">Bearer Token</SelectItem>
+                      <SelectItem value="api_key">API Key</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {formData.advancedOptions && (
-                  <div>
-                    <Label htmlFor="authentication">Authentication</Label>
-                    <Select
-                      value={formData.authentication}
-                      onValueChange={(value: any) => setFormData({ ...formData, authentication: value })}
-                    >
-                      <SelectTrigger className="bg-gray-700 text-white border-gray-600">
-                        <SelectValue placeholder="Choose Authentication" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="basic">Basic Auth</SelectItem>
-                        <SelectItem value="bearer">Bearer Token</SelectItem>
-                        <SelectItem value="api_key">API Key</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                    <div>
+                      <Label htmlFor="http-method">HTTP Method</Label>
+                      <Select
+                        value={formData.httpMethod}
+                        onValueChange={(value: 'GET' | 'POST' | 'PUT' | 'PATCH') => setFormData({ ...formData, httpMethod: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose Method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="GET">GET</SelectItem>
+                          <SelectItem value="POST">POST</SelectItem>
+                          <SelectItem value="PUT">PUT</SelectItem>
+                          <SelectItem value="PATCH">PATCH</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="text-xs text-gray-500">Required</span>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label>Headers</Label>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-6 px-2"
+                            onClick={() => {
+                              toast({
+                                title: 'Available Tokens',
+                                description: 'Use these tokens in header values: {call_id}, {phone_number}, {campaign_id}, {timestamp}, {duration}, {status}'
+                              });
+                            }}
+                          >
+                            TOKEN
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-6 px-2"
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                headers: [...prev.headers, { key: '', value: '' }]
+                              }));
+                            }}
+                          >
+                            ADD
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {formData.headers.length === 0 ? (
+                        <div className="text-center py-4 text-gray-500 bg-white rounded border-2 border-dashed">
+                          <p className="text-sm">No Headers</p>
+                          <p className="text-xs">Click ADD to add headers</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {formData.headers.map((header, index) => (
+                            <div key={index} className="flex gap-2 items-center">
+                              <Input
+                                placeholder="key"
+                                value={header.key}
+                                onChange={(e) => {
+                                  const newHeaders = [...formData.headers];
+                                  newHeaders[index].key = e.target.value;
+                                  setFormData(prev => ({ ...prev, headers: newHeaders }));
+                                }}
+                                className="flex-1"
+                              />
+                              <span className="text-gray-500">:</span>
+                              <Input
+                                placeholder="value"
+                                value={header.value}
+                                onChange={(e) => {
+                                  const newHeaders = [...formData.headers];
+                                  newHeaders[index].value = e.target.value;
+                                  setFormData(prev => ({ ...prev, headers: newHeaders }));
+                                }}
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-500 hover:text-red-700 h-8 w-8 p-0"
+                                onClick={() => {
+                                  const newHeaders = formData.headers.filter((_, i) => i !== index);
+                                  setFormData(prev => ({ ...prev, headers: newHeaders }));
+                                }}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
