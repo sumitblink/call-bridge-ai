@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -85,23 +85,40 @@ interface CallTrackingTagsProps {
   campaignId: number;
 }
 
+// Helper function to get localStorage key for tracking tags
+const getTrackingTagsStorageKey = (campaignId: number) => 
+  `campaign_tracking_tags_${campaignId}`;
+
 export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCodeDialogOpen, setIsCodeDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [selectedTag, setSelectedTag] = useState<CallTrackingTag | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    tagCode: "",
-    primaryNumberId: "none",
-    numberToReplace: "",
-    poolId: "none",
-    rotationStrategy: "round_robin",
-    publisherId: "none",
-    captureUserData: false,
-    sessionTimeout: 1800,
-    stickyDuration: 86400
+  
+  // Initialize form data with localStorage persistence
+  const [formData, setFormData] = useState(() => {
+    try {
+      const storageKey = getTrackingTagsStorageKey(campaignId);
+      const savedFormData = localStorage.getItem(storageKey);
+      if (savedFormData) {
+        return JSON.parse(savedFormData);
+      }
+    } catch (error) {
+      console.log('Failed to load saved tracking tag form data');
+    }
+    return {
+      name: "",
+      tagCode: "",
+      primaryNumberId: "none",
+      numberToReplace: "",
+      poolId: "none",
+      rotationStrategy: "round_robin",
+      publisherId: "none",
+      captureUserData: false,
+      sessionTimeout: 1800,
+      stickyDuration: 86400
+    };
   });
   const [settingsData, setSettingsData] = useState({
     name: "",
@@ -142,13 +159,25 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     queryKey: ["/api/publishers"],
   });
 
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      const storageKey = getTrackingTagsStorageKey(campaignId);
+      localStorage.setItem(storageKey, JSON.stringify(formData));
+    } catch (error) {
+      console.log('Failed to save tracking tag form data');
+    }
+  }, [formData, campaignId]);
+
   // Create tracking tag mutation
   const createTagMutation = useMutation({
     mutationFn: (data: any) => apiRequest(`/api/campaigns/${campaignId}/tracking-tags`, "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}/tracking-tags`] });
       setIsCreateDialogOpen(false);
-      setFormData({
+      
+      // Clear form data and localStorage
+      const defaultFormData = {
         name: "",
         tagCode: "",
         primaryNumberId: "none",
@@ -159,7 +188,17 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
         captureUserData: false,
         sessionTimeout: 1800,
         stickyDuration: 86400
-      });
+      };
+      setFormData(defaultFormData);
+      
+      // Clear localStorage
+      try {
+        const storageKey = getTrackingTagsStorageKey(campaignId);
+        localStorage.removeItem(storageKey);
+      } catch (error) {
+        console.log('Failed to clear tracking tag form data from localStorage');
+      }
+      
       toast({
         title: "Success",
         description: "Call tracking tag created successfully",

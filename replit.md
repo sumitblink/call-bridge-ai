@@ -114,6 +114,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 23, 2025: **TRACKING PIXELS TAB PERSISTENCE FIXED** - Fixed critical issue where tracking pixel form data disappeared when switching between campaign tabs
+  - **Root Cause**: CallTrackingTags component used non-persistent useState that reset on component unmount
+  - **Solution**: Implemented campaign-specific localStorage persistence with keys like `campaign_tracking_tags_123`
+  - **User Experience**: Tracking pixel form data now persists when switching between Tracking Tags ↔ URL Parameters ↔ Tracking Pixels tabs
+  - **Campaign Isolation**: Each campaign maintains its own independent tracking pixel configuration
+  - **Form Reset**: localStorage cleared only after successful pixel creation, maintaining data integrity
+  - **Status**: Tracking pixel form configuration now properly persists during tab navigation within campaign interface
 - July 23, 2025: **URL PARAMETERS TAB PERSISTENCE FIXED** - Fixed critical issue where user-created URL parameters disappeared when switching between campaign tabs
   - **Root Cause**: CampaignUrlParameters component used non-persistent local state that reset on component unmount
   - **Solution**: Implemented campaign-specific localStorage persistence with keys like `campaign_url_parameters_123`
