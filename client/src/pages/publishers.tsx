@@ -116,6 +116,7 @@ export default function Publishers() {
   // Create publisher mutation
   const createPublisher = useMutation({
     mutationFn: async (data: PublisherFormData) => {
+      // Step 1: Create the publisher
       const response = await apiRequest("/api/publishers", "POST", {
         name: data.name,
         email: data.email,
@@ -124,7 +125,25 @@ export default function Publishers() {
         payoutModel: data.payoutType, // Map to database field
         defaultPayout: data.payoutAmount.toString(), // Map to database field
       });
-      return response.json();
+      const publisher = await response.json();
+      
+      // Step 2: Handle campaign assignments
+      if (data.allowedTargets && data.allowedTargets.length > 0) {
+        await Promise.all(
+          data.allowedTargets.map(async (campaignId) => {
+            try {
+              await apiRequest(`/api/campaigns/${campaignId}/publishers`, "POST", {
+                publisherId: publisher.id,
+                customPayout: data.payoutAmount.toString() // Use publisher's default payout
+              });
+            } catch (error) {
+              console.error(`Failed to assign publisher to campaign ${campaignId}:`, error);
+            }
+          })
+        );
+      }
+      
+      return publisher;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/publishers"] });
@@ -145,6 +164,7 @@ export default function Publishers() {
   // Update publisher mutation
   const updatePublisher = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: PublisherFormData }) => {
+      // Step 1: Update the publisher
       const response = await apiRequest(`/api/publishers/${id}`, "PUT", {
         name: data.name,
         email: data.email,
@@ -153,7 +173,51 @@ export default function Publishers() {
         payoutModel: data.payoutType, // Map to database field
         defaultPayout: data.payoutAmount.toString(), // Map to database field
       });
-      return response.json();
+      const publisher = await response.json();
+      
+      // Step 2: Get current campaign assignments to compare
+      const currentAssignments = new Set<string>();
+      for (const campaign of campaigns) {
+        try {
+          const publishersResponse = await apiRequest(`/api/campaigns/${campaign.id}/publishers`, "GET");
+          const campaignPublishers = await publishersResponse.json();
+          if (campaignPublishers.some((p: any) => p.id === id)) {
+            currentAssignments.add(campaign.id);
+          }
+        } catch (error) {
+          console.error(`Failed to check publisher assignments for campaign ${campaign.id}:`, error);
+        }
+      }
+      
+      // Step 3: Handle campaign assignment changes
+      const newAssignments = new Set(data.allowedTargets || []);
+      
+      // Remove assignments that are no longer selected
+      for (const campaignId of currentAssignments) {
+        if (!newAssignments.has(campaignId)) {
+          try {
+            await apiRequest(`/api/campaigns/${campaignId}/publishers/${id}`, "DELETE");
+          } catch (error) {
+            console.error(`Failed to remove publisher from campaign ${campaignId}:`, error);
+          }
+        }
+      }
+      
+      // Add new assignments
+      for (const campaignId of newAssignments) {
+        if (!currentAssignments.has(campaignId)) {
+          try {
+            await apiRequest(`/api/campaigns/${campaignId}/publishers`, "POST", {
+              publisherId: id,
+              customPayout: data.payoutAmount.toString()
+            });
+          } catch (error) {
+            console.error(`Failed to assign publisher to campaign ${campaignId}:`, error);
+          }
+        }
+      }
+      
+      return publisher;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/publishers"] });
@@ -192,7 +256,7 @@ export default function Publishers() {
     }
   };
 
-  const handleEdit = (publisher: Publisher) => {
+  const handleEdit = async (publisher: Publisher) => {
     // Map database fields to form fields
     const dbPublisher = publisher as any; // Cast to access database field names
     
@@ -200,12 +264,27 @@ export default function Publishers() {
     const payoutAmount = dbPublisher.defaultPayout ? parseFloat(dbPublisher.defaultPayout) : 0;
     const safePayoutAmount = isNaN(payoutAmount) ? 0 : payoutAmount;
     
+    // Get current campaign assignments for this publisher
+    const assignedCampaigns: string[] = [];
+    for (const campaign of campaigns) {
+      try {
+        const publishersResponse = await apiRequest(`/api/campaigns/${campaign.id}/publishers`, "GET");
+        const campaignPublishers = await publishersResponse.json();
+        if (campaignPublishers.some((p: any) => p.id === publisher.id)) {
+          assignedCampaigns.push(campaign.id);
+        }
+      } catch (error) {
+        console.error(`Failed to check publisher assignments for campaign ${campaign.id}:`, error);
+      }
+    }
+    
     console.log("Setting form data for edit:", {
       publisher,
       defaultPayout: dbPublisher.defaultPayout,
       payoutModel: dbPublisher.payoutModel,
       parsed: payoutAmount,
-      safe: safePayoutAmount
+      safe: safePayoutAmount,
+      assignedCampaigns
     });
     
     // Set form values BEFORE opening dialog to avoid reset issues
@@ -217,7 +296,7 @@ export default function Publishers() {
       payoutType: dbPublisher.payoutModel as "per_call" | "per_minute" | "revenue_share",
       payoutAmount: safePayoutAmount,
       minCallDuration: 0, // Not stored in publishers table
-      allowedTargets: [], // Not stored in publishers table directly
+      allowedTargets: assignedCampaigns, // Load actual assignments
       enableTracking: true, // Default value
       trackingSettings: "",
       customParameters: "",
