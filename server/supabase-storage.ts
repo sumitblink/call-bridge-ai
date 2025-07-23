@@ -152,11 +152,58 @@ export class SupabaseStorage implements IStorage {
     // Delete calls related to this campaign
     await db.delete(calls).where(eq(calls.campaignId, id));
     
+    // Delete conversion events
+    try {
+      await db.delete(conversionEvents).where(eq(conversionEvents.campaignId, id));
+    } catch (error) {
+      console.log('Conversion events table error, skipping...');
+    }
+    
+    // Delete RTB bid requests
+    try {
+      await db.delete(rtbBidRequests).where(eq(rtbBidRequests.campaignId, id));
+    } catch (error) {
+      console.log('RTB bid requests table error, skipping...');
+    }
+    
+    // Delete campaign pool assignments
+    try {
+      await db.delete(campaignPoolAssignments).where(eq(campaignPoolAssignments.campaignId, id));
+    } catch (error) {
+      console.log('Campaign pool assignments table error, skipping...');
+    }
+    
+    // Delete agent campaigns
+    try {
+      await db.delete(agentCampaigns).where(eq(agentCampaigns.campaignId, id));
+    } catch (error) {
+      console.log('Agent campaigns table error, skipping...');
+    }
+    
+    // Delete call flows
+    try {
+      await db.delete(callFlows).where(eq(callFlows.campaignId, id));
+    } catch (error) {
+      console.log('Call flows table error, skipping...');
+    }
+    
+    // Delete call tracking tags
+    try {
+      await db.delete(callTrackingTags).where(eq(callTrackingTags.campaignId, id));
+    } catch (error) {
+      console.log('Call tracking tags table error, skipping...');
+    }
+    
     // Delete campaign-buyer relationships
     await db.delete(campaignBuyers).where(eq(campaignBuyers.campaignId, id));
     
     // Delete campaign RTB targets
     await db.delete(campaignRtbTargets).where(eq(campaignRtbTargets.campaignId, id));
+    
+    // Update phone numbers to remove campaign reference (don't delete, just unlink)
+    await db.update(phoneNumbers)
+      .set({ campaignId: null })
+      .where(eq(phoneNumbers.campaignId, id));
     
     // Finally delete the campaign
     const result = await db.delete(campaigns).where(eq(campaigns.id, id));

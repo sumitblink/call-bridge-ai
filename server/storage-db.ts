@@ -201,7 +201,12 @@ export class DatabaseStorage implements IStorage {
       // 4. Delete campaign RTB targets
       await db.delete(campaignRtbTargets).where(eq(campaignRtbTargets.campaignId, id));
       
-      // 5. Finally delete the campaign
+      // 5. Update phone numbers to remove campaign reference
+      await db.update(phoneNumbers)
+        .set({ campaignId: null })
+        .where(eq(phoneNumbers.campaignId, id));
+      
+      // 6. Finally delete the campaign
       const result = await db.delete(campaigns).where(eq(campaigns.id, id));
       return result.rowCount > 0;
     } catch (error) {
