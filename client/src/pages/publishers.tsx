@@ -194,8 +194,8 @@ export default function Publishers() {
         name: publisher.name,
         email: publisher.email,
         phone: publisher.phone || "",
-        status: publisher.status as any,
-        payoutType: publisher.payoutType as any,
+        status: publisher.status as "active" | "paused" | "suspended",
+        payoutType: publisher.payoutType as "per_call" | "per_minute" | "revenue_share",
         payoutAmount: parseFloat(publisher.payoutAmount),
         minCallDuration: publisher.minCallDuration,
         allowedTargets: publisher.allowedTargets || [],
@@ -388,7 +388,7 @@ export default function Publishers() {
               </DialogTitle>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" key={editingPublisher?.id || 'create'}>
                 <Tabs defaultValue="basic" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="basic">Basic Settings</TabsTrigger>
