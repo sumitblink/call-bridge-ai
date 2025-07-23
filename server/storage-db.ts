@@ -70,7 +70,7 @@ import {
   type InsertRedtrackConfig,
 } from '@shared/schema';
 import { db } from './db';
-import { eq, and, sql, inArray } from 'drizzle-orm';
+import { eq, and, sql, inArray, isNotNull, ne, isNull } from 'drizzle-orm';
 import type { IStorage } from './storage';
 
 export class DatabaseStorage implements IStorage {
@@ -892,7 +892,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUnassignedPhoneNumbers(userId?: number): Promise<PhoneNumber[]> {
-    // Get phone numbers that are not assigned to any pool
+    // Get phone numbers that are not assigned to any pool AND have valid Twilio SIDs
     const query = db
       .select({
         id: phoneNumbers.id,
@@ -913,7 +913,10 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           userId ? eq(phoneNumbers.userId, userId) : undefined,
-          sql`${numberPoolAssignments.phoneNumberId} IS NULL`
+          sql`${numberPoolAssignments.phoneNumberId} IS NULL`,
+          isNotNull(phoneNumbers.phoneNumberSid),
+          ne(phoneNumbers.phoneNumberSid, ''),
+          sql`${phoneNumbers.phoneNumberSid} LIKE 'PN%'` // Valid Twilio SID format
         )
       );
 

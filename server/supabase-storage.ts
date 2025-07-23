@@ -1,4 +1,4 @@
-import { eq, desc, count, sql, and, isNull, gte } from 'drizzle-orm';
+import { eq, desc, count, sql, and, isNull, gte, isNotNull, ne } from 'drizzle-orm';
 import { db } from './db';
 import { 
   campaigns, 
@@ -1006,10 +1006,13 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getUnassignedPhoneNumbers(userId?: number): Promise<any[]> {
-    // Get phone numbers that are not assigned to campaigns and not assigned to pools
+    // Get phone numbers that are not assigned to campaigns, not assigned to pools, AND have valid Twilio SIDs
     const conditions = [
       isNull(phoneNumbers.campaignId),
-      isNull(numberPoolAssignments.phoneNumberId) // Not assigned to any pool
+      isNull(numberPoolAssignments.phoneNumberId), // Not assigned to any pool
+      isNotNull(phoneNumbers.phoneNumberSid),
+      ne(phoneNumbers.phoneNumberSid, ''),
+      sql`${phoneNumbers.phoneNumberSid} LIKE 'PN%'` // Valid Twilio SID format
     ];
     
     if (userId) {

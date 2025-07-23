@@ -114,6 +114,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 23, 2025: **PHONE NUMBER POOL AUTO-CONFIGURATION FIXED** - Resolved pool creation webhook configuration issue preventing proper Twilio integration
+  - **Root Cause**: Pool creation was assigning numbers without Twilio SIDs, causing webhook configuration failures
+  - **Smart Assignment**: Modified getUnassignedPhoneNumbers to only return numbers with valid Twilio SIDs (PN format)
+  - **Status Logic Fixed**: Pool-assigned numbers now correctly show "In Use" status instead of "Available"
+  - **Enhanced Display**: Improved phone number dropdown with two-line format showing number prominently and assignment status
+  - **Webhook Automation**: Pool creation now properly configures Twilio webhooks for all assigned numbers
+  - **Status**: Pool creation and phone number assignment now fully operational with automatic Twilio configuration
 - July 23, 2025: **PHONE NUMBER MANAGEMENT IMPROVEMENTS** - Enhanced phone number organization and webhook configuration
   - **Friendly Names Updated**: Changed all Twilio phone numbers to clean names ("Pool 3", "Unassigned") instead of complex generated names
   - **Webhook Configuration**: Fixed phone number +18565290287 mismatched webhook URLs (voice: pool/3, status: pool/23)
