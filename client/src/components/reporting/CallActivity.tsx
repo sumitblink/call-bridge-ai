@@ -112,6 +112,38 @@ export default function CallActivity() {
   
   const { toast } = useToast();
 
+  // Fetch URL parameters to create dynamic column definitions
+  const { data: urlParameters } = useQuery({
+    queryKey: ['/api/integrations/url-parameters'],
+    queryFn: () => fetch('/api/integrations/url-parameters').then(res => res.json())
+  });
+
+  // Create dynamic column definition lookup that includes URL parameters
+  const getDynamicColumnDefinition = (columnId: string) => {
+    // First check static columns
+    const staticColumn = getColumnDefinition(columnId);
+    if (staticColumn) return staticColumn;
+    
+    // Then check URL parameters
+    const urlParam = urlParameters?.find((param: any) => param.parameterName === columnId);
+    if (urlParam) {
+      return {
+        id: urlParam.parameterName,
+        label: urlParam.reportName, // Use Report Name as the label
+        category: urlParam.reportingMenuName,
+        dataType: urlParam.parameterType,
+        defaultVisible: false,
+        width: 150,
+        sortable: true,
+        filterable: true,
+        description: `URL parameter: ${urlParam.parameterName}`
+      };
+    }
+    
+    // Fallback to column ID if no definition found
+    return { id: columnId, label: columnId, category: 'Unknown', dataType: 'string', defaultVisible: false };
+  };
+
   const handleColumnsChange = (newVisibleColumns: string[]) => {
     // Remove duplicates to fix React key issues
     const uniqueColumns = [...new Set(newVisibleColumns)];
@@ -186,7 +218,7 @@ export default function CallActivity() {
   };
 
   const renderColumnValue = (call: Call, column: string) => {
-    const columnDef = getColumnDefinition(column);
+    const columnDef = getDynamicColumnDefinition(column);
     
     switch (column) {
       case 'campaign':
@@ -432,7 +464,7 @@ export default function CallActivity() {
               <TableHeader>
                 <TableRow>
                   {visibleColumns.map((column, columnIndex) => {
-                    const columnDef = getColumnDefinition(column);
+                    const columnDef = getDynamicColumnDefinition(column);
                     return (
                       <TableHead 
                         key={`header-${columnIndex}-${column}`} 
@@ -460,7 +492,7 @@ export default function CallActivity() {
                         key={`cell-${callIndex}-${columnIndex}`} 
                         className="py-2"
                         style={{ 
-                          width: columnWidths[column] || getColumnDefinition(column)?.width || 'auto',
+                          width: columnWidths[column] || getDynamicColumnDefinition(column)?.width || 'auto',
                           minWidth: '60px'
                         }}
                       >
