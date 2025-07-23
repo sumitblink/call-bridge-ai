@@ -348,7 +348,7 @@ export const callTrackingTags = pgTable("call_tracking_tags", {
   rotationStrategy: varchar("rotation_strategy", { length: 50 }).default("round_robin").notNull(), // round_robin, sticky, random, priority
   
   // Publisher Assignment
-  publisherId: integer("publisher_id").references(() => publishers.id), // Assigned publisher
+  publisherId: integer("publisher_id").references(() => publishers.id), // Assigned publisher (nullable for historical preservation)
   
   // User Data Collection
   captureUserData: boolean("capture_user_data").default(false).notNull(),
