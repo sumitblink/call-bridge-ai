@@ -533,7 +533,7 @@ export default function Campaigns() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       const response = await apiRequest(`/api/campaigns/${id}`, "DELETE");
       if (!response.ok) {
         throw new Error(`Failed to delete campaign: ${response.statusText}`);
@@ -783,7 +783,7 @@ export default function Campaigns() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => campaignToDelete && deleteMutation.mutate(Number(campaignToDelete.id))}
+                onClick={() => campaignToDelete && deleteMutation.mutate(campaignToDelete.id)}
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? "Deleting..." : "Delete"}
