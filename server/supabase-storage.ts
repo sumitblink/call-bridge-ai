@@ -979,6 +979,14 @@ export class SupabaseStorage implements IStorage {
     return result[0];
   }
 
+  async updatePhoneNumberFriendlyName(id: number, friendlyName: string): Promise<any | undefined> {
+    const result = await db.update(phoneNumbers)
+      .set({ friendlyName })
+      .where(eq(phoneNumbers.id, id))
+      .returning();
+    return result[0];
+  }
+
   async deletePhoneNumber(id: number): Promise<boolean> {
     const result = await db.delete(phoneNumbers).where(eq(phoneNumbers.id, id));
     return result.rowCount > 0;

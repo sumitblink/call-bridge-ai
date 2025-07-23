@@ -582,6 +582,13 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async updatePhoneNumberFriendlyName(id: number, friendlyName: string): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.updatePhoneNumberFriendlyName(id, friendlyName),
+      () => this.memStorage.updatePhoneNumberFriendlyName(id, friendlyName)
+    );
+  }
+
   async deletePhoneNumber(id: number): Promise<boolean> {
     return this.executeOperation(
       () => this.databaseStorage.deletePhoneNumber(id),

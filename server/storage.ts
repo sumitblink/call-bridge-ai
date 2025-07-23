@@ -1159,6 +1159,14 @@ export class MemStorage implements IStorage {
     return undefined;
   }
 
+  async updatePhoneNumberFriendlyName(id: number, friendlyName: string): Promise<any | undefined> {
+    const phoneNumber = this.phoneNumbers.find(p => p.id === id);
+    if (!phoneNumber) return undefined;
+    
+    phoneNumber.friendlyName = friendlyName;
+    return phoneNumber;
+  }
+
   async deletePhoneNumber(id: number): Promise<boolean> {
     return false;
   }

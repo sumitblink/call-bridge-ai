@@ -2777,6 +2777,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Phone number not found' });
       }
 
+      // Update Twilio webhook for direct campaign assignment
+      try {
+        const { TwilioWebhookService } = await import('./twilio-webhook-service');
+        const webhookUpdated = await TwilioWebhookService.updateCampaignWebhook(campaignId, updatedNumber);
+        
+        if (webhookUpdated) {
+          console.log(`Successfully updated webhook for direct campaign assignment: ${updatedNumber.phoneNumber}`);
+          // Update database friendly name
+          await storage.updatePhoneNumberFriendlyName(parseInt(id), 'Campaign Direct');
+        }
+      } catch (webhookError) {
+        console.error('Error updating webhook for campaign assignment:', webhookError);
+        // Don't fail the assignment if webhook update fails
+      }
+
       res.json({
         success: true,
         phoneNumber: updatedNumber
@@ -2795,6 +2810,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!updatedNumber) {
         return res.status(404).json({ error: 'Phone number not found' });
+      }
+
+      // Reset Twilio webhook when unassigning from campaign
+      try {
+        const { TwilioWebhookService } = await import('./twilio-webhook-service');
+        const webhookReset = await TwilioWebhookService.removeWebhooks([updatedNumber]);
+        
+        if (webhookReset.success) {
+          console.log(`Successfully reset webhook after campaign unassignment: ${updatedNumber.phoneNumber}`);
+          // Update database friendly name
+          await storage.updatePhoneNumberFriendlyName(parseInt(id), 'Unassigned');
+        }
+      } catch (webhookError) {
+        console.error('Error resetting webhook after campaign unassignment:', webhookError);
+        // Don't fail the unassignment if webhook reset fails
       }
 
       res.json({
@@ -2956,6 +2986,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             if (updateResult.success) {
               console.log(`Successfully updated webhooks for ${updateResult.updated.length} numbers`);
+              
+              // Update database friendly names to match Twilio
+              for (const phoneNumber of poolNumbers) {
+                await storage.updatePhoneNumberFriendlyName(phoneNumber.id, `Pool ${newPool.id}`);
+              }
             }
             
             if (updateResult.failed.length > 0) {
@@ -3132,6 +3167,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { phoneNumberId, priority = 1 } = req.body;
       
       const assignment = await storage.assignNumberToPool(parseInt(poolId), phoneNumberId, priority);
+      
+      // Update Twilio webhook for number assigned to pool
+      try {
+        const phoneNumbers = await storage.getPhoneNumbers();
+        const phoneNumber = phoneNumbers.find(p => p.id === phoneNumberId);
+        
+        if (phoneNumber && phoneNumber.phoneNumberSid) {
+          const { TwilioWebhookService } = await import('./twilio-webhook-service');
+          const webhookResult = await TwilioWebhookService.updatePoolWebhooks(parseInt(poolId), [phoneNumber]);
+          
+          if (webhookResult.success) {
+            console.log(`Successfully updated webhook for number ${phoneNumber.phoneNumber} assigned to pool ${poolId}`);
+            // Update database friendly name
+            await storage.updatePhoneNumberFriendlyName(phoneNumberId, `Pool ${poolId}`);
+          }
+        }
+      } catch (webhookError) {
+        console.error('Error updating webhook for pool assignment:', webhookError);
+        // Don't fail assignment if webhook update fails
+      }
+      
       res.json(assignment);
     } catch (error: any) {
       console.error('Error assigning number to pool:', error);
@@ -3152,6 +3208,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!removed) {
         return res.status(404).json({ error: 'Assignment not found' });
+      }
+
+      // Reset Twilio webhook when removing number from pool
+      try {
+        const phoneNumbers = await storage.getPhoneNumbers();
+        const phoneNumber = phoneNumbers.find(p => p.id === parseInt(phoneNumberId));
+        
+        if (phoneNumber && phoneNumber.phoneNumberSid) {
+          const { TwilioWebhookService } = await import('./twilio-webhook-service');
+          const webhookReset = await TwilioWebhookService.removeWebhooks([phoneNumber]);
+          
+          if (webhookReset.success) {
+            console.log(`Successfully reset webhook for number ${phoneNumber.phoneNumber} removed from pool ${poolId}`);
+            // Update database friendly name
+            await storage.updatePhoneNumberFriendlyName(parseInt(phoneNumberId), 'Unassigned');
+          }
+        }
+      } catch (webhookError) {
+        console.error('Error resetting webhook after pool removal:', webhookError);
+        // Don't fail removal if webhook reset fails
       }
 
       res.json({ success: true });

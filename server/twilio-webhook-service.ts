@@ -97,12 +97,12 @@ export class TwilioWebhookService {
   /**
    * Update webhook URLs for a single campaign number
    */
-  static async updateCampaignWebhook(campaignId: number, phoneNumber: any): Promise<boolean> {
+  static async updateCampaignWebhook(campaignId: string, phoneNumber: any): Promise<boolean> {
     const client = this.getTwilioClient();
     const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
     const protocol = domain.includes('localhost') ? 'http' : 'https';
     
-    const webhookUrl = `${protocol}://${domain}/api/campaigns/${campaignId}/webhook/voice`;
+    const webhookUrl = `${protocol}://${domain}/api/webhooks/voice`;
     const statusCallbackUrl = `${protocol}://${domain}/api/campaigns/${campaignId}/webhook/status`;
 
     try {
@@ -115,7 +115,7 @@ export class TwilioWebhookService {
         voiceMethod: 'POST',
         statusCallback: statusCallbackUrl,
         statusCallbackMethod: 'POST',
-        friendlyName: `Campaign ${campaignId}`
+        friendlyName: `Campaign Direct`
       });
 
       console.log(`Updated campaign webhook for ${phoneNumber.phoneNumber}`);
@@ -156,7 +156,8 @@ export class TwilioWebhookService {
           await client.incomingPhoneNumbers(phoneNumber.phoneNumberSid).update({
             voiceUrl: '',
             statusCallback: '',
-            friendlyName: `Unassigned-${phoneNumber.phoneNumber}`
+            voiceFallbackUrl: '',
+            friendlyName: `Unassigned`
           });
 
           result.updated.push(phoneNumber.phoneNumber);
