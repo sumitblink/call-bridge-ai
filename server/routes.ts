@@ -22,6 +22,7 @@ import {
   numberPools,
   publishers,
   visitorSessions,
+  campaigns,
   insertCallTrackingTagSchema,
   CallTrackingTag,
   InsertCallTrackingTag 
@@ -1332,8 +1333,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[Webhook RTB] Incoming call from ${fromNumber} to ${toNumber}, CallSid: ${CallSid}`);
       
-      // Find campaign by phone number
-      const campaign = await storage.getCampaignByPhoneNumber(toNumber);
+      // Find campaign by phone number - using raw SQL to bypass TypeScript issues
+      let campaign;
+      try {
+        const result = await db.execute(sql`
+          SELECT c.*, p.phone_number as phone_number
+          FROM campaigns c 
+          INNER JOIN phone_numbers p ON p.campaign_id = c.id 
+          WHERE p.phone_number = ${toNumber}
+          LIMIT 1
+        `);
+        
+        if (result.rows.length > 0) {
+          const row = result.rows[0] as any;
+          campaign = {
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            description: row.description,
+            status: row.status,
+            phoneNumber: row.phone_number,
+            enableRtb: row.enable_rtb,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at
+          };
+          console.log(`[Webhook RTB] Direct SQL lookup found campaign:`, campaign.name);
+        } else {
+          console.log(`[Webhook RTB] Direct SQL lookup found no campaign for ${toNumber}`);
+        }
+      } catch (dbError) {
+        console.error(`[Webhook RTB] Direct SQL lookup failed:`, dbError);
+        // Fallback to storage method
+        campaign = await storage.getCampaignByPhoneNumber(toNumber);
+      }
       
       if (!campaign) {
         console.log(`[Webhook RTB] No campaign found for number ${toNumber}`);

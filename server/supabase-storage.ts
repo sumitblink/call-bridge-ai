@@ -117,8 +117,27 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined> {
-    const result = await db.select().from(campaigns).where(eq(campaigns.phoneNumber, phoneNumber)).limit(1);
-    return result[0];
+    try {
+      const result = await db
+        .select()
+        .from(campaigns)
+        .innerJoin(phoneNumbers, eq(phoneNumbers.campaignId, campaigns.id))
+        .where(eq(phoneNumbers.phoneNumber, phoneNumber))
+        .limit(1);
+      
+      if (result.length > 0) {
+        // Map the joined result to a campaign object
+        const campaignData = result[0].campaigns;
+        return {
+          ...campaignData,
+          phoneNumber: result[0].phone_numbers.phoneNumber
+        } as Campaign;
+      }
+      return undefined;
+    } catch (error) {
+      console.error('Error in getCampaignByPhoneNumber:', error);
+      return undefined;
+    }
   }
 
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
