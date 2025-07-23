@@ -49,8 +49,8 @@ import {
   type InsertRtbTarget,
   type RtbRouter,
   type InsertRtbRouter,
-  type RtbRouterAssignment,
-  type InsertRtbRouterAssignment,
+  type CampaignRtbTarget,
+  type InsertCampaignRtbTarget,
   type RtbBidRequest,
   type InsertRtbBidRequest,
   type RtbBidResponse,
@@ -72,7 +72,7 @@ import type { IStorage } from './storage';
 export class SupabaseStorage implements IStorage {
   // Users
   async getUser(id: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    const result = await db.select().from(users).where(eq(users.id, parseInt(id))).limit(1);
     return result[0];
   }
 
@@ -112,7 +112,8 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getCampaign(id: string | number): Promise<Campaign | undefined> {
-    const result = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
+    const campaignId = typeof id === 'string' ? id : id.toString();
+    const result = await db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
     return result[0];
   }
 
@@ -149,12 +150,13 @@ export class SupabaseStorage implements IStorage {
   }
 
   async updateCampaign(id: string | number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
+    const campaignId = typeof id === 'string' ? id : id.toString();
     const result = await db.update(campaigns)
       .set({
         ...campaign,
         updatedAt: new Date()
       })
-      .where(eq(campaigns.id, id))
+      .where(eq(campaigns.id, campaignId))
       .returning();
     return result[0];
   }
@@ -268,6 +270,7 @@ export class SupabaseStorage implements IStorage {
   async createBuyer(buyer: InsertBuyer): Promise<Buyer> {
     const result = await db.insert(buyers).values({
       ...buyer,
+      userId: buyer.userId || 1, // Provide default userId
       updatedAt: new Date()
     }).returning();
     return result[0];
@@ -321,6 +324,7 @@ export class SupabaseStorage implements IStorage {
         avgResponseTime: buyers.avgResponseTime,
         createdAt: buyers.createdAt,
         updatedAt: buyers.updatedAt,
+        userId: buyers.userId,
       })
       .from(buyers)
       .innerJoin(campaignBuyers, eq(buyers.id, campaignBuyers.buyerId))
@@ -340,7 +344,7 @@ export class SupabaseStorage implements IStorage {
         status: campaigns.status,
         routingType: campaigns.routingType,
         enableRtb: campaigns.enableRtb,
-        rtbRouterId: campaigns.rtbRouterId,
+        // rtbRouterId removed - using direct campaign-target assignments
         rtbId: campaigns.rtbId,
         createdAt: campaigns.createdAt,
         updatedAt: campaigns.updatedAt,
@@ -354,7 +358,7 @@ export class SupabaseStorage implements IStorage {
 
   async addBuyerToCampaign(campaignId: string | number, buyerId: number, priority = 1): Promise<CampaignBuyer> {
     const result = await db.insert(campaignBuyers).values({
-      campaignId,
+      campaignId: typeof campaignId === 'string' ? campaignId : campaignId.toString(),
       buyerId,
       priority,
     }).returning();
@@ -362,9 +366,10 @@ export class SupabaseStorage implements IStorage {
   }
 
   async removeBuyerFromCampaign(campaignId: string | number, buyerId: number): Promise<boolean> {
+    const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
     const result = await db.delete(campaignBuyers)
       .where(and(
-        eq(campaignBuyers.campaignId, campaignId),
+        eq(campaignBuyers.campaignId, campaignIdStr),
         eq(campaignBuyers.buyerId, buyerId)
       ));
     return result.rowCount > 0;
@@ -372,6 +377,7 @@ export class SupabaseStorage implements IStorage {
 
   // Call Routing & Ping/Post
   async pingBuyersForCall(campaignId: number, callData: any): Promise<Buyer[]> {
+    const campaignIdStr = campaignId.toString();
     const result = await db
       .select({
         id: buyers.id,
@@ -387,11 +393,12 @@ export class SupabaseStorage implements IStorage {
         avgResponseTime: buyers.avgResponseTime,
         createdAt: buyers.createdAt,
         updatedAt: buyers.updatedAt,
+        userId: buyers.userId,
       })
       .from(buyers)
       .innerJoin(campaignBuyers, eq(buyers.id, campaignBuyers.buyerId))
       .where(and(
-        eq(campaignBuyers.campaignId, campaignId),
+        eq(campaignBuyers.campaignId, campaignIdStr),
         eq(buyers.status, "active"),
         eq(campaignBuyers.isActive, true)
       ))
@@ -418,6 +425,7 @@ export class SupabaseStorage implements IStorage {
   async createAgent(agent: InsertAgent): Promise<Agent> {
     const result = await db.insert(agents).values({
       ...agent,
+      userId: agent.userId || 1, // Provide default userId
       updatedAt: new Date()
     }).returning();
     return result[0];
@@ -445,8 +453,9 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getCallsByCampaign(campaignId: number): Promise<Call[]> {
+    const campaignIdStr = campaignId.toString();
     return await db.select().from(calls)
-      .where(eq(calls.campaignId, campaignId))
+      .where(eq(calls.campaignId, campaignIdStr))
       .orderBy(desc(calls.createdAt));
   }
 
@@ -811,9 +820,10 @@ export class SupabaseStorage implements IStorage {
   }
 
   async addPublisherToCampaign(publisherId: number, campaignId: number, customPayout?: string): Promise<any> {
+    const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
     const [result] = await db.insert(publisherCampaigns).values({
       publisherId,
-      campaignId,
+      campaignId: campaignIdStr,
       customPayout,
       isActive: true,
     }).returning();
@@ -821,10 +831,11 @@ export class SupabaseStorage implements IStorage {
   }
 
   async removePublisherFromCampaign(publisherId: number, campaignId: number): Promise<boolean> {
+    const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
     const result = await db.delete(publisherCampaigns)
       .where(and(
         eq(publisherCampaigns.publisherId, publisherId),
-        eq(publisherCampaigns.campaignId, campaignId)
+        eq(publisherCampaigns.campaignId, campaignIdStr)
       ));
     return result.rowCount > 0;
   }
@@ -885,32 +896,14 @@ export class SupabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
-  // RTB Router Assignments
-  async getRtbRouterAssignments(routerId: number): Promise<RtbRouterAssignment[]> {
-    return await db.select().from(rtbRouterAssignments)
-      .where(eq(rtbRouterAssignments.rtbRouterId, routerId))
-      .orderBy(rtbRouterAssignments.priority);
-  }
-
-  async createRtbRouterAssignment(assignment: InsertRtbRouterAssignment): Promise<RtbRouterAssignment> {
-    const result = await db.insert(rtbRouterAssignments).values(assignment).returning();
-    return result[0];
-  }
-
-  async deleteRtbRouterAssignment(routerId: number, targetId: number): Promise<boolean> {
-    const result = await db.delete(rtbRouterAssignments)
-      .where(and(
-        eq(rtbRouterAssignments.rtbRouterId, routerId),
-        eq(rtbRouterAssignments.rtbTargetId, targetId)
-      ));
-    return result.rowCount > 0;
-  }
+  // RTB Router Assignments - DEPRECATED: Now using direct campaign-target assignments
 
   // RTB Bid Requests
   async getRtbBidRequests(campaignId?: number): Promise<RtbBidRequest[]> {
     const query = db.select().from(rtbBidRequests);
     if (campaignId) {
-      return await query.where(eq(rtbBidRequests.campaignId, campaignId))
+      const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
+      return await query.where(eq(rtbBidRequests.campaignId, campaignIdStr))
         .orderBy(desc(rtbBidRequests.createdAt));
     }
     return await query.orderBy(desc(rtbBidRequests.createdAt));
