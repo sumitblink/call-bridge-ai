@@ -198,8 +198,8 @@ export class DatabaseStorage implements IStorage {
       // 3. Delete campaign_buyers entries
       await db.delete(campaignBuyers).where(eq(campaignBuyers.campaignId, id));
       
-      // 4. Delete publisher_campaigns entries (skip if table doesn't exist)
-      // await db.delete(campaignPublishers).where(eq(campaignPublishers.campaignId, id));
+      // 4. Delete campaign RTB targets
+      await db.delete(campaignRtbTargets).where(eq(campaignRtbTargets.campaignId, id));
       
       // 5. Finally delete the campaign
       const result = await db.delete(campaigns).where(eq(campaigns.id, id));
