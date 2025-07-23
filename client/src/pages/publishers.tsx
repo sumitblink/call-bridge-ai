@@ -39,7 +39,7 @@ const publisherSchema = z.object({
   payoutType: z.enum(["per_call", "per_minute", "revenue_share"]),
   payoutAmount: z.number().min(0, "Payout amount must be positive").default(0),
   minCallDuration: z.number().min(0, "Duration must be positive").default(0),
-  allowedTargets: z.array(z.number()).default([]),
+  allowedTargets: z.array(z.number()).optional().default([]),
   enableTracking: z.boolean().default(true),
   trackingSettings: z.string().optional(),
   customParameters: z.string().optional(),
@@ -125,8 +125,13 @@ export default function Publishers() {
       form.reset();
       toast({ title: "Publisher created successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to create publisher", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Publisher creation error:", error);
+      toast({ 
+        title: "Failed to create publisher", 
+        description: error.message || "Please check all required fields and try again.",
+        variant: "destructive" 
+      });
     },
   });
 
@@ -171,6 +176,9 @@ export default function Publishers() {
   });
 
   const onSubmit = (data: PublisherFormData) => {
+    console.log("Submitting publisher data:", data);
+    console.log("Form errors:", form.formState.errors);
+    
     if (editingPublisher) {
       updatePublisher.mutate({ id: editingPublisher.id, data });
     } else {
@@ -544,18 +552,21 @@ export default function Publishers() {
                             </FormDescription>
                             <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded p-3">
                               {campaigns.length === 0 ? (
-                                <p className="text-sm text-muted-foreground col-span-2">No campaigns available</p>
+                                <p className="text-sm text-muted-foreground col-span-2">
+                                  No campaigns available. Publisher will have access to all campaigns by default.
+                                </p>
                               ) : (
                                 campaigns.map((campaign) => (
                                   <div key={campaign.id} className="flex items-center space-x-2">
                                     <Checkbox
                                       id={`campaign-${campaign.id}`}
-                                      checked={field.value.includes(campaign.id)}
+                                      checked={field.value?.includes(campaign.id) || false}
                                       onCheckedChange={(checked) => {
+                                        const currentValue = field.value || [];
                                         if (checked) {
-                                          field.onChange([...field.value, campaign.id]);
+                                          field.onChange([...currentValue, campaign.id]);
                                         } else {
-                                          field.onChange(field.value.filter((id: number) => id !== campaign.id));
+                                          field.onChange(currentValue.filter((id: number) => id !== campaign.id));
                                         }
                                       }}
                                     />
