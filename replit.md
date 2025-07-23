@@ -114,7 +114,7 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
-- July 23, 2025: **INTEGRATIONS PIXEL FORM ENHANCED WITH CUSTOM URL FIELD** - Added custom URL input field to Integrations > Tracking Pixels form to support RedTrack postback URLs and other external tracking services
+- July 23, 2025: **RINGBA-STYLE UNIFIED TRACKING PIXEL FORMS COMPLETE** - Implemented consistent Ringba-style interface across both Integrations and Campaign tracking pixel forms
   - **Custom URL Field**: Added optional custom URL input field in Integrations pixel creation form
   - **Smart Form Handling**: When custom URL is entered, form uses custom URL instead of auto-generated code
   - **RedTrack Support**: Users can now paste RedTrack postback URLs like "https://test.offer.com/postback?clickid={call_id}&campaign={campaign_id}"
