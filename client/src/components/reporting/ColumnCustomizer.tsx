@@ -38,17 +38,20 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
   });
 
   // Convert URL parameters to column definitions
-  const urlParameterColumns: ColumnDefinition[] = (urlParameters || []).map((param: any) => ({
-    id: param.parameterName,
-    label: param.reportName, // This should display the "Report Name" from database
-    category: param.reportingMenuName,
-    dataType: param.parameterType as any,
-    defaultVisible: false,
-    width: 150,
-    sortable: true,
-    filterable: true,
-    description: `URL parameter: ${param.parameterName}`
-  }));
+  const urlParameterColumns: ColumnDefinition[] = (urlParameters || []).map((param: any) => {
+    console.log('Creating column for URL parameter:', param);
+    return {
+      id: param.parameterName,
+      label: param.reportName, // This should display the "Report Name" from database
+      category: param.reportingMenuName,
+      dataType: param.parameterType as any,
+      defaultVisible: false,
+      width: 150,
+      sortable: true,  
+      filterable: true,
+      description: `URL parameter: ${param.parameterName}`
+    };
+  });
 
   // Merge static columns with dynamic URL parameter columns
   const allColumnDefinitions = [...COLUMN_DEFINITIONS, ...urlParameterColumns];
@@ -277,7 +280,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
 
         <div className="flex items-center justify-between py-4">
           <div className="text-sm text-muted-foreground">
-            {localVisibleColumns.length} of {COLUMN_DEFINITIONS.length} columns selected
+            {localVisibleColumns.length} of {allColumnDefinitions.length} columns selected
           </div>
           <Button
             variant="ghost"
