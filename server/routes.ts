@@ -4764,6 +4764,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple DNI tracking endpoint (Ringba-style)
+  app.post('/api/dni/track-simple', async (req, res) => {
+    // Additional CORS headers for DNI endpoint
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    try {
+      console.log('=== Simple DNI Track Handler Called ===');
+      console.log('Request body:', req.body);
+
+      const {
+        campaignId,
+        sessionId,
+        domain,
+        referrer,
+        userAgent,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+        utmContent,
+        utmTerm,
+        publisher,
+        gclid,
+        fbclid,
+        msclkid,
+        ttclid,
+        twclid,
+        liclid,
+        subid,
+        clickid,
+        affid,
+        pubid,
+        source,
+        medium,
+        campaign,
+        content,
+        term,
+        keyword,
+        placement,
+        adgroup,
+        creative,
+        device,
+        network,
+        matchtype,
+        adposition,
+        target,
+        targetid,
+        loc_physical_ms,
+        loc_interest_ms
+      } = req.body;
+
+      const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+      
+      console.log('DNI: Processing simple tracking request');
+
+      const trackingRequest = {
+        campaignId,
+        sessionId,
+        source: utmSource || source,
+        medium: utmMedium || medium,
+        campaign: utmCampaign || campaign,
+        content: utmContent || content,
+        term: utmTerm || term,
+        referrer: referrer || '',
+        userAgent: userAgent || '',
+        ipAddress,
+        customFields: {
+          domain,
+          publisher,
+          gclid,
+          fbclid,
+          msclkid,
+          ttclid,
+          twclid,
+          liclid,
+          subid,
+          clickid,
+          affid,
+          pubid,
+          keyword,
+          placement,
+          adgroup,
+          creative,
+          device,
+          network,
+          matchtype,
+          adposition,
+          target,
+          targetid,
+          loc_physical_ms,
+          loc_interest_ms
+        }
+      };
+
+      console.log('DNI: Service called with request:', trackingRequest);
+
+      const result = await DNIService.trackVisitorByCampaignId(trackingRequest);
+
+      if (result.success) {
+        res.json({
+          phoneNumber: result.phoneNumber,
+          formattedNumber: result.formattedNumber,
+          trackingId: result.trackingId,
+          sessionId: result.sessionId
+        });
+      } else {
+        res.status(400).json({ error: result.error || 'Failed to track visitor' });
+      }
+    } catch (error) {
+      console.error('Simple DNI tracking error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // DNI tracking endpoint for website integration (with API key authentication)
   app.post('/api/dni/track', async (req, res) => {
     // Additional CORS headers for DNI endpoint

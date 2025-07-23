@@ -313,6 +313,15 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     });
   };
 
+  const generateSimpleTrackingCode = (campaignId: string) => {
+    const currentDomain = window.location.hostname;
+    const protocol = window.location.protocol;
+    const port = window.location.port ? `:${window.location.port}` : '';
+    const baseUrl = `${protocol}//${currentDomain}${port}`;
+    
+    return `<script src="${baseUrl}/js/t.js" data-campaign="${campaignId}" async></script>`;
+  };
+
   const generateJavaScriptCode = (tag: any) => {
     if (!tag) return '';
     
@@ -874,15 +883,53 @@ ${generateJavaScriptCode(tag)}`;
               </div>
             </DialogTitle>
           </DialogHeader>
-          <Tabs defaultValue="javascript" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="javascript">JavaScript</TabsTrigger>
+          <Tabs defaultValue="simple" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="simple">Simple (Recommended)</TabsTrigger>
+              <TabsTrigger value="javascript">Advanced JavaScript</TabsTrigger>
               <TabsTrigger value="html">HTML Snippet</TabsTrigger>
               <TabsTrigger value="manual">Manual Integration</TabsTrigger>
             </TabsList>
+            <TabsContent value="simple" className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">You only need to add this once per campaign</span>
+                </div>
+                <p className="text-sm text-blue-600 dark:text-blue-400">
+                  Copy and paste this snippet in your page header. It will search for phone numbers to replace and swap them with Pool Numbers.
+                </p>
+              </div>
+              <div>
+                <Label>One-Line Script Tag (Ringba Style)</Label>
+                <div className="relative">
+                  <Textarea
+                    className="font-mono text-sm h-16"
+                    value={selectedTag?.campaignId ? generateSimpleTrackingCode(selectedTag.campaignId) : ''}
+                    readOnly
+                  />
+                  <Button
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => selectedTag?.campaignId && copyToClipboard(generateSimpleTrackingCode(selectedTag.campaignId))}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <h4 className="font-medium">How it works:</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Automatically detects phone numbers on your page</li>
+                    <li>• Replaces them with tracking numbers from your pool</li>
+                    <li>• Captures all URL parameters (publisher, UTM, click IDs)</li>
+                    <li>• Works on any website without configuration</li>
+                  </ul>
+                </div>
+              </div>
+            </TabsContent>
             <TabsContent value="javascript" className="space-y-4">
               <div>
-                <Label>JavaScript Code</Label>
+                <Label>Advanced JavaScript Code</Label>
                 <div className="relative">
                   <Textarea
                     className="font-mono text-sm min-h-[300px]"

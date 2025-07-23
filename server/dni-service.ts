@@ -464,6 +464,54 @@ export class DNIService {
   }
 
   /**
+   * Track visitor by campaign ID (Ringba-style simple tracking)
+   */
+  static async trackVisitorByCampaignId(request: DNIRequest): Promise<DNIResponse> {
+    try {
+      console.log('DNI: Simple tracking by campaign ID:', request.campaignId);
+      
+      // Find campaign by ID
+      const campaign = await db.select().from(campaigns).where(eq(campaigns.id, request.campaignId)).limit(1);
+      
+      if (!campaign || campaign.length === 0) {
+        return {
+          phoneNumber: '',
+          formattedNumber: '',
+          campaignId: '',
+          campaignName: '',
+          trackingId: '',
+          success: false,
+          error: 'Campaign not found'
+        };
+      }
+
+      const campaignRecord = campaign[0];
+      console.log('DNI: Found campaign:', campaignRecord.name);
+
+      // Use the existing trackVisitor method with campaign details
+      const trackingRequest = {
+        ...request,
+        campaignId: campaignRecord.id,
+        campaignName: campaignRecord.name
+      };
+
+      return await this.trackVisitor(trackingRequest);
+      
+    } catch (error) {
+      console.error('DNI Campaign ID tracking error:', error);
+      return {
+        phoneNumber: '',
+        formattedNumber: '',
+        campaignId: '',
+        campaignName: '',
+        trackingId: '',
+        success: false,
+        error: 'Failed to track visitor'
+      };
+    }
+  }
+
+  /**
    * Generate simple HTML snippet for website integration
    */
   static generateHTMLSnippet(campaignId: number, campaignName: string, domain: string): string {

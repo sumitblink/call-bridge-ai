@@ -114,6 +114,16 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 23, 2025: **RINGBA-STYLE SIMPLE TRACKING IMPLEMENTED** - Created ultra-simple one-line script tag tracking system matching Ringba's ease of use
+  - **One-Line Script Tag**: Users now get simple `<script src="/js/t.js" data-campaign="CAMPAIGN_ID" async></script>` instead of complex JavaScript blocks
+  - **Automatic Phone Detection**: Script automatically finds and replaces phone numbers on any webpage without manual configuration
+  - **Universal Parameter Capture**: Captures 25+ tracking parameters (publisher, UTM, click IDs) automatically without setup
+  - **Zero Configuration Required**: No technical knowledge needed - just copy/paste one script tag in website header
+  - **Campaign ID Based**: Direct campaign ID targeting eliminates need for tracking tag codes and complex setup
+  - **New API Endpoint**: Added `/api/dni/track-simple` endpoint for streamlined campaign-based tracking
+  - **Enhanced UI**: New "Simple (Recommended)" tab in tracking code generator with Ringba-style messaging and instructions
+  - **Test Page Created**: Added `/simple-test.html` demonstrating automatic phone number replacement across multiple page elements
+  - **Major UX Improvement**: Transforms complex enterprise tracking into simple copy/paste solution competitive with Ringba's ease of use
 - July 23, 2025: **DYNAMIC URL PARAMETER TRACKING ENHANCED** - Updated tracking code generator to automatically capture all configured URL parameters including publisher tracking
   - **Dynamic Parameter Capture**: Tracking code now includes publisher, gclid, fbclid, and 25+ common tracking parameters
   - **Publisher Attribution**: Publisher parameter now captured and stored with call data for proper attribution
