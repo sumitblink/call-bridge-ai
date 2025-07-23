@@ -2166,10 +2166,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const campaignId = req.params.id;
       const userId = req.user?.id;
       
-      // Check if campaign exists and belongs to user
-      const campaign = await storage.getCampaign(campaignId);
-      if (!campaign || campaign.userId !== userId) {
-        return res.status(404).json({ error: "Campaign not found" });
+      // Get all campaigns to find the one with matching ID and user
+      const campaigns = await storage.getCampaigns();
+      const campaign = campaigns.find(c => c.id === campaignId && c.userId === userId);
+      
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found or access denied" });
       }
       
       const pixels = await storage.getCampaignTrackingPixels(campaignId);
@@ -2195,10 +2197,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         active = true 
       } = req.body;
       
-      // Check if campaign exists and belongs to user
-      const campaign = await storage.getCampaign(campaignId);
-      if (!campaign || campaign.userId !== userId) {
-        return res.status(404).json({ error: "Campaign not found" });
+      // Get all campaigns to find the one with matching ID and user
+      const campaigns = await storage.getCampaigns();
+      const campaign = campaigns.find(c => c.id === campaignId && c.userId === userId);
+      
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found or access denied" });
       }
       
       // Validate required fields
@@ -2240,10 +2244,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pixelId = parseInt(req.params.pixelId);
       const userId = req.user?.id;
       
-      // Check if campaign exists and belongs to user
-      const campaign = await storage.getCampaign(campaignId);
-      if (!campaign || campaign.userId !== userId) {
-        return res.status(404).json({ error: "Campaign not found" });
+      // Get all campaigns to find the one with matching ID and user
+      const campaigns = await storage.getCampaigns();
+      const campaign = campaigns.find(c => c.id === campaignId && c.userId === userId);
+      
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found or access denied" });
       }
 
       if (isNaN(pixelId)) {
