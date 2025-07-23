@@ -1,216 +1,222 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Plus, Edit, Trash2, Link, ExternalLink, Download, Info } from 'lucide-react';
+import { Copy, Plus, Edit, Trash2, Link, Code, Settings, Download, Info, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface CampaignUrlParametersProps {
-  campaignId?: number;
+  campaignId?: string;
 }
 
-interface UrlParameter {
+interface URLParameter {
   id: number;
-  name: string;
   parameterName: string;
   reportingMenuName: string;
   reportName: string;
   parameterType: 'string' | 'integer' | 'decimal';
-  required: boolean;
-  active: boolean;
+  isRequired: boolean;
+  defaultValue?: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const DEFAULT_PARAMETERS: UrlParameter[] = [
-  {
-    id: 1,
-    name: 'Campaign Source',
-    parameterName: 'utm_source',
-    reportingMenuName: 'Traffic Source',
-    reportName: 'Source',
-    parameterType: 'string',
-    required: true,
-    active: true
-  },
-  {
-    id: 2,
-    name: 'Campaign Medium',
-    parameterName: 'utm_medium',
-    reportingMenuName: 'Traffic Source',
-    reportName: 'Medium',
-    parameterType: 'string',
-    required: true,
-    active: true
-  },
-  {
-    id: 3,
-    name: 'Campaign Name',
-    parameterName: 'utm_campaign',
-    reportingMenuName: 'Campaign Performance',
-    reportName: 'Campaign',
-    parameterType: 'string',
-    required: true,
-    active: true
-  },
-  {
-    id: 4,
-    name: 'Campaign Content',
-    parameterName: 'utm_content',
-    reportingMenuName: 'Campaign Performance',
-    reportName: 'Content',
-    parameterType: 'string',
-    required: false,
-    active: true
-  },
-  {
-    id: 5,
-    name: 'Campaign Term',
-    parameterName: 'utm_term',
-    reportingMenuName: 'Campaign Performance',
-    reportName: 'Keyword',
-    parameterType: 'string',
-    required: false,
-    active: true
-  }
-];
-
-const getParametersStorageKey = (campaignId?: number) => 
-  campaignId ? `campaign_url_parameters_${campaignId}` : 'campaign_url_parameters_default';
-
 export default function CampaignUrlParameters({ campaignId }: CampaignUrlParametersProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isUrlParameterDialogOpen, setIsUrlParameterDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [editingParameter, setEditingParameter] = useState<UrlParameter | null>(null);
-  const [parameters, setParameters] = useState<UrlParameter[]>(() => {
-    // Load saved parameters from localStorage on initialization
-    try {
-      const storageKey = getParametersStorageKey(campaignId);
-      const savedParameters = localStorage.getItem(storageKey);
-      if (savedParameters) {
-        return JSON.parse(savedParameters);
-      }
-    } catch (error) {
-      console.log('Failed to load saved URL parameters');
-    }
-    return DEFAULT_PARAMETERS;
-  });
+  const [editingItem, setEditingItem] = useState<URLParameter | null>(null);
   const [selectedGlobalParameters, setSelectedGlobalParameters] = useState<number[]>([]);
-  const [formData, setFormData] = useState<{
-    parameterName: string;
-    reportingMenuName: string;
-    reportName: string;
-  }>({
-    parameterName: '',
-    reportingMenuName: '',
-    reportName: ''
+  const [urlParameterForm, setUrlParameterForm] = useState({
+    parameterName: "",
+    reportingMenuName: "",
+    reportName: "",
+    parameterType: "string" as 'string' | 'integer' | 'decimal',
+    isRequired: false,
+    defaultValue: "",
+    description: "",
+    isActive: true
   });
-  
+
   const { toast } = useToast();
 
-  // Save parameters to localStorage whenever they change
-  useEffect(() => {
-    try {
-      const storageKey = getParametersStorageKey(campaignId);
-      localStorage.setItem(storageKey, JSON.stringify(parameters));
-    } catch (error) {
-      console.log('Failed to save URL parameters');
-    }
-  }, [parameters, campaignId]);
-
-  // Fetch global URL parameters from Integrations
-  const { data: globalParameters, isLoading: isLoadingGlobal } = useQuery({
-    queryKey: ['/api/integrations/url-parameters'],
-    retry: false,
+  // Fetch URL Parameters from API (same as Integrations)
+  const { data: urlParameters = [], isLoading: isLoadingUrlParameters } = useQuery<URLParameter[]>({
+    queryKey: ['/api/integrations/url-parameters']
   });
 
-  const resetForm = () => {
-    setFormData({
-      parameterName: '',
-      reportingMenuName: '',
-      reportName: ''
+  const resetUrlParameterForm = () => {
+    setUrlParameterForm({
+      parameterName: "",
+      reportingMenuName: "",
+      reportName: "",
+      parameterType: "string",
+      isRequired: false,
+      defaultValue: "",
+      description: "",
+      isActive: true
     });
-    setEditingParameter(null);
-    setIsDialogOpen(false);
+    setEditingItem(null);
+    setIsUrlParameterDialogOpen(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (editingParameter) {
-      // Update existing parameter
-      setParameters(prev => prev.map(param => 
-        param.id === editingParameter.id 
-          ? { 
-              ...param, 
-              name: formData.parameterName,
-              parameterName: formData.parameterName,
-              reportingMenuName: formData.reportingMenuName,
-              reportName: formData.reportName
-            }
-          : param
-      ));
+  // Create URL Parameter Mutation
+  const createUrlParameterMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/integrations/url-parameters', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/integrations/url-parameters'] });
+      resetUrlParameterForm();
       toast({
-        title: 'Success',
-        description: 'URL parameter updated successfully'
+        title: "Success",
+        description: "URL parameter created successfully"
       });
-    } else {
-      // Create new parameter
-      const newParameter: UrlParameter = {
-        id: Date.now(),
-        name: formData.parameterName,
-        parameterName: formData.parameterName,
-        reportingMenuName: formData.reportingMenuName,
-        reportName: formData.reportName,
-        parameterType: 'string',
-        required: true,
-        active: true
-      };
-      setParameters(prev => [...prev, newParameter]);
+    },
+    onError: (error: any) => {
       toast({
-        title: 'Success',
-        description: 'URL parameter created successfully'
+        title: "Error",
+        description: error.message || "Failed to create URL parameter",
+        variant: "destructive"
       });
     }
+  });
+
+  // Update URL Parameter Mutation
+  const updateUrlParameterMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => 
+      apiRequest(`/api/integrations/url-parameters/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/integrations/url-parameters'] });
+      resetUrlParameterForm();
+      toast({
+        title: "Success",
+        description: "URL parameter updated successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update URL parameter",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Delete URL Parameter Mutation
+  const deleteUrlParameterMutation = useMutation({
+    mutationFn: (id: number) => apiRequest(`/api/integrations/url-parameters/${id}`, {
+      method: 'DELETE'
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/integrations/url-parameters'] });
+      toast({
+        title: "Success",
+        description: "URL parameter deleted successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete URL parameter",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleUrlParameterSubmit = async () => {
+    if (!urlParameterForm.parameterName || !urlParameterForm.reportingMenuName || !urlParameterForm.reportName) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check for duplicates (excluding current item when editing)
+    const isDuplicateParameterName = urlParameters.some(param => 
+      param.parameterName.toLowerCase() === urlParameterForm.parameterName.toLowerCase() && 
+      (!editingItem || param.id !== editingItem.id)
+    );
     
-    resetForm();
+    const isDuplicateReportName = urlParameters.some(param => 
+      param.reportName.toLowerCase() === urlParameterForm.reportName.toLowerCase() && 
+      (!editingItem || param.id !== editingItem.id)
+    );
+
+    if (isDuplicateParameterName) {
+      toast({
+        title: "Duplicate Parameter",
+        description: "A parameter with this name already exists",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (isDuplicateReportName) {
+      toast({
+        title: "Duplicate Report Name",
+        description: "A parameter with this report name already exists",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const data = {
+      parameterName: urlParameterForm.parameterName,
+      reportingMenuName: urlParameterForm.reportingMenuName,
+      reportName: urlParameterForm.reportName,
+      parameterType: urlParameterForm.parameterType,
+      isRequired: urlParameterForm.isRequired,
+      defaultValue: urlParameterForm.defaultValue || null,
+      description: urlParameterForm.description || null,
+      isActive: urlParameterForm.isActive
+    };
+
+    if (editingItem) {
+      updateUrlParameterMutation.mutate({ id: editingItem.id, data });
+    } else {
+      createUrlParameterMutation.mutate(data);
+    }
   };
 
-  const handleEdit = (parameter: UrlParameter) => {
-    setEditingParameter(parameter);
-    setFormData({
+  const handleEditUrlParameter = (parameter: URLParameter) => {
+    setEditingItem(parameter);
+    setUrlParameterForm({
       parameterName: parameter.parameterName,
       reportingMenuName: parameter.reportingMenuName,
-      reportName: parameter.reportName
+      reportName: parameter.reportName,
+      parameterType: parameter.parameterType,
+      isRequired: parameter.isRequired,
+      defaultValue: parameter.defaultValue || "",
+      description: parameter.description || "",
+      isActive: parameter.isActive
     });
-    setIsDialogOpen(true);
+    setIsUrlParameterDialogOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    setParameters(prev => prev.filter(param => param.id !== id));
-    toast({
-      title: 'Success',
-      description: 'URL parameter deleted successfully'
-    });
-  };
-
-  const handleToggleActive = (id: number) => {
-    setParameters(prev => prev.map(param => 
-      param.id === id 
-        ? { ...param, active: !param.active }
-        : param
-    ));
+  const handleDeleteUrlParameter = (id: number) => {
+    deleteUrlParameterMutation.mutate(id);
   };
 
   const generateSampleUrl = () => {
     const baseUrl = 'https://your-website.com/landing-page';
-    const activeParams = parameters.filter(p => p.active);
+    const activeParams = urlParameters.filter(p => p.isActive);
     const sampleParams = activeParams.map(param => {
       const sampleValue = param.parameterType === 'integer' ? '123' : 
                          param.parameterType === 'decimal' ? '12.34' : 
@@ -229,43 +235,6 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
     });
   };
 
-  const handleImportParameters = () => {
-    if (!globalParameters || !Array.isArray(globalParameters) || selectedGlobalParameters.length === 0) return;
-
-    const parametersToImport = globalParameters.filter((param: any) => 
-      selectedGlobalParameters.includes(param.id)
-    );
-
-    const highestId = Math.max(...parameters.map(p => p.id), 0);
-    const newParameters = parametersToImport.map((param: any, index: number) => ({
-      id: highestId + index + 1,
-      name: param.parameterName,
-      parameterName: param.parameterName,
-      reportingMenuName: param.reportingMenuName,
-      reportName: param.reportName,
-      parameterType: param.parameterType,
-      required: param.required,
-      active: true
-    }));
-
-    setParameters(prev => [...prev, ...newParameters]);
-    setSelectedGlobalParameters([]);
-    setIsImportDialogOpen(false);
-    
-    toast({
-      title: 'Parameters Imported!',
-      description: `${newParameters.length} parameter(s) imported from Integrations`
-    });
-  };
-
-  const handleToggleParameterSelection = (paramId: number) => {
-    setSelectedGlobalParameters(prev => 
-      prev.includes(paramId) 
-        ? prev.filter(id => id !== paramId)
-        : [...prev, paramId]
-    );
-  };
-
   return (
     <div className="space-y-6">
       {/* Parameter Configuration */}
@@ -279,299 +248,279 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+              <Dialog open={isUrlParameterDialogOpen} onOpenChange={setIsUrlParameterDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Import Existing
+                  <Button onClick={() => {
+                    setEditingItem(null);
+                    resetUrlParameterForm();
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Parameter
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-lg">
                   <DialogHeader>
-                    <DialogTitle>Import URL Parameters</DialogTitle>
+                    <DialogTitle>
+                      {editingItem ? 'Edit URL Parameter' : 'Create URL Parameter'}
+                    </DialogTitle>
                     <DialogDescription>
-                      Select URL parameters from your Integrations to add to this campaign
+                      Configure URL parameters to capture and report campaign data
                     </DialogDescription>
                   </DialogHeader>
+
                   <div className="space-y-4">
-                    {isLoadingGlobal ? (
-                      <div className="text-center py-8">Loading parameters...</div>
-                    ) : !globalParameters || !Array.isArray(globalParameters) || globalParameters.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No URL parameters found in Integrations. Create some parameters in the Integrations section first.
-                      </div>
-                    ) : (
-                      <>
-                        <div className="max-h-64 overflow-y-auto">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="w-12">Select</TableHead>
-                                <TableHead>Parameter Name</TableHead>
-                                <TableHead>URL Parameter</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Required</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {globalParameters.map((param: any) => (
-                                <TableRow key={param.id}>
-                                  <TableCell>
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedGlobalParameters.includes(param.id)}
-                                      onChange={() => handleToggleParameterSelection(param.id)}
-                                      className="rounded"
-                                    />
-                                  </TableCell>
-                                  <TableCell>{param.parameterName}</TableCell>
-                                  <TableCell>
-                                    <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm">
-                                      {param.parameterName}
-                                    </code>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant="outline">{param.parameterType}</Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    {param.required ? 
-                                      <Badge variant="default" className="bg-orange-100 text-orange-800">Required</Badge> : 
-                                      <Badge variant="secondary">Optional</Badge>
-                                    }
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => {
-                              setSelectedGlobalParameters([]);
-                              setIsImportDialogOpen(false);
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button 
-                            onClick={handleImportParameters}
-                            disabled={selectedGlobalParameters.length === 0}
-                          >
-                            Import {selectedGlobalParameters.length} Parameter(s)
-                          </Button>
-                        </div>
-                      </>
-                    )}
+                    <div>
+                      <Label htmlFor="parameter-name">URL Parameter <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="parameter-name"
+                        placeholder="utm_campaign"
+                        value={urlParameterForm.parameterName}
+                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, parameterName: e.target.value }))}
+                        required
+                        className={
+                          urlParameterForm.parameterName && 
+                          urlParameters.find(param => 
+                            param.parameterName.toLowerCase() === urlParameterForm.parameterName.toLowerCase() && 
+                            (!editingItem || param.id !== editingItem.id)
+                          ) ? "border-red-500" : ""
+                        }
+                      />
+                      {urlParameterForm.parameterName && 
+                       urlParameters.find(param => 
+                         param.parameterName.toLowerCase() === urlParameterForm.parameterName.toLowerCase() && 
+                         (!editingItem || param.id !== editingItem.id)
+                       ) ? (
+                        <span className="text-xs text-red-500 mt-1">⚠️ Parameter name already exists</span>
+                      ) : (
+                        <span className="text-xs text-gray-500 mt-1">Required</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="reporting-menu">Reporting Menu Name <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="reporting-menu"
+                        placeholder="User"
+                        value={urlParameterForm.reportingMenuName}
+                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, reportingMenuName: e.target.value }))}
+                        required
+                      />
+                      <span className="text-xs text-gray-500 mt-1">Required</span>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="report-name">Report Name <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="report-name"
+                        placeholder="Campaign Name"
+                        value={urlParameterForm.reportName}
+                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, reportName: e.target.value }))}
+                        required
+                        className={
+                          urlParameterForm.reportName && 
+                          urlParameters.find(param => 
+                            param.reportName.toLowerCase() === urlParameterForm.reportName.toLowerCase() && 
+                            (!editingItem || param.id !== editingItem.id)
+                          ) ? "border-red-500" : ""
+                        }
+                      />
+                      {urlParameterForm.reportName && 
+                       urlParameters.find(param => 
+                         param.reportName.toLowerCase() === urlParameterForm.reportName.toLowerCase() && 
+                         (!editingItem || param.id !== editingItem.id)
+                       ) ? (
+                        <span className="text-xs text-red-500 mt-1">⚠️ Report name already exists</span>
+                      ) : (
+                        <span className="text-xs text-gray-500 mt-1">Required - appears as column header</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="parameter-type">Parameter Type</Label>
+                      <Select 
+                        value={urlParameterForm.parameterType} 
+                        onValueChange={(value: 'string' | 'integer' | 'decimal') => 
+                          setUrlParameterForm(prev => ({ ...prev, parameterType: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="string">String</SelectItem>
+                          <SelectItem value="integer">Integer</SelectItem>
+                          <SelectItem value="decimal">Decimal</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="description">Description (Optional)</Label>
+                      <Input
+                        id="description"
+                        placeholder="Brief description of this parameter"
+                        value={urlParameterForm.description}
+                        onChange={(e) => setUrlParameterForm(prev => ({ ...prev, description: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="is-required"
+                        checked={urlParameterForm.isRequired}
+                        onCheckedChange={(checked) => setUrlParameterForm(prev => ({ ...prev, isRequired: checked }))}
+                      />
+                      <Label htmlFor="is-required">Required Parameter</Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="is-active"
+                        checked={urlParameterForm.isActive}
+                        onCheckedChange={(checked) => setUrlParameterForm(prev => ({ ...prev, isActive: checked }))}
+                      />
+                      <Label htmlFor="is-active">Active</Label>
+                    </div>
+
+                    <div className="flex justify-center space-x-3 pt-6">
+                      <Button
+                        onClick={handleUrlParameterSubmit}
+                        disabled={createUrlParameterMutation.isPending || updateUrlParameterMutation.isPending}
+                        className="px-8"
+                      >
+                        {editingItem ? 'UPDATE' : 'CREATE'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsUrlParameterDialogOpen(false);
+                          setEditingItem(null);
+                          resetUrlParameterForm();
+                        }}
+                        className="px-8"
+                      >
+                        CANCEL
+                      </Button>
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
             </div>
-            
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => setEditingParameter(null)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add New Parameter
-                  </Button>
-                </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingParameter ? 'Edit' : 'Add'} URL Parameter
-                  </DialogTitle>
-                  <DialogDescription>
-                    Configure how this parameter appears in tracking and reports
-                  </DialogDescription>
-                </DialogHeader>
-                <TooltipProvider>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="parameterName">URL Parameter <span className="text-red-500">*</span></Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>The actual URL parameter name that will be captured (e.g., utm_source, utm_campaign, gclid)</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Input
-                      id="parameterName"
-                      value={formData.parameterName}
-                      onChange={(e) => setFormData({ ...formData, parameterName: e.target.value })}
-                      placeholder="e.g., utm_source"
-                      required
-                    />
-                    <span className="text-xs text-gray-500 mt-1">Required</span>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="reportingMenuName">Reporting Menu Name <span className="text-red-500">*</span></Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>The section name where this parameter will appear in reports (e.g., "User", "Campaign Performance")</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Input
-                      id="reportingMenuName"
-                      value={formData.reportingMenuName}
-                      onChange={(e) => setFormData({ ...formData, reportingMenuName: e.target.value })}
-                      placeholder="e.g., User"
-                      required
-                    />
-                    <span className="text-xs text-gray-500 mt-1">Required</span>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="reportName">Report Name <span className="text-red-500">*</span></Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>The column header name that will be displayed in reports (e.g., "Source", "Campaign", "Medium")</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Input
-                      id="reportName"
-                      value={formData.reportName}
-                      onChange={(e) => setFormData({ ...formData, reportName: e.target.value })}
-                      placeholder="e.g., Source"
-                      required
-                    />
-                    <span className="text-xs text-gray-500 mt-1">Required</span>
-                  </div>
-
-                  <div className="flex justify-center space-x-3 pt-6">
-                    <Button type="submit" className="px-8">
-                      {editingParameter ? 'UPDATE' : 'CREATE'}
-                    </Button>
-                    <Button type="button" variant="outline" onClick={resetForm} className="px-8">
-                      CANCEL
-                    </Button>
-                  </div>
-                </form>
-                </TooltipProvider>
-              </DialogContent>
-            </Dialog>
           </div>
         </CardHeader>
-        <CardContent>
-          {parameters.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No URL parameters configured yet. Add your first parameter to get started.
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Parameter Name</TableHead>
-                    <TableHead>URL Parameter</TableHead>
-                    <TableHead>Report Menu</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Required</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {parameters.map((parameter) => (
-                    <TableRow key={parameter.id}>
-                      <TableCell>{parameter.name}</TableCell>
-                      <TableCell>
-                        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm">
-                          {parameter.parameterName}
-                        </code>
-                      </TableCell>
-                      <TableCell>{parameter.reportingMenuName}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {parameter.parameterType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {parameter.required ? 
-                          <Badge variant="default" className="bg-orange-100 text-orange-800">Required</Badge> : 
-                          <Badge variant="secondary">Optional</Badge>
-                        }
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={parameter.active ? "default" : "secondary"}
-                          className={parameter.active ? 'bg-green-100 text-green-800' : ''}
-                        >
-                          {parameter.active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleToggleActive(parameter.id)}
-                          >
-                            {parameter.active ? 'Disable' : 'Enable'}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(parameter)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(parameter.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {/* Sample URL Preview */}
-              <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <Link className="h-4 w-4" />
-                    Sample Tracking URL
-                  </h4>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => copyToClipboard(generateSampleUrl())}
-                  >
-                    <Copy className="h-4 w-4 mr-1" />
-                    Copy
-                  </Button>
-                </div>
-                <code className="text-sm break-all">
-                  {generateSampleUrl()}
-                </code>
-                <p className="text-xs text-muted-foreground mt-2">
-                  This URL includes all active parameters and can be used to test tracking
-                </p>
-              </div>
-            </>
-          )}
-        </CardContent>
       </Card>
+
+      {/* URL Parameters Table */}
+      <div className="bg-white rounded-lg border">
+        {isLoadingUrlParameters ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading URL parameters...</p>
+          </div>
+        ) : urlParameters.length === 0 ? (
+          <div className="text-center py-12">
+            <Settings className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium mb-2">No URL Parameters</h3>
+            <p className="text-gray-600 mb-4">Configure URL parameters to track campaign data from traffic sources</p>
+            <p className="text-sm text-gray-500">Examples: utm_campaign, utm_source, keyword, adgroup_id</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parameter</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Menu</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report Column</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {urlParameters.map((parameter) => (
+                  <tr key={parameter.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <Code className="h-4 w-4 text-purple-500 mr-2" />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{parameter.parameterName}</div>
+                          {parameter.description && (
+                            <div className="text-sm text-gray-500">{parameter.description}</div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{parameter.reportingMenuName}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{parameter.reportName}</td>
+                    <td className="px-6 py-4">
+                      <Badge variant="outline" className="capitalize">{parameter.parameterType}</Badge>
+                      {parameter.isRequired && (
+                        <Badge variant="destructive" className="ml-1">Required</Badge>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant={parameter.isActive ? "default" : "secondary"}>
+                        {parameter.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-sm space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditUrlParameter(parameter)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteUrlParameter(parameter.id)}
+                        disabled={deleteUrlParameterMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Usage Information */}
+      {urlParameters.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Link className="h-5 w-5 mr-2" />
+              Parameter Usage
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-3">
+              These parameters will be captured from campaign URLs and displayed in reports:
+            </p>
+            <div className="bg-gray-50 p-3 rounded-lg font-mono text-sm mb-3">
+              {generateSampleUrl()}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => copyToClipboard(generateSampleUrl())}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Sample URL
+              </Button>
+            </div>
+            <div className="mt-3 text-xs text-gray-500">
+              Values will appear in reporting under the configured menu names and column headers.
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
