@@ -1060,7 +1060,17 @@ export class SupabaseStorage implements IStorage {
   // Pool Assignments - missing methods
   async getPoolNumbers(poolId: number): Promise<any[]> {
     const result = await db
-      .select()
+      .select({
+        id: phoneNumbers.id,
+        phoneNumber: phoneNumbers.phoneNumber,
+        phoneNumberSid: phoneNumbers.phoneNumberSid,
+        friendlyName: phoneNumbers.friendlyName,
+        numberType: phoneNumbers.numberType,
+        country: phoneNumbers.country,
+        isActive: phoneNumbers.isActive,
+        priority: numberPoolAssignments.priority,
+        assignedAt: numberPoolAssignments.assignedAt,
+      })
       .from(numberPoolAssignments)
       .innerJoin(phoneNumbers, eq(numberPoolAssignments.phoneNumberId, phoneNumbers.id))
       .where(eq(numberPoolAssignments.poolId, poolId));

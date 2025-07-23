@@ -2906,6 +2906,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { selectedNumbers, ...poolData } = req.body;
       const poolDataWithUser = { ...poolData, userId };
       
+      // Validate pool data
+      try {
+        insertNumberPoolSchema.parse(poolDataWithUser);
+      } catch (validationError: any) {
+        console.error('Pool validation error:', validationError.errors);
+        return res.status(400).json({ 
+          error: 'Invalid pool data', 
+          details: validationError.errors 
+        });
+      }
+      
       // Create the pool first
       const newPool = await storage.createNumberPool(poolDataWithUser);
       
