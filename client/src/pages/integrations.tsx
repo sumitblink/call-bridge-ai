@@ -404,6 +404,10 @@ export default function IntegrationsPage() {
   const createUrlParameterMutation = useMutation({
     mutationFn: async (data: any) => {
       const response = await apiRequest('/api/integrations/url-parameters', 'POST', data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || 'Failed to create URL parameter');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -417,8 +421,8 @@ export default function IntegrationsPage() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to create URL parameter",
+        title: "Validation Error",
+        description: error.message,
         variant: "destructive"
       });
     }
@@ -428,6 +432,10 @@ export default function IntegrationsPage() {
     mutationFn: async (data: { id: number; [key: string]: any }) => {
       const { id, ...payload } = data;
       const response = await apiRequest(`/api/integrations/url-parameters/${id}`, 'PUT', payload);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || 'Failed to update URL parameter');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -442,8 +450,8 @@ export default function IntegrationsPage() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update URL parameter",
+        title: "Validation Error",
+        description: error.message,
         variant: "destructive"
       });
     }

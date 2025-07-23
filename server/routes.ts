@@ -2378,6 +2378,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive = true
       } = req.body;
       
+      // Check if Report Name already exists for this user
+      const existingReportName = await db.execute(sql`
+        SELECT id FROM url_parameters 
+        WHERE "userId" = ${user.id} AND "reportName" = ${reportName}
+      `);
+      
+      if (existingReportName.rows.length > 0) {
+        return res.status(409).json({ 
+          error: 'Report Name must be unique',
+          message: `A parameter with Report Name "${reportName}" already exists. Please choose a different name.`
+        });
+      }
+      
+      // Check if Parameter Name already exists for this user
+      const existingParamName = await db.execute(sql`
+        SELECT id FROM url_parameters 
+        WHERE "userId" = ${user.id} AND "parameterName" = ${parameterName}
+      `);
+      
+      if (existingParamName.rows.length > 0) {
+        return res.status(409).json({ 
+          error: 'Parameter Name must be unique',
+          message: `A parameter with name "${parameterName}" already exists. Please choose a different name.`
+        });
+      }
+      
       const result = await db.execute(sql`
         INSERT INTO url_parameters (
           "userId", "parameterName", "reportingMenuName", "reportName", 
@@ -2400,6 +2426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/integrations/url-parameters/:id', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const user = req.user as any;
       const { db } = await import('./db');
       const { sql } = await import('drizzle-orm');
       
@@ -2413,6 +2440,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description,
         isActive
       } = req.body;
+      
+      // Check if Report Name already exists for this user (excluding current parameter)
+      const existingReportName = await db.execute(sql`
+        SELECT id FROM url_parameters 
+        WHERE "userId" = ${user.id} AND "reportName" = ${reportName} AND id != ${parseInt(id)}
+      `);
+      
+      if (existingReportName.rows.length > 0) {
+        return res.status(409).json({ 
+          error: 'Report Name must be unique',
+          message: `A parameter with Report Name "${reportName}" already exists. Please choose a different name.`
+        });
+      }
+      
+      // Check if Parameter Name already exists for this user (excluding current parameter)
+      const existingParamName = await db.execute(sql`
+        SELECT id FROM url_parameters 
+        WHERE "userId" = ${user.id} AND "parameterName" = ${parameterName} AND id != ${parseInt(id)}
+      `);
+      
+      if (existingParamName.rows.length > 0) {
+        return res.status(409).json({ 
+          error: 'Parameter Name must be unique',
+          message: `A parameter with name "${parameterName}" already exists. Please choose a different name.`
+        });
+      }
       
       const result = await db.execute(sql`
         UPDATE url_parameters 
