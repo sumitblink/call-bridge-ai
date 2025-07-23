@@ -114,6 +114,26 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 23, 2025: **CAMPAIGN SETUP UI MADE COMPACT** - Significantly reduced vertical space usage of Campaign Setup Progress section
+  - **Smaller Cards**: Reduced padding from pb-4 to pb-2, CardContent space-y-4 to space-y-3
+  - **Compact Progress Bar**: Progress bar height reduced from h-2 to h-1.5, text from text-sm to text-xs
+  - **Smaller Step Cards**: Setup step cards reduced from p-3 to p-2, gap-2 to gap-1.5, text-sm to text-xs
+  - **Compact Ready to Launch**: Reduced Ready to Launch section padding, smaller icons (h-8 to h-6), smaller text
+  - **Tighter Spacing**: Overall container spacing reduced from space-y-6 to space-y-4
+  - **User Experience**: Same functionality but takes much less screen real estate, allowing more content visibility
+- July 23, 2025: **TRACKING TAGS ROUTING TYPE DETECTION FIXED** - Implemented intelligent tracking tag interface based on campaign routing type
+  - **Conditional Pool Options**: Pool selection only shows for pool-based campaigns, not direct routing campaigns
+  - **Direct Campaign Display**: Direct campaigns show assigned phone number with "Direct" badge instead of pool options
+  - **Smart Data Fetching**: Number pools only fetched when campaign uses pool routing for efficiency  
+  - **Enhanced Tooltips**: Added helpful tooltips explaining routing differences in both creation and settings dialogs
+  - **User Experience**: Prevents confusion about when to use pools vs direct numbers in tracking tag creation
+  - **Status**: Tracking tags now properly adapt to campaign configuration - no more irrelevant options shown
+- July 23, 2025: **PHONE NUMBER CACHE INVALIDATION ENHANCED** - Added comprehensive phone number list auto-refresh after webhook configuration
+  - **Campaign Settings**: Campaign updates now invalidate phone numbers cache to show updated status
+  - **Pool Operations**: Pool creation and deletion operations refresh main phone numbers list
+  - **Enhanced Success Messages**: Success toasts now mention webhook automation status
+  - **Real-time Updates**: Phone number status changes now immediately visible across all components
+  - **Status**: Phone number management now provides seamless real-time updates after webhook automation
 - July 23, 2025: **CAMPAIGN ACTIVATION VALIDATION ENHANCED** - Added comprehensive campaign activation validation with clear error messaging
   - **Buyer Requirement**: Campaigns cannot be activated without at least one assigned buyer
   - **Phone Number Requirement**: Campaigns must have either a direct phone number or pool assignment

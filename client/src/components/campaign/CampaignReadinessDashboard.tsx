@@ -104,17 +104,17 @@ export function CampaignReadinessDashboard({ campaignId, campaignStatus }: Campa
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Setup Progress */}
       <Card>
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 Campaign Setup Progress
                 <Badge variant={getStatusColor() as any}>{getStatusText()}</Badge>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Complete all required steps to activate your campaign
               </CardDescription>
             </div>
@@ -138,25 +138,25 @@ export function CampaignReadinessDashboard({ campaignId, campaignStatus }: Campa
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs">
               <span>Progress</span>
               <span>{validation.completionPercentage}% Complete</span>
             </div>
             <Progress 
               value={validation.completionPercentage} 
-              className="h-2"
+              className="h-1.5"
             />
           </div>
 
           {/* Setup Steps */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {validation.steps.map((step) => (
               <div 
                 key={step.id}
-                className={`flex items-center gap-2 p-3 rounded-lg border ${
+                className={`flex items-center gap-1.5 p-2 rounded-md border ${
                   step.completed 
                     ? "bg-green-50 border-green-200" 
                     : step.required 
@@ -165,7 +165,7 @@ export function CampaignReadinessDashboard({ campaignId, campaignStatus }: Campa
                 }`}
               >
                 {getStatusIcon(step.completed, step.required)}
-                <span className={`text-sm font-medium ${
+                <span className={`text-xs font-medium ${
                   step.completed ? "text-green-800" : "text-gray-700"
                 }`}>
                   {step.label}
@@ -211,14 +211,14 @@ export function CampaignReadinessDashboard({ campaignId, campaignStatus }: Campa
       {/* Ready to Launch */}
       {validation.canActivate && campaignStatus !== "active" && (
         <Card className="border-green-200 bg-green-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+          <CardContent className="pt-3 pb-3">
+            <div className="flex items-center gap-3">
               <div className="flex-shrink-0">
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-green-800">Ready to Launch!</h3>
-                <p className="text-sm text-green-700">
+                <h3 className="font-semibold text-green-800 text-sm">Ready to Launch!</h3>
+                <p className="text-xs text-green-700">
                   Your campaign is properly configured and ready to receive calls.
                 </p>
               </div>
@@ -226,8 +226,9 @@ export function CampaignReadinessDashboard({ campaignId, campaignStatus }: Campa
                 onClick={() => activateMutation.mutate()}
                 disabled={activateMutation.isPending}
                 className="bg-green-600 hover:bg-green-700"
+                size="sm"
               >
-                <Zap className="h-4 w-4 mr-2" />
+                <Zap className="h-3 w-3 mr-1" />
                 {activateMutation.isPending ? "Activating..." : "Go Live"}
               </Button>
             </div>
