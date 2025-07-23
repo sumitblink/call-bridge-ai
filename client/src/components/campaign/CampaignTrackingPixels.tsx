@@ -61,8 +61,18 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   // Fetch campaign-specific tracking pixels only
   const { data: pixels = [], isLoading: isLoadingPixels } = useQuery<TrackingPixel[]>({
     queryKey: ['/api/campaigns', campaignId, 'tracking-pixels'],
+    queryFn: async () => {
+      const response = await fetch(`/api/campaigns/${campaignId}/tracking-pixels`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    },
     enabled: !!campaignId,
     select: (data: any[]) => {
+      console.log('Raw campaign tracking pixels data:', data);
       // Handle authentication errors or empty responses
       if (!Array.isArray(data)) {
         return [];
@@ -665,7 +675,9 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                               active: pixel.active !== false
                             });
                             
-                            queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'tracking-pixels'] });
+                            // Force refresh the campaign pixels query
+                            await queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'tracking-pixels'] });
+                            await queryClient.refetchQueries({ queryKey: ['/api/campaigns', campaignId, 'tracking-pixels'] });
                             
                             toast({
                               title: 'Success',

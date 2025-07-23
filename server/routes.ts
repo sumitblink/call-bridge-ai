@@ -2166,15 +2166,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const campaignId = req.params.id;
       const userId = req.user?.id;
       
+      console.log('Fetching tracking pixels for campaign:', campaignId, 'user:', userId);
+      
       // Get all campaigns to find the one with matching ID and user
       const campaigns = await storage.getCampaigns();
       const campaign = campaigns.find(c => c.id === campaignId && c.userId === userId);
       
       if (!campaign) {
+        console.log('Campaign not found:', campaignId);
         return res.status(404).json({ error: "Campaign not found or access denied" });
       }
       
       const pixels = await storage.getCampaignTrackingPixels(campaignId);
+      console.log('Retrieved campaign tracking pixels:', pixels);
       res.json(pixels);
     } catch (error) {
       console.error("Error fetching campaign tracking pixels:", error);
