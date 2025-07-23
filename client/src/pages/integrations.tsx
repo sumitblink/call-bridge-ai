@@ -62,7 +62,8 @@ interface URLParameter {
 
 export default function IntegrationsPage() {
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPixelDialogOpen, setIsPixelDialogOpen] = useState(false);
+  const [isUrlParameterDialogOpen, setIsUrlParameterDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState("all");
   const [testResult, setTestResult] = useState<any>(null);
@@ -145,7 +146,7 @@ export default function IntegrationsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
-      setIsDialogOpen(false);
+      setIsPixelDialogOpen(false);
       resetPixelForm();
       toast({
         title: "Success",
@@ -177,7 +178,7 @@ export default function IntegrationsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/pixels'] });
-      setIsDialogOpen(false);
+      setIsPixelDialogOpen(false);
       setEditingItem(null);
       resetPixelForm();
       toast({
@@ -314,7 +315,7 @@ export default function IntegrationsPage() {
       assignedCampaigns: pixel.assignedCampaigns || [],
       isActive: pixel.isActive
     });
-    setIsDialogOpen(true);
+    setIsPixelDialogOpen(true);
   };
 
   const handleDeletePixel = (id: number) => {
@@ -366,7 +367,7 @@ export default function IntegrationsPage() {
       description: parameter.description || "",
       isActive: parameter.isActive
     });
-    setIsDialogOpen(true);
+    setIsUrlParameterDialogOpen(true);
   };
 
   const handleDeleteUrlParameter = (id: number) => {
@@ -383,7 +384,7 @@ export default function IntegrationsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/url-parameters'] });
-      setIsDialogOpen(false);
+      setIsUrlParameterDialogOpen(false);
       resetUrlParameterForm();
       toast({
         title: "Success",
@@ -407,7 +408,7 @@ export default function IntegrationsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/integrations/url-parameters'] });
-      setIsDialogOpen(false);
+      setIsUrlParameterDialogOpen(false);
       setEditingItem(null);
       resetUrlParameterForm();
       toast({
@@ -521,7 +522,7 @@ export default function IntegrationsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <Dialog open={isPixelDialogOpen} onOpenChange={setIsPixelDialogOpen}>
                   <DialogTrigger asChild>
                     <Button onClick={() => {
                       setEditingItem(null);
@@ -667,7 +668,7 @@ export default function IntegrationsPage() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                          <Button variant="outline" onClick={() => setIsPixelDialogOpen(false)}>
                             Cancel
                           </Button>
                           <Button 
@@ -696,7 +697,7 @@ export default function IntegrationsPage() {
                   <Button onClick={() => {
                     setEditingItem(null);
                     resetPixelForm();
-                    setIsDialogOpen(true);
+                    setIsPixelDialogOpen(true);
                   }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create First Pixel
@@ -782,7 +783,7 @@ export default function IntegrationsPage() {
                 <h2 className="text-xl font-semibold">URL Parameters</h2>
                 <p className="text-gray-600">Configure URL parameters for campaign tracking and reporting</p>
               </div>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <Dialog open={isUrlParameterDialogOpen} onOpenChange={setIsUrlParameterDialogOpen}>
                 <DialogTrigger asChild>
                   <Button onClick={() => {
                     setEditingItem(null);
@@ -850,7 +851,7 @@ export default function IntegrationsPage() {
                       <Button
                         variant="outline"
                         onClick={() => {
-                          setIsDialogOpen(false);
+                          setIsUrlParameterDialogOpen(false);
                           setEditingItem(null);
                           resetUrlParameterForm();
                         }}
