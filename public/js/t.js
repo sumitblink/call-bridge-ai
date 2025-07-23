@@ -9,10 +9,22 @@
   }
   
   var campaignId = scriptTag.getAttribute('data-campaign');
-  var currentDomain = window.location.hostname;
-  var protocol = window.location.protocol;
-  var port = window.location.port ? `:${window.location.port}` : '';
-  var baseUrl = `${protocol}//${currentDomain}${port}`;
+  
+  // Use the script's source domain as the API base URL (for external websites)
+  var scriptSrc = scriptTag.src;
+  var baseUrl;
+  
+  if (scriptSrc && scriptSrc.indexOf('http') === 0) {
+    // Extract domain from script source URL
+    var url = new URL(scriptSrc);
+    baseUrl = url.protocol + '//' + url.host;
+  } else {
+    // Fallback to current domain (for same-domain usage)
+    var currentDomain = window.location.hostname;
+    var protocol = window.location.protocol;
+    var port = window.location.port ? `:${window.location.port}` : '';
+    baseUrl = `${protocol}//${currentDomain}${port}`;
+  }
   
   // Generate unique session ID
   var sessionId = 'dni_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -124,6 +136,9 @@
   
   // Make the tracking request
   function requestTrackingNumber() {
+    console.log('CallCenter Pro: Making request to:', baseUrl + '/api/dni/track-simple');
+    console.log('CallCenter Pro: Campaign ID:', campaignId);
+    
     var xhr = new XMLHttpRequest();
     xhr.open('POST', baseUrl + '/api/dni/track-simple', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
