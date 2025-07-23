@@ -255,6 +255,17 @@ export interface IStorage {
   createUrlParameter(parameter: InsertURLParameter): Promise<URLParameter>;
   updateUrlParameter(id: number, parameter: Partial<InsertURLParameter>): Promise<URLParameter | undefined>;
   deleteUrlParameter(id: number): Promise<boolean>;
+
+  // Integration Tracking Pixels
+  getTrackingPixels(): Promise<any[]>;
+  createTrackingPixel(data: any): Promise<any>;
+  updateTrackingPixel(id: number, data: any): Promise<any>;
+  deleteTrackingPixel(id: number): Promise<boolean>;
+
+  // Campaign-specific Tracking Pixels
+  getCampaignTrackingPixels(campaignId: string): Promise<any[]>;
+  createCampaignTrackingPixel(data: any): Promise<any>;
+  deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -270,9 +281,12 @@ export class MemStorage implements IStorage {
   private phoneNumberTags: Map<number, any> = new Map();
   private redtrackConfigs: Map<number, any> = new Map();
   private urlParameters: Map<number, URLParameter> = new Map();
+  private trackingPixels: Map<number, any> = new Map();
+  private campaignTrackingPixels: Map<string, any[]> = new Map();
   private currentUserId: number = 1;
   private currentCampaignId: number = 1;
   private currentBuyerId: number = 1;
+  private currentPixelId: number = 1;
   private currentAgentId: number = 1;
   private currentCallId: number = 1;
   private currentCallLogId: number = 1;
@@ -918,12 +932,56 @@ export class MemStorage implements IStorage {
     return { id: Date.now(), ...data };
   }
 
+  // Integration Tracking Pixels
   async getTrackingPixels(): Promise<any[]> {
-    return [];
+    return Array.from(this.trackingPixels.values());
   }
 
   async createTrackingPixel(data: any): Promise<any> {
-    return { id: Date.now(), ...data };
+    const id = this.currentPixelId++;
+    const pixel = { id, ...data };
+    this.trackingPixels.set(id, pixel);
+    return pixel;
+  }
+
+  async updateTrackingPixel(id: number, data: any): Promise<any> {
+    const existing = this.trackingPixels.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...data };
+    this.trackingPixels.set(id, updated);
+    return updated;
+  }
+
+  async deleteTrackingPixel(id: number): Promise<boolean> {
+    return this.trackingPixels.delete(id);
+  }
+
+  // Campaign-specific Tracking Pixels
+  async getCampaignTrackingPixels(campaignId: string): Promise<any[]> {
+    return this.campaignTrackingPixels.get(campaignId) || [];
+  }
+
+  async createCampaignTrackingPixel(data: any): Promise<any> {
+    const id = this.currentPixelId++;
+    const pixel = { id, ...data };
+    
+    const campaignPixels = this.campaignTrackingPixels.get(data.campaignId) || [];
+    campaignPixels.push(pixel);
+    this.campaignTrackingPixels.set(data.campaignId, campaignPixels);
+    
+    return pixel;
+  }
+
+  async deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean> {
+    const campaignPixels = this.campaignTrackingPixels.get(campaignId) || [];
+    const filteredPixels = campaignPixels.filter(p => p.id !== pixelId);
+    
+    if (filteredPixels.length === campaignPixels.length) {
+      return false; // Pixel not found
+    }
+    
+    this.campaignTrackingPixels.set(campaignId, filteredPixels);
+    return true;
   }
 
   async updateTrackingPixel(id: number, data: any): Promise<any> {

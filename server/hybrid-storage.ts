@@ -411,6 +411,28 @@ class HybridStorage implements IStorage {
     );
   }
 
+  // Campaign-specific Tracking Pixels
+  async getCampaignTrackingPixels(campaignId: string): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getCampaignTrackingPixels(campaignId),
+      () => this.memStorage.getCampaignTrackingPixels(campaignId)
+    );
+  }
+
+  async createCampaignTrackingPixel(data: any): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.createCampaignTrackingPixel(data),
+      () => this.memStorage.createCampaignTrackingPixel(data)
+    );
+  }
+
+  async deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.deleteCampaignTrackingPixel(campaignId, pixelId),
+      () => this.memStorage.deleteCampaignTrackingPixel(campaignId, pixelId)
+    );
+  }
+
   async getWebhookConfigs(): Promise<any[]> {
     return this.executeOperation(
       () => this.databaseStorage.getWebhookConfigs(),

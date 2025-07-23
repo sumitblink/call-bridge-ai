@@ -2160,6 +2160,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Campaign-specific tracking pixels
+  app.get('/api/campaigns/:id/tracking-pixels', requireAuth, async (req: any, res) => {
+    try {
+      const campaignId = req.params.id;
+      const userId = req.user?.id;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      const pixels = await storage.getCampaignTrackingPixels(campaignId);
+      res.json(pixels);
+    } catch (error) {
+      console.error("Error fetching campaign tracking pixels:", error);
+      res.status(500).json({ error: "Failed to fetch campaign tracking pixels" });
+    }
+  });
+
+  app.post('/api/campaigns/:id/tracking-pixels', requireAuth, async (req: any, res) => {
+    try {
+      const campaignId = req.params.id;
+      const userId = req.user?.id;
+      const { 
+        name, 
+        fire_on_event, 
+        code, 
+        http_method = 'GET',
+        headers = '[]',
+        authentication_type = 'none',
+        advanced_options = false,
+        active = true 
+      } = req.body;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      // Validate required fields
+      if (!name || !fire_on_event || !code) {
+        return res.status(400).json({ error: "Missing required fields: name, fire_on_event, code" });
+      }
+
+      // Validate fire event
+      const validEvents = ['incoming', 'connected', 'completed', 'converted', 'error', 'payout', 'recording', 'finalized'];
+      if (!validEvents.includes(fire_on_event)) {
+        return res.status(400).json({ error: `Invalid fire_on_event. Must be one of: ${validEvents.join(', ')}` });
+      }
+
+      const pixelData = {
+        campaignId,
+        name,
+        fireOnEvent: fire_on_event,
+        code,
+        httpMethod: http_method,
+        headers,
+        authenticationType: authentication_type,
+        advancedOptions: advanced_options,
+        active,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const pixel = await storage.createCampaignTrackingPixel(pixelData);
+      res.status(201).json(pixel);
+    } catch (error) {
+      console.error("Error creating campaign tracking pixel:", error);
+      res.status(500).json({ error: "Failed to create campaign tracking pixel" });
+    }
+  });
+
+  app.delete('/api/campaigns/:campaignId/tracking-pixels/:pixelId', requireAuth, async (req: any, res) => {
+    try {
+      const campaignId = req.params.campaignId;
+      const pixelId = parseInt(req.params.pixelId);
+      const userId = req.user?.id;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+
+      if (isNaN(pixelId)) {
+        return res.status(400).json({ error: "Invalid pixel ID" });
+      }
+
+      const success = await storage.deleteCampaignTrackingPixel(campaignId, pixelId);
+      if (!success) {
+        return res.status(404).json({ error: "Campaign tracking pixel not found" });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting campaign tracking pixel:", error);
+      res.status(500).json({ error: "Failed to delete campaign tracking pixel" });
+    }
+  });
+
   // URL Parameters routes - Raw SQL to bypass schema issues
   app.get('/api/integrations/url-parameters', requireAuth, async (req, res) => {
     try {

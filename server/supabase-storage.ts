@@ -741,6 +741,22 @@ export class SupabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
+  // Campaign-specific Tracking Pixels (using integration pixels table for now)
+  async getCampaignTrackingPixels(campaignId: string): Promise<any[]> {
+    // For now, return empty array until we have a separate campaign_tracking_pixels table
+    return [];
+  }
+
+  async createCampaignTrackingPixel(data: any): Promise<any> {
+    // For now, return the data with an ID until we have a separate table
+    return { id: Date.now(), ...data };
+  }
+
+  async deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean> {
+    // For now, always return true until we have a separate table
+    return true;
+  }
+
   async getWebhookConfigs(): Promise<any[]> {
     return await db.select().from(webhookConfigs);
   }

@@ -75,9 +75,11 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     retry: false,
   });
 
-  // Fetch global tracking pixels from Integrations
+  // Only fetch integration pixels when Import dialog is opened
+  const [shouldFetchGlobalPixels, setShouldFetchGlobalPixels] = useState(false);
   const { data: globalPixels = [], isLoading: isLoadingGlobal } = useQuery<any[]>({
     queryKey: ['/api/integrations/pixels'],
+    enabled: shouldFetchGlobalPixels,
     retry: false,
   });
 
@@ -118,16 +120,47 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     setIsDialogOpen(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Direct users to the Integrations page for pixel management
-    toast({
-      title: 'Create pixels in Integrations',
-      description: 'Please use the Integrations page to create and manage tracking pixels. They will appear here automatically.',
-    });
+    if (!campaignId) {
+      toast({
+        title: 'Error',
+        description: 'Campaign ID is required',
+        variant: 'destructive'
+      });
+      return;
+    }
     
-    resetForm();
+    try {
+      // Create pixel specifically for this campaign
+      await apiRequest(`/api/campaigns/${campaignId}/tracking-pixels`, 'POST', {
+        name: formData.name,
+        fire_on_event: formData.firePixelOn,
+        code: formData.url,
+        http_method: formData.httpMethod,
+        headers: JSON.stringify(formData.headers),
+        authentication_type: formData.authentication,
+        advanced_options: formData.advancedOptions,
+        active: formData.active
+      });
+
+      // Invalidate campaign pixels cache
+      queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'tracking-pixels'] });
+      
+      toast({
+        title: 'Success',
+        description: 'Campaign tracking pixel created successfully'
+      });
+      
+      resetForm();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create campaign tracking pixel',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleEdit = (pixel: TrackingPixel) => {
@@ -152,11 +185,9 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   };
 
   const handleImportPixels = () => {
-    toast({
-      title: 'Pixels are automatically available',
-      description: 'All pixels created in Integrations are automatically available here.',
-    });
-    setIsImportDialogOpen(false);
+    // Enable fetching of integration pixels when Import dialog opens
+    setShouldFetchGlobalPixels(true);
+    setIsImportDialogOpen(true);
   };
 
   const copyToClipboard = (text: string) => {
@@ -541,7 +572,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                     Cancel
                   </Button>
                   <Button type="submit">
-                    Create in Integrations
+                    Create Campaign Pixel
                   </Button>
                 </div>
               </form>
@@ -549,19 +580,76 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
         </Dialog>
 
         {/* Import Pixels Dialog */}
-        <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
+          setIsImportDialogOpen(open);
+          if (!open) setShouldFetchGlobalPixels(false);
+        }}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Import Existing Pixels</DialogTitle>
+              <DialogTitle>Import Integration Pixels</DialogTitle>
               <DialogDescription>
-                All pixels created in Integrations are automatically available here.
+                Select pixels from your Integrations to import into this campaign.
               </DialogDescription>
             </DialogHeader>
 
             <div className="py-4">
-              <p className="text-sm text-gray-600">
-                No import needed - all tracking pixels from the Integrations page are automatically available in this campaign.
-              </p>
+              {isLoadingGlobal ? (
+                <div className="text-center py-4">Loading integration pixels...</div>
+              ) : globalPixels.length > 0 ? (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {globalPixels.map((pixel: any) => (
+                    <div key={pixel.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                      <div>
+                        <div className="font-medium">{pixel.name}</div>
+                        <div className="text-sm text-gray-500">
+                          Fires on: {pixel.fireOnEvent || pixel.fire_on_event}
+                        </div>
+                        <div className="text-xs text-blue-600 truncate max-w-md">
+                          {pixel.code}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            await apiRequest(`/api/campaigns/${campaignId}/tracking-pixels`, 'POST', {
+                              name: pixel.name,
+                              fire_on_event: pixel.fire_on_event,
+                              code: pixel.code,
+                              http_method: pixel.http_method || 'GET',
+                              headers: pixel.headers || '[]',
+                              authentication_type: pixel.authentication_type || 'none',
+                              advanced_options: pixel.advanced_options || false,
+                              active: pixel.active !== false
+                            });
+                            
+                            queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'tracking-pixels'] });
+                            
+                            toast({
+                              title: 'Success',
+                              description: `Imported "${pixel.name}" to campaign`
+                            });
+                          } catch (error) {
+                            toast({
+                              title: 'Error',
+                              description: 'Failed to import pixel',
+                              variant: 'destructive'
+                            });
+                          }
+                        }}
+                      >
+                        Import
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <ExternalLink className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <p className="text-sm">No integration pixels found</p>
+                  <p className="text-xs">Create pixels in Integrations page first</p>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-2">
