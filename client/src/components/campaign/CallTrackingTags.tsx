@@ -116,6 +116,11 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     stickyDuration: 86400
   });
 
+  // Fetch campaign data to check routing type
+  const { data: campaign } = useQuery({
+    queryKey: [`/api/campaigns/${campaignId}`],
+  });
+
   // Fetch tracking tags for campaign
   const { data: trackingTags = [], isLoading: isLoadingTags } = useQuery<CallTrackingTag[]>({
     queryKey: [`/api/campaigns/${campaignId}/tracking-tags`],
@@ -126,9 +131,10 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     queryKey: ["/api/phone-numbers"],
   });
 
-  // Fetch number pools for dropdown
+  // Fetch number pools for dropdown (only if campaign uses pool routing)
   const { data: numberPools = [] } = useQuery<NumberPool[]>({
     queryKey: ["/api/number-pools"],
+    enabled: campaign?.routingType === "pool",
   });
 
   // Fetch publishers for dropdown
@@ -550,25 +556,64 @@ ${generateJavaScriptCode(tag)}`;
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="pool">Number Pool</Label>
-                  <Select
-                    value={formData.poolId}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, poolId: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Number Pool" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No pool</SelectItem>
-                      {numberPools.map((pool) => (
-                        <SelectItem key={pool.id} value={pool.id.toString()}>
-                          {pool.name} ({pool.poolSize} numbers)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {campaign?.routingType === "pool" ? (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Label htmlFor="pool">Number Pool</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Pool of numbers for dynamic insertion<br/>
+                              Perfect for testing different numbers with visitors</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Select
+                      value={formData.poolId}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, poolId: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Number Pool" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No pool</SelectItem>
+                        {numberPools.map((pool) => (
+                          <SelectItem key={pool.id} value={pool.id.toString()}>
+                            {pool.name} ({pool.poolSize} numbers)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Label>Campaign Number</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>This campaign uses direct routing<br/>
+                              Tracking will use the assigned campaign number</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div className="p-3 bg-muted rounded-md flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">
+                        {campaign?.phoneNumber ? formatPhoneNumber(campaign.phoneNumber) : "No number assigned"}
+                      </span>
+                      <Badge variant="secondary">Direct</Badge>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <Label htmlFor="rotationStrategy">Rotation Strategy</Label>
                   <Select
@@ -936,25 +981,38 @@ ${generateJavaScriptCode(tag)}`;
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="settings-pool">Number Pool</Label>
-                <Select
-                  value={settingsData.poolId}
-                  onValueChange={(value) => setSettingsData(prev => ({ ...prev, poolId: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select number pool" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No pool</SelectItem>
-                    {numberPools.map((pool) => (
-                      <SelectItem key={pool.id} value={pool.id.toString()}>
-                        {pool.name} ({pool.poolSize} numbers)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {campaign?.routingType === "pool" ? (
+                <div>
+                  <Label htmlFor="settings-pool">Number Pool</Label>
+                  <Select
+                    value={settingsData.poolId}
+                    onValueChange={(value) => setSettingsData(prev => ({ ...prev, poolId: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select number pool" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No pool</SelectItem>
+                      {numberPools.map((pool) => (
+                        <SelectItem key={pool.id} value={pool.id.toString()}>
+                          {pool.name} ({pool.poolSize} numbers)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div>
+                  <Label>Campaign Number</Label>
+                  <div className="p-3 bg-muted rounded-md flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">
+                      {campaign?.phoneNumber ? formatPhoneNumber(campaign.phoneNumber) : "No number assigned"}
+                    </span>
+                    <Badge variant="secondary">Direct</Badge>
+                  </div>
+                </div>
+              )}
               <div>
                 <Label htmlFor="settings-rotationStrategy">Rotation Strategy</Label>
                 <Select
