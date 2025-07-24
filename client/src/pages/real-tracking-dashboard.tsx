@@ -36,7 +36,7 @@ export default function RealTrackingDashboard() {
     stats: TrackingStats;
   }>({
     queryKey: ['/api/tracking/live-sessions'],
-    refetchInterval: 60000, // 1 minute refresh (was 6 seconds - too aggressive)
+    refetchInterval: false, // Turn off auto-refresh to reduce console spam
     staleTime: 30000,
   });
 

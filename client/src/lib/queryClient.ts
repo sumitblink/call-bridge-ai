@@ -49,14 +49,14 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: false,
-      onError: (error) => {
-        console.error('Query error:', error);
+      onError: () => {
+        // Silently handle query errors to reduce console spam
       },
     },
     mutations: {
       retry: false,
-      onError: (error) => {
-        console.error('Mutation error:', error);
+      onError: () => {
+        // Silently handle mutation errors to reduce console spam
       },
     },
   },

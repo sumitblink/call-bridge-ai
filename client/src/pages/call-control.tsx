@@ -52,7 +52,7 @@ export default function CallControlPage() {
   // Fetch real calls data from API
   const { data: callsData, isLoading } = useQuery({
     queryKey: ["/api/calls"],
-    refetchInterval: 60000, // Refresh every 1 minute (was 5 seconds - too aggressive)
+    refetchInterval: false, // Turn off auto-refresh to reduce console spam
   });
 
   // Transform API data to match ActiveCall interface

@@ -371,11 +371,7 @@ export default function CallActivity() {
   });
 
   // Debug: log filtered calls count
-  console.log('Total calls:', calls.length, 'Filtered calls:', filteredCalls.length, 'Visible columns:', visibleColumns);
-  if (filteredCalls.length > 0) {
-    console.log('Sample call data:', filteredCalls[0]);
-  }
-  console.log('Sample column mapping check:', visibleColumns.map(col => ({ col, def: getColumnDefinition(col) })));
+
 
   const renderColumnValue = (call: Call, column: string) => {
     const columnDef = getDynamicColumnDefinition(column);
