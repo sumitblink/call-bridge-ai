@@ -12,7 +12,7 @@ import type { Request, Response, NextFunction } from "express";
 
 const requireAuth = (req: any, res: Response, next: NextFunction) => {
   const sessionUser = req.session?.user;
-  if (!sessionUser) {
+  if (!sessionUser || !sessionUser.id) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   req.user = sessionUser;
@@ -28,7 +28,6 @@ interface CallWithDetails extends Call {
   rtbAuctions?: RtbAuctionDetails[];
   campaignName?: string;
   buyerName?: string;
-  publisherName?: string;
 }
 
 // Phase 1: Get detailed call information for expandable rows
@@ -82,7 +81,7 @@ router.get("/api/calls/:callId/details", requireAuth, async (req, res) => {
       .where(eq(rtbAuctionDetails.callId, callId))
       .orderBy(desc(rtbAuctionDetails.timestamp));
 
-    const callWithDetails: CallWithDetails = {
+    const callWithDetails = {
       ...call,
       events,
       routingDecisions: routingDecs,

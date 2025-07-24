@@ -1,5 +1,6 @@
 import { storage } from "./hybrid-storage";
 import { TwiMLGenerator, type CallFlowDefinition, type FlowNode, type CallSession, type TwiMLResponse } from "./twiml-generator";
+import { CallFlowTracker } from "./call-flow-tracker";
 import { v4 as uuidv4 } from 'uuid';
 
 /*
@@ -95,6 +96,24 @@ export class FlowExecutionEngine {
 
       session.currentNodeId = startNode.id;
       this.activeSessions.set(session.sessionId, session);
+
+      // Phase 2: Log flow execution start
+      try {
+        const callIdNum = parseInt(callId);
+        if (!isNaN(callIdNum)) {
+          await CallFlowTracker.logIVREvent(callIdNum, {
+            eventType: 'node_enter',
+            nodeId: startNode.id,
+            nodeName: startNode.name || 'Flow Start',
+            nodeType: startNode.type as any,
+            stepName: `Started flow execution: ${flow.name}`,
+            metadata: { flowId, sessionId: session.sessionId }
+          });
+          console.log(`[FlowTracker] Logged flow start for call ${callId}`);
+        }
+      } catch (trackingError) {
+        console.error('[FlowTracker] Failed to log flow start:', trackingError);
+      }
 
       // Execute start node
       const result = await this.executeNode(session, flowDefinition, startNode);
@@ -212,6 +231,17 @@ export class FlowExecutionEngine {
         };
       }
 
+      // Phase 2: Log user input if present
+      try {
+        const callIdNum = parseInt(session.callId);
+        if (!isNaN(callIdNum) && response && (response.Digits || response.SpeechResult)) {
+          const userInput = response.Digits || response.SpeechResult;
+          await CallFlowTracker.logUserInput(callIdNum, nodeId, userInput, currentNode.type);
+        }
+      } catch (trackingError) {
+        console.error('[FlowTracker] Failed to log user input:', trackingError);
+      }
+
       // Process response based on node type
       const processedResponse = this.processNodeResponse(currentNode, response);
       
@@ -251,6 +281,16 @@ export class FlowExecutionEngine {
     incomingData?: any
   ): Promise<FlowExecutionResult> {
     try {
+      // Phase 2: Log node entry
+      try {
+        const callIdNum = parseInt(session.callId);
+        if (!isNaN(callIdNum)) {
+          await CallFlowTracker.logNodeEnter(callIdNum, node.id, node.name || node.type, node.type);
+        }
+      } catch (trackingError) {
+        console.error('[FlowTracker] Failed to log node entry:', trackingError);
+      }
+
       // Update session
       this.activeSessions.set(session.sessionId, session);
 

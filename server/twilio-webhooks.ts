@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { storage } from './hybrid-storage';
 import { CallRouter } from './call-routing';
+import { CallFlowTracker } from './call-flow-tracker';
 import { twilioService } from './twilio-service';
 import { FlowExecutionEngine } from './flow-execution-engine';
 
@@ -75,10 +76,29 @@ export async function handleIncomingCall(req: Request, res: Response) {
     if (activeFlow) {
       console.log('[Webhook] Found active call flow:', activeFlow.name, 'ID:', activeFlow.id);
       
+      // Create call record first for Phase 2 tracking
+      const callId = await createCallRecord(callData, campaign, 'flow');
+      
+      // Phase 2: Initialize call flow tracking
+      try {
+        await CallFlowTracker.initializeCallTracking(callId, {
+          flowId: activeFlow.id,
+          flowName: activeFlow.name,
+          campaignId: campaign.id,
+          callerNumber: callData.From,
+          targetNumber: callData.To,
+          callSid: callData.CallSid,
+          startTime: new Date()
+        });
+        console.log(`[FlowTracker] Initialized tracking for call ${callId}`);
+      } catch (trackingError) {
+        console.error('[FlowTracker] Failed to initialize call tracking:', trackingError);
+      }
+      
       // Start flow execution
       const flowResult = await FlowExecutionEngine.startFlowExecution(
         activeFlow.id,
-        callData.CallSid,
+        callId.toString(),
         callData.From,
         campaign.id
       );
@@ -300,6 +320,50 @@ export async function handleCallStatus(req: Request, res: Response) {
   } catch (error) {
     console.error('[Webhook] Error handling call status:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+/**
+ * Create call record with enhanced tracking
+ */
+async function createCallRecord(callData: TwilioCallRequest, campaign: any, routingType: string): Promise<number> {
+  try {
+    // Calculate financial values based on campaign configuration
+    const defaultPayout = parseFloat(campaign.defaultPayout || '0.00');
+    const cost = '0.0000';
+    const payout = defaultPayout.toFixed(4);
+    const revenue = defaultPayout.toFixed(4);
+    const profit = (defaultPayout - 0).toFixed(4);
+    
+    // Create enhanced call record with tracking fields
+    const newCall = await storage.createCall({
+      userId: campaign.userId,
+      campaignId: campaign.id,
+      callSid: callData.CallSid,
+      fromNumber: callData.From,
+      toNumber: callData.To,
+      dialedNumber: callData.To,
+      status: 'ringing',
+      duration: 0,
+      cost,
+      payout,
+      revenue,
+      profit,
+      routingType,
+      // Phase 2 tracking fields
+      flowExecutionId: null,
+      ringTreeId: null,
+      attemptSequence: 1,
+      geographicLocation: `${callData.CallerCity || 'Unknown'}, ${callData.CallerState || 'Unknown'}`,
+      deviceInfo: 'Phone Call',
+      timestamp: new Date()
+    });
+    
+    console.log(`[Webhook] Created call record ${newCall.id} for ${routingType} routing`);
+    return newCall.id;
+  } catch (error) {
+    console.error('[Webhook] Error creating call record:', error);
+    throw error;
   }
 }
 

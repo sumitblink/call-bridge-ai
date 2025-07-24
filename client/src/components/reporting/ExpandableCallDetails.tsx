@@ -138,7 +138,7 @@ export function ExpandableCallDetails() {
   const [selectedCallDetails, setSelectedCallDetails] = useState<{[key: number]: CallWithDetails}>({});
 
   // Fetch enhanced calls data
-  const { data: calls = [], isLoading } = useQuery<CallWithDetails[]>({
+  const { data: calls = [], isLoading } = useQuery({
     queryKey: ["/api/calls/enhanced"],
     queryFn: async () => {
       const response = await fetch("/api/calls/enhanced");
@@ -158,7 +158,7 @@ export function ExpandableCallDetails() {
       // Fetch detailed call data if not already cached
       if (!selectedCallDetails[callId]) {
         try {
-          const response = await fetch(`/api/calls/${callId}/details`);
+          const response = await fetch(`/api/call-details/api/calls/${callId}/details`);
           if (response.ok) {
             const detailData = await response.json();
             setSelectedCallDetails(prev => ({
@@ -525,16 +525,16 @@ export function ExpandableCallDetails() {
                           {/* IVR Events and Routing */}
                           <div className="space-y-4">
                             {selectedCallDetails[call.id]?.events && 
-                              renderCallEvents(selectedCallDetails[call.id].events)}
+                              renderCallEvents(selectedCallDetails[call.id].events || [])}
                             
                             {selectedCallDetails[call.id]?.routingDecisions && 
-                              renderRoutingDecisions(selectedCallDetails[call.id].routingDecisions)}
+                              renderRoutingDecisions(selectedCallDetails[call.id].routingDecisions || [])}
                           </div>
 
                           {/* RTB Auction Details */}
                           <div className="space-y-4">
                             {selectedCallDetails[call.id]?.rtbAuctions && 
-                              renderRtbAuctions(selectedCallDetails[call.id].rtbAuctions)}
+                              renderRtbAuctions(selectedCallDetails[call.id].rtbAuctions || [])}
                             
                             {/* Conversion Info */}
                             {call.isConverted && (
