@@ -644,7 +644,7 @@ export default function CallActivity() {
               <TableBody>
                 {filteredCalls.map((call, callIndex) => (
                   <React.Fragment key={`call-fragment-${call.id}`}>
-                    <TableRow key={`call-row-${callIndex}`} className="hover:bg-muted/30">
+                    <TableRow className="hover:bg-muted/30">
                       <TableCell className="py-2 w-8">
                         <Button
                           size="sm"
@@ -708,7 +708,7 @@ export default function CallActivity() {
                       ))}
                     </TableRow>
                     {expandedRows.has(call.id) && (
-                      <TableRow key={`expanded-${call.id}`}>
+                      <TableRow>
                         <TableCell colSpan={visibleColumns.length + 1} className="p-0 bg-muted/20">
                           <div className="p-3 border-t">
                             <CallDetailsExpanded 
