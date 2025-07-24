@@ -508,6 +508,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RedTrack Tracking - Call Quality tracking (no auth for external pages)
+  app.post('/api/tracking/redtrack/quality', async (req, res) => {
+    try {
+      const {
+        clickid,
+        conversionType,
+        duration,
+        answered,
+        converted,
+        revenue,
+        sessionId
+      } = req.body;
+
+      if (!clickid) {
+        return res.json({ 
+          success: false, 
+          message: 'No RedTrack clickid provided' 
+        });
+      }
+
+      // Enhanced conversion tracking with call quality data
+      const qualityData = {
+        sessionId: sessionId || `rt_quality_${Date.now()}`,
+        eventType: 'call_quality',
+        eventValue: revenue || 0,
+        phoneNumber: '',
+        metadata: {
+          clickid,
+          conversionType: conversionType || 'RAWCall', // RAWCall, AnsweredCall, ConvertedCall
+          duration: duration || 0,
+          answered: answered || false,
+          converted: converted || false,
+          revenue: revenue || 0,
+          redtrack_attribution: true,
+          redtrack_quality_tracking: true
+        }
+      };
+
+      await storage.createConversionEvent(qualityData);
+
+      // Fire tracking pixels based on conversion type
+      if (conversionType && ['RAWCall', 'AnsweredCall', 'ConvertedCall'].includes(conversionType)) {
+        try {
+          // Get tracking pixels that should fire for this conversion type
+          const userId = 2; // System user for external tracking
+          const pixels = await storage.getTrackingPixels(userId);
+          const redtrackPixels = pixels.filter(p => 
+            p.url.includes('redtrack') || 
+            p.url.includes('postback') ||
+            p.name.toLowerCase().includes('redtrack')
+          );
+
+          for (const pixel of redtrackPixels) {
+            // Replace tokens in pixel URL
+            let fireUrl = pixel.url;
+            fireUrl = fireUrl.replace(/\[tag:User:clickid\]/g, clickid);
+            fireUrl = fireUrl.replace(/\[Call:ConversionPayout\]/g, String(revenue || 25));
+            fireUrl = fireUrl.replace(/\{clickid\}/g, clickid);
+            fireUrl = fireUrl.replace(/\{sum\}/g, String(revenue || 25));
+            fireUrl = fireUrl.replace(/\{type\}/g, conversionType);
+
+            // Fire the pixel (async, don't wait for response)
+            fetch(fireUrl, { method: 'GET' }).catch(err => 
+              console.log('RedTrack pixel fire failed:', err.message)
+            );
+
+            console.log(`RedTrack pixel fired: ${fireUrl}`);
+          }
+        } catch (pixelError) {
+          console.error('RedTrack pixel firing error:', pixelError);
+        }
+      }
+
+      console.log('RedTrack call quality tracked:', { 
+        sessionId, 
+        clickid, 
+        conversionType, 
+        duration, 
+        answered, 
+        converted 
+      });
+
+      res.json({
+        success: true,
+        sessionId,
+        conversionType,
+        duration,
+        answered,
+        converted,
+        message: `RedTrack ${conversionType} quality tracked successfully`
+      });
+
+    } catch (error) {
+      console.error('Error tracking RedTrack call quality:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to track call quality' 
+      });
+    }
+  });
+
   app.post("/api/redtrack-configs", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;

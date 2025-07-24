@@ -291,11 +291,78 @@ export async function handleCallStatus(req: Request, res: Response) {
     });
 
     console.log('[Webhook] Call updated:', call.id, updates);
+
+    // Trigger RedTrack quality tracking for call completion
+    await triggerRedTrackQualityEvent(updatedCall, statusData);
+
     res.json({ success: true });
 
   } catch (error) {
     console.error('[Webhook] Error handling call status:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+/**
+ * Trigger RedTrack quality tracking events based on call completion
+ */
+async function triggerRedTrackQualityEvent(call: any, statusData: TwilioCallStatusRequest) {
+  try {
+    // Only process if call has RedTrack clickid
+    if (!call.clickId && !call.redtrackClickid) {
+      return;
+    }
+
+    const clickid = call.clickId || call.redtrackClickid;
+    const duration = parseInt(statusData.Duration || '0', 10);
+    const callStatus = statusData.CallStatus;
+    
+    // Determine conversion type based on call completion
+    let conversionType = 'RAWCall';
+    let answered = false;
+    let converted = false;
+    
+    if (callStatus === 'completed') {
+      answered = true;
+      conversionType = 'AnsweredCall';
+      
+      // Consider calls > 30 seconds as converted
+      if (duration > 30) {
+        converted = true;
+        conversionType = 'ConvertedCall';
+      }
+    }
+
+    const qualityData = {
+      clickid,
+      conversionType,
+      duration,
+      answered,
+      converted,
+      revenue: parseFloat(call.revenue || '0'),
+      sessionId: call.sessionId || `call_${call.id}_${Date.now()}`
+    };
+
+    console.log('[Webhook] Triggering RedTrack quality event:', qualityData);
+
+    // Send to RedTrack quality endpoint
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(`${process.env.BASE_URL || 'http://localhost:5000'}/api/tracking/redtrack/quality`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(qualityData),
+    });
+
+    if (response.ok) {
+      console.log('[Webhook] RedTrack quality event sent successfully');
+    } else {
+      console.error('[Webhook] RedTrack quality event failed:', response.status);
+    }
+
+  } catch (error) {
+    console.error('[Webhook] Error sending RedTrack quality event:', error);
   }
 }
 

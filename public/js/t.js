@@ -71,8 +71,46 @@
     target: urlParams.get('target'),
     targetid: urlParams.get('targetid'),
     loc_physical_ms: urlParams.get('loc_physical_ms'),
-    loc_interest_ms: urlParams.get('loc_interest_ms')
+    loc_interest_ms: urlParams.get('loc_interest_ms'),
+    // RedTrack specific parameters
+    redtrack_campaign_id: urlParams.get('campaign_id'),
+    redtrack_offer_id: urlParams.get('offer_id'),
+    redtrack_affiliate_id: urlParams.get('affiliate_id'),
+    redtrack_sub_id: urlParams.get('sub_id')
   };
+  
+  // RedTrack Auto-Detection & Integration
+  var isRedTrackDetected = trackingData.clickid || trackingData.redtrack_campaign_id || trackingData.redtrack_offer_id;
+  
+  if (isRedTrackDetected) {
+    console.log('CallCenter Pro: RedTrack parameters detected, initializing integration...');
+    
+    // Store RedTrack clickid globally for Ringba-style integration
+    if (trackingData.clickid) {
+      window.rtkClickID = trackingData.clickid;
+      console.log('CallCenter Pro: RedTrack clickID set globally:', window.rtkClickID);
+    }
+    
+    // Initialize RedTrack tag system (Ringba-style)
+    window._rgba_tags = window._rgba_tags || [];
+    window._rgba_tags.push({ type: "User", track_attempted: "yes" });
+    
+    // Auto-inject RedTrack clickid transfer logic
+    if (window.rtkClickID) {
+      window._rgba_tags.push({ type: "User", clickid: window.rtkClickID });
+      console.log('CallCenter Pro: RedTrack tags initialized with clickID:', window.rtkClickID);
+    }
+    
+    // Enhanced conversion tracking for RedTrack events
+    window.ccpRedTrackConfig = {
+      clickid: trackingData.clickid,
+      campaign_id: trackingData.redtrack_campaign_id,
+      offer_id: trackingData.redtrack_offer_id,
+      affiliate_id: trackingData.redtrack_affiliate_id,
+      baseUrl: baseUrl,
+      sessionId: sessionId
+    };
+  }
   
   // Phone number patterns to detect
   var phonePatterns = [
@@ -163,11 +201,103 @@
     xhr.send(JSON.stringify(trackingData));
   }
   
+  // Enhanced phone click tracking with RedTrack conversion events
+  function setupRedTrackConversionTracking() {
+    if (!isRedTrackDetected) return;
+    
+    console.log('CallCenter Pro: Setting up RedTrack conversion tracking...');
+    
+    // Track phone clicks for RedTrack conversions
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest('a[href^="tel:"]');
+      if (target && window.ccpRedTrackConfig && window.ccpRedTrackConfig.clickid) {
+        var phoneNumber = target.href.replace('tel:', '');
+        
+        console.log('CallCenter Pro: RedTrack phone click detected:', phoneNumber);
+        
+        // Send conversion event to CallCenter Pro
+        var conversionData = {
+          eventType: 'phone_click',
+          phoneNumber: phoneNumber,
+          clickid: window.ccpRedTrackConfig.clickid,
+          campaign_id: window.ccpRedTrackConfig.campaign_id,
+          offer_id: window.ccpRedTrackConfig.offer_id,
+          affiliate_id: window.ccpRedTrackConfig.affiliate_id,
+          sessionId: window.ccpRedTrackConfig.sessionId,
+          timestamp: new Date().toISOString(),
+          conversionType: 'RAWCall',
+          conversionValue: 25.00 // Default value, will be overridden by campaign settings
+        };
+        
+        // Send to internal tracking endpoint
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', baseUrl + '/api/tracking/redtrack/conversion', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              console.log('CallCenter Pro: RedTrack conversion tracked successfully');
+            } else {
+              console.error('CallCenter Pro: RedTrack conversion tracking failed');
+            }
+          }
+        };
+        xhr.send(JSON.stringify(conversionData));
+        
+        // Update Ringba-style tags for advanced integrations
+        if (window._rgba_tags) {
+          window._rgba_tags.push({
+            type: "Conversion", 
+            eventType: "RAWCall",
+            clickid: window.ccpRedTrackConfig.clickid,
+            phoneNumber: phoneNumber,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+    });
+    
+    // Setup call quality tracking (for AnsweredCall and ConvertedCall events)
+    // This will be triggered by actual call completion webhooks
+    window.ccpTrackCallQuality = function(callData) {
+      if (!window.ccpRedTrackConfig || !window.ccpRedTrackConfig.clickid) return;
+      
+      var conversionType = 'RAWCall';
+      if (callData.answered) conversionType = 'AnsweredCall';
+      if (callData.converted) conversionType = 'ConvertedCall';
+      
+      var qualityData = {
+        eventType: 'call_quality',
+        conversionType: conversionType,
+        clickid: window.ccpRedTrackConfig.clickid,
+        duration: callData.duration || 0,
+        answered: callData.answered || false,
+        converted: callData.converted || false,
+        revenue: callData.revenue || 0,
+        sessionId: window.ccpRedTrackConfig.sessionId
+      };
+      
+      // Send quality tracking
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', baseUrl + '/api/tracking/redtrack/quality', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.send(JSON.stringify(qualityData));
+      
+      console.log('CallCenter Pro: RedTrack call quality tracked:', conversionType);
+    };
+  }
+  
+  // Initialize tracking
+  function initializeTracking() {
+    requestTrackingNumber();
+    setupRedTrackConversionTracking();
+  }
+  
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', requestTrackingNumber);
+    document.addEventListener('DOMContentLoaded', initializeTracking);
   } else {
-    requestTrackingNumber();
+    initializeTracking();
   }
   
 })();
