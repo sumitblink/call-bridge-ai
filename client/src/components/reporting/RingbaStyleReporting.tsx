@@ -470,23 +470,19 @@ export default function RingbaStyleReporting() {
     });
   };
 
-  // Use real data only - no mock data
-  const rawCampaignSummaries: CampaignSummary[] = [];
-
-  // Alternative: Real data processing (commented out for testing)
-  /*
+  // Process calls into campaign summaries
   const rawCampaignSummaries: CampaignSummary[] = calls.length > 0 ? calls.reduce((acc, call) => {
-    const campaignId = call.campaignId;
+    const campaignId = call.campaignId || 'unknown';
     let summary = acc.find(s => s.campaignId === campaignId);
     
     if (!summary) {
       summary = {
         campaignId,
         campaignName: call.campaign?.name || 'Unknown Campaign',
-        publisher: '-',
+        publisher: call.utmSource || '-',
         target: 'Live',
         buyer: call.buyer?.name || 'Unknown Buyer',
-        dialedNumbers: [],
+        dialedNumbers: [call.toNumber || ''],
         numberPool: 'Pool',
         totalCalls: 0,
         incoming: 0,
@@ -519,33 +515,31 @@ export default function RingbaStyleReporting() {
     summary.totalCalls += 1;
     summary.incoming += 1;
     
-    if (call.status === 'in_progress') summary.live += 1;
+    if (call.status === 'in-progress') summary.live += 1;
     if (call.status === 'completed') {
       summary.completed += 1;
       summary.connected += 1;
+      summary.converted += 1;
     }
-    if (call.status === 'failed' || call.status === 'busy' || call.status === 'no_answer') {
+    if (call.status === 'failed' || call.status === 'busy' || call.status === 'no-answer') {
       summary.ended += 1;
       summary.noConnection += 1;
     }
     
     // Financial calculations
-    const revenue = Number(call.revenue) || 0;
-    const cost = Number(call.cost) || 0;
+    const revenue = parseFloat(call.revenue?.toString() || '0');
+    const cost = parseFloat(call.cost?.toString() || '0');
     const profit = revenue - cost;
     
     summary.revenue += revenue;
     summary.totalCost += cost;
-    summary.payout += cost;
+    summary.payout += revenue; // Use revenue as payout for now
     summary.profit += profit;
-    summary.tcl += call.duration;
+    summary.tcl += call.duration || 0;
     
-    // Track dialed numbers and tags
-    if (call.dialedNumber && !summary.dialedNumbers.includes(call.dialedNumber)) {
-      summary.dialedNumbers.push(call.dialedNumber);
-    }
-    if (call.sub1 && !summary.tags.includes(call.sub1)) {
-      summary.tags.push(call.sub1);
+    // Track dialed numbers
+    if (call.toNumber && !summary.dialedNumbers.includes(call.toNumber)) {
+      summary.dialedNumbers.push(call.toNumber);
     }
     
     // Update last call date if newer
@@ -555,7 +549,6 @@ export default function RingbaStyleReporting() {
 
     return acc;
   }, [] as CampaignSummary[]) : [];
-  */
 
   // Apply filters to get final data - only show filtered data when filter badges exist
   const campaignSummaries = filterRules.length > 0 ? applyFilters(rawCampaignSummaries) : rawCampaignSummaries;
