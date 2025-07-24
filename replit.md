@@ -114,6 +114,14 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 24, 2025: **ACCEPTANCE RATE AND RESPONSE TIME CONVERTED FROM MOCK TO REAL DATA** - Eliminated hardcoded mock data (95%, 200ms) and implemented dynamic calculation from actual call performance
+  - **Mock Data Removed**: Removed hardcoded acceptance_rate and avg_response_time columns from buyers database table
+  - **Real Calculation Implemented**: Updated getBuyers() method to calculate acceptance rate from actual call completion data
+  - **Dynamic Metrics**: Acceptance rate now shows real percentage based on completed vs total calls for each buyer
+  - **Response Time Calculation**: Response time calculated from actual call duration data converted to milliseconds
+  - **UI Updated**: Frontend now displays "No data" when buyers have no call history instead of fake 95%/200ms values
+  - **Data Integrity**: System now shows only authentic performance metrics from real call tracking data
+  - **Status**: All buyer performance metrics now use genuine data - no more misleading mock statistics
 - July 24, 2025: **PUBLISHER-CAMPAIGN ASSIGNMENT DATABASE QUERY COMPLETELY FIXED** - Resolved final issue where getCampaignPublishers method was delegating to broken storage module instead of implementing proper database query
   - **Root Cause Fixed**: getCampaignPublishers was delegating to storage-db.ts instead of implementing SQL query directly in supabase-storage.ts
   - **Database Query Implemented**: Added proper JOIN query between campaignPublishers and publishers tables with full field selection

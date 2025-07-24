@@ -82,7 +82,9 @@ function BuyerCard({ buyer, onEdit, onDelete }: {
           </div>
           <div>
             <span className="font-medium text-gray-600">Response Time:</span>
-            <div className="text-lg font-semibold">{buyer.avgResponseTime}ms</div>
+            <div className="text-lg font-semibold">
+              {buyer.avgResponseTime ? `${buyer.avgResponseTime}ms` : 'No data'}
+            </div>
           </div>
         </div>
         
@@ -134,8 +136,7 @@ function BuyerForm({
       priority: buyer?.priority || 1,
       dailyCap: buyer?.dailyCap || 50,
       concurrencyLimit: buyer?.concurrencyLimit || 3,
-      acceptanceRate: buyer?.acceptanceRate || "0.00",
-      avgResponseTime: buyer?.avgResponseTime || 0,
+
     },
   });
 
@@ -151,8 +152,7 @@ function BuyerForm({
         priority: buyer.priority || 1,
         dailyCap: buyer.dailyCap || 50,
         concurrencyLimit: buyer.concurrencyLimit || 3,
-        acceptanceRate: buyer.acceptanceRate || "0.00",
-        avgResponseTime: buyer.avgResponseTime || 0,
+
       });
     } else if (!buyer && open) {
       // Reset to empty form for new buyer
@@ -165,8 +165,7 @@ function BuyerForm({
         priority: 1,
         dailyCap: 50,
         concurrencyLimit: 3,
-        acceptanceRate: "0.00",
-        avgResponseTime: 0,
+
       });
     }
   }, [buyer, open, form]);

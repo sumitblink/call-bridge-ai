@@ -99,8 +99,7 @@ export const buyers = pgTable("buyers", {
   priority: integer("priority").default(1),
   dailyCap: integer("daily_cap").default(100),
   concurrencyLimit: integer("concurrency_limit").default(5),
-  acceptanceRate: varchar("acceptance_rate").default("95%"),
-  avgResponseTime: integer("avg_response_time").default(200), // in milliseconds
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
