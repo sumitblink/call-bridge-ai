@@ -1466,37 +1466,8 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getCampaignPublishers(campaignId: number): Promise<any[]> {
-    const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
-    
-    try {
-      const result = await db
-        .select({
-          id: publishers.id,
-          name: publishers.name,
-          email: publishers.email,
-          phoneNumber: publishers.phoneNumber,
-          company: publishers.company,
-          publisherType: publishers.publisherType,
-          trafficSource: publishers.trafficSource,
-          quality: publishers.quality,
-          defaultPayout: publishers.defaultPayout,
-          payoutModel: publishers.payoutModel,
-          status: publishers.status,
-          createdAt: publishers.createdAt,
-          // Campaign assignment details
-          payout: campaignPublishers.payout,
-          isActive: campaignPublishers.isActive,
-          assignedAt: campaignPublishers.assignedAt,
-        })
-        .from(campaignPublishers)
-        .innerJoin(publishers, eq(campaignPublishers.publisherId, publishers.id))
-        .where(eq(campaignPublishers.campaignId, campaignIdStr));
-      
-      return result;
-    } catch (error) {
-      console.error('Error fetching campaign publishers:', error);
-      return [];
-    }
+    const { storage } = await import('./storage-db');
+    return storage.getCampaignPublishers(campaignId);
   }
 
   // Campaign RTB Target methods
