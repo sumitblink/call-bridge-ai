@@ -6745,19 +6745,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const buyersData = await storage.getBuyers(userId);
       const publishersData = await storage.getPublishers(userId);
 
-      // Create lookup maps
-      const campaignMap = new Map(campaignsData.map(c => [c.id, c]));
+      console.log('Enhanced calls debug - Sample call:', callsData[0]?.campaignId);
+      console.log('Enhanced calls debug - Sample campaign:', campaignsData[0]?.id, campaignsData[0]?.name);
+      console.log('Enhanced calls debug - Campaign IDs:', campaignsData.map(c => c.id));
+
+      // Create lookup maps - use string conversion to ensure matching
+      const campaignMap = new Map(campaignsData.map(c => [String(c.id), c]));
       const buyerMap = new Map(buyersData.map(b => [b.id, b]));
       const publisherMap = new Map(publishersData.map(p => [p.id, p]));
 
       // Enhance calls with related data
-      const enhancedCalls = callsData.map(call => ({
-        ...call,
-        campaignName: campaignMap.get(call.campaignId || '')?.name || 'Unknown Campaign',
-        buyerName: call.buyerId ? buyerMap.get(call.buyerId)?.name || 'Unknown Buyer' : undefined,
-        publisherName: call.publisherId ? publisherMap.get(call.publisherId)?.name || call.publisherName || 'Direct' : 'Direct',
-      }));
+      const enhancedCalls = callsData.map(call => {
+        const campaignId = String(call.campaignId || '');
+        const campaign = campaignMap.get(campaignId);
+        
+        return {
+          ...call,
+          campaign: campaign, // Include full campaign object for RingbaStyleReporting
+          campaignName: campaign?.name || 'Unknown Campaign',
+          buyerName: call.buyerId ? buyerMap.get(call.buyerId)?.name || 'Unknown Buyer' : undefined,
+          publisherName: call.publisherId ? publisherMap.get(call.publisherId)?.name || call.publisherName || 'Direct' : 'Direct',
+        };
+      });
 
+      console.log('Enhanced calls debug - Result sample:', enhancedCalls[0]?.campaignName);
       res.json(enhancedCalls);
     } catch (error) {
       console.error("Error fetching enhanced calls:", error);
