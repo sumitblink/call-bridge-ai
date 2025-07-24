@@ -160,7 +160,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
   const resetMutation = useMutation({
     mutationFn: async (): Promise<ColumnPreferences> => {
       const defaultPrefs = { 
-        visibleColumns: ['campaign', 'buyer', 'callDate', 'callerId', 'dialedNumber', 'duration', 'status', 'actions'],
+        visibleColumns: ['campaign', 'publisherName', 'buyer', 'callDate', 'callerId', 'dialedNumber', 'duration', 'status', 'actions'],
         columnOrder: null,
         columnWidths: {}
       };

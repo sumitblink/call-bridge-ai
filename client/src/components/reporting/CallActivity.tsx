@@ -78,6 +78,9 @@ export default function CallActivity() {
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    // Clear any old column preferences to prevent conflicts
+    localStorage.removeItem('call-activity-columns');
+    
     // Define custom column order with Publisher as second column
     const customOrder = [
       'campaign',
@@ -91,18 +94,24 @@ export default function CallActivity() {
       'actions'
     ];
     
-    // Load saved preferences or use custom order
-    const saved = localStorage.getItem('call-activity-columns');
+    // Load saved preferences but filter out old 'publisher' column
+    const saved = localStorage.getItem('call-details-column-preferences');
     if (saved) {
       try {
-        const savedColumns = JSON.parse(saved);
+        const savedPrefs = JSON.parse(saved);
+        const savedColumns = savedPrefs.visibleColumns || savedPrefs;
+        // Filter out old 'publisher' column and ensure publisherName is used
+        const filteredColumns = savedColumns
+          .filter((col: string) => col !== 'publisher') // Remove old publisher column
+          .map((col: string) => col === 'publisher' ? 'publisherName' : col); // Map any remaining
+        
         // Ensure actions column is always at the right end
-        const actionsIndex = savedColumns.indexOf('actions');
+        const actionsIndex = filteredColumns.indexOf('actions');
         if (actionsIndex > -1) {
-          const columnsWithoutActions = savedColumns.filter((col: string) => col !== 'actions');
+          const columnsWithoutActions = filteredColumns.filter((col: string) => col !== 'actions');
           return [...columnsWithoutActions, 'actions'];
         }
-        return savedColumns;
+        return filteredColumns.length > 0 ? filteredColumns : customOrder;
       } catch (e) {
         return customOrder;
       }
