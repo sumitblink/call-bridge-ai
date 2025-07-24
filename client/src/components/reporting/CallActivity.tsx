@@ -78,15 +78,36 @@ export default function CallActivity() {
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
-    // Remove duplicates from default columns to prevent React key issues
-    const defaultColumns = [...new Set(getDefaultVisibleColumns())];
-    // Ensure actions column is always at the right end
-    const actionsIndex = defaultColumns.indexOf('actions');
-    if (actionsIndex > -1) {
-      const columnsWithoutActions = defaultColumns.filter(col => col !== 'actions');
-      return [...columnsWithoutActions, 'actions'];
+    // Define custom column order with Publisher as second column
+    const customOrder = [
+      'campaign',
+      'publisher',  // Publisher as second column
+      'buyer',
+      'callDate',
+      'callerId',
+      'dialedNumber',
+      'duration',
+      'status',
+      'actions'
+    ];
+    
+    // Load saved preferences or use custom order
+    const saved = localStorage.getItem('call-activity-columns');
+    if (saved) {
+      try {
+        const savedColumns = JSON.parse(saved);
+        // Ensure actions column is always at the right end
+        const actionsIndex = savedColumns.indexOf('actions');
+        if (actionsIndex > -1) {
+          const columnsWithoutActions = savedColumns.filter((col: string) => col !== 'actions');
+          return [...columnsWithoutActions, 'actions'];
+        }
+        return savedColumns;
+      } catch (e) {
+        return customOrder;
+      }
     }
-    return defaultColumns;
+    return customOrder;
   });
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
   const [isResizing, setIsResizing] = useState<string | null>(null);
