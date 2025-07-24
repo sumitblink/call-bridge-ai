@@ -1,0 +1,25 @@
+[vite] connected.
+Warning: Each child in a list should have a unique &quot;key&quot; prop.
+
+Check the render method of `CallActivity`. See https://reactjs.org/link/warning-keys for more information.
+    at CallActivity (https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/src/components/reporting/CallActivity.tsx:375:43)
+    at div
+    at div
+    at _c9 (https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at RingbaStyleReporting (https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/src/components/reporting/RingbaStyleReporting.tsx:458:45)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/src/components/Layout.tsx:19:34)
+    at EnhancedReporting
+    at Route (https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=5304f14d:323:16)
+    at Switch (https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=5304f14d:379:17)
+    at Router (https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/src/App.tsx?v=x-TnbD9uAVmIQnTqNIqRm:43:42)
+    at Provider (https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=5304f14d:38:15)
+    at TooltipProvider (https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=5304f14d:65:5)
+    at QueryClientProvider (https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=5304f14d:2805:3)
+    at App

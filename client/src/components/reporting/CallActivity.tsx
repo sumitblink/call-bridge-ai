@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -643,7 +643,7 @@ export default function CallActivity() {
               </TableHeader>
               <TableBody>
                 {filteredCalls.map((call, callIndex) => (
-                  <>
+                  <React.Fragment key={`call-fragment-${call.id}`}>
                     <TableRow key={`call-row-${callIndex}`} className="hover:bg-muted/30">
                       <TableCell className="py-2 w-8">
                         <Button
@@ -720,7 +720,7 @@ export default function CallActivity() {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </React.Fragment>
                 ))}
               </TableBody>
             </Table>
