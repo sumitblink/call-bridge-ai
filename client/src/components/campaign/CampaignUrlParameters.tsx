@@ -14,6 +14,15 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
+// Reserved column IDs that cannot be used as URL parameter names
+const RESERVED_COLUMN_IDS = [
+  'campaign', 'publisherName', 'target', 'buyer', 'callDate', 'callerId', 'dialedNumber', 
+  'duration', 'status', 'actions', 'fromNumber', 'toNumber', 'duplicate', 'previouslyConnected',
+  'campaignId', 'buyerId', 'targetNumber', 'targetGroup', 'publisherId', 'numberPool', 'revenue',
+  'profit', 'payout', 'timeToCall', 'timeToConnect', 'connectedCallLength', 'numberPoolId',
+  'numberPoolUsed'
+];
+
 interface CampaignUrlParametersProps {
   campaignId?: string;
 }
@@ -229,6 +238,16 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
       return;
     }
 
+    // Check for reserved column names
+    if (RESERVED_COLUMN_IDS.includes(urlParameterForm.parameterName.toLowerCase())) {
+      toast({
+        title: "Reserved Column Name",
+        description: `"${urlParameterForm.parameterName}" is a built-in column name and cannot be used as a URL parameter. Please choose a different name.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Check for duplicates across ALL parameters (not just campaign-specific)
     const isDuplicateParameterName = allUrlParameters.some(param => 
       param.parameterName.toLowerCase() === urlParameterForm.parameterName.toLowerCase() && 
@@ -435,10 +454,10 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                         required
                         className={
                           urlParameterForm.parameterName && 
-                          urlParameters.find(param => 
+                          (urlParameters.find(param => 
                             param.parameterName.toLowerCase() === urlParameterForm.parameterName.toLowerCase() && 
                             (!editingItem || param.id !== editingItem.id)
-                          ) ? "border-red-500" : ""
+                          ) || RESERVED_COLUMN_IDS.includes(urlParameterForm.parameterName.toLowerCase())) ? "border-red-500" : ""
                         }
                       />
                       {urlParameterForm.parameterName && 
@@ -447,6 +466,9 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
                          (!editingItem || param.id !== editingItem.id)
                        ) ? (
                         <span className="text-xs text-red-500 mt-1">⚠️ Parameter name already exists</span>
+                      ) : urlParameterForm.parameterName && 
+                         RESERVED_COLUMN_IDS.includes(urlParameterForm.parameterName.toLowerCase()) ? (
+                        <span className="text-xs text-red-500 mt-1">⚠️ Parameter name conflicts with built-in column</span>
                       ) : (
                         <span className="text-xs text-gray-500 mt-1">Required</span>
                       )}

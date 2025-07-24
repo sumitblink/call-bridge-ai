@@ -28,6 +28,14 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
+// Get reserved column IDs from column definitions to prevent conflicts
+const RESERVED_COLUMN_IDS = [
+  'campaign', 'publisherName', 'target', 'buyer', 'callDate', 'callerId', 'dialedNumber', 
+  'duration', 'status', 'actions', 'fromNumber', 'toNumber', 'duplicate', 'previouslyConnected',
+  'campaignId', 'buyerId', 'targetNumber', 'targetGroup', 'publisherId', 'numberPool', 'revenue',
+  'profit', 'payout', 'timeToCall', 'timeToConnect', 'connectedCallLength', 'numberPoolId',
+  'numberPoolUsed'
+];
 
 interface Pixel {
   id: number;
@@ -368,6 +376,16 @@ export default function IntegrationsPage() {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check for reserved column names
+    if (RESERVED_COLUMN_IDS.includes(urlParameterForm.parameterName.toLowerCase())) {
+      toast({
+        title: "Reserved Column Name",
+        description: `"${urlParameterForm.parameterName}" is a built-in column name and cannot be used as a URL parameter. Please choose a different name.`,
         variant: "destructive"
       });
       return;
@@ -967,10 +985,10 @@ export default function IntegrationsPage() {
                         required
                         className={
                           urlParameterForm.parameterName && 
-                          urlParameters.find(param => 
+                          (urlParameters.find(param => 
                             param.parameterName.toLowerCase() === urlParameterForm.parameterName.toLowerCase() && 
                             (!editingItem || param.id !== editingItem.id)
-                          ) ? "border-red-500" : ""
+                          ) || RESERVED_COLUMN_IDS.includes(urlParameterForm.parameterName.toLowerCase())) ? "border-red-500" : ""
                         }
                       />
                       {urlParameterForm.parameterName && 
@@ -979,6 +997,9 @@ export default function IntegrationsPage() {
                          (!editingItem || param.id !== editingItem.id)
                        ) ? (
                         <span className="text-xs text-red-500 mt-1">⚠️ Parameter name already exists</span>
+                      ) : urlParameterForm.parameterName && 
+                         RESERVED_COLUMN_IDS.includes(urlParameterForm.parameterName.toLowerCase()) ? (
+                        <span className="text-xs text-red-500 mt-1">⚠️ Parameter name conflicts with built-in column</span>
                       ) : (
                         <span className="text-xs text-gray-500 mt-1">Required</span>
                       )}

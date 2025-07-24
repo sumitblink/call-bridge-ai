@@ -639,3 +639,8 @@ export function getDefaultVisibleColumns() {
 export function getColumnDefinition(columnId: string): ColumnDefinition | undefined {
   return COLUMN_DEFINITIONS.find(col => col.id === columnId);
 }
+
+// Get all reserved column IDs that cannot be used as URL parameter names
+export function getReservedColumnIds(): string[] {
+  return COLUMN_DEFINITIONS.map(col => col.id);
+}
