@@ -27,7 +27,11 @@ import {
   Activity,
   Zap,
   MapPin,
-  Info
+  Info,
+  TrendingUp,
+  CheckCircle,
+  XCircle,
+  AlertCircle
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -245,85 +249,145 @@ export function ExpandableCallDetails() {
     </div>
   );
 
+  // Phase 4: Enhanced Routing Decision Journey Visualization
   const renderRoutingDecisions = (decisions: RoutingDecision[]) => (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <Users className="h-4 w-4" />
-        Routing Plan
+        <Zap className="h-4 w-4 text-blue-500" />
+        Routing Decision Journey ({decisions.length} decisions)
       </div>
       {decisions.length === 0 ? (
         <p className="text-sm text-gray-500">No routing decisions recorded</p>
       ) : (
-        <div className="space-y-1">
-          {decisions.map((decision) => (
-            <div key={decision.id} className="text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="font-medium">#{decision.sequenceNumber} - {decision.targetName}</span>
-                  <Badge className={`ml-2 text-xs ${decision.outcome === 'selected' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {decision.outcome}
-                  </Badge>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+          <div className="space-y-3">
+            {decisions
+              .sort((a, b) => a.sequenceNumber - b.sequenceNumber)
+              .map((decision, index) => (
+              <div key={decision.id} className="flex items-center gap-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                {/* Sequence Number */}
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-xs font-medium text-blue-600 dark:text-blue-300">
+                  {decision.sequenceNumber}
                 </div>
-                <span className="text-gray-400">
-                  {decision.responseTime}ms
-                </span>
+                
+                {/* Decision Details */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium">{decision.targetName || decision.targetType}</span>
+                    <Badge 
+                      variant={decision.outcome === 'success' ? 'default' : 
+                              decision.outcome === 'failed' ? 'destructive' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {decision.outcome === 'success' && <CheckCircle className="h-3 w-3 mr-1" />}
+                      {decision.outcome === 'failed' && <XCircle className="h-3 w-3 mr-1" />}
+                      {decision.outcome !== 'success' && decision.outcome !== 'failed' && <AlertCircle className="h-3 w-3 mr-1" />}
+                      {decision.outcome}
+                    </Badge>
+                    {decision.priority && (
+                      <Badge variant="outline" className="text-xs">
+                        Priority {decision.priority}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div><strong>Type:</strong> {decision.targetType.toUpperCase()}</div>
+                    {decision.reason && <div><strong>Reason:</strong> {decision.reason}</div>}
+                    {decision.bidAmount && <div><strong>Bid:</strong> {formatCurrency(decision.bidAmount)}</div>}
+                    <div><strong>Time:</strong> {formatDistanceToNow(new Date(decision.timestamp))} ago</div>
+                  </div>
+                </div>
+                
+                {/* Response Time */}
+                {decision.responseTime && (
+                  <div className="flex-shrink-0 text-right">
+                    <div className="text-xs text-gray-500">Response</div>
+                    <div className={`text-sm font-medium ${
+                      decision.responseTime < 500 ? 'text-green-600' :
+                      decision.responseTime < 1000 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {decision.responseTime < 1000 ? `${decision.responseTime}ms` : `${(decision.responseTime/1000).toFixed(1)}s`}
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="mt-1 text-gray-600">
-                Priority: {decision.priority} | Type: {decision.targetType}
-              </div>
-              {decision.reason && (
-                <div className="mt-1 text-gray-600">Reason: {decision.reason}</div>
-              )}
-              {decision.bidAmount && (
-                <div className="mt-1 text-gray-600">Bid: {formatCurrency(decision.bidAmount)}</div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
 
+  // Phase 4: Enhanced RTB Auction Visualization with Winner Analysis  
   const renderRtbAuctions = (auctions: RtbAuctionDetails[]) => (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <Zap className="h-4 w-4" />
-        Ring Tree Pinging Summary
+        <TrendingUp className="h-4 w-4 text-green-500" />
+        RTB Auction Results ({auctions.length} bidders)
       </div>
       {auctions.length === 0 ? (
         <p className="text-sm text-gray-500">No RTB auctions for this call</p>
       ) : (
-        <div className="space-y-1">
-          {auctions.map((auction) => (
-            <div key={auction.id} className="text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="font-medium">{auction.targetName}</span>
-                  {auction.isWinner && (
-                    <Badge className="ml-2 bg-green-100 text-green-800 text-xs">Winner</Badge>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+          <div className="space-y-3">
+            {auctions
+              .sort((a, b) => parseFloat(b.bidAmount) - parseFloat(a.bidAmount))
+              .map((auction, index) => (
+              <div key={auction.id} className="flex items-center gap-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                {/* Winner Crown or Rank */}
+                <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs">
+                  {auction.isWinner ? (
+                    <div className="w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900 flex items-center justify-center">
+                      <span className="text-yellow-600 dark:text-yellow-300">👑</span>
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                      <span className="text-gray-400">#{index + 1}</span>
+                    </div>
                   )}
                 </div>
-                <div className="text-right">
-                  <div>{formatCurrency(auction.bidAmount)}</div>
-                  <div className="text-gray-400">{auction.responseTime}ms</div>
+                
+                {/* Auction Details */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium">{auction.targetName}</span>
+                    <Badge 
+                      variant={auction.isWinner ? 'default' : 
+                              auction.bidStatus === 'won' ? 'default' :
+                              auction.bidStatus === 'failed' ? 'destructive' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {auction.bidStatus}
+                    </Badge>
+                    <div className="text-sm font-bold text-green-600 dark:text-green-400">
+                      {formatCurrency(auction.bidAmount)}
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div><strong>Auction ID:</strong> {auction.auctionId}</div>
+                    {auction.destinationNumber && <div><strong>Destination:</strong> {auction.destinationNumber}</div>}
+                    {auction.rejectionReason && <div><strong>Rejection:</strong> {auction.rejectionReason}</div>}
+                    <div><strong>Time:</strong> {formatDistanceToNow(new Date(auction.timestamp))} ago</div>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-1">
-                <Badge className={`text-xs ${auction.bidStatus === 'accepted' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                  {auction.bidStatus}
-                </Badge>
-                {auction.bidDuration && (
-                  <span className="ml-2 text-gray-600">{auction.bidDuration}s duration</span>
+                
+                {/* Response Time */}
+                {auction.responseTime && (
+                  <div className="flex-shrink-0 text-right">
+                    <div className="text-xs text-gray-500">Response</div>
+                    <div className={`text-sm font-medium ${
+                      auction.responseTime < 500 ? 'text-green-600' :
+                      auction.responseTime < 1000 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {auction.responseTime < 1000 ? `${auction.responseTime}ms` : `${(auction.responseTime/1000).toFixed(1)}s`}
+                    </div>
+                  </div>
                 )}
               </div>
-              {auction.destinationNumber && (
-                <div className="mt-1 text-gray-600">Routed to: {auction.destinationNumber}</div>
-              )}
-              {auction.rejectionReason && (
-                <div className="mt-1 text-red-600">Reason: {auction.rejectionReason}</div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
