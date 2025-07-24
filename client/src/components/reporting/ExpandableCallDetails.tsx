@@ -438,7 +438,7 @@ export function ExpandableCallDetails() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {calls.map((call) => (
+            {calls.map((call: any) => (
               <React.Fragment key={call.id}>
                 <TableRow className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <TableCell>
@@ -531,115 +531,247 @@ export function ExpandableCallDetails() {
                   </TableCell>
                 </TableRow>
                 
-                {/* Expandable Content - Ringba Style */}
+                {/* Phase 5: Comprehensive Expandable Rows */}
                 {expandedRows.has(call.id) && (
                   <TableRow>
-                    <TableCell colSpan={17} className="p-0">
-                      <div className="bg-gray-50 dark:bg-gray-900 p-4 border-t">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                          {/* Call Overview */}
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-sm font-medium">
-                                <Info className="h-4 w-4" />
-                                Call Overview
+                    <TableCell colSpan={17} className="bg-gray-50 dark:bg-gray-900 p-0">
+                      <div className="p-6 space-y-8">
+                        {/* Phase 5: Comprehensive Call Journey Header */}
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                                <Phone className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                               </div>
-                              <div className="space-y-1 text-xs">
-                                <div><strong>Call SID:</strong> {call.callSid}</div>
-                                <div><strong>Ring Tree ID:</strong> {call.ringTreeId || 'N/A'}</div>
-                                <div><strong>Flow Execution:</strong> {call.flowExecutionId || 'N/A'}</div>
-                                <div><strong>Routing Attempts:</strong> {call.routingAttempts || 0}</div>
-                                {call.connectionTime && (
-                                  <div><strong>Connection Time:</strong> {call.connectionTime}ms</div>
-                                )}
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                  Complete Call Journey
+                                </h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  End-to-end analysis of routing decisions, IVR interactions, and RTB auctions
+                                </p>
                               </div>
                             </div>
-
-                            {/* Geographic & Technical Info */}
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-sm font-medium">
-                                <MapPin className="h-4 w-4" />
-                                Location & Device
+                            <div className="flex items-center gap-4 text-sm">
+                              <div className="text-center">
+                                <div className="font-semibold text-gray-900 dark:text-gray-100">{formatDuration(call.duration)}</div>
+                                <div className="text-gray-500">Total Duration</div>
                               </div>
-                              <div className="space-y-1 text-xs">
-                                {call.city && <div><strong>Location:</strong> {call.city}, {call.state} {call.country}</div>}
-                                {call.deviceType && <div><strong>Device:</strong> {call.deviceType}</div>}
+                              <div className="text-center">
+                                <div className="font-semibold text-green-600">{formatCurrency(call.revenue)}</div>
+                                <div className="text-gray-500">Revenue</div>
+                              </div>
+                              <div className="text-center">
+                                <div className={`font-semibold px-2 py-1 rounded text-xs ${getStatusColor(call.status)}`}>
+                                  {call.status.replace('_', ' ').toUpperCase()}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Quick Stats Row */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                            <div className="bg-white dark:bg-gray-800 rounded p-3 border">
+                              <div className="font-medium text-gray-500">Call ID</div>
+                              <div className="font-mono text-gray-900 dark:text-gray-100">{call.callSid}</div>
+                            </div>
+                            <div className="bg-white dark:bg-gray-800 rounded p-3 border">
+                              <div className="font-medium text-gray-500">Campaign</div>
+                              <div className="text-gray-900 dark:text-gray-100">{call.campaignName}</div>
+                            </div>
+                            <div className="bg-white dark:bg-gray-800 rounded p-3 border">
+                              <div className="font-medium text-gray-500">Location</div>
+                              <div className="text-gray-900 dark:text-gray-100">{call.city && call.state ? `${call.city}, ${call.state}` : 'Unknown'}</div>
+                            </div>
+                            <div className="bg-white dark:bg-gray-800 rounded p-3 border">
+                              <div className="font-medium text-gray-500">Quality</div>
+                              <div className={`font-medium px-2 py-1 rounded text-xs ${getQualityColor(call.callQuality || 'unknown')}`}>
+                                {(call.callQuality || 'Unknown').toUpperCase()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Phase 5: Three-Column Comprehensive Layout */}
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                          {/* Column 1: Call Flow & IVR Events */}
+                          <div className="space-y-6">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border p-6">
+                              <div className="flex items-center gap-2 mb-4 text-lg font-semibold">
+                                <Activity className="h-5 w-5 text-purple-500" />
+                                IVR & Call Flow
+                              </div>
+                              {selectedCallDetails[call.id]?.events && selectedCallDetails[call.id].events!.length > 0 ? 
+                                renderCallEvents(selectedCallDetails[call.id].events || []) : 
+                                <p className="text-sm text-gray-500">No IVR events recorded for this call</p>
+                              }
+                            </div>
+                            
+                            {/* Technical Details */}
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border p-6">
+                              <div className="flex items-center gap-2 mb-4 text-lg font-semibold">
+                                <Info className="h-5 w-5 text-gray-500" />
+                                Technical Details
+                              </div>
+                              <div className="space-y-3 text-sm">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <div className="font-medium text-gray-500">Ring Tree ID</div>
+                                    <div className="text-gray-900 dark:text-gray-100">{call.ringTreeId || 'N/A'}</div>
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-gray-500">Flow Execution</div>
+                                    <div className="text-gray-900 dark:text-gray-100">{call.flowExecutionId || 'N/A'}</div>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <div className="font-medium text-gray-500">Routing Attempts</div>
+                                    <div className="text-gray-900 dark:text-gray-100">{call.routingAttempts || 0}</div>
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-gray-500">Device Type</div>
+                                    <div className="text-gray-900 dark:text-gray-100">{call.deviceType || 'Unknown'}</div>
+                                  </div>
+                                </div>
                                 {call.userAgent && (
-                                  <div className="break-all"><strong>User Agent:</strong> {call.userAgent.substring(0, 100)}...</div>
+                                  <div>
+                                    <div className="font-medium text-gray-500">User Agent</div>
+                                    <div className="text-gray-900 dark:text-gray-100 break-all text-xs font-mono bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                                      {call.userAgent}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Column 2: Routing Decisions & Journey */}
+                          <div className="space-y-6">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border p-6">
+                              <div className="flex items-center gap-2 mb-4 text-lg font-semibold">
+                                <Zap className="h-5 w-5 text-blue-500" />
+                                Routing Journey
+                              </div>
+                              {selectedCallDetails[call.id]?.routingDecisions && selectedCallDetails[call.id].routingDecisions!.length > 0 ? 
+                                renderRoutingDecisions(selectedCallDetails[call.id].routingDecisions || []) : 
+                                <p className="text-sm text-gray-500">No routing decisions recorded for this call</p>
+                              }
+                            </div>
+
+                            {/* Financial Breakdown */}
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border p-6">
+                              <div className="flex items-center gap-2 mb-4 text-lg font-semibold">
+                                <DollarSign className="h-5 w-5 text-green-500" />
+                                Financial Analysis
+                              </div>
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800">
+                                    <div className="font-medium text-green-600 dark:text-green-400">Revenue</div>
+                                    <div className="text-lg font-bold text-green-700 dark:text-green-300">{formatCurrency(call.revenue)}</div>
+                                  </div>
+                                  <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                                    <div className="font-medium text-blue-600 dark:text-blue-400">Payout</div>
+                                    <div className="text-lg font-bold text-blue-700 dark:text-blue-300">{formatCurrency(call.payout)}</div>
+                                  </div>
+                                  <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
+                                    <div className="font-medium text-red-600 dark:text-red-400">Cost</div>
+                                    <div className="text-lg font-bold text-red-700 dark:text-red-300">{formatCurrency(call.cost)}</div>
+                                  </div>
+                                  <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded border border-purple-200 dark:border-purple-800">
+                                    <div className="font-medium text-purple-600 dark:text-purple-400">Profit</div>
+                                    <div className="text-lg font-bold text-purple-700 dark:text-purple-300">{formatCurrency(call.profit)}</div>
+                                  </div>
+                                </div>
+                                {call.margin && (
+                                  <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded border text-center">
+                                    <div className="font-medium text-gray-600 dark:text-gray-400">Profit Margin</div>
+                                    <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{call.margin}%</div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Column 3: RTB Auctions & Media */}
+                          <div className="space-y-6">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border p-6">
+                              <div className="flex items-center gap-2 mb-4 text-lg font-semibold">
+                                <TrendingUp className="h-5 w-5 text-green-500" />
+                                RTB Auctions
+                              </div>
+                              {selectedCallDetails[call.id]?.rtbAuctions && selectedCallDetails[call.id].rtbAuctions!.length > 0 ? 
+                                renderRtbAuctions(selectedCallDetails[call.id].rtbAuctions || []) : 
+                                <p className="text-sm text-gray-500">No RTB auctions for this call</p>
+                              }
+                            </div>
+
+                            {/* Call Quality & Timing */}
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border p-6">
+                              <div className="flex items-center gap-2 mb-4 text-lg font-semibold">
+                                <Clock className="h-5 w-5 text-orange-500" />
+                                Timing Analysis
+                              </div>
+                              <div className="space-y-3 text-sm">
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                    <div className="font-medium text-gray-500">Ring Time</div>
+                                    <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatDuration(call.ringTime || 0)}</div>
+                                  </div>
+                                  <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                    <div className="font-medium text-gray-500">Talk Time</div>
+                                    <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formatDuration(call.talkTime || 0)}</div>
+                                  </div>
+                                </div>
+                                {call.connectionTime && (
+                                  <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                                    <div className="font-medium text-blue-600 dark:text-blue-400">Connection Time</div>
+                                    <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">{call.connectionTime}ms</div>
+                                  </div>
                                 )}
                               </div>
                             </div>
 
-                            {/* Financial Summary */}
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-sm font-medium">
-                                <DollarSign className="h-4 w-4" />
-                                Financial Summary
-                              </div>
-                              <div className="space-y-1 text-xs">
-                                <div><strong>Revenue:</strong> {formatCurrency(call.revenue)}</div>
-                                <div><strong>Payout:</strong> {formatCurrency(call.payout)}</div>
-                                <div><strong>Cost:</strong> {formatCurrency(call.cost)}</div>
-                                <div><strong>Profit:</strong> {formatCurrency(call.profit)}</div>
-                                {call.margin && <div><strong>Margin:</strong> {call.margin}%</div>}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* IVR Events and Routing */}
-                          <div className="space-y-4">
-                            {selectedCallDetails[call.id]?.events && 
-                              renderCallEvents(selectedCallDetails[call.id].events || [])}
-                            
-                            {selectedCallDetails[call.id]?.routingDecisions && 
-                              renderRoutingDecisions(selectedCallDetails[call.id].routingDecisions || [])}
-                          </div>
-
-                          {/* RTB Auction Details */}
-                          <div className="space-y-4">
-                            {selectedCallDetails[call.id]?.rtbAuctions && 
-                              renderRtbAuctions(selectedCallDetails[call.id].rtbAuctions || [])}
-                            
-                            {/* Conversion Info */}
-                            {call.isConverted && (
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-sm font-medium">
-                                  <Activity className="h-4 w-4" />
-                                  Conversion Details
+                            {/* Media & Conversion */}
+                            {(call.recordingUrl || call.transcription || call.isConverted) && (
+                              <div className="bg-white dark:bg-gray-800 rounded-lg border p-6">
+                                <div className="flex items-center gap-2 mb-4 text-lg font-semibold">
+                                  <Activity className="h-5 w-5 text-purple-500" />
+                                  Media & Conversion
                                 </div>
-                                <div className="space-y-1 text-xs">
-                                  <div><strong>Type:</strong> {call.conversionType}</div>
-                                  <div><strong>Value:</strong> {formatCurrency(call.conversionValue || '0')}</div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Recording and Transcription */}
-                            {(call.recordingUrl || call.transcription) && (
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-sm font-medium">
-                                  <Clock className="h-4 w-4" />
-                                  Media & Transcription
-                                </div>
-                                <div className="space-y-1 text-xs">
+                                <div className="space-y-4">
+                                  {call.isConverted && (
+                                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded border border-green-200 dark:border-green-800">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                        <span className="font-medium text-green-700 dark:text-green-300">Conversion Achieved</span>
+                                      </div>
+                                      <div className="text-sm space-y-1">
+                                        <div><strong>Type:</strong> {call.conversionType}</div>
+                                        <div><strong>Value:</strong> {formatCurrency(call.conversionValue || '0')}</div>
+                                      </div>
+                                    </div>
+                                  )}
                                   {call.recordingUrl && (
-                                    <div>
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded border border-blue-200 dark:border-blue-800">
                                       <a 
                                         href={call.recordingUrl} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
-                                        className="text-blue-600 hover:text-blue-800"
+                                        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
                                       >
-                                        📞 Play Recording
+                                        <Phone className="h-4 w-4" />
+                                        Play Call Recording
                                       </a>
                                     </div>
                                   )}
                                   {call.transcription && (
-                                    <div className="bg-white dark:bg-gray-800 p-2 rounded border">
-                                      <strong>Transcription:</strong>
-                                      <p className="mt-1 text-gray-700 dark:text-gray-300">
-                                        {call.transcription}
-                                      </p>
+                                    <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded border">
+                                      <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Call Transcription</div>
+                                      <div className="text-sm text-gray-600 dark:text-gray-400 italic">
+                                        "{call.transcription}"
+                                      </div>
                                     </div>
                                   )}
                                 </div>
