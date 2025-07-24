@@ -141,7 +141,11 @@ export default function CallActivity() {
 
   // Create dynamic column definition lookup that includes URL parameters
   const getDynamicColumnDefinition = (columnId: string) => {
-    // First check if there's a URL parameter for this column ID
+    // First check static columns (built-in columns like 'publisher' take priority)
+    const staticColumn = getColumnDefinition(columnId);
+    if (staticColumn) return staticColumn;
+    
+    // Then check if it's a URL parameter (only if not a built-in column)
     const urlParam = urlParameters?.find((param: any) => param.parameterName === columnId);
     if (urlParam) {
       return {
@@ -156,10 +160,6 @@ export default function CallActivity() {
         description: `URL parameter: ${urlParam.parameterName}`
       };
     }
-    
-    // Then check static columns
-    const staticColumn = getColumnDefinition(columnId);
-    if (staticColumn) return staticColumn;
     
     // Fallback to column ID if no definition found
     return { id: columnId, label: columnId, category: 'Unknown', dataType: 'string', defaultVisible: false };
