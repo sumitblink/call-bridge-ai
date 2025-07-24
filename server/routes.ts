@@ -6745,9 +6745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const buyersData = await storage.getBuyers(userId);
       const publishersData = await storage.getPublishers(userId);
 
-      console.log('Enhanced calls debug - Sample call:', callsData[0]?.campaignId);
-      console.log('Enhanced calls debug - Sample campaign:', campaignsData[0]?.id, campaignsData[0]?.name);
-      console.log('Enhanced calls debug - Campaign IDs:', campaignsData.map(c => c.id));
+
 
       // Create lookup maps - use string conversion to ensure matching
       const campaignMap = new Map(campaignsData.map(c => [String(c.id), c]));
@@ -6768,7 +6766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
 
-      console.log('Enhanced calls debug - Result sample:', enhancedCalls[0]?.campaignName);
+
       res.json(enhancedCalls);
     } catch (error) {
       console.error("Error fetching enhanced calls:", error);

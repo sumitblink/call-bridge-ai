@@ -493,7 +493,6 @@ export default function CallActivity() {
         if (paramValue !== undefined && paramValue !== null && paramValue !== '') {
           return <div className="truncate text-xs">{paramValue}</div>;
         }
-        console.log('Unknown column:', column, 'mapped to:', dbColumnName, 'value:', paramValue);
         return <div className="truncate text-xs">-</div>;
     }
   };
