@@ -237,41 +237,42 @@ export const callEvents = pgTable("call_events", {
   metadata: json("metadata"), // Additional event data
 });
 
-// Routing Decisions for call flow analysis
+// Phase 3: Routing Decisions table for comprehensive routing analytics
 export const routingDecisions = pgTable("routing_decisions", {
   id: serial("id").primaryKey(),
   callId: integer("call_id").references(() => calls.id).notNull(),
   sequenceNumber: integer("sequence_number").notNull(), // Order of routing attempts
-  targetType: varchar("target_type", { length: 50 }).notNull(), // buyer, rtb_target, external
-  targetId: integer("target_id"), // buyer_id or rtb_target_id
-  targetName: varchar("target_name", { length: 255 }), // Target display name
-  priority: integer("priority"), // Target priority
-  weight: integer("weight"), // Target weight for load balancing
-  reason: varchar("reason", { length: 255 }), // Why this target was selected/rejected
-  outcome: varchar("outcome", { length: 50 }).notNull(), // selected, rejected, timeout, error
-  responseTime: integer("response_time"), // milliseconds to respond
-  bidAmount: decimal("bid_amount", { precision: 10, scale: 4 }), // RTB bid amount
+  targetType: varchar("target_type", { length: 20 }).notNull(), // 'buyer', 'rtb', 'voicemail', 'fallback'
+  targetId: integer("target_id"), // Reference to buyer or RTB target
+  targetName: varchar("target_name", { length: 100 }),
+  priority: integer("priority"),
+  weight: integer("weight"),
+  reason: text("reason"), // Why this target was selected/rejected
+  outcome: varchar("outcome", { length: 20 }).notNull(), // 'selected', 'attempted', 'failed', 'rejected', 'timeout'
+  responseTime: integer("response_time"), // Response time in milliseconds
+  bidAmount: varchar("bid_amount", { length: 20 }), // For RTB targets
   timestamp: timestamp("timestamp").defaultNow().notNull(),
-  metadata: json("metadata"), // Additional routing data
+  metadata: json("metadata"), // Additional routing metadata
 });
 
-// RTB Auction Details for comprehensive bidding analysis
+// Phase 3: RTB Auction Details table for comprehensive auction tracking
 export const rtbAuctionDetails = pgTable("rtb_auction_details", {
   id: serial("id").primaryKey(),
   callId: integer("call_id").references(() => calls.id).notNull(),
   auctionId: varchar("auction_id", { length: 100 }).notNull(), // Unique auction identifier
-  targetId: integer("target_id").references(() => rtbTargets.id).notNull(),
-  targetName: varchar("target_name", { length: 255 }).notNull(),
-  bidAmount: decimal("bid_amount", { precision: 10, scale: 4 }).notNull(),
-  bidDuration: integer("bid_duration"), // seconds
-  bidStatus: varchar("bid_status", { length: 50 }).notNull(), // submitted, accepted, rejected, timeout
-  responseTime: integer("response_time"), // milliseconds to respond
-  rejectionReason: varchar("rejection_reason", { length: 255 }), // Why bid was rejected
-  destinationNumber: varchar("destination_number", { length: 20 }), // Where call was routed
-  isWinner: boolean("is_winner").default(false), // Did this bid win the auction
+  targetId: integer("target_id").notNull(),
+  targetName: varchar("target_name", { length: 100 }).notNull(),
+  bidAmount: varchar("bid_amount", { length: 20 }).notNull(),
+  bidStatus: varchar("bid_status", { length: 20 }).notNull(), // 'bid_received', 'won', 'failed'
+  responseTime: integer("response_time").notNull(), // Response time in milliseconds
+  destinationNumber: varchar("destination_number", { length: 20 }),
+  isWinner: boolean("is_winner").default(false).notNull(),
+  rejectionReason: text("rejection_reason"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
-  metadata: json("metadata"), // Additional auction data
+  metadata: json("metadata"), // Additional auction metadata
 });
+
+
 
 // Enhanced agents table for full call center functionality
 export const agents = pgTable("agents", {

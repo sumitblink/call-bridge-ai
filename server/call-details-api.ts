@@ -74,7 +74,7 @@ router.get("/api/calls/:callId/details", requireAuth, async (req, res) => {
       .where(eq(routingDecisions.callId, callId))
       .orderBy(routingDecisions.sequenceNumber);
 
-    // Get RTB auction details if applicable
+    // Get RTB auction details
     const rtbAuctions = await db
       .select()
       .from(rtbAuctionDetails)

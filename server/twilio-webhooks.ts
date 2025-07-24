@@ -2,8 +2,10 @@ import { Request, Response } from 'express';
 import { storage } from './hybrid-storage';
 import { CallRouter } from './call-routing';
 import { CallFlowTracker } from './call-flow-tracker';
+import { RoutingDecisionTracker } from './routing-decision-tracker';
 import { twilioService } from './twilio-service';
 import { FlowExecutionEngine } from './flow-execution-engine';
+import { RTBService } from './rtb-service';
 
 export interface TwilioCallRequest {
   CallSid: string;
@@ -114,13 +116,94 @@ export async function handleIncomingCall(req: Request, res: Response) {
       }
     }
 
-    // Use call router to select best buyer (fallback when no active flow)
+    // Phase 3: Check if RTB is enabled for this campaign first
+    let callId: number;
+    let routingSequence = 1;
+
+    if (campaign.enableRtb) {
+      console.log('[Webhook] RTB enabled for campaign, initiating auction...');
+      
+      // Create call record first for RTB tracking
+      const enrichedCallData = {
+        campaignId: campaign.id,
+        callSid: callData.CallSid,
+        fromNumber: callData.From,
+        toNumber: callData.To,
+        dialedNumber: callData.To,
+        status: 'ringing',
+        duration: 0,
+        cost: '0.0000',
+        payout: (parseFloat(campaign.defaultPayout || '0.00')).toFixed(4),
+        revenue: (parseFloat(campaign.defaultPayout || '0.00')).toFixed(4),
+        profit: (parseFloat(campaign.defaultPayout || '0.00')).toFixed(4),
+      };
+
+      const callRecord = await storage.createCall(enrichedCallData);
+      callId = callRecord.id;
+
+      // Phase 3: Log RTB auction initiation
+      await RoutingDecisionTracker.logRtbAuctionStart(callId, routingSequence++, campaign.id, 0, 'RTB auction initiated for incoming call');
+
+      // Initiate RTB auction
+      const auctionResult = await RTBService.initiateAuction(campaign, {
+        requestId: `call_${callData.CallSid}`,
+        campaignId: parseInt(campaign.id), // Convert UUID to number for compatibility
+        callerId: callData.From,
+        callerState: callData.CallerState,
+        callerZip: callData.CallerZip,
+        callStartTime: new Date(),
+        timeoutMs: campaign.biddingTimeoutMs || 3000
+      }, callId);
+
+      if (auctionResult.success && auctionResult.winningBid) {
+        console.log('[Webhook] RTB auction successful, routing to winner');
+        const winnerTarget = await storage.getRtbTarget(auctionResult.winningBid.rtbTargetId);
+        
+        // Return TwiML for RTB winner
+        res.set('Content-Type', 'text/xml');
+        res.send(`<?xml version="1.0" encoding="UTF-8"?>
+          <Response>
+            <Say voice="alice">Connecting to our premium partner.</Say>
+            <Dial timeout="30" record="record-from-ringing">
+              <Number>${auctionResult.winningBid.destinationNumber}</Number>
+            </Dial>
+          </Response>`);
+        return;
+      } else {
+        console.log('[Webhook] RTB auction failed, falling back to traditional routing:', auctionResult.error);
+        // Phase 3: Log RTB failure
+        await RoutingDecisionTracker.logRoutingDecision(callId, routingSequence++, 'rtb', undefined, 'RTB Auction', undefined, undefined, auctionResult.error || 'Auction failed', 'failed');
+      }
+    }
+
+    // Use call router to select best buyer (fallback when no active flow or RTB fails)
     console.log('[Webhook] Starting buyer selection for campaign ID:', campaign.id);
     const routingResult = await CallRouter.selectBuyer(campaign.id, callData.From);
     console.log('[Webhook] Routing result:', routingResult);
     
     if (!routingResult.selectedBuyer) {
       console.log('[Webhook] No available buyers:', routingResult.reason);
+      
+      // Create call record for fallback if not already created
+      if (!callId) {
+        const callRecord = await storage.createCall({
+          campaignId: campaign.id,
+          callSid: callData.CallSid,
+          fromNumber: callData.From,
+          toNumber: callData.To,
+          dialedNumber: callData.To,
+          status: 'failed',
+          duration: 0,
+          cost: '0.0000',
+          payout: '0.0000',
+          revenue: '0.0000',
+          profit: '0.0000',
+        });
+        callId = callRecord.id;
+      }
+
+      // Phase 3: Log fallback routing
+      await RoutingDecisionTracker.logFallbackRouting(callId, routingSequence, 'no_agents', routingResult.reason || 'No available buyers');
       
       // Return TwiML for no available buyers
       res.set('Content-Type', 'text/xml');
@@ -134,6 +217,36 @@ export async function handleIncomingCall(req: Request, res: Response) {
 
     const selectedBuyer = routingResult.selectedBuyer;
     console.log('[Webhook] Selected buyer:', selectedBuyer.name, 'Phone:', selectedBuyer.phoneNumber);
+
+    // Create call record for traditional routing if not already created
+    if (!callId) {
+      const callRecord = await storage.createCall({
+        campaignId: campaign.id,
+        buyerId: selectedBuyer.id,
+        callSid: callData.CallSid,
+        fromNumber: callData.From,
+        toNumber: callData.To,
+        dialedNumber: callData.To,
+        status: 'ringing',
+        duration: 0,
+        cost: '0.0000',
+        payout: (parseFloat(campaign.defaultPayout || '0.00')).toFixed(4),
+        revenue: (parseFloat(campaign.defaultPayout || '0.00')).toFixed(4),
+        profit: (parseFloat(campaign.defaultPayout || '0.00')).toFixed(4),
+      });
+      callId = callRecord.id;
+    }
+
+    // Phase 3: Log successful buyer selection
+    await RoutingDecisionTracker.logBuyerSelection(
+      callId,
+      routingSequence,
+      selectedBuyer.id,
+      selectedBuyer.name,
+      selectedBuyer.priority || 1,
+      `Selected buyer based on priority and availability`,
+      'selected'
+    );
 
     // Create call record with visitor session enrichment
     console.log('[Webhook] Creating call record...');

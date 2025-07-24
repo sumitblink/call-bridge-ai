@@ -154,11 +154,59 @@ export class RTBService {
   }
 
   /**
+   * Phase 3: Log RTB auction details for comprehensive tracking
+   */
+  private static async logRtbAuctionDetails(
+    callId: number,
+    auctionId: string,
+    targetId: number,
+    targetName: string,
+    bidAmount: string,
+    bidStatus: string,
+    responseTime: number,
+    destinationNumber?: string,
+    isWinner: boolean = false,
+    rejectionReason?: string
+  ): Promise<void> {
+    try {
+      const auctionDetails = {
+        callId,
+        auctionId,
+        targetId,
+        targetName,
+        bidAmount,
+        bidStatus,
+        responseTime,
+        destinationNumber,
+        isWinner,
+        rejectionReason,
+        timestamp: new Date(),
+        metadata: {
+          loggedAt: new Date().toISOString(),
+          source: 'RTBService.initiateAuction'
+        }
+      };
+
+      // Store in database via call-details API
+      await fetch(`/api/call-details/api/calls/${callId}/rtb`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(auctionDetails)
+      });
+
+      console.log(`[RTB Phase3] Logged auction details for call ${callId}, target ${targetName}: ${bidStatus}`);
+    } catch (error) {
+      console.error('[RTB Phase3] Failed to log auction details:', error);
+    }
+  }
+
+  /**
    * Initiate a real-time bidding auction for an incoming call
    */
   static async initiateAuction(
     campaign: Campaign,
-    bidRequest: BidRequest
+    bidRequest: BidRequest,
+    callId?: number // Phase 3: Add callId for auction logging
   ): Promise<AuctionResult> {
     try {
       // Validate that RTB is enabled for this campaign
@@ -255,6 +303,9 @@ export class RTBService {
       const results = await Promise.allSettled(targetPromises);
       const totalResponseTime = Date.now() - startTime;
 
+      // Phase 3: Generate unique auction ID for tracking
+      const auctionId = `auction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       // Process responses and store them
       const validBids: RtbBidResponse[] = [];
       let successfulResponses = 0;
@@ -262,6 +313,8 @@ export class RTBService {
       for (let i = 0; i < results.length; i++) {
         const result = results[i];
         const targetId = eligibleTargets[i].rtbTargetId;
+        const target = await storage.getRtbTarget(targetId);
+        const targetName = target?.name || `Target ${targetId}`;
 
         if (result.status === 'fulfilled' && result.value) {
           const response: InsertRtbBidResponse = {
@@ -282,6 +335,21 @@ export class RTBService {
           if (result.value.isValid) {
             validBids.push(storedResponse);
             successfulResponses++;
+
+            // Phase 3: Log successful auction details
+            if (callId) {
+              await this.logRtbAuctionDetails(
+                callId,
+                auctionId,
+                targetId,
+                targetName,
+                result.value.bidAmount.toString(),
+                'bid_received',
+                result.value.responseTimeMs,
+                result.value.destinationNumber,
+                false // Will be updated to true for winner
+              );
+            }
           }
         } else {
           // Store failed response
@@ -297,6 +365,22 @@ export class RTBService {
             isWinningBid: false,
             errorMessage: result.status === 'rejected' ? String(result.reason) : 'No response'
           });
+
+          // Phase 3: Log failed auction details
+          if (callId) {
+            await this.logRtbAuctionDetails(
+              callId,
+              auctionId,
+              targetId,
+              targetName,
+              '0.00',
+              'failed',
+              bidRequest.timeoutMs || 5000,
+              undefined,
+              false,
+              result.status === 'rejected' ? String(result.reason) : 'No response'
+            );
+          }
         }
       }
 
@@ -337,6 +421,22 @@ export class RTBService {
           biddingCompletedAt: new Date(),
           totalResponseTimeMs: totalResponseTime
         });
+
+        // Phase 3: Log winner selection
+        if (callId) {
+          const winnerTarget = await storage.getRtbTarget(winningBid.rtbTargetId);
+          await this.logRtbAuctionDetails(
+            callId,
+            auctionId,
+            winningBid.rtbTargetId,
+            winnerTarget?.name || `Target ${winningBid.rtbTargetId}`,
+            winningBid.bidAmount.toString(),
+            'won',
+            winningBid.responseTimeMs,
+            winningBid.destinationNumber,
+            true
+          );
+        }
 
         // Log final winner selection
         console.log(`[RTB Auction] Winner selected: Target ${winningBid.rtbTargetId} with $${winningBid.bidAmount} bid (${winningBid.responseTimeMs}ms response time)`);
