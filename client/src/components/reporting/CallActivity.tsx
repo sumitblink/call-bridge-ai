@@ -630,6 +630,7 @@ export default function CallActivity() {
             <Table ref={tableRef}>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="text-xs font-medium bg-muted/50 w-8"></TableHead>
                   {visibleColumns.map((column, columnIndex) => {
                     const columnDef = getDynamicColumnDefinition(column);
                     return (
@@ -655,6 +656,20 @@ export default function CallActivity() {
                 {filteredCalls.map((call, callIndex) => (
                   <>
                     <TableRow key={`call-row-${callIndex}`} className="hover:bg-muted/30">
+                      <TableCell className="py-2 w-8">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => toggleRowExpansion(call.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          {expandedRows.has(call.id) ? (
+                            <ChevronDown className="h-3 w-3" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </TableCell>
                       {visibleColumns.map((column, columnIndex) => (
                         <TableCell 
                           key={`cell-${callIndex}-${columnIndex}`} 
@@ -665,52 +680,38 @@ export default function CallActivity() {
                           }}
                         >
                           {column === 'actions' ? (
-                            <div className="flex items-center space-x-1">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => toggleRowExpansion(call.id)}
-                                className="h-6 w-6 p-0"
-                              >
-                                {expandedRows.has(call.id) ? (
-                                  <ChevronDown className="h-3 w-3" />
-                                ) : (
-                                  <ChevronRight className="h-3 w-3" />
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <MoreVertical className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem onClick={() => handleBlockNumber(call.id, call.fromNumber)}>
+                                  <Ban className="h-3 w-3 mr-2" />
+                                  Block Number
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuItem onClick={() => handleAddTag(call.id, (call as any).tags ? (call as any).tags.split(',') : [])}>
+                                  <Tag className="h-3 w-3 mr-2" />
+                                  Add Tag
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuItem onClick={() => handleAdjustPayment(call.id, call.revenue, call.cost)}>
+                                  <Edit3 className="h-3 w-3 mr-2" />
+                                  Adjust Payment
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuSeparator />
+                                
+                                {call.recordingUrl && (
+                                  <DropdownMenuItem onClick={() => call.recordingUrl && window.open(call.recordingUrl, '_blank')}>
+                                    <Play className="h-3 w-3 mr-2" />
+                                    Play Recording
+                                  </DropdownMenuItem>
                                 )}
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                    <MoreVertical className="h-3 w-3" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-40">
-                                  <DropdownMenuItem onClick={() => handleBlockNumber(call.id, call.fromNumber)}>
-                                    <Ban className="h-3 w-3 mr-2" />
-                                    Block Number
-                                  </DropdownMenuItem>
-                                  
-                                  <DropdownMenuItem onClick={() => handleAddTag(call.id, (call as any).tags ? (call as any).tags.split(',') : [])}>
-                                    <Tag className="h-3 w-3 mr-2" />
-                                    Add Tag
-                                  </DropdownMenuItem>
-                                  
-                                  <DropdownMenuItem onClick={() => handleAdjustPayment(call.id, call.revenue, call.cost)}>
-                                    <Edit3 className="h-3 w-3 mr-2" />
-                                    Adjust Payment
-                                  </DropdownMenuItem>
-                                  
-                                  <DropdownMenuSeparator />
-                                  
-                                  {call.recordingUrl && (
-                                    <DropdownMenuItem onClick={() => call.recordingUrl && window.open(call.recordingUrl, '_blank')}>
-                                      <Play className="h-3 w-3 mr-2" />
-                                      Play Recording
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           ) : (
                             renderColumnValue(call, column)
                           )}
@@ -719,8 +720,8 @@ export default function CallActivity() {
                     </TableRow>
                     {expandedRows.has(call.id) && (
                       <TableRow key={`expanded-${call.id}`}>
-                        <TableCell colSpan={visibleColumns.length} className="p-0 bg-muted/20">
-                          <div className="p-6 border-t transition-all duration-200">
+                        <TableCell colSpan={visibleColumns.length + 1} className="p-0 bg-muted/20">
+                          <div className="p-3 border-t">
                             <CallDetailsExpanded 
                               call={call}
                               campaign={campaigns.find(c => c.id === call.campaignId)}
