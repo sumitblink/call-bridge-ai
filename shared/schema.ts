@@ -123,6 +123,13 @@ export const calls = pgTable("calls", {
   callSid: varchar("call_sid", { length: 100 }),
   fromNumber: varchar("from_number", { length: 20 }).notNull(),
   toNumber: varchar("to_number", { length: 20 }).notNull(),
+  
+  // Call Flow Tracking
+  flowExecutionId: varchar("flow_execution_id", { length: 100 }), // UUID for tracking flow execution
+  ringTreeId: varchar("ring_tree_id", { length: 100 }), // Ring tree identifier
+  currentNodeId: varchar("current_node_id", { length: 100 }), // Current IVR node
+  flowPath: json("flow_path").array(), // Array of nodes traversed
+  routingAttempts: integer("routing_attempts").default(0), // Number of routing attempts
   dialedNumber: varchar("dialed_number", { length: 20 }), // The number that was actually dialed (from pool)
   numberPoolId: integer("number_pool_id").references(() => numberPools.id), // Pool used for this call
   phoneNumberId: integer("phone_number_id").references(() => phoneNumbers.id), // Specific number from pool
@@ -213,6 +220,57 @@ export const callLogs = pgTable("call_logs", {
   response: text("response"),
   responseTime: integer("response_time"), // in milliseconds
   timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+// Call Events for IVR flow tracking
+export const callEvents = pgTable("call_events", {
+  id: serial("id").primaryKey(),
+  callId: integer("call_id").references(() => calls.id).notNull(),
+  eventType: varchar("event_type", { length: 50 }).notNull(), // node_enter, node_exit, ivr_input, routing_decision
+  nodeId: varchar("node_id", { length: 100 }), // IVR node identifier
+  nodeName: varchar("node_name", { length: 255 }), // Human-readable node name
+  nodeType: varchar("node_type", { length: 50 }), // dial, gather, play, hangup, goto
+  stepName: varchar("step_name", { length: 255 }), // Step description
+  userInput: varchar("user_input", { length: 100 }), // DTMF input or speech
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  duration: integer("duration"), // time spent in this node (milliseconds)
+  metadata: json("metadata"), // Additional event data
+});
+
+// Routing Decisions for call flow analysis
+export const routingDecisions = pgTable("routing_decisions", {
+  id: serial("id").primaryKey(),
+  callId: integer("call_id").references(() => calls.id).notNull(),
+  sequenceNumber: integer("sequence_number").notNull(), // Order of routing attempts
+  targetType: varchar("target_type", { length: 50 }).notNull(), // buyer, rtb_target, external
+  targetId: integer("target_id"), // buyer_id or rtb_target_id
+  targetName: varchar("target_name", { length: 255 }), // Target display name
+  priority: integer("priority"), // Target priority
+  weight: integer("weight"), // Target weight for load balancing
+  reason: varchar("reason", { length: 255 }), // Why this target was selected/rejected
+  outcome: varchar("outcome", { length: 50 }).notNull(), // selected, rejected, timeout, error
+  responseTime: integer("response_time"), // milliseconds to respond
+  bidAmount: decimal("bid_amount", { precision: 10, scale: 4 }), // RTB bid amount
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  metadata: json("metadata"), // Additional routing data
+});
+
+// RTB Auction Details for comprehensive bidding analysis
+export const rtbAuctionDetails = pgTable("rtb_auction_details", {
+  id: serial("id").primaryKey(),
+  callId: integer("call_id").references(() => calls.id).notNull(),
+  auctionId: varchar("auction_id", { length: 100 }).notNull(), // Unique auction identifier
+  targetId: integer("target_id").references(() => rtbTargets.id).notNull(),
+  targetName: varchar("target_name", { length: 255 }).notNull(),
+  bidAmount: decimal("bid_amount", { precision: 10, scale: 4 }).notNull(),
+  bidDuration: integer("bid_duration"), // seconds
+  bidStatus: varchar("bid_status", { length: 50 }).notNull(), // submitted, accepted, rejected, timeout
+  responseTime: integer("response_time"), // milliseconds to respond
+  rejectionReason: varchar("rejection_reason", { length: 255 }), // Why bid was rejected
+  destinationNumber: varchar("destination_number", { length: 20 }), // Where call was routed
+  isWinner: boolean("is_winner").default(false), // Did this bid win the auction
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  metadata: json("metadata"), // Additional auction data
 });
 
 // Enhanced agents table for full call center functionality
@@ -769,6 +827,28 @@ export type InsertCall = z.infer<typeof insertCallSchema>;
 
 export type CallLog = typeof callLogs.$inferSelect;
 export type InsertCallLog = z.infer<typeof insertCallLogSchema>;
+
+// New table schemas and types
+export const insertCallEventSchema = createInsertSchema(callEvents).omit({
+  id: true,
+  timestamp: true,
+});
+export type CallEvent = typeof callEvents.$inferSelect;
+export type InsertCallEvent = z.infer<typeof insertCallEventSchema>;
+
+export const insertRoutingDecisionSchema = createInsertSchema(routingDecisions).omit({
+  id: true,
+  timestamp: true,
+});
+export type RoutingDecision = typeof routingDecisions.$inferSelect;
+export type InsertRoutingDecision = z.infer<typeof insertRoutingDecisionSchema>;
+
+export const insertRtbAuctionDetailsSchema = createInsertSchema(rtbAuctionDetails).omit({
+  id: true,
+  timestamp: true,
+});
+export type RtbAuctionDetails = typeof rtbAuctionDetails.$inferSelect;
+export type InsertRtbAuctionDetails = z.infer<typeof insertRtbAuctionDetailsSchema>;
 
 export type Agent = typeof agents.$inferSelect;
 export type InsertAgent = z.infer<typeof insertAgentSchema>;

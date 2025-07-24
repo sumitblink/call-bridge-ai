@@ -29,6 +29,7 @@ import {
 } from "../shared/schema";
 import { handleIncomingCall, handleCallStatus, handleRecordingStatus } from "./twilio-webhooks";
 import { RTBIdGenerator } from "./rtb-id-generator";
+import { callDetailsRouter } from "./call-details-api";
 import { z } from "zod";
 import twilio from "twilio";
 import fetch from "node-fetch";
@@ -6730,8 +6731,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const phoneNumberTagsRouter = (await import('./api/phone-number-tags')).default;
   app.use('/api/phone-number-tags', phoneNumberTagsRouter);
   
-  const callsEnhancedRouter = (await import('./api/calls-enhanced')).default;
-  app.use('/api/calls/enhanced', callsEnhancedRouter);
+  // Enhanced calls endpoint for expandable call details
+  app.get('/api/calls/enhanced', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Get calls with basic enhanced data
+      const callsData = await storage.getCalls(userId);
+      const campaignsData = await storage.getCampaigns(userId);
+      const buyersData = await storage.getBuyers(userId);
+      const publishersData = await storage.getPublishers(userId);
+
+      // Create lookup maps
+      const campaignMap = new Map(campaignsData.map(c => [c.id, c]));
+      const buyerMap = new Map(buyersData.map(b => [b.id, b]));
+      const publisherMap = new Map(publishersData.map(p => [p.id, p]));
+
+      // Enhance calls with related data
+      const enhancedCalls = callsData.map(call => ({
+        ...call,
+        campaignName: campaignMap.get(call.campaignId || '')?.name || 'Unknown Campaign',
+        buyerName: call.buyerId ? buyerMap.get(call.buyerId)?.name || 'Unknown Buyer' : undefined,
+        publisherName: call.publisherId ? publisherMap.get(call.publisherId)?.name || call.publisherName || 'Direct' : 'Direct',
+      }));
+
+      res.json(enhancedCalls);
+    } catch (error) {
+      console.error("Error fetching enhanced calls:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
   
   const reportingRouter = (await import('./api/reporting')).default;
   app.use('/api/reporting', reportingRouter);
@@ -6754,6 +6786,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Mount call details router for enhanced call tracking
+  app.use(callDetailsRouter);
 
   const httpServer = createServer(app);
   // Test landing page route for RedTrack integration testing
