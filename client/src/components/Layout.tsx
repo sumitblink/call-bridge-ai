@@ -13,7 +13,9 @@ export default function Layout({ children }: LayoutProps) {
         <Header />
         
         <main className="flex-1 overflow-y-auto pl-[15px] pr-[15px] pt-[15px] pb-[15px]">
-          {children}
+          <div className="min-h-fit">
+            {children}
+          </div>
         </main>
       </div>
     </div>

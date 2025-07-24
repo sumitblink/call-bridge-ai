@@ -65,7 +65,7 @@ export default function CampaignDetail() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Campaign Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -106,7 +106,7 @@ export default function CampaignDetail() {
         />
 
         {/* Campaign Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-8" : "grid-cols-7") : (campaign.routingType === "pool" ? "grid-cols-7" : "grid-cols-6")}`}>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />

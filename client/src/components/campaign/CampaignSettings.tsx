@@ -165,7 +165,7 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle>General Settings</CardTitle>
@@ -175,8 +175,8 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="name"
@@ -473,9 +473,9 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
               />
 
               {/* Financial Settings Section */}
-              <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Financial Settings</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="defaultPayout"
