@@ -85,71 +85,68 @@ export function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpand
 
   return (
     <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t">
-      {/* Call Details */}
-      <div className="flex items-center gap-2 mb-3">
-        <Phone className="h-4 w-4 text-blue-600" />
-        <span className="font-medium text-sm">Call Details</span>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
-        <div>
-          <span className="text-gray-500">Call ID:</span>
-          <span className="ml-2 font-mono">{call.callSid}</span>
+      <div className="space-y-3 text-sm">
+        {/* First Row */}
+        <div className="flex flex-wrap gap-x-8 gap-y-2">
+          <div>
+            <span className="text-gray-500">Call ID:</span>
+            <span className="ml-2 font-mono">{call.callSid}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Campaign:</span>
+            <span className="ml-2">{campaign?.name || 'Unknown'}</span>
+          </div>
         </div>
-        <div>
-          <span className="text-gray-500">Campaign:</span>
-          <span className="ml-2">{campaign?.name || 'Unknown'}</span>
-        </div>
-      </div>
 
-      {/* IVR & Call Flow */}
-      <div className="flex items-center gap-2 mb-3">
-        <Activity className="h-4 w-4 text-purple-500" />
-        <span className="font-medium text-sm">IVR & Call Flow</span>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
-        <div>
-          <span className="text-gray-500">From:</span>
-          <span className="ml-2">{call.fromNumber}</span>
+        {/* IVR & Call Flow */}
+        <div className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-purple-500" />
+          <span className="font-medium">IVR & Call Flow</span>
         </div>
-        <div>
-          <span className="text-gray-500">Duration:</span>
-          <span className="ml-2">{formatDuration(call.duration)}</span>
+        
+        <div className="flex flex-wrap gap-x-8 gap-y-2">
+          <div>
+            <span className="text-gray-500">From:</span>
+            <span className="ml-2">{call.fromNumber}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Duration:</span>
+            <span className="ml-2">{formatDuration(call.duration)}</span>
+          </div>
         </div>
-      </div>
 
-      {/* Technical Details */}
-      <div className="flex items-center gap-2 mb-3">
-        <Zap className="h-4 w-4 text-gray-500" />
-        <span className="font-medium text-sm">Technical Details</span>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
-        <div>
-          <span className="text-gray-500">Recording:</span>
-          <span className="ml-2">{call.recordingUrl ? 'Available' : 'Not available'}</span>
+        {/* Technical Details */}
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 text-gray-500" />
+          <span className="font-medium">Technical Details</span>
         </div>
-        <div>
-          <span className="text-gray-500">Quality:</span>
-          <span className="ml-2">{call.callQuality || 'Not rated'}</span>
+        
+        <div className="flex flex-wrap gap-x-8 gap-y-2">
+          <div>
+            <span className="text-gray-500">Recording:</span>
+            <span className="ml-2">{call.recordingUrl ? 'Available' : 'Not available'}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Quality:</span>
+            <span className="ml-2">{call.callQuality || 'Not rated'}</span>
+          </div>
         </div>
-      </div>
 
-      {/* Routing Journey */}
-      <div className="flex items-center gap-2 mb-3">
-        <Users className="h-4 w-4 text-blue-500" />
-        <span className="font-medium text-sm">Routing Journey</span>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-        <div>
-          <span className="text-gray-500">Campaign:</span>
-          <span className="ml-2">{campaign?.name || 'Unknown'}</span>
+        {/* Routing Journey */}
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-blue-500" />
+          <span className="font-medium">Routing Journey</span>
         </div>
-        <div>
-          <span className="text-gray-500">Revenue:</span>
-          <span className="ml-2">{formatCurrency(call.revenue)}</span>
+        
+        <div className="flex flex-wrap gap-x-8 gap-y-2">
+          <div>
+            <span className="text-gray-500">Campaign:</span>
+            <span className="ml-2">{campaign?.name || 'Unknown'}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Revenue:</span>
+            <span className="ml-2">{formatCurrency(call.revenue)}</span>
+          </div>
         </div>
       </div>
     </div>
