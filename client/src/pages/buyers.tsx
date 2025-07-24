@@ -166,7 +166,7 @@ function BuyerForm({
 
   const createBuyerMutation = useMutation({
     mutationFn: async (data: InsertBuyer) => {
-      console.log("Creating buyer with data:", data);
+
       const response = await fetch("/api/buyers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

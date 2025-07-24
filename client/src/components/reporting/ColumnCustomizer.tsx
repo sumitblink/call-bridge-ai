@@ -53,8 +53,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
       });
       
       if (filteredColumns.length !== localVisibleColumns.length) {
-        console.log('Removing deleted URL parameter columns from visible columns:', 
-          localVisibleColumns.filter(col => !filteredColumns.includes(col)));
+
         setLocalVisibleColumns(filteredColumns);
         onColumnsChange(filteredColumns);
         
@@ -71,7 +70,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
 
   // Convert URL parameters to column definitions
   const urlParameterColumns: ColumnDefinition[] = (urlParameters || []).map((param: any) => {
-    console.log('Creating column for URL parameter:', param);
+
     return {
       id: param.parameterName,
       label: param.reportName, // This should display the "Report Name" from database
@@ -195,7 +194,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
   // Initialize with saved preferences or provided visible columns
   useEffect(() => {
     if (preferences && preferences.visibleColumns.length > 0) {
-      console.log('Loading saved column preferences:', preferences.visibleColumns);
+
       setLocalVisibleColumns(preferences.visibleColumns);
       // Ensure actions column is always at the right end
       const actionsIndex = preferences.visibleColumns.indexOf('actions');
@@ -206,7 +205,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
         onColumnsChange(preferences.visibleColumns);
       }
     } else {
-      console.log('Using provided columns:', visibleColumns);
+
       setLocalVisibleColumns(visibleColumns);
     }
   }, [preferences, visibleColumns, onColumnsChange]);
@@ -222,24 +221,20 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
   };
 
   const toggleColumn = (columnId: string) => {
-    console.log('=== TOGGLE COLUMN START ===');
-    console.log('Toggling column:', columnId);
-    console.log('Current visible columns:', localVisibleColumns);
-    console.log('Current visible length:', localVisibleColumns.length);
+
     
     const isCurrentlyVisible = localVisibleColumns.includes(columnId);
-    console.log('Is currently visible:', isCurrentlyVisible);
+
     
     const newVisible = isCurrentlyVisible
       ? localVisibleColumns.filter(id => id !== columnId)
       : [...localVisibleColumns, columnId];
     
-    console.log('New visible columns:', newVisible);
-    console.log('New visible length:', newVisible.length);
+
     
     // Ensure at least one column remains visible
     if (newVisible.length === 0) {
-      console.log('WARNING: Attempting to hide all columns');
+
       toast({
         title: "Warning",
         description: "At least one column must remain visible.",
@@ -248,7 +243,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
       return;
     }
     
-    console.log('Setting new visible columns...');
+
     setLocalVisibleColumns(newVisible);
     
     // Auto-save the column preferences immediately
@@ -260,12 +255,12 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
     localStorage.setItem('call-details-column-preferences', JSON.stringify(updatedPrefs));
     queryClient.invalidateQueries({ queryKey: ['/api/column-preferences', 'call_details'] });
     
-    console.log('Calling onColumnsChange...');
+
     // Apply changes immediately to the table
     setTimeout(() => {
       onColumnsChange(newVisible);
     }, 0);
-    console.log('=== TOGGLE COLUMN END ===');
+
   };
 
   const handleSave = () => {
@@ -357,11 +352,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
                           id={`checkbox-${column.id}`}
                           checked={localVisibleColumns.includes(column.id)}
                           onChange={(e) => {
-                            console.log('=== CHECKBOX CHANGE EVENT ===');
-                            console.log('Column ID:', column.id);
-                            console.log('Target checked:', e.target.checked);
-                            console.log('Current localVisibleColumns:', localVisibleColumns);
-                            console.log('Includes check:', localVisibleColumns.includes(column.id));
+
                             e.preventDefault();
                             e.stopPropagation();
                             
@@ -378,7 +369,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
                           className="flex-1 text-sm cursor-pointer leading-none"
                           onClick={(e) => {
                             e.preventDefault();
-                            console.log('Label clicked for:', column.id);
+
                             toggleColumn(column.id);
                           }}
                         >

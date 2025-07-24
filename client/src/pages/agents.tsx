@@ -88,7 +88,7 @@ export default function AgentsPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      console.log("Creating agent with data:", data);
+
       const response = await apiRequest("/api/agents", "POST", data);
       return response.json();
     },

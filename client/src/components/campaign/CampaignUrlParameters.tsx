@@ -85,7 +85,7 @@ export default function CampaignUrlParameters({ campaignId }: CampaignUrlParamet
       localStorage.setItem(`campaign_url_params_${campaignId}`, JSON.stringify(ids));
       setCampaignParameterIds(ids);
     } catch (error) {
-      console.error('Failed to save campaign parameter IDs');
+
     }
   };
 

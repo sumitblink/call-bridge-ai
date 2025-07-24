@@ -171,7 +171,7 @@ export function ExpandableCallDetails() {
             }));
           }
         } catch (error) {
-          console.error("Failed to fetch call details:", error);
+
         }
       }
     }

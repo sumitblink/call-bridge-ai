@@ -70,7 +70,7 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
     queryFn: async () => {
       const response = await fetch(`/api/number-pools?available=true&excludeCampaign=${campaignId}`);
       if (!response.ok) {
-        console.error('Error fetching number pools:', response.status, response.statusText);
+
         return [];
       }
       const data = await response.json();

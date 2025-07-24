@@ -105,7 +105,7 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
         return JSON.parse(savedFormData);
       }
     } catch (error) {
-      console.log('Failed to load saved tracking tag form data');
+
     }
     return {
       name: "",
@@ -165,7 +165,7 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
       const storageKey = getTrackingTagsStorageKey(campaignId);
       localStorage.setItem(storageKey, JSON.stringify(formData));
     } catch (error) {
-      console.log('Failed to save tracking tag form data');
+
     }
   }, [formData, campaignId]);
 
@@ -196,7 +196,7 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
         const storageKey = getTrackingTagsStorageKey(campaignId);
         localStorage.removeItem(storageKey);
       } catch (error) {
-        console.log('Failed to clear tracking tag form data from localStorage');
+
       }
       
       toast({
@@ -205,7 +205,7 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
       });
     },
     onError: (error: any) => {
-      console.error("Create tag error:", error);
+
       
       // Handle specific duplicate tag code error
       if (error?.response?.status === 409 || error?.message?.includes('duplicate') || error?.message?.includes('already exists')) {
@@ -395,7 +395,7 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     replaceNumbers: function() {
       var elements = document.querySelectorAll('.tracking-number, [data-tracking-number]');
       if (elements.length === 0) {
-        console.warn('DNI: No tracking number elements found');
+
         return;
       }
       
@@ -474,7 +474,7 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
       })
       .then(callback)
       .catch(function(error) {
-        console.error('DNI Error:', error);
+
       });
     },
     

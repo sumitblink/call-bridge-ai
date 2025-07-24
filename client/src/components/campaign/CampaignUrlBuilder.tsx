@@ -41,7 +41,7 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
         }
       }
     } catch (error) {
-      console.log('Failed to load URL builder data from localStorage');
+
     }
   }, [campaignName]);
 
@@ -61,7 +61,7 @@ export default function CampaignUrlBuilder({ campaignName }: CampaignUrlBuilderP
       const campaignStorageKey = getStorageKey(campaignName);
       localStorage.setItem(campaignStorageKey, JSON.stringify(dataToSave));
     } catch (error) {
-      console.log('Failed to save URL builder data to localStorage');
+
     }
   }, [baseUrl, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, campaignName]);
 
