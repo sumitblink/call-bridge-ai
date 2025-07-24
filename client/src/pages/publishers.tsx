@@ -19,6 +19,7 @@ import { Plus, Edit, Trash2, DollarSign, Target, Settings, Users } from "lucide-
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // JSON validation helper
 const validateJsonString = (value: string | undefined) => {
@@ -365,110 +366,144 @@ export default function Publishers() {
           </Button>
         </div>
 
-        {/* Publishers Grid */}
-        {isLoading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-gray-200 rounded"></div>
-                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {publishers.map((publisher) => (
-              <Card key={publisher.id} className="relative">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{publisher.name}</CardTitle>
-                    <Badge className={getStatusColor(publisher.status)}>
-                      {publisher.status}
-                    </Badge>
-                  </div>
-                  <CardDescription>{publisher.email}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Payout</p>
-                      <p className="text-lg font-semibold">
-                        ${publisher.defaultPayout} {getPayoutTypeLabel(publisher.payoutModel)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total Calls</p>
-                      <p className="text-lg font-semibold">{publisher.callsGenerated}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total Payout</p>
-                      <p className="text-lg font-semibold">${publisher.totalPayout}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Avg Duration</p>
-                      <p className="text-lg font-semibold">{publisher.avgCallDuration}s</p>
-                    </div>
-                  </div>
-                  
-                  {publisher.allowedTargets && publisher.allowedTargets.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Allowed Targets</p>
-                      <div className="flex flex-wrap gap-1">
-                        {publisher.allowedTargets.map((targetId) => {
-                          const campaign = campaigns.find(c => c.id === targetId);
-                          return (
-                            <Badge key={targetId} variant="secondary">
-                              {campaign ? campaign.name : `Campaign ${targetId}`}
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end space-x-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(publisher)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Publisher</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{publisher.name}"? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(publisher.id)}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        {/* Publishers Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Publishers</CardTitle>
+            <CardDescription>Manage your affiliate publishers and traffic sources</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-16 bg-gray-200 rounded-lg animate-pulse" />
+                ))}
+              </div>
+            ) : publishers.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No publishers found</h3>
+                <p className="text-gray-500 mb-4">Start by adding your first publisher to begin generating traffic</p>
+                <Button onClick={() => setIsCreateOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Publisher
+                </Button>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Publisher</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Payout</TableHead>
+                    <TableHead>Performance</TableHead>
+                    <TableHead>Targets</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {publishers.map((publisher) => (
+                    <TableRow key={publisher.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{publisher.name}</span>
+                          <span className="text-sm text-gray-500">ID: {publisher.id}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm">{publisher.email}</span>
+                          {publisher.phoneNumber && (
+                            <span className="text-xs text-gray-500">{publisher.phoneNumber}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(publisher.status)}>
+                          {publisher.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">${publisher.defaultPayout}</span>
+                          <span className="text-xs text-gray-500">{getPayoutTypeLabel(publisher.payoutModel)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center text-sm">
+                            <span className="font-medium">{publisher.callsGenerated}</span>
+                            <span className="text-gray-500 ml-1">calls</span>
+                          </div>
+                          <div className="flex items-center text-xs text-gray-500">
+                            <span>${publisher.totalPayout} total</span>
+                          </div>
+                          <div className="flex items-center text-xs text-gray-500">
+                            <span>{publisher.avgCallDuration}s avg</span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {publisher.allowedTargets && publisher.allowedTargets.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {publisher.allowedTargets.slice(0, 2).map((targetId) => {
+                              const campaign = campaigns.find(c => c.id === targetId);
+                              return (
+                                <Badge key={targetId} variant="secondary" className="text-xs">
+                                  {campaign ? campaign.name : `Campaign ${targetId}`}
+                                </Badge>
+                              );
+                            })}
+                            {publisher.allowedTargets.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{publisher.allowedTargets.length - 2} more
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500">All campaigns</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(publisher)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Publisher</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{publisher.name}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(publisher.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Create/Edit Publisher Dialog */}
         <Dialog 
