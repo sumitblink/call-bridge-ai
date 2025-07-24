@@ -86,7 +86,7 @@ export function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpand
   return (
     <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t">
       <div className="space-y-3 text-sm">
-        {/* First Row */}
+        {/* First Row - Start directly with Call ID and Campaign */}
         <div className="flex flex-wrap gap-x-8 gap-y-2">
           <div>
             <span className="text-gray-500">Call ID:</span>

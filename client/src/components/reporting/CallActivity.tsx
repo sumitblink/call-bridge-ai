@@ -83,13 +83,7 @@ interface CallDetailsExpandedProps {
 function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps) {
   return (
     <div className="space-y-6">
-      {/* Simple Header Section */}
-      <div className="flex items-center gap-3 pb-4 border-b">
-        <Phone className="h-5 w-5 text-blue-600" />
-        <h3 className="text-lg font-semibold">Call Details</h3>
-      </div>
-
-      {/* Basic Info Cards */}
+      {/* Basic Info Cards - Start directly without header */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
