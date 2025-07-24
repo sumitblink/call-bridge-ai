@@ -114,6 +114,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 24, 2025: **REDUNDANT DETAILED CALL VIEW SECTION REMOVED** - Eliminated separate "Detailed Call Views" navigation and page since expandable call details in Enhanced Reporting provide same functionality
+  - **Navigation Cleanup**: Removed "Detailed Call Views" from sidebar Reporting section for cleaner interface
+  - **Route Cleanup**: Removed /detailed-calls route and component imports from App.tsx
+  - **File Cleanup**: Deleted client/src/pages/detailed-calls.tsx page file completely
+  - **User Experience**: Streamlined reporting workflow - all call details now accessible through Enhanced Reporting table expansion
+  - **Status**: Eliminated redundancy - users now have single, integrated location for all call detail viewing
 - July 24, 2025: **ENHANCED REPORTING ACCORDION UI SIMPLIFIED** - Completely redesigned expandable call details to match Ringba's minimal, clean design approach
   - **Expand Arrow Repositioned**: Moved expand/collapse buttons to leftmost column for intuitive Ringba-style interaction
   - **Removed Visual Categories**: Eliminated boxed sections and fancy styling to create inline subsection appearance

@@ -26,7 +26,6 @@ import AdvancedAnalyticsPage from "@/pages/advanced-analytics";
 import UsefulAnalytics from "@/pages/useful-analytics";
 
 import EnhancedReporting from "@/pages/enhanced-reporting";
-import DetailedCalls from "@/pages/detailed-calls";
 
 
 import NotFound from "@/pages/not-found";
@@ -72,7 +71,6 @@ function Router() {
 
           <Route path="/analytics" component={UsefulAnalytics} />
           <Route path="/enhanced-reporting" component={EnhancedReporting} />
-          <Route path="/detailed-calls" component={DetailedCalls} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/redtrack" component={RedTrackPage} />
           <Route path="/help" component={Feedback} />
