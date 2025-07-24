@@ -642,9 +642,9 @@ export default function CallActivity() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCalls.map((call, callIndex) => (
-                  <React.Fragment key={`call-fragment-${call.id}`}>
-                    <TableRow className="hover:bg-muted/30">
+                {filteredCalls.flatMap((call, callIndex) => {
+                  const rows = [
+                    <TableRow key={`call-row-${call.id}`} className="hover:bg-muted/30">
                       <TableCell className="py-2 w-8">
                         <Button
                           size="sm"
@@ -707,8 +707,11 @@ export default function CallActivity() {
                         </TableCell>
                       ))}
                     </TableRow>
-                    {expandedRows.has(call.id) && (
-                      <TableRow>
+                  ];
+
+                  if (expandedRows.has(call.id)) {
+                    rows.push(
+                      <TableRow key={`expanded-${call.id}`}>
                         <TableCell colSpan={visibleColumns.length + 1} className="p-0 bg-muted/20">
                           <div className="p-3 border-t">
                             <CallDetailsExpanded 
@@ -719,9 +722,11 @@ export default function CallActivity() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    )}
-                  </React.Fragment>
-                ))}
+                    );
+                  }
+
+                  return rows;
+                })}
               </TableBody>
             </Table>
           </div>
