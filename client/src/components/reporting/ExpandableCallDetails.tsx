@@ -162,7 +162,7 @@ export function ExpandableCallDetails() {
       // Fetch detailed call data if not already cached
       if (!selectedCallDetails[callId]) {
         try {
-          const response = await fetch(`/api/call-details/api/calls/${callId}/details`);
+          const response = await fetch(`/api/calls/${callId}/details`);
           if (response.ok) {
             const detailData = await response.json();
             setSelectedCallDetails(prev => ({
@@ -438,9 +438,94 @@ export function ExpandableCallDetails() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {calls.map((call: any) => (
-              <React.Fragment key={call.id}>
-                <TableRow className="hover:bg-gray-50 dark:hover:bg-gray-800">
+            {calls.map((call: any) => {
+              const expandedContent = expandedRows.has(call.id) ? (
+                <TableRow key={`call-expanded-${call.id}`}>
+                  <TableCell colSpan={17} className="bg-gray-50 dark:bg-gray-900 p-6">
+                    <div className="space-y-6">
+                      {/* Simple Header */}
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+                        <div className="flex items-center gap-3 mb-4">
+                          <Phone className="h-5 w-5 text-blue-600" />
+                          <h3 className="text-lg font-semibold">Complete Call Journey</h3>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          End-to-end analysis of routing decisions, IVR interactions, and RTB auctions
+                        </p>
+                        
+                        {/* Simple Info Cards */}
+                        <div className="grid grid-cols-3 gap-4 mt-4">
+                          <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                            <div className="text-xs text-gray-500">Call ID</div>
+                            <div className="font-mono text-sm">{call.callSid}</div>
+                          </div>
+                          <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                            <div className="text-xs text-gray-500">Campaign</div>
+                            <div className="text-sm">{call.campaignName}</div>
+                          </div>
+                          <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                            <div className="text-xs text-gray-500">Location</div>
+                            <div className="text-sm">{call.city && call.state ? `${call.city}, ${call.state}` : 'Unknown'}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* IVR & Call Flow */}
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Activity className="h-4 w-4 text-purple-500" />
+                          <h4 className="font-semibold">IVR & Call Flow</h4>
+                        </div>
+                        {selectedCallDetails[call.id]?.events && selectedCallDetails[call.id].events!.length > 0 ? 
+                          renderCallEvents(selectedCallDetails[call.id].events || []) : 
+                          <p className="text-sm text-gray-500">No IVR events recorded for this call</p>
+                        }
+                      </div>
+
+                      {/* Technical Details */}
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Info className="h-4 w-4 text-gray-500" />
+                          <h4 className="font-semibold">Technical Details</h4>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-500">Ring Tree ID</span>
+                            <div>{call.ringTreeId || 'N/A'}</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Flow Execution</span>
+                            <div>{call.flowExecutionId || 'N/A'}</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Routing Attempts</span>
+                            <div>{call.routingAttempts || 0}</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Device Type</span>
+                            <div>{call.deviceType || 'Unknown'}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Routing Journey */}
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="h-4 w-4 text-blue-500" />
+                          <h4 className="font-semibold">Routing Journey</h4>
+                        </div>
+                        {selectedCallDetails[call.id]?.routingDecisions && selectedCallDetails[call.id].routingDecisions!.length > 0 ? 
+                          renderRoutingDecisions(selectedCallDetails[call.id].routingDecisions || []) : 
+                          <p className="text-sm text-gray-500">No routing decisions recorded for this call</p>
+                        }
+                      </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : null;
+
+              return [
+                <TableRow key={`call-${call.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <TableCell>
                     <Button
                       variant="ghost"
@@ -529,95 +614,10 @@ export function ExpandableCallDetails() {
                       {call.status}
                     </Badge>
                   </TableCell>
-                </TableRow>
-                
-                {/* Simple Expandable Content - Ringba Style */}
-                {expandedRows.has(call.id) && (
-                  <TableRow>
-                    <TableCell colSpan={17} className="bg-gray-50 dark:bg-gray-900 p-6">
-                      <div className="space-y-6">
-                        {/* Simple Header */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
-                          <div className="flex items-center gap-3 mb-4">
-                            <Phone className="h-5 w-5 text-blue-600" />
-                            <h3 className="text-lg font-semibold">Complete Call Journey</h3>
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            End-to-end analysis of routing decisions, IVR interactions, and RTB auctions
-                          </p>
-                          
-                          {/* Simple Info Cards */}
-                          <div className="grid grid-cols-3 gap-4 mt-4">
-                            <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                              <div className="text-xs text-gray-500">Call ID</div>
-                              <div className="font-mono text-sm">{call.callSid}</div>
-                            </div>
-                            <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                              <div className="text-xs text-gray-500">Campaign</div>
-                              <div className="text-sm">{call.campaignName}</div>
-                            </div>
-                            <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                              <div className="text-xs text-gray-500">Location</div>
-                              <div className="text-sm">{call.city && call.state ? `${call.city}, ${call.state}` : 'Unknown'}</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* IVR & Call Flow */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Activity className="h-4 w-4 text-purple-500" />
-                            <h4 className="font-semibold">IVR & Call Flow</h4>
-                          </div>
-                          {selectedCallDetails[call.id]?.events && selectedCallDetails[call.id].events!.length > 0 ? 
-                            renderCallEvents(selectedCallDetails[call.id].events || []) : 
-                            <p className="text-sm text-gray-500">No IVR events recorded for this call</p>
-                          }
-                        </div>
-
-                        {/* Technical Details */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Info className="h-4 w-4 text-gray-500" />
-                            <h4 className="font-semibold">Technical Details</h4>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="text-gray-500">Ring Tree ID</span>
-                              <div>{call.ringTreeId || 'N/A'}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Flow Execution</span>
-                              <div>{call.flowExecutionId || 'N/A'}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Routing Attempts</span>
-                              <div>{call.routingAttempts || 0}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Device Type</span>
-                              <div>{call.deviceType || 'Unknown'}</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Routing Journey */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Zap className="h-4 w-4 text-blue-500" />
-                            <h4 className="font-semibold">Routing Journey</h4>
-                          </div>
-                          {selectedCallDetails[call.id]?.routingDecisions && selectedCallDetails[call.id].routingDecisions!.length > 0 ? 
-                            renderRoutingDecisions(selectedCallDetails[call.id].routingDecisions || []) : 
-                            <p className="text-sm text-gray-500">No routing decisions recorded for this call</p>
-                          }
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </React.Fragment>
-            ))}
+                </TableRow>,
+                expandedContent
+              ];
+            })}
           </TableBody>
         </Table>
         
