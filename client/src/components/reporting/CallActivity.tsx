@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded, Ban, Tag, Edit3, MoreVertical } from "lucide-react";
+import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded, Ban, Tag, Edit3, MoreVertical, ChevronRight, ChevronDown, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ColumnCustomizer } from "./ColumnCustomizer";
@@ -73,9 +73,143 @@ interface Buyer {
   updatedAt: string;
 }
 
+// Individual call details component for accordion expansion
+interface CallDetailsExpandedProps {
+  call: Call;
+  campaign?: Campaign;
+  buyer?: Buyer;
+}
+
+function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps) {
+  return (
+    <div className="space-y-6">
+      {/* Simple Header Section */}
+      <div className="flex items-center gap-3 pb-4 border-b">
+        <Phone className="h-5 w-5 text-blue-600" />
+        <h3 className="text-lg font-semibold">Call Details</h3>
+      </div>
+
+      {/* Basic Info Cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-gray-600">Call ID</div>
+            <div className="font-mono text-sm">{call.callSid}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-gray-600">Campaign</div>
+            <div className="text-sm">{campaign?.name || 'Unknown'}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-gray-600">Location</div>
+            <div className="text-sm">{call.geoLocation || 'Unknown'}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Three Basic Sections */}
+      <div className="space-y-4">
+        {/* IVR & Call Flow */}
+        <div>
+          <h4 className="flex items-center gap-2 text-sm font-medium mb-3">
+            <Phone className="h-4 w-4" />
+            IVR & Call Flow
+          </h4>
+          <div className="bg-gray-50 p-4 rounded">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">From:</span> {call.fromNumber}
+              </div>
+              <div>
+                <span className="text-gray-600">To:</span> {call.toNumber}
+              </div>
+              <div>
+                <span className="text-gray-600">Duration:</span> {call.duration}s
+              </div>
+              <div>
+                <span className="text-gray-600">Status:</span> 
+                <Badge className={`ml-2 ${getStatusColor(call.status)}`}>
+                  {call.status}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Technical Details */}
+        <div>
+          <h4 className="flex items-center gap-2 text-sm font-medium mb-3">
+            <Activity className="h-4 w-4" />
+            Technical Details
+          </h4>
+          <div className="bg-gray-50 p-4 rounded">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Recording:</span> {call.recordingUrl ? 'Available' : 'Not available'}
+              </div>
+              <div>
+                <span className="text-gray-600">Transcription:</span> {call.transcription ? 'Available' : 'Not available'}
+              </div>
+              <div>
+                <span className="text-gray-600">Quality:</span> {call.callQuality || 'Not rated'}
+              </div>
+              <div>
+                <span className="text-gray-600">User Agent:</span> {call.userAgent ? 'Available' : 'Not available'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Routing Journey */}
+        <div>
+          <h4 className="flex items-center gap-2 text-sm font-medium mb-3">
+            <Users className="h-4 w-4" />
+            Routing Journey
+          </h4>
+          <div className="bg-gray-50 p-4 rounded">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Campaign:</span> {campaign?.name || 'Unknown'}
+              </div>
+              <div>
+                <span className="text-gray-600">Buyer:</span> {buyer?.name || 'No buyer assigned'}
+              </div>
+              <div>
+                <span className="text-gray-600">Revenue:</span> ${call.revenue}
+              </div>
+              <div>
+                <span className="text-gray-600">Cost:</span> ${call.cost}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Helper function for status colors (moved here for reuse)
+function getStatusColor(status: string): string {
+  switch (status) {
+    case "completed": return "bg-green-100 text-green-800";
+    case "in-progress": return "bg-blue-100 text-blue-800";
+    case "failed": return "bg-red-100 text-red-800";
+    case "busy": return "bg-yellow-100 text-yellow-800";
+    case "no-answer": return "bg-gray-100 text-gray-800";
+    default: return "bg-gray-100 text-gray-800";
+  }
+}
+
 export default function CallActivity() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
+  
+  // Expanded rows state for accordion functionality
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     // Clear any old column preferences to prevent conflicts
@@ -187,6 +321,19 @@ export default function CallActivity() {
     }
   };
 
+  // Toggle row expansion
+  const toggleRowExpansion = (callId: number) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(callId)) {
+        newSet.delete(callId);
+      } else {
+        newSet.add(callId);
+      }
+      return newSet;
+    });
+  };
+
   // Action handlers
   const handleBlockNumber = (callId: number, phoneNumber: string) => {
     setBlockNumberDialog({ isOpen: true, callId, phoneNumber });
@@ -235,17 +382,6 @@ export default function CallActivity() {
     console.log('Sample call data:', filteredCalls[0]);
   }
   console.log('Sample column mapping check:', visibleColumns.map(col => ({ col, def: getColumnDefinition(col) })));
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-green-100 text-green-800";
-      case "in-progress": return "bg-blue-100 text-blue-800";
-      case "failed": return "bg-red-100 text-red-800";
-      case "busy": return "bg-yellow-100 text-yellow-800";
-      case "no-answer": return "bg-gray-100 text-gray-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
 
   const renderColumnValue = (call: Call, column: string) => {
     const columnDef = getDynamicColumnDefinition(column);
@@ -517,20 +653,53 @@ export default function CallActivity() {
               </TableHeader>
               <TableBody>
                 {filteredCalls.map((call, callIndex) => (
-                  <TableRow key={`call-row-${callIndex}`} className="hover:bg-muted/30">
-                    {visibleColumns.map((column, columnIndex) => (
-                      <TableCell 
-                        key={`cell-${callIndex}-${columnIndex}`} 
-                        className="py-2"
-                        style={{ 
-                          width: columnWidths[column] || getDynamicColumnDefinition(column)?.width || 'auto',
-                          minWidth: '60px'
-                        }}
-                      >
-                        {renderColumnValue(call, column)}
-                      </TableCell>
-                    ))}
-                  </TableRow>
+                  <>
+                    <TableRow key={`call-row-${callIndex}`} className="hover:bg-muted/30">
+                      {visibleColumns.map((column, columnIndex) => (
+                        <TableCell 
+                          key={`cell-${callIndex}-${columnIndex}`} 
+                          className="py-2"
+                          style={{ 
+                            width: columnWidths[column] || getDynamicColumnDefinition(column)?.width || 'auto',
+                            minWidth: '60px'
+                          }}
+                        >
+                          {column === 'actions' ? (
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => toggleRowExpansion(call.id)}
+                                className="h-6 w-6 p-0"
+                              >
+                                {expandedRows.has(call.id) ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
+                                )}
+                              </Button>
+                              {renderColumnValue(call, column)}
+                            </div>
+                          ) : (
+                            renderColumnValue(call, column)
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                    {expandedRows.has(call.id) && (
+                      <TableRow key={`expanded-${call.id}`}>
+                        <TableCell colSpan={visibleColumns.length} className="p-0 bg-muted/20">
+                          <div className="p-6 border-t transition-all duration-200">
+                            <CallDetailsExpanded 
+                              call={call}
+                              campaign={campaigns.find(c => c.id === call.campaignId)}
+                              buyer={call.buyerId ? buyers.find(b => b.id === call.buyerId) : undefined}
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 ))}
               </TableBody>
             </Table>
