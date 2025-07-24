@@ -114,6 +114,15 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 24, 2025: **CALL FLOW NODE CONFIGURATION MINI NOTES ADDED** - Enhanced call flow editor with configuration summary displays on nodes for better user understanding
+  - **Action Node Summaries**: Shows routing destination (→ Buyer Name), hangup status (✕ Hangup), transfer numbers (→ +1234567890), voicemail (📧 Voicemail)
+  - **Condition Node Summaries**: Displays condition types (🕐 Business Hours, 📞 Caller ID, 👥 Capacity) for quick identification
+  - **Menu Node Summaries**: Shows option count (📞 3 options) to indicate IVR menu complexity
+  - **Other Node Types**: Gather (🎤 Input), Play (🔊 Message), Router (🔄 Route), Splitter (📊 Split), Pixel (📊 Pixel), JavaScript (⚡ JS Code)
+  - **Visual Design**: Clean mini notes with gray background, blue left border, and appropriate icons for easy scanning
+  - **Dynamic Updates**: Configuration summary updates immediately when node settings are changed
+  - **User Experience**: Users can now quickly identify what each node does without opening configuration dialogs
+  - **Status**: Call flow editor now provides instant visual feedback on node configurations making complex flows easier to understand
 - July 24, 2025: **SIMPLIFIED EXPANDABLE CALL DETAILS UI COMPLETE** - Redesigned expandable call details to match user's Ringba screenshot with clean, minimal design
   - **Simple Header Section**: Clean header with phone icon, basic title, and three simple info cards (Call ID, Campaign, Location)
   - **Minimal Sections**: Three basic sections - IVR & Call Flow, Technical Details, and Routing Journey matching Ringba's simple layout

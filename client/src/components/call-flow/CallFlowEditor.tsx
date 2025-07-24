@@ -425,6 +425,69 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
     setPanOffset({ x: 0, y: 0 });
   };
 
+  // Helper function to get configuration summary for mini notes
+  const getConfigurationSummary = (node: FlowNode) => {
+    const config = node.data.config || {};
+    
+    switch (node.type) {
+      case 'action':
+        if (config.actionType === 'route' && config.buyerId) {
+          const buyer = buyers?.find(b => b.id === parseInt(config.buyerId));
+          return `→ ${buyer?.name || 'Buyer'}`;
+        }
+        if (config.actionType === 'hangup') {
+          return `✕ Hangup`;
+        }
+        if (config.actionType === 'transfer' && config.transferNumber) {
+          return `→ ${config.transferNumber}`;
+        }
+        if (config.actionType === 'voicemail') {
+          return `📧 Voicemail`;
+        }
+        return config.actionType ? `⚡ ${config.actionType}` : '';
+        
+      case 'condition':
+        if (config.conditionType === 'time') {
+          return `🕐 Business Hours`;
+        }
+        if (config.conditionType === 'caller') {
+          return `📞 Caller ID`;
+        }
+        if (config.conditionType === 'capacity') {
+          return `👥 Capacity`;
+        }
+        return config.conditionType ? `🔀 ${config.conditionType}` : '';
+        
+      case 'menu':
+        const optionCount = config.options?.length || 0;
+        return optionCount > 0 ? `📞 ${optionCount} options` : '📞 Menu';
+        
+      case 'gather':
+        return config.gatherType ? `🎤 ${config.gatherType}` : '🎤 Input';
+        
+      case 'play':
+        return config.message ? `🔊 Message` : '🔊 Audio';
+        
+      case 'hours':
+        return `🕐 Hours Check`;
+        
+      case 'router':
+        return config.routingType ? `🔄 ${config.routingType}` : '🔄 Route';
+        
+      case 'splitter':
+        return config.splitType ? `📊 ${config.splitType}` : '📊 Split';
+        
+      case 'pixel':
+        return config.pixelType ? `📊 ${config.pixelType}` : '📊 Pixel';
+        
+      case 'javascript':
+        return `⚡ JS Code`;
+        
+      default:
+        return '';
+    }
+  };
+
   const handleSave = () => {
     if (!name) {
       toast({
@@ -509,6 +572,13 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
           </div>
         )}
         <div className="text-xs text-gray-500 mt-1">{node.type}</div>
+        
+        {/* Configuration Summary Mini Note */}
+        {getConfigurationSummary(node) && (
+          <div className="mt-2 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300 border-l-2 border-blue-400">
+            {getConfigurationSummary(node)}
+          </div>
+        )}
         
         {/* Connection handle */}
         <div
