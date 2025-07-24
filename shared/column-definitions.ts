@@ -60,7 +60,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     filterable: true
   },
   {
-    id: 'publisher',
+    id: 'publisherName',
     label: 'Publisher',
     category: 'Popular',
     dataType: 'string',

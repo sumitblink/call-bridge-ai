@@ -114,6 +114,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 24, 2025: **BUILT-IN PUBLISHER COLUMN RENAMED TO PREVENT CONFLICTS** - Changed built-in Publisher column ID from 'publisher' to 'publisherName' to prevent naming conflicts with custom URL parameters
+  - **Column ID Changed**: Built-in Publisher column now uses 'publisherName' instead of 'publisher' for unique identification
+  - **Conflict Resolution**: Users can now create custom URL parameters named 'publisher' without conflicting with built-in Publisher column
+  - **Dual Column System**: Built-in 'publisherName' (Popular category) for call attribution vs custom 'publisher' (User category) for URL tracking
+  - **Column Priority Fixed**: Built-in columns now take priority over URL parameters with same names in getDynamicColumnDefinition logic
+  - **Status**: No more "Publisher utm" display issues - built-in and custom columns now properly separated
 - July 24, 2025: **PUBLISHER ATTRIBUTION BUG COMPLETELY FIXED** - Resolved critical issue where publisher parameters weren't being stored in visitor sessions despite being received by DNI system
   - **Root Cause**: Publisher parameter was extracted from request body but not passed to customFields object in DNI route handlers
   - **Both Routes Fixed**: Updated both `/api/dni/track` and `/api/dni/track-simple` endpoints to properly include publisher in customFields

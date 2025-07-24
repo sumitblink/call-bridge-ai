@@ -81,7 +81,7 @@ export default function CallActivity() {
     // Define custom column order with Publisher as second column
     const customOrder = [
       'campaign',
-      'publisher',  // Publisher as second column
+      'publisherName',  // Publisher as second column
       'buyer',
       'callDate',
       'callerId',
@@ -289,7 +289,7 @@ export default function CallActivity() {
         return <div className="font-mono text-xs">{call.campaignId}</div>;
       case 'buyerId':
         return <div className="font-mono text-xs">{call.buyerId || 'N/A'}</div>;
-      case 'publisher':
+      case 'publisherName':
         return <div className="truncate text-xs">{(call as any).publisherName || 'No Publisher'}</div>;
       case 'payout':
         return <div className="text-xs font-medium text-blue-600">${(call as any).payout || '0.00'}</div>;
