@@ -162,6 +162,9 @@ export class ChatbotService {
     if (lowerQuery.includes('agent')) terms.push('agent');
     if (lowerQuery.includes('publisher')) terms.push('publisher');
     if (lowerQuery.includes('analytics') || lowerQuery.includes('stats')) terms.push('analytics');
+    if (lowerQuery.includes('redtrack') || lowerQuery.includes('red track')) terms.push('redtrack');
+    if (lowerQuery.includes('tracking') || lowerQuery.includes('pixel') || lowerQuery.includes('conversion')) terms.push('tracking');
+    if (lowerQuery.includes('conversion') || lowerQuery.includes('postback')) terms.push('conversion');
 
     // Default search terms if none found
     if (terms.length === 0) {
@@ -189,7 +192,10 @@ export class ChatbotService {
       'dni tracking': 'Dynamic Number Insertion (DNI) provides different numbers to different visitors for campaign attribution.',
       'agent': 'Agents handle calls with status tracking, availability management, and performance metrics.',
       'publisher': 'Publishers are traffic sources that can be assigned to campaigns with custom payout configurations.',
-      'analytics': 'Analytics include call volume, conversion rates, buyer performance, and campaign ROI tracking.'
+      'analytics': 'Analytics include call volume, conversion rates, buyer performance, and campaign ROI tracking.',
+      'redtrack': 'RedTrack integration is fully automated with 100% Ringba-style compliance. CallCenter Pro automatically detects RedTrack parameters (clickid, campaign_id, offer_id, affiliate_id) and initializes tracking without any manual setup required.',
+      'tracking': 'CallCenter Pro offers multiple tracking options: 1) Simple JavaScript tracking tags for any website, 2) RedTrack auto-detection integration, 3) Custom tracking pixels, and 4) DNI tracking for phone number replacement.',
+      'conversion': 'Conversion tracking supports three types: RAWCall (phone click), AnsweredCall (completed call), and ConvertedCall (calls >30 seconds). RedTrack postbacks are fired automatically with proper token replacement.'
     };
 
     return searchMappings[term] || null;
@@ -232,11 +238,27 @@ KEY FEATURES:
 - Twilio Integration: Fully managed voice services
 - Multi-tenant Security: Complete user data isolation
 
+REDTRACK INTEGRATION (100% AUTO-DETECTION):
+- RedTrack parameters (clickid, campaign_id, offer_id, affiliate_id) are automatically detected
+- No manual configuration required - just add simple tracking script to your website
+- Three conversion types supported: RAWCall (phone click), AnsweredCall (completed), ConvertedCall (>30 seconds)
+- Automatic postback firing to RedTrack with proper token replacement
+- Works exactly like Ringba's tracking system - zero configuration needed
+- Use simple script tag: <script src="/js/t.js" data-campaign="YOUR_CAMPAIGN_ID"></script>
+- RedTrack integration happens automatically when parameters are detected in URLs
+
+TRACKING OPTIONS:
+1. Simple JavaScript Tracking: Universal one-line script for any website
+2. RedTrack Auto-Detection: Automatic integration when RedTrack parameters present
+3. Custom Tracking Pixels: Create custom postback pixels for any tracking platform
+4. DNI Tracking: Dynamic phone number replacement with attribution tracking
+
 RECENT UPDATES:
-- RTB analytics now show target names instead of generic IDs
-- Twilio is fully managed - no user setup required
-- Multi-tenancy security implemented with user-scoped data access
-- AI chatbot added for user support and Q&A
+- RedTrack auto-detection system now 100% operational with Ringba-style compliance
+- Enhanced Reporting streamlined with expandable call details in single location
+- RTB Phase 3 & 4 complete with comprehensive auction analytics
+- All mock data eliminated - only authentic performance metrics displayed
+- Call Flow Editor enhanced with configuration mini notes and visual feedback
 `;
   }
 

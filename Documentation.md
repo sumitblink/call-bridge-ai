@@ -1274,6 +1274,82 @@ SESSION_SECRET=your_session_secret
 
 ---
 
+## RedTrack Integration
+
+### Overview
+
+CallCenter Pro provides 100% RedTrack integration compliance with automatic parameter detection and zero-configuration setup. The system works exactly like Ringba's tracking approach, automatically detecting RedTrack parameters and initializing conversion tracking.
+
+### Auto-Detection System
+
+**Automatic Parameter Detection:**
+- **clickid**: Primary RedTrack tracking identifier
+- **campaign_id**: RedTrack campaign identification
+- **offer_id**: RedTrack offer identification  
+- **affiliate_id**: RedTrack affiliate identification
+- **Additional Parameters**: Supports all standard RedTrack URL parameters
+
+**Zero Configuration Required:**
+```html
+<!-- Simple one-line integration -->
+<script src="/js/t.js" data-campaign="YOUR_CAMPAIGN_ID" async></script>
+```
+
+### Conversion Tracking
+
+**Three Conversion Types:**
+1. **RAWCall**: Phone click events (immediate tracking)
+2. **AnsweredCall**: Completed calls (call duration based)
+3. **ConvertedCall**: Quality calls over 30 seconds
+
+**Automatic Postback Integration:**
+- Fires RedTrack postback pixels automatically
+- Proper token replacement: `[tag:User:clickid]`, `[Call:ConversionPayout]`
+- No manual postback URL configuration needed
+
+### Technical Implementation
+
+**Global Variables (Ringba-Style):**
+- `window.rtkClickID`: Stores RedTrack click ID globally
+- `window._rgba_tags`: Ringba-compatible tag system
+- `window.ccpRedTrackConfig`: Complete RedTrack configuration object
+
+**API Endpoints:**
+- `/api/tracking/redtrack/session`: Session initialization
+- `/api/tracking/redtrack/conversion`: Conversion event tracking
+- `/api/tracking/redtrack/quality`: Call quality events (AnsweredCall, ConvertedCall)
+
+### Setup Instructions
+
+**Step 1: Add Tracking Script**
+Add the CallCenter Pro tracking script to your website header:
+```html
+<script src="https://your-domain.replit.app/js/t.js" data-campaign="YOUR_CAMPAIGN_ID" async></script>
+```
+
+**Step 2: RedTrack Campaign Setup**
+Configure your RedTrack campaign with CallCenter Pro landing page URLs containing tracking parameters:
+```
+https://your-landing-page.com/?clickid={clickid}&campaign_id={campaign_id}&offer_id={offer_id}
+```
+
+**Step 3: Automatic Integration**
+RedTrack integration happens automatically when parameters are detected - no additional configuration needed.
+
+### Advanced Features
+
+**Professional Compliance:**
+- Meets all RedTrack-Ringba integration requirements
+- Compatible with standard RedTrack workflows
+- Works with existing RedTrack campaign structures
+
+**Real-time Analytics:**
+- Call attribution through complete tracking chain
+- Performance metrics with RedTrack parameter visibility
+- Revenue tracking with proper payout attribution
+
+---
+
 ## AI Help System
 
 ### Overview
