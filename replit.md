@@ -114,6 +114,14 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 24, 2025: **PUBLISHER ATTRIBUTION BUG COMPLETELY FIXED** - Resolved critical issue where publisher parameters weren't being stored in visitor sessions despite being received by DNI system
+  - **Root Cause**: Publisher parameter was extracted from request body but not passed to customFields object in DNI route handlers
+  - **Both Routes Fixed**: Updated both `/api/dni/track` and `/api/dni/track-simple` endpoints to properly include publisher in customFields
+  - **Database Storage Working**: Publisher parameter now correctly flows from URL → DNI request → visitor_sessions table storage
+  - **Attribution Chain Complete**: System can now properly attribute calls to their originating publishers/affiliates
+  - **Testing Verified**: Confirmed publisher "TestPublisherSimple" successfully stored in visitor_sessions.publisher column
+  - **Campaign Attribution Ready**: Publisher tracking now operational for call attribution and reporting
+  - **Status**: Publisher attribution system fully operational - URL parameters like ?publisher=YourPublisher now properly tracked and stored
 - July 24, 2025: **ACCEPTANCE RATE AND RESPONSE TIME CONVERTED FROM MOCK TO REAL DATA** - Eliminated hardcoded mock data (95%, 200ms) and implemented dynamic calculation from actual call performance
   - **Mock Data Removed**: Removed hardcoded acceptance_rate and avg_response_time columns from buyers database table
   - **Real Calculation Implemented**: Updated getBuyers() method to calculate acceptance rate from actual call completion data

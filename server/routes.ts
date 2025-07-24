@@ -5106,7 +5106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ipAddress,
         customFields: {
           domain,
-          publisher,
+          publisher, // Publisher passed correctly here
           gclid,
           fbclid,
           msclkid,
@@ -5251,8 +5251,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`DNI: Processing validated tracking request from: ${origin}`);
       
-      // Extract the request data properly including clickid
-      const { tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId, clickid } = req.body;
+      // Extract the request data properly including clickid and publisher
+      const { tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId, clickid, publisher } = req.body;
       
       if (!tagCode) {
         return res.status(400).json({
@@ -5280,7 +5280,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customFields: {
           domain,
           visitorId,
-          clickid  // FIX: Include clickid in customFields
+          clickid,  // Include clickid in customFields
+          publisher // FIX: Include publisher in customFields for attribution
         }
       };
       
