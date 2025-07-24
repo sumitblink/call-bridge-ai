@@ -17,8 +17,9 @@ import { Trash2, Edit2, Plus, Phone, Mail, Globe, TrendingUp, Info } from "lucid
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-function BuyerCard({ buyer, onEdit, onDelete }: { 
+function BuyerRow({ buyer, onEdit, onDelete }: { 
   buyer: Buyer; 
   onEdit: (buyer: Buyer) => void;
   onDelete: (id: number) => void;
@@ -39,77 +40,70 @@ function BuyerCard({ buyer, onEdit, onDelete }: {
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{buyer.name}</CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge className={getStatusColor(buyer.status)}>
-              {buyer.status || 'Unknown'}
-            </Badge>
-            <Badge className={getPriorityColor(buyer.priority)}>
-              Priority {buyer.priority || 1}
-            </Badge>
-          </div>
+    <TableRow className="hover:bg-gray-50">
+      <TableCell>
+        <div className="flex flex-col">
+          <span className="font-medium">{buyer.name}</span>
+          <span className="text-sm text-gray-500">ID: {buyer.id}</span>
         </div>
-        <CardDescription className="flex items-center gap-4 text-sm">
-          <span className="flex items-center gap-1">
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-col gap-1">
+          <span className="flex items-center gap-1 text-sm">
             <Mail className="h-3 w-3" />
             {buyer.email || 'No email'}
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 text-sm">
             <Phone className="h-3 w-3" />
             {buyer.phoneNumber || 'No phone'}
           </span>
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="font-medium text-gray-600">Daily Cap:</span>
-            <div className="text-lg font-semibold">{buyer.dailyCap}</div>
-          </div>
-          <div>
-            <span className="font-medium text-gray-600">Concurrency:</span>
-            <div className="text-lg font-semibold">{buyer.concurrencyLimit}</div>
-          </div>
-          <div>
-            <span className="font-medium text-gray-600">Acceptance Rate:</span>
-            <div className="text-lg font-semibold flex items-center gap-1">
-              <TrendingUp className="h-4 w-4 text-green-600" />
-              {buyer.acceptanceRate}%
-            </div>
-          </div>
-          <div>
-            <span className="font-medium text-gray-600">Response Time:</span>
-            <div className="text-lg font-semibold">
-              {buyer.avgResponseTime ? `${buyer.avgResponseTime}ms` : 'No data'}
-            </div>
-          </div>
         </div>
-        
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <Badge className={getStatusColor(buyer.status)}>
+            {buyer.status || 'Unknown'}
+          </Badge>
+          <Badge className={getPriorityColor(buyer.priority)}>
+            Priority {buyer.priority || 1}
+          </Badge>
+        </div>
+      </TableCell>
+      <TableCell className="text-center">
+        <div className="font-semibold">{buyer.dailyCap}</div>
+      </TableCell>
+      <TableCell className="text-center">
+        <div className="font-semibold">{buyer.concurrencyLimit}</div>
+      </TableCell>
+      <TableCell className="text-center">
+        <div className="flex items-center justify-center gap-1">
+          <TrendingUp className="h-4 w-4 text-green-600" />
+          <span className="font-semibold">{buyer.acceptanceRate}%</span>
+        </div>
+      </TableCell>
+      <TableCell className="text-center">
+        <div className="font-semibold">
+          {buyer.avgResponseTime ? `${buyer.avgResponseTime}ms` : 'No data'}
+        </div>
+      </TableCell>
+      <TableCell>
         {buyer.endpoint && (
-          <div className="mt-4 p-2 bg-gray-50 rounded-lg">
-            <span className="text-xs font-medium text-gray-600 flex items-center gap-1">
-              <Globe className="h-3 w-3" />
-              Webhook Endpoint
-            </span>
-            <div className="text-xs font-mono text-gray-800 truncate">{buyer.endpoint}</div>
+          <div className="text-xs font-mono text-gray-600 max-w-32 truncate" title={buyer.endpoint}>
+            {buyer.endpoint}
           </div>
         )}
-
-        <div className="flex gap-2 mt-4">
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-1">
           <Button variant="outline" size="sm" onClick={() => onEdit(buyer)}>
-            <Edit2 className="h-4 w-4 mr-1" />
-            Edit
+            <Edit2 className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="sm" onClick={() => onDelete(buyer.id)}>
-            <Trash2 className="h-4 w-4 mr-1" />
-            Delete
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -626,12 +620,30 @@ export default function Buyers() {
   if (isLoading) {
     return (
       <Layout>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 bg-gray-200 rounded-lg animate-pulse" />
-            ))}
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Buyer Management</h1>
+              <p className="text-muted-foreground">Manage your call buyers and routing preferences</p>
+            </div>
+            <Button disabled>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Buyer
+            </Button>
           </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Buyers</CardTitle>
+              <CardDescription>Loading buyer data...</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-16 bg-gray-200 rounded-lg animate-pulse" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </Layout>
     );
@@ -652,16 +664,39 @@ export default function Buyers() {
       </div>
 
       {buyers && Array.isArray(buyers) && buyers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(buyers as Buyer[]).map((buyer: Buyer) => (
-            <BuyerCard
-              key={buyer.id}
-              buyer={buyer}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Buyers</CardTitle>
+            <CardDescription>Manage your call buyers and their settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name & ID</TableHead>
+                  <TableHead>Contact Info</TableHead>
+                  <TableHead>Status & Priority</TableHead>
+                  <TableHead className="text-center">Daily Cap</TableHead>
+                  <TableHead className="text-center">Concurrency</TableHead>
+                  <TableHead className="text-center">Acceptance Rate</TableHead>
+                  <TableHead className="text-center">Response Time</TableHead>
+                  <TableHead>Endpoint</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(buyers as Buyer[]).map((buyer: Buyer) => (
+                  <BuyerRow
+                    key={buyer.id}
+                    buyer={buyer}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       ) : (
         <div className="text-center py-12">
           <div className="text-gray-500 mb-4">No buyers found</div>
