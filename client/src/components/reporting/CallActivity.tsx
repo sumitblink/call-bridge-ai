@@ -82,39 +82,39 @@ interface CallDetailsExpandedProps {
 
 function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {/* Basic Info Cards - Start directly without header */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2">
         <Card>
-          <CardContent className="p-4">
-            <div className="text-sm text-gray-600">Call ID</div>
-            <div className="font-mono text-sm">{call.callSid}</div>
+          <CardContent className="p-2">
+            <div className="text-xs text-gray-600">Call ID</div>
+            <div className="font-mono text-xs">{call.callSid}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="text-sm text-gray-600">Campaign</div>
-            <div className="text-sm">{campaign?.name || 'Unknown'}</div>
+          <CardContent className="p-2">
+            <div className="text-xs text-gray-600">Campaign</div>
+            <div className="text-xs">{campaign?.name || 'Unknown'}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="text-sm text-gray-600">Location</div>
-            <div className="text-sm">{call.geoLocation || 'Unknown'}</div>
+          <CardContent className="p-2">
+            <div className="text-xs text-gray-600">Location</div>
+            <div className="text-xs">{call.geoLocation || 'Unknown'}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Three Basic Sections */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         {/* IVR & Call Flow */}
         <div>
-          <h4 className="flex items-center gap-2 text-sm font-medium mb-3">
+          <h4 className="flex items-center gap-2 text-sm font-medium mb-1">
             <Phone className="h-4 w-4" />
             IVR & Call Flow
           </h4>
-          <div className="bg-gray-50 p-4 rounded">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="bg-gray-50 p-2 rounded">
+            <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span className="text-gray-600">From:</span> {call.fromNumber}
               </div>
@@ -136,12 +136,12 @@ function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps
 
         {/* Technical Details */}
         <div>
-          <h4 className="flex items-center gap-2 text-sm font-medium mb-3">
+          <h4 className="flex items-center gap-2 text-sm font-medium mb-1">
             <Activity className="h-4 w-4" />
             Technical Details
           </h4>
-          <div className="bg-gray-50 p-4 rounded">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="bg-gray-50 p-2 rounded">
+            <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span className="text-gray-600">Recording:</span> {call.recordingUrl ? 'Available' : 'Not available'}
               </div>
@@ -160,12 +160,12 @@ function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps
 
         {/* Routing Journey */}
         <div>
-          <h4 className="flex items-center gap-2 text-sm font-medium mb-3">
+          <h4 className="flex items-center gap-2 text-sm font-medium mb-1">
             <Users className="h-4 w-4" />
             Routing Journey
           </h4>
-          <div className="bg-gray-50 p-4 rounded">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="bg-gray-50 p-2 rounded">
+            <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span className="text-gray-600">Campaign:</span> {campaign?.name || 'Unknown'}
               </div>
