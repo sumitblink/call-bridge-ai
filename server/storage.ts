@@ -273,6 +273,19 @@ export interface IStorage {
   getCampaignTrackingPixels(campaignId: string): Promise<any[]>;
   createCampaignTrackingPixel(data: any): Promise<any>;
   deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean>;
+
+  // Custom Reports
+  getCustomReports(userId: number): Promise<any[]>;
+  createCustomReport(report: any): Promise<any>;
+  updateCustomReport(id: number, report: any, userId: number): Promise<any>;
+  deleteCustomReport(id: number, userId: number): Promise<boolean>;
+  copyCustomReport(id: number, userId: number): Promise<any>;
+
+  // Bulk Actions
+  bulkTranscribeCalls(callIds: number[], userId: number): Promise<any>;
+  bulkAnnotateCalls(callIds: number[], data: any, userId: number): Promise<any>;
+  bulkBlockCallerIds(callIds: number[], data: any, userId: number): Promise<any>;
+  bulkRequestAdjustments(callIds: number[], data: any, userId: number): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -1754,6 +1767,181 @@ export class MemStorage implements IStorage {
 
   async deleteUrlParameter(id: number): Promise<boolean> {
     return this.urlParameters.delete(id);
+  }
+
+  // Tracking Pixels methods
+  async getTrackingPixels(userId: number): Promise<any[]> {
+    return Array.from(this.trackingPixels.values())
+      .filter(pixel => pixel.userId === userId);
+  }
+
+  async getTrackingPixel(id: number): Promise<any | undefined> {
+    return this.trackingPixels.get(id);
+  }
+
+  async createTrackingPixel(pixel: any): Promise<any> {
+    const newPixel = {
+      ...pixel,
+      id: this.currentPixelId++,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.trackingPixels.set(newPixel.id, newPixel);
+    return newPixel;
+  }
+
+  async updateTrackingPixel(id: number, pixel: any): Promise<any | undefined> {
+    const existing = this.trackingPixels.get(id);
+    if (!existing) return undefined;
+
+    const updated = {
+      ...existing,
+      ...pixel,
+      updatedAt: new Date()
+    };
+    this.trackingPixels.set(id, updated);
+    return updated;
+  }
+
+  async deleteTrackingPixel(id: number): Promise<boolean> {
+    return this.trackingPixels.delete(id);
+  }
+
+  // Campaign-specific Tracking Pixels
+  async getCampaignTrackingPixels(campaignId: string): Promise<any[]> {
+    return this.campaignTrackingPixels.get(campaignId) || [];
+  }
+
+  async createCampaignTrackingPixel(data: any): Promise<any> {
+    const newPixel = {
+      ...data,
+      id: this.currentPixelId++,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const existing = this.campaignTrackingPixels.get(data.campaignId) || [];
+    existing.push(newPixel);
+    this.campaignTrackingPixels.set(data.campaignId, existing);
+    return newPixel;
+  }
+
+  async deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean> {
+    const existing = this.campaignTrackingPixels.get(campaignId) || [];
+    const filtered = existing.filter(pixel => pixel.id !== pixelId);
+    this.campaignTrackingPixels.set(campaignId, filtered);
+    return filtered.length < existing.length;
+  }
+
+  // Custom Reports
+  private customReports: Map<number, any> = new Map();
+  private currentReportId: number = 1;
+
+  async getCustomReports(userId: number): Promise<any[]> {
+    return Array.from(this.customReports.values())
+      .filter(report => report.userId === userId);
+  }
+
+  async createCustomReport(report: any): Promise<any> {
+    const newReport = {
+      ...report,
+      id: this.currentReportId++,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.customReports.set(newReport.id, newReport);
+    return newReport;
+  }
+
+  async updateCustomReport(id: number, report: any, userId: number): Promise<any> {
+    const existing = this.customReports.get(id);
+    if (!existing || existing.userId !== userId) return undefined;
+
+    const updated = {
+      ...existing,
+      ...report,
+      updatedAt: new Date()
+    };
+    this.customReports.set(id, updated);
+    return updated;
+  }
+
+  async deleteCustomReport(id: number, userId: number): Promise<boolean> {
+    const existing = this.customReports.get(id);
+    if (!existing || existing.userId !== userId) return false;
+    return this.customReports.delete(id);
+  }
+
+  async copyCustomReport(id: number, userId: number): Promise<any> {
+    const existing = this.customReports.get(id);
+    if (!existing) return undefined;
+
+    const copied = {
+      ...existing,
+      id: this.currentReportId++,
+      name: `${existing.name} (Copy)`,
+      userId: userId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.customReports.set(copied.id, copied);
+    return copied;
+  }
+
+  // Bulk Actions
+  async bulkTranscribeCalls(callIds: number[], userId: number): Promise<any> {
+    const results = [];
+    for (const callId of callIds) {
+      const call = this.calls.get(callId);
+      if (call && call.userId === userId) {
+        call.transcription = `Mock transcription for call ${callId}`;
+        call.updatedAt = new Date();
+        results.push({ callId, status: 'transcribed' });
+      }
+    }
+    return { results, total: callIds.length, processed: results.length };
+  }
+
+  async bulkAnnotateCalls(callIds: number[], data: any, userId: number): Promise<any> {
+    const results = [];
+    for (const callId of callIds) {
+      const call = this.calls.get(callId);
+      if (call && call.userId === userId) {
+        call.notes = data.annotation;
+        call.updatedAt = new Date();
+        results.push({ callId, status: 'annotated' });
+      }
+    }
+    return { results, total: callIds.length, processed: results.length };
+  }
+
+  async bulkBlockCallerIds(callIds: number[], data: any, userId: number): Promise<any> {
+    const results = [];
+    for (const callId of callIds) {
+      const call = this.calls.get(callId);
+      if (call && call.userId === userId) {
+        // In a real implementation, would add caller ID to blocklist
+        results.push({ callId, status: 'blocked', callerNumber: call.callerNumber });
+      }
+    }
+    return { results, total: callIds.length, processed: results.length };
+  }
+
+  async bulkRequestAdjustments(callIds: number[], data: any, userId: number): Promise<any> {
+    const results = [];
+    for (const callId of callIds) {
+      const call = this.calls.get(callId);
+      if (call && call.userId === userId) {
+        // In a real implementation, would create adjustment requests
+        results.push({ 
+          callId, 
+          status: 'adjustment_requested', 
+          requestType: data.adjustmentType,
+          reason: data.reason 
+        });
+      }
+    }
+    return { results, total: callIds.length, processed: results.length };
   }
 }
 

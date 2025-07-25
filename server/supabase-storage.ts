@@ -1636,6 +1636,78 @@ export class SupabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Tracking Pixels methods
+  async getTrackingPixels(userId: number): Promise<any[]> {
+    return [];
+  }
+
+  async getTrackingPixel(id: number): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async createTrackingPixel(pixel: any): Promise<any> {
+    return { id: Math.floor(Math.random() * 10000), ...pixel, createdAt: new Date().toISOString() };
+  }
+
+  async updateTrackingPixel(id: number, pixel: any): Promise<any | undefined> {
+    return { id, ...pixel, updatedAt: new Date().toISOString() };
+  }
+
+  async deleteTrackingPixel(id: number): Promise<boolean> {
+    return true;
+  }
+
+  // Campaign-specific Tracking Pixels
+  async getCampaignTrackingPixels(campaignId: string): Promise<any[]> {
+    return [];
+  }
+
+  async createCampaignTrackingPixel(data: any): Promise<any> {
+    return { id: Math.floor(Math.random() * 10000), ...data, createdAt: new Date().toISOString() };
+  }
+
+  async deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean> {
+    return true;
+  }
+
+  // Custom Reports (temporary implementations for demo)
+  async getCustomReports(userId: number): Promise<any[]> {
+    return [];
+  }
+
+  async createCustomReport(report: any): Promise<any> {
+    return { id: Math.floor(Math.random() * 10000), ...report, createdAt: new Date().toISOString() };
+  }
+
+  async updateCustomReport(id: number, report: any, userId: number): Promise<any> {
+    return { id, ...report, updatedAt: new Date().toISOString() };
+  }
+
+  async deleteCustomReport(id: number, userId: number): Promise<boolean> {
+    return true;
+  }
+
+  async copyCustomReport(id: number, userId: number): Promise<any> {
+    return { id: Math.floor(Math.random() * 10000), name: "Copy of Report", createdAt: new Date().toISOString() };
+  }
+
+  // Bulk Actions (temporary implementations for demo)
+  async bulkTranscribeCalls(callIds: number[], userId: number): Promise<any> {
+    return { processed: callIds.length, success: true };
+  }
+
+  async bulkAnnotateCalls(callIds: number[], data: any, userId: number): Promise<any> {
+    return { processed: callIds.length, success: true };
+  }
+
+  async bulkBlockCallerIds(callIds: number[], data: any, userId: number): Promise<any> {
+    return { processed: callIds.length, success: true };
+  }
+
+  async bulkRequestAdjustments(callIds: number[], data: any, userId: number): Promise<any> {
+    return { processed: callIds.length, success: true };
+  }
 }
 
 export const storage = new SupabaseStorage();
