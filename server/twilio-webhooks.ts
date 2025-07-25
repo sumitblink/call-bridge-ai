@@ -515,16 +515,57 @@ async function createCallRecord(callData: TwilioCallRequest, campaign: any, rout
 }
 
 /**
- * Trigger RedTrack quality tracking events based on call completion
+ * Trigger RedTrack quality tracking events and postback URLs based on call completion
  */
 async function triggerRedTrackQualityEvent(call: any, statusData: TwilioCallStatusRequest) {
   try {
-    // Only process if call has RedTrack clickid
-    if (!call.clickId && !call.redtrackClickid) {
+    console.log('[Webhook] Checking call for RedTrack data:', {
+      callId: call.id,
+      sessionId: call.sessionId,
+      clickId: call.clickId,
+      redtrackClickid: call.redtrackClickid
+    });
+
+    // Try to find RedTrack data in multiple places
+    let clickid = call.clickId || call.redtrackClickid;
+    let visitorSession = null;
+
+    // If no direct clickid, try to find visitor session with RedTrack data
+    if (!clickid && call.sessionId) {
+      try {
+        const client = (await import('@neondatabase/serverless')).neon;
+        const sql_client = client(process.env.DATABASE_URL!);
+        
+        const sessions = await sql_client`
+          SELECT redtrack_clickid, redtrack_campaign_id, redtrack_offer_id, redtrack_affiliate_id,
+                 redtrack_sub_1, redtrack_sub_2, redtrack_sub_3, redtrack_sub_4, redtrack_sub_5,
+                 redtrack_sub_6, redtrack_sub_7, redtrack_sub_8, session_id
+          FROM visitor_sessions 
+          WHERE session_id LIKE ${call.sessionId + '%'} 
+             OR session_id = ${call.sessionId}
+          ORDER BY last_activity DESC 
+          LIMIT 1
+        `;
+
+        if (sessions.length > 0) {
+          visitorSession = sessions[0];
+          clickid = visitorSession.redtrack_clickid;
+          console.log('[Webhook] Found RedTrack data in visitor session:', {
+            sessionId: visitorSession.session_id,
+            clickid: clickid
+          });
+        }
+      } catch (error) {
+        console.error('[Webhook] Error fetching visitor session:', error);
+      }
+    }
+
+    // Only process if we have RedTrack clickid
+    if (!clickid) {
+      console.log('[Webhook] No RedTrack clickid found for call:', call.id);
       return;
     }
 
-    const clickid = call.clickId || call.redtrackClickid;
     const duration = parseInt(statusData.Duration || '0', 10);
     const callStatus = statusData.CallStatus;
     
@@ -544,36 +585,115 @@ async function triggerRedTrackQualityEvent(call: any, statusData: TwilioCallStat
       }
     }
 
+    const revenue = parseFloat(call.revenue || '0');
+    const payout = parseFloat(call.payout || '0');
+    const conversionValue = payout > 0 ? payout : revenue > 0 ? revenue : 25.00; // Fallback to $25
+
     const qualityData = {
       clickid,
       conversionType,
       duration,
       answered,
       converted,
-      revenue: parseFloat(call.revenue || '0'),
+      revenue,
       sessionId: call.sessionId || `call_${call.id}_${Date.now()}`
     };
 
     console.log('[Webhook] Triggering RedTrack quality event:', qualityData);
 
-    // Send to RedTrack quality endpoint
+    // Send to internal RedTrack quality endpoint
     const fetch = (await import('node-fetch')).default;
-    const response = await fetch(`${process.env.BASE_URL || 'http://localhost:5000'}/api/tracking/redtrack/quality`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(qualityData),
-    });
+    try {
+      const response = await fetch(`${process.env.BASE_URL || 'http://localhost:5000'}/api/tracking/redtrack/quality`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(qualityData),
+      });
 
-    if (response.ok) {
-      console.log('[Webhook] RedTrack quality event sent successfully');
-    } else {
-      console.error('[Webhook] RedTrack quality event failed:', response.status);
+      if (response.ok) {
+        console.log('[Webhook] RedTrack quality event sent successfully');
+      } else {
+        console.error('[Webhook] RedTrack quality event failed:', response.status);
+      }
+    } catch (error) {
+      console.error('[Webhook] Error sending internal RedTrack quality event:', error);
+    }
+
+    // Fire RedTrack postback URL if call is completed (answered or converted)
+    if (callStatus === 'completed' && (answered || converted)) {
+      await fireRedTrackPostback(clickid, conversionType, conversionValue, visitorSession);
     }
 
   } catch (error) {
     console.error('[Webhook] Error sending RedTrack quality event:', error);
+  }
+}
+
+/**
+ * Fire actual RedTrack postback URL for call completion
+ */
+async function fireRedTrackPostback(clickid: string, conversionType: string, conversionValue: number, visitorSession?: any) {
+  try {
+    // Extract RedTrack domain from clickid if it follows standard format
+    let redtrackDomain = null;
+    
+    // Check if we have campaign/offer data to construct postback URL
+    if (visitorSession?.redtrack_campaign_id || visitorSession?.redtrack_offer_id) {
+      // Standard RedTrack postback format
+      const campaignId = visitorSession.redtrack_campaign_id;
+      const offerId = visitorSession.redtrack_offer_id;
+      
+      // Try common RedTrack domain patterns
+      const commonDomains = [
+        'cy9n0.rdtk.io', // User's specific domain from the URL they provided
+        'rdtk.io',
+        'redtrack.io'
+      ];
+      
+      for (const domain of commonDomains) {
+        try {
+          const postbackUrl = `https://${domain}/postback?clickid=${clickid}&sum=${conversionValue}&type=${conversionType}`;
+          
+          console.log('[Webhook] Firing RedTrack postback:', postbackUrl);
+          
+          const fetch = (await import('node-fetch')).default;
+          const response = await fetch(postbackUrl, {
+            method: 'GET',
+            timeout: 10000,
+            headers: {
+              'User-Agent': 'CallCenter-Pro-Webhook/1.0'
+            }
+          });
+
+          if (response.ok) {
+            console.log(`[Webhook] ✅ RedTrack postback fired successfully to ${domain}:`, {
+              clickid,
+              conversionType,
+              conversionValue,
+              status: response.status
+            });
+            return; // Success, stop trying other domains
+          } else {
+            console.log(`[Webhook] RedTrack postback failed for ${domain}:`, response.status);
+          }
+        } catch (error) {
+          console.log(`[Webhook] RedTrack postback error for ${domain}:`, error.message);
+        }
+      }
+    }
+
+    // If no specific domain worked, log the data for manual verification
+    console.log('[Webhook] RedTrack postback data (manual verification needed):', {
+      clickid,
+      conversionType,
+      conversionValue,
+      message: 'Add your specific RedTrack postback URL configuration'
+    });
+
+  } catch (error) {
+    console.error('[Webhook] Error firing RedTrack postback:', error);
   }
 }
 

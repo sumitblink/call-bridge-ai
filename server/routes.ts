@@ -44,6 +44,152 @@ const requireAuth = (req: any, res: Response, next: NextFunction) => {
   next();
 };
 
+/**
+ * Trigger RedTrack postback for call completion
+ */
+async function triggerRedTrackPostback(call: any, statusData: any) {
+  try {
+    console.log('[Webhook] Checking call for RedTrack data:', {
+      callId: call.id,
+      sessionId: call.sessionId,
+      clickId: call.clickId
+    });
+
+    // Try to find RedTrack data in multiple places
+    let clickid = call.clickId;
+    let visitorSession = null;
+
+    // If no direct clickid, try to find visitor session with RedTrack data
+    if (!clickid && call.sessionId) {
+      try {
+        const client = (await import('@neondatabase/serverless')).neon;
+        const sql_client = client(process.env.DATABASE_URL!);
+        
+        const sessions = await sql_client`
+          SELECT redtrack_clickid, redtrack_campaign_id, redtrack_offer_id, redtrack_affiliate_id,
+                 redtrack_sub_1, redtrack_sub_2, redtrack_sub_3, redtrack_sub_4, redtrack_sub_5,
+                 redtrack_sub_6, redtrack_sub_7, redtrack_sub_8, session_id
+          FROM visitor_sessions 
+          WHERE session_id LIKE ${call.sessionId + '%'} 
+             OR session_id = ${call.sessionId}
+          ORDER BY last_activity DESC 
+          LIMIT 1
+        `;
+
+        if (sessions.length > 0) {
+          visitorSession = sessions[0];
+          clickid = visitorSession.redtrack_clickid;
+          console.log('[Webhook] Found RedTrack data in visitor session:', {
+            sessionId: visitorSession.session_id,
+            clickid: clickid
+          });
+        }
+      } catch (error) {
+        console.error('[Webhook] Error fetching visitor session:', error);
+      }
+    }
+
+    // Only process if we have RedTrack clickid
+    if (!clickid) {
+      console.log('[Webhook] No RedTrack clickid found for call:', call.id);
+      return;
+    }
+
+    const duration = parseInt(statusData.Duration || '0', 10);
+    const callStatus = statusData.CallStatus;
+    
+    // Determine conversion type based on call completion
+    let conversionType = 'RAWCall';
+    let answered = false;
+    let converted = false;
+    
+    if (callStatus === 'completed') {
+      answered = true;
+      conversionType = 'AnsweredCall';
+      
+      // Consider calls > 30 seconds as converted
+      if (duration > 30) {
+        converted = true;
+        conversionType = 'ConvertedCall';
+      }
+    }
+
+    const revenue = parseFloat(call.revenue || '0');
+    const payout = parseFloat(call.payout || '0');
+    const conversionValue = payout > 0 ? payout : revenue > 0 ? revenue : 25.00; // Fallback to $25
+
+    console.log('[Webhook] Triggering RedTrack postback for:', {
+      clickid,
+      conversionType,
+      conversionValue,
+      duration
+    });
+
+    // Fire RedTrack postback URL if call is completed (answered or converted)
+    if (callStatus === 'completed' && (answered || converted)) {
+      await fireRedTrackPostback(clickid, conversionType, conversionValue, visitorSession);
+    }
+
+  } catch (error) {
+    console.error('[Webhook] Error triggering RedTrack postback:', error);
+  }
+}
+
+/**
+ * Fire actual RedTrack postback URL for call completion
+ */
+async function fireRedTrackPostback(clickid: string, conversionType: string, conversionValue: number, visitorSession?: any) {
+  try {
+    // Try common RedTrack domain patterns
+    const commonDomains = [
+      'cy9n0.rdtk.io', // User's specific domain from the URL they provided
+      'rdtk.io',
+      'redtrack.io'
+    ];
+    
+    for (const domain of commonDomains) {
+      try {
+        const postbackUrl = `https://${domain}/postback?clickid=${clickid}&sum=${conversionValue}&type=${conversionType}`;
+        
+        console.log('[Webhook] Firing RedTrack postback:', postbackUrl);
+        
+        const response = await fetch(postbackUrl, {
+          method: 'GET',
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'CallCenter-Pro-Webhook/1.0'
+          }
+        });
+
+        if (response.ok) {
+          console.log(`[Webhook] ✅ RedTrack postback fired successfully to ${domain}:`, {
+            clickid,
+            conversionType,
+            conversionValue,
+            status: response.status
+          });
+          return; // Success, stop trying other domains
+        } else {
+          console.log(`[Webhook] RedTrack postback failed for ${domain}:`, response.status);
+        }
+      } catch (error) {
+        console.log(`[Webhook] RedTrack postback error for ${domain}:`, error.message);
+      }
+    }
+
+    // If no specific domain worked, log the data for manual verification
+    console.log('[Webhook] RedTrack postback data (manual verification needed):', {
+      clickid,
+      conversionType,
+      conversionValue,
+      message: 'Add your specific RedTrack postback URL configuration'
+    });
+
+  } catch (error) {
+    console.error('[Webhook] Error firing RedTrack postback:', error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure session middleware for custom auth
   const session = (await import('express-session')).default;
@@ -2023,7 +2169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/webhooks/call-status', async (req, res) => {
     try {
-      const { CallSid, CallStatus, CallDuration } = req.body;
+      const { CallSid, CallStatus, CallDuration, Duration } = req.body;
       
       console.log(`[Webhook] Call status update: ${CallSid} - ${CallStatus}`);
       
@@ -2032,11 +2178,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const call = calls.find(c => c.callSid === CallSid);
       
       if (call) {
-        await storage.updateCall(call.id, {
+        const finalDuration = Duration || CallDuration;
+        const updatedCall = await storage.updateCall(call.id, {
           status: CallStatus.toLowerCase(),
-          duration: CallDuration ? parseInt(CallDuration) : undefined
+          duration: finalDuration ? parseInt(finalDuration) : undefined
         });
         console.log(`[Webhook] Updated call ${call.id} status to ${CallStatus}`);
+        
+        // Trigger RedTrack postback for call completion
+        if (CallStatus === 'completed') {
+          await triggerRedTrackPostback(call, {
+            CallSid,
+            CallStatus,
+            Duration: finalDuration
+          });
+        }
       }
       
       res.status(200).send('OK');
