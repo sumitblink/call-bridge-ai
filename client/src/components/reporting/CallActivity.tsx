@@ -427,7 +427,7 @@ export default function CallActivity() {
       case 'publisherName':
         return <div className="truncate text-xs">{(call as any).publisherName || 'No Publisher'}</div>;
       case 'clickId':
-        return <div className="font-mono text-xs text-blue-600">{(call as any).clickId || 'No Click ID'}</div>;
+        return <div className="font-mono text-xs text-blue-600">{(call as any).click_id || (call as any).clickId || '-'}</div>;
       case 'payout':
         return <div className="text-xs font-medium text-blue-600">${(call as any).payout || '0.00'}</div>;
       case 'timeToCall':
