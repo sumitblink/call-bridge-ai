@@ -114,6 +114,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 25, 2025: **PHONE NUMBER WEBHOOK ROUTING ISSUE COMPLETELY FIXED** - Resolved critical issue preventing calls to landing page phone numbers from connecting properly
+  - **Root Cause**: Phone number +18566441573 had incorrect webhook URL pointing to pool/25/voice instead of pool/9/voice
+  - **Database Fix**: Updated voice_url in phone_numbers table to correct pool/9/voice endpoint
+  - **Twilio Configuration**: Updated actual Twilio phone number webhook configuration and friendly name
+  - **Call Routing Verified**: Test calls now properly route to Premium Insurance Co (+917045484791)
+  - **End-to-End Testing**: Confirmed complete call flow from landing page number to buyer with recording and attribution
+  - **Status**: Phone calls to +18566441573 from landing pages now connect successfully to configured buyers
 - July 25, 2025: **CAMPAIGN SETUP PROGRESS SECTION HIDDEN FOR ACTIVE CAMPAIGNS** - Dramatically reduced interface clutter by hiding redundant campaign setup information for active campaigns
   - **Compact Status Display**: Replaced bulky Campaign Setup Progress section with minimal status bar showing Live badge and pause button
   - **75% Space Reduction**: Eliminated progress bars, step cards, and redundant setup information taking significant vertical space
