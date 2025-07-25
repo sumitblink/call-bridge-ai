@@ -1433,12 +1433,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Filter calls to only show those belonging to user's campaigns
       const userCampaigns = await storage.getCampaigns(userId);
-      const campaignIds = userCampaigns.map(c => String(c.id));
+      const campaignIds = userCampaigns.map(c => c.id);
       
       const allCalls = await storage.getCalls();
-      console.log(`User ${userId} has ${userCampaigns.length} campaigns, ${allCalls.length} total calls`);
-      const userCalls = allCalls.filter(call => campaignIds.includes(String(call.campaignId)));
-      console.log(`Filtered to ${userCalls.length} user calls`);
+      const userCalls = allCalls.filter(call => campaignIds.includes(call.campaignId));
       
       // Apply pagination
       const totalCount = userCalls.length;
