@@ -379,8 +379,6 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     const port = window.location.port ? `:${window.location.port}` : '';
     const baseUrl = `${protocol}//${currentDomain}${port}`;
     
-
-    
     return `<script>
 (function() {
   'use strict';
@@ -388,7 +386,8 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
   var DNI = {
     config: {
       tagCode: '${tag.tagCode}',
-      apiUrl: '${baseUrl}/api/dni/track',
+      campaignId: '${campaignId}',
+      apiUrl: '${baseUrl}/api/dni/track-simple',
       timeout: 5000,
       captureUserData: ${tag.captureUserData || false},
       debug: false
@@ -405,12 +404,11 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     replaceNumbers: function() {
       var elements = document.querySelectorAll('.tracking-number, [data-tracking-number]');
       if (elements.length === 0) {
-
         return;
       }
       
       this.getTrackingNumber(function(response) {
-        if (response.success && response.formattedNumber) {
+        if (response.phoneNumber && response.formattedNumber) {
           for (var i = 0; i < elements.length; i++) {
             elements[i].textContent = response.formattedNumber;
             // Update href if it's a link
@@ -424,7 +422,7 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     
     getTrackingNumber: function(callback) {
       var requestData = {
-        tagCode: this.config.tagCode,
+        campaignId: this.config.campaignId,
         sessionId: this.getSessionId(),
         domain: window.location.hostname,
         referrer: document.referrer,
@@ -440,7 +438,18 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
         requestData.utmContent = urlParams.get('utm_content');
         requestData.utmTerm = urlParams.get('utm_term');
         
-        // Custom URL parameters (auto-generated from configuration)
+        // RedTrack parameters (sub1-sub8)
+        requestData.clickid = urlParams.get('clickid');
+        requestData.sub1 = urlParams.get('sub1');
+        requestData.sub2 = urlParams.get('sub2');
+        requestData.sub3 = urlParams.get('sub3');
+        requestData.sub4 = urlParams.get('sub4');
+        requestData.sub5 = urlParams.get('sub5');
+        requestData.sub6 = urlParams.get('sub6');
+        requestData.sub7 = urlParams.get('sub7');
+        requestData.sub8 = urlParams.get('sub8');
+        
+        // Additional tracking parameters
         requestData.publisher = urlParams.get('publisher');
         requestData.gclid = urlParams.get('gclid');
         requestData.fbclid = urlParams.get('fbclid');
@@ -449,7 +458,6 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
         requestData.twclid = urlParams.get('twclid');
         requestData.liclid = urlParams.get('liclid');
         requestData.subid = urlParams.get('subid');
-        requestData.clickid = urlParams.get('clickid');
         requestData.affid = urlParams.get('affid');
         requestData.pubid = urlParams.get('pubid');
         requestData.source = urlParams.get('source');
@@ -484,7 +492,7 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
       })
       .then(callback)
       .catch(function(error) {
-
+        console.error('DNI tracking error:', error);
       });
     },
     
