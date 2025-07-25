@@ -89,56 +89,36 @@ export default function RingbaStyleReporting() {
   });
   const [activeReportPanel, setActiveReportPanel] = useState("timeline");
 
-  // Mock data for demonstration
-  const mockSummaries: CampaignSummary[] = [
-    {
-      campaignId: "b284e3ad-dae9-4b8a-9c4d-c9f00bdbb41b",
-      campaignName: "Healthcare Insurance Lead Generation",
-      publisher: "Google Ads",
-      target: "Health Insurance Seekers",
-      buyer: "SecureHealth Partners",
-      dialedNumbers: ["+18569256411", "+18564853922"],
-      numberPool: "FirstCampaignPool",
-      lastCallDate: "2025-01-25",
-      duplicate: "No",
-      tags: ["health", "insurance", "lead-gen"],
-      incoming: 15,
-      live: 12,
-      completed: 10,
-      ended: 2,
-      connected: 8,
-      paid: 7,
-      converted: 5,
-      noConnection: 2,
-      blocked: 1,
-      ivrHangup: 1,
-      rpc: 5.50,
-      revenue: 55.00,
-      payout: 50.00,
-      profit: 5.00,
-      margin: 9.1,
-      conversionRate: 50.0,
-      tcl: 180,
-      acl: 45,
-      totalCost: 15.00,
-      totalCalls: 15
+  // Fetch real summary data from API
+  const { data: summaryResponse, isLoading: isSummaryLoading } = useQuery({
+    queryKey: ['/api/reporting/summary', { groupBy: 'campaign', filters: activeFilters, dateRange: 'today' }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        groupBy: 'campaign',
+        dateRange: 'today',
+        filters: JSON.stringify(activeFilters)
+      });
+      const response = await fetch(`/api/reporting/summary?${params}`);
+      return response.json();
     }
-  ];
+  });
 
-  const chartData = [
-    { time: "00:00", calls: 2, revenue: 10 },
-    { time: "01:00", calls: 1, revenue: 5 },
-    { time: "02:00", calls: 0, revenue: 0 },
-    { time: "03:00", calls: 1, revenue: 5 },
-    { time: "04:00", calls: 3, revenue: 15 },
-    { time: "05:00", calls: 2, revenue: 10 },
-    { time: "06:00", calls: 4, revenue: 20 },
-    { time: "07:00", calls: 6, revenue: 30 },
-    { time: "08:00", calls: 8, revenue: 40 },
-    { time: "09:00", calls: 12, revenue: 60 },
-    { time: "10:00", calls: 15, revenue: 75 },
-    { time: "11:00", calls: 18, revenue: 90 }
-  ];
+  const summaryData = summaryResponse?.summaries || [];
+
+  // Fetch real timeline data from API
+  const { data: timelineResponse, isLoading: isTimelineLoading } = useQuery({
+    queryKey: ['/api/reporting/timeline', { groupBy: 'hour', dateRange: 'today' }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        groupBy: 'hour',
+        dateRange: 'today'
+      });
+      const response = await fetch(`/api/reporting/timeline?${params}`);
+      return response.json();
+    }
+  });
+
+  const chartData = timelineResponse?.timeline || [];
 
   // Export CSV functionality
   const exportCsv = () => {
@@ -150,7 +130,7 @@ export default function RingbaStyleReporting() {
       'Conversion Rate %', 'TCL', 'ACL', 'Total Cost'
     ];
     
-    const csvData = mockSummaries.map(summary => [
+    const csvData = summaryData.map((summary: any) => [
       summary.campaignName,
       summary.publisher,
       summary.target,

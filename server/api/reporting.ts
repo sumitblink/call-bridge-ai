@@ -73,37 +73,77 @@ router.get('/timeline', requireAuth, async (req, res) => {
     const dateRange = req.query.dateRange as string || 'today';
     const groupBy = req.query.groupBy as string || 'hour';
 
-    // Generate mock timeline data based on current time
-    const now = new Date();
+    // Get real call data
+    const calls = await storage.getCallsByUser(userId);
     const timelineData = [];
     
     if (groupBy === 'hour') {
+      // Group calls by hour
+      const callsByHour = new Map<string, any[]>();
+      
+      calls.forEach(call => {
+        const callDate = new Date(call.createdAt);
+        const hour = callDate.getHours().toString().padStart(2, '0') + ':00';
+        
+        if (!callsByHour.has(hour)) {
+          callsByHour.set(hour, []);
+        }
+        callsByHour.get(hour)!.push(call);
+      });
+      
+      // Generate 24-hour timeline
       for (let i = 0; i < 24; i++) {
         const hour = i.toString().padStart(2, '0') + ':00';
-        const calls = Math.floor(Math.random() * 20);
-        const revenue = calls * 5.50;
+        const hourCalls = callsByHour.get(hour) || [];
+        const callCount = hourCalls.length;
+        const revenue = hourCalls.reduce((sum, call) => sum + parseFloat(call.revenue || '0'), 0);
+        const cost = hourCalls.reduce((sum, call) => sum + parseFloat(call.cost || '0'), 0);
+        const conversions = hourCalls.filter(call => 
+          call.status === 'completed' && call.duration && call.duration > 30
+        ).length;
         
         timelineData.push({
           time: hour,
-          calls,
+          calls: callCount,
           revenue,
-          conversions: Math.floor(calls * 0.3),
-          cost: calls * 0.15
+          conversions,
+          cost
         });
       }
     } else if (groupBy === 'day') {
+      // Group calls by day for last 7 days
+      const callsByDay = new Map<string, any[]>();
+      
+      calls.forEach(call => {
+        const callDate = new Date(call.createdAt);
+        const day = callDate.toISOString().split('T')[0];
+        
+        if (!callsByDay.has(day)) {
+          callsByDay.set(day, []);
+        }
+        callsByDay.get(day)!.push(call);
+      });
+      
+      // Generate last 7 days
+      const now = new Date();
       for (let i = 6; i >= 0; i--) {
         const date = new Date(now);
         date.setDate(date.getDate() - i);
-        const calls = Math.floor(Math.random() * 100) + 20;
-        const revenue = calls * 5.50;
+        const day = date.toISOString().split('T')[0];
+        const dayCalls = callsByDay.get(day) || [];
+        const callCount = dayCalls.length;
+        const revenue = dayCalls.reduce((sum, call) => sum + parseFloat(call.revenue || '0'), 0);
+        const cost = dayCalls.reduce((sum, call) => sum + parseFloat(call.cost || '0'), 0);
+        const conversions = dayCalls.filter(call => 
+          call.status === 'completed' && call.duration && call.duration > 30
+        ).length;
         
         timelineData.push({
-          time: date.toISOString().split('T')[0],
-          calls,
+          time: day,
+          calls: callCount,
           revenue,
-          conversions: Math.floor(calls * 0.3),
-          cost: calls * 0.15
+          conversions,
+          cost
         });
       }
     }
@@ -301,14 +341,26 @@ router.post('/bulk/adjustment', requireAuth, async (req, res) => {
 // Tags endpoint for Summary Report
 router.get('/tags', requireAuth, async (req, res) => {
   try {
-    // Return sample tags for now
-    const tags = [
-      { value: 'healthcare', label: 'Healthcare' },
-      { value: 'insurance', label: 'Insurance' },
-      { value: 'solar', label: 'Solar' },
-      { value: 'finance', label: 'Finance' },
-      { value: 'education', label: 'Education' }
-    ];
+    const userId = req.session.userId!;
+    
+    // Get actual tags from calls data
+    const calls = await storage.getCallsByUser(userId);
+    const tagSet = new Set<string>();
+    
+    calls.forEach(call => {
+      if (call.tags) {
+        const callTags = call.tags.split(',').map(tag => tag.trim());
+        callTags.forEach(tag => {
+          if (tag) tagSet.add(tag);
+        });
+      }
+    });
+    
+    const tags = Array.from(tagSet).map(tag => ({
+      value: tag,
+      label: tag.charAt(0).toUpperCase() + tag.slice(1)
+    }));
+    
     res.json(tags);
   } catch (error) {
     console.error('Error fetching tags:', error);
