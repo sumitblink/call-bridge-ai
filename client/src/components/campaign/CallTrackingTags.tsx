@@ -627,7 +627,12 @@ ${generateJavaScriptCode(tag)}`;
                       <SelectItem value="none">No primary number</SelectItem>
                       {availablePhoneNumbers.map((number) => (
                         <SelectItem key={number.id} value={number.id.toString()}>
-                          {number.friendlyName || formatPhoneNumber(number.phoneNumber)}
+                          <div className="flex items-center justify-between w-full">
+                            <span>{number.friendlyName || 'Available'}</span>
+                            <span className="text-muted-foreground ml-2">
+                              {formatPhoneNumber(number.phoneNumber)}
+                            </span>
+                          </div>
                         </SelectItem>
                       ))}
                       {availablePhoneNumbers.length === 0 && (
