@@ -635,10 +635,12 @@ ${generateJavaScriptCode(tag)}`;
                       <SelectItem value="none">No primary number</SelectItem>
                       {availablePhoneNumbers.map((number) => (
                         <SelectItem key={number.id} value={number.id.toString()}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{number.friendlyName || 'Available'}</span>
-                            <span className="text-muted-foreground ml-2">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-medium text-foreground">
                               {formatPhoneNumber(number.phoneNumber)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {number.friendlyName || 'Available'}
                             </span>
                           </div>
                         </SelectItem>
@@ -1109,7 +1111,14 @@ ${generateJavaScriptCode(tag)}`;
                     <SelectItem value="none">No primary number</SelectItem>
                     {phoneNumbers.map((phone) => (
                       <SelectItem key={phone.id} value={phone.id.toString()}>
-                        {phone.friendlyName || formatPhoneNumber(phone.phoneNumber)}
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium text-foreground">
+                            {formatPhoneNumber(phone.phoneNumber)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {phone.friendlyName || 'Available'}
+                          </span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
