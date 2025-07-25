@@ -304,11 +304,21 @@ export default function RingbaStyleReporting() {
       {/* Four-Panel Report Content */}
       <div className="p-4 space-y-4">
         {activeReportPanel === "timeline" && (
-          <EnhancedTimelineReport
-            filters={activeFilters}
-            dateRange={dateRange}
-            onTimeRangeSelect={handleTimeRangeSelect}
-          />
+          <div className="space-y-6">
+            {/* Timeline Report */}
+            <EnhancedTimelineReport
+              filters={activeFilters}
+              dateRange={dateRange}
+              onTimeRangeSelect={handleTimeRangeSelect}
+            />
+            
+            {/* Summary Report below Timeline */}
+            <SummaryReport
+              filters={activeFilters}
+              dateRange={dateRange}
+              onFilterClick={handleFilterClick}
+            />
+          </div>
         )}
 
         {activeReportPanel === "summary" && (
