@@ -70,6 +70,17 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     filterable: true
   },
   {
+    id: 'clickId',
+    label: 'Click ID',
+    category: 'Popular',
+    dataType: 'string',
+    defaultVisible: true,
+    width: 200,
+    sortable: true,
+    filterable: true,
+    description: 'Tracking click ID from visitor session'
+  },
+  {
     id: 'target',
     label: 'Target',
     category: 'Popular',

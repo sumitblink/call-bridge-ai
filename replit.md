@@ -114,6 +114,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 25, 2025: **CLICK ID COLUMN ADDED TO CALL DETAILS TABLE** - Fixed missing Click ID column by adding proper column definition and rendering logic
+  - **Column Definition Added**: Added clickId to Popular category in shared/column-definitions.ts with defaultVisible: true
+  - **Rendering Logic**: Added case for 'clickId' in CallActivity.tsx renderColumnValue function with blue monospace styling
+  - **Data Flow Confirmed**: Click ID data is captured from visitor sessions and stored in calls table through webhook handlers
+  - **Database Schema**: Click ID field exists as clickId varchar(255) in calls table and is properly mapped from visitor sessions
+  - **User Experience**: Click ID now appears in Call Details table showing tracking attribution from visitor sessions
+  - **Status**: Click ID column now visible and functional in Enhanced Reporting Call Details table
 - July 24, 2025: **REACT KEY WARNING COMPLETELY FIXED** - Resolved "Each child in a list should have a unique key prop" error in CallActivity table rendering
   - **Fragment Key Fix**: Added proper `key` prop to React.Fragment elements wrapping table rows and expandable content
   - **React Import Added**: Added React import to support React.Fragment syntax with proper key handling
