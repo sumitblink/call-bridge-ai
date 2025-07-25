@@ -618,14 +618,14 @@ export default function CallActivity() {
           <div className="rounded-md border overflow-hidden">
             <Table ref={tableRef}>
               <TableHeader>
-                <TableRow className="bg-gradient-to-r from-slate-100 to-slate-200 border-b-2 border-slate-300">
-                  <TableHead className="text-xs font-semibold bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 w-8"></TableHead>
+                <TableRow className="bg-gray-100 border-b border-gray-300">
+                  <TableHead className="text-xs font-semibold bg-gray-100 text-gray-800 w-8"></TableHead>
                   {visibleColumns.map((column, columnIndex) => {
                     const columnDef = getDynamicColumnDefinition(column);
                     return (
                       <TableHead 
                         key={`header-${columnIndex}-${column}`} 
-                        className="text-xs font-semibold relative bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 border-r border-slate-300 last:border-r-0"
+                        className="text-xs font-semibold relative bg-gray-100 text-gray-800"
                         style={{ 
                           width: columnWidths[column] || columnDef?.width || 'auto',
                           minWidth: '60px'
