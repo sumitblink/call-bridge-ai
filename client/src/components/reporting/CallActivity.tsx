@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -346,10 +346,41 @@ export default function CallActivity() {
     setAdjustmentReason("");
   };
 
-  // Real data queries - no mock data
-  const { data: calls = [], isLoading: isLoadingCalls } = useQuery<Call[]>({
-    queryKey: ["/api/calls"]
+  // Add refs and state for lazy loading
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Pagination state and types
+  interface PaginatedResponse {
+    calls: Call[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+  }
+
+  // Infinite query for paginated calls with lazy loading
+  const {
+    data: callsData,
+    isLoading: isLoadingCalls,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<PaginatedResponse>({
+    queryKey: ['/api/calls'],
+    queryFn: ({ pageParam = 1 }) => 
+      fetch(`/api/calls?page=${pageParam}&limit=25`).then(res => res.json()),
+    getNextPageParam: (lastPage) => 
+      lastPage.pagination.hasNextPage ? lastPage.pagination.page + 1 : undefined,
+    staleTime: 1000 * 60 * 2, // Cache for 2 minutes
   });
+
+  // Flatten all pages into single calls array
+  const calls = callsData?.pages.flatMap(page => page.calls) || [];
+  const totalCalls = callsData?.pages[0]?.pagination.total || 0;
 
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"]
@@ -358,6 +389,28 @@ export default function CallActivity() {
   const { data: buyers = [], isLoading: isLoadingBuyers } = useQuery<Buyer[]>({
     queryKey: ["/api/buyers"]
   });
+
+  // Infinite scroll handler
+  const handleScroll = useCallback(() => {
+    const container = tableContainerRef.current;
+    if (!container || !hasNextPage || isFetchingNextPage) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const scrolledToBottom = scrollTop + clientHeight >= scrollHeight - 200; // Load when 200px from bottom
+
+    if (scrolledToBottom) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Attach scroll listener
+  useEffect(() => {
+    const container = tableContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, [handleScroll]);
 
   const filteredCalls = calls.filter(call => {
     const matchesStatus = statusFilter === "all" || call.status === statusFilter;
@@ -593,7 +646,12 @@ export default function CallActivity() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg">Call Details</CardTitle>
-            <CardDescription>Monitor and manage individual call activities</CardDescription>
+            <CardDescription>
+              {calls.length > 0 ? 
+                `Showing ${calls.length} of ${totalCalls} calls • Lazy loading enabled` : 
+                'Monitor and manage individual call activities'
+              }
+            </CardDescription>
           </div>
           <div className="flex items-center space-x-2">
             <ColumnCustomizer
@@ -658,7 +716,11 @@ export default function CallActivity() {
             </p>
           </div>
         ) : (
-          <div className="rounded-md border overflow-hidden">
+          <div 
+            ref={tableContainerRef}
+            className="rounded-md border overflow-auto max-h-[600px]"
+            style={{ scrollBehavior: 'smooth' }}
+          >
             <Table ref={tableRef}>
               <TableHeader>
                 <TableRow className="bg-gray-100 border-b border-gray-300">
@@ -772,6 +834,26 @@ export default function CallActivity() {
                 })}
               </TableBody>
             </Table>
+            
+            {/* Loading indicator for infinite scroll */}
+            {isFetchingNextPage && (
+              <div className="flex items-center justify-center py-4 border-t bg-muted/30">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span>Loading more calls...</span>
+                </div>
+              </div>
+            )}
+            
+            {/* Total count indicator */}
+            {calls.length > 0 && (
+              <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-t text-xs text-muted-foreground">
+                <span>Showing {calls.length} of {totalCalls} total calls</span>
+                {hasNextPage && !isFetchingNextPage && (
+                  <span>Scroll down to load more</span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

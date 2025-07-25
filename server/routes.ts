@@ -1198,10 +1198,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Calls
+  // Calls with pagination support for lazy loading
   app.get('/api/calls', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
+      
+      // Parse pagination parameters
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = (page - 1) * limit;
+      
       // Filter calls to only show those belonging to user's campaigns
       const userCampaigns = await storage.getCampaigns(userId);
       const campaignIds = userCampaigns.map(c => c.id);
@@ -1209,7 +1215,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allCalls = await storage.getCalls();
       const userCalls = allCalls.filter(call => campaignIds.includes(call.campaignId));
       
-      res.json(userCalls);
+      // Apply pagination
+      const totalCount = userCalls.length;
+      const paginatedCalls = userCalls
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) // Sort by newest first
+        .slice(offset, offset + limit);
+      
+      res.json({
+        calls: paginatedCalls,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasPreviousPage: page > 1
+        }
+      });
     } catch (error) {
       console.error("Error fetching calls:", error);
       res.status(500).json({ error: "Failed to fetch calls" });
@@ -6881,7 +6903,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const phoneNumberTagsRouter = (await import('./api/phone-number-tags')).default;
   app.use('/api/phone-number-tags', phoneNumberTagsRouter);
   
-  // Enhanced calls endpoint for expandable call details
+  // Enhanced calls endpoint for expandable call details with pagination
   app.get('/api/calls/enhanced', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
@@ -6889,13 +6911,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
+      // Parse pagination parameters
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 25; // Smaller default for enhanced data
+      const offset = (page - 1) * limit;
+
       // Get calls with basic enhanced data
       const callsData = await storage.getCalls(userId);
       const campaignsData = await storage.getCampaigns(userId);
       const buyersData = await storage.getBuyers(userId);
       const publishersData = await storage.getPublishers(userId);
-
-
 
       // Create lookup maps - use string conversion to ensure matching
       const campaignMap = new Map(campaignsData.map(c => [String(c.id), c]));
@@ -6916,8 +6941,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
 
+      // Apply pagination to enhanced calls
+      const totalCount = enhancedCalls.length;
+      const sortedCalls = enhancedCalls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const paginatedCalls = sortedCalls.slice(offset, offset + limit);
 
-      res.json(enhancedCalls);
+      res.json({
+        calls: paginatedCalls,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasPreviousPage: page > 1
+        }
+      });
     } catch (error) {
       console.error("Error fetching enhanced calls:", error);
       res.status(500).json({ message: "Internal server error" });

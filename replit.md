@@ -114,6 +114,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 25, 2025: **LAZY LOADING IMPLEMENTED FOR CALL DETAILS TABLE** - Added infinite scroll pagination to handle large datasets efficiently with 25 calls per page
+  - **Infinite Scroll Support**: Call Details table now loads 25 calls at a time with automatic pagination on scroll
+  - **Performance Optimization**: Reduced initial load time and memory usage for large call datasets
+  - **Backend Pagination**: Enhanced `/api/calls` and `/api/calls/enhanced` endpoints with page and limit parameters
+  - **Visual Indicators**: Added loading spinners, scroll hints, and total count display for better user experience
+  - **Smooth Scrolling**: Implemented scroll-triggered loading 200px from bottom with smooth scroll behavior
+  - **Status**: Large call datasets now load instantly with progressive loading as user scrolls through data
 - July 25, 2025: **DNI SERVICE PERFORMANCE OPTIMIZED BY 99%** - Eliminated 3-second page load delays by implementing caching, query optimization, and reduced logging in Dynamic Number Insertion system
   - **Response Time Improvement**: Reduced DNI API response time from 3+ seconds to 20-25ms (99% faster)
   - **Database Query Optimization**: Combined multiple sequential database queries into single optimized queries with LIMIT clauses
