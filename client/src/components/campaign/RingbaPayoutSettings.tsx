@@ -118,20 +118,20 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
               </Button>
             </DialogTrigger>
             
-            <DialogContent className="sm:max-w-[600px] bg-gray-900 text-white border-gray-700">
+            <DialogContent className="sm:max-w-[600px] bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700">
               <DialogHeader>
-                <DialogTitle className="text-white">Default Payout Settings</DialogTitle>
+                <DialogTitle className="text-gray-900 dark:text-white">Default Payout Settings</DialogTitle>
               </DialogHeader>
               
               <div className="space-y-6 py-4">
                 {/* Payout Setting Section */}
-                <div className="space-y-4 border-b border-gray-700 pb-6">
-                  <h3 className="text-lg font-medium">Payout Setting</h3>
+                <div className="space-y-4 border-b border-gray-200 dark:border-gray-700 pb-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Payout Setting</h3>
                   
                   {/* Payout Type Toggle */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Label className="text-gray-300">Payout Type</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">Payout Type</Label>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
@@ -143,12 +143,12 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                         </Tooltip>
                       </TooltipProvider>
                     </div>
-                    <div className="flex gap-0 bg-gray-800 rounded-md p-1">
+                    <div className="flex gap-0 bg-gray-100 dark:bg-gray-800 rounded-md p-1">
                       <Button
                         type="button"
                         variant={newPayout.type === 'fixed' ? 'default' : 'ghost'}
                         size="sm"
-                        className={`flex-1 ${newPayout.type === 'fixed' ? 'bg-blue-600 hover:bg-blue-700' : 'text-gray-300 hover:text-white'}`}
+                        className={`flex-1 ${newPayout.type === 'fixed' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
                         onClick={() => setNewPayout({ ...newPayout, type: 'fixed' })}
                       >
                         Fixed Amount
@@ -157,7 +157,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                         type="button"
                         variant={newPayout.type === 'percentage' ? 'default' : 'ghost'}
                         size="sm"
-                        className={`flex-1 ${newPayout.type === 'percentage' ? 'bg-blue-600 hover:bg-blue-700' : 'text-gray-300 hover:text-white'}`}
+                        className={`flex-1 ${newPayout.type === 'percentage' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
                         onClick={() => setNewPayout({ ...newPayout, type: 'percentage' })}
                       >
                         Revshare Percentage
@@ -168,7 +168,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                   {/* Payout On Event */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Label className="text-gray-300">Payout On</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">Payout On</Label>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
@@ -181,12 +181,12 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                       </TooltipProvider>
                     </div>
                     <Select onValueChange={(value) => setNewPayout({ ...newPayout, event: value })}>
-                      <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                      <SelectTrigger className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
                         <SelectValue placeholder="Choose Type" />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-600">
+                      <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                         {eventTypes.map((event) => (
-                          <SelectItem key={event.value} value={event.value} className="text-white hover:bg-gray-700">
+                          <SelectItem key={event.value} value={event.value} className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
                             {event.label}
                           </SelectItem>
                         ))}
@@ -197,7 +197,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                   {/* Payout Amount */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Label className="text-gray-300">
+                      <Label className="text-gray-700 dark:text-gray-300">
                         {newPayout.type === 'percentage' ? 'Payout Percentage' : 'Payout Amount'}
                       </Label>
                       <TooltipProvider>
@@ -220,7 +220,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                             max="100"
                             step="0.01"
                             placeholder="0.00"
-                            className="bg-gray-800 border-gray-600 text-white pr-8"
+                            className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white pr-8"
                             value={newPayout.amount || ''}
                             onChange={(e) => setNewPayout({ ...newPayout, amount: e.target.value })}
                           />
@@ -233,7 +233,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                             type="number"
                             step="0.01"
                             placeholder="0.00"
-                            className="bg-gray-800 border-gray-600 text-white pl-8"
+                            className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white pl-8"
                             value={newPayout.amount || ''}
                             onChange={(e) => setNewPayout({ ...newPayout, amount: e.target.value })}
                           />
@@ -246,7 +246,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                   {newPayout.type === 'percentage' && (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Label className="text-gray-300">Set Revshare Payout Limits</Label>
+                        <Label className="text-gray-700 dark:text-gray-300">Set Revshare Payout Limits</Label>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
@@ -268,7 +268,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                   {/* Duplicate Payouts */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Label className="text-gray-300">Duplicate Payouts</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">Duplicate Payouts</Label>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
@@ -280,12 +280,12 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                         </Tooltip>
                       </TooltipProvider>
                     </div>
-                    <div className="flex gap-0 bg-gray-800 rounded-md p-1">
+                    <div className="flex gap-0 bg-gray-100 dark:bg-gray-800 rounded-md p-1">
                       <Button
                         type="button"
                         variant={newPayout.duplicatePayouts === 'disable' ? 'default' : 'ghost'}
                         size="sm"
-                        className={`flex-1 ${newPayout.duplicatePayouts === 'disable' ? 'bg-blue-600 hover:bg-blue-700' : 'text-gray-300 hover:text-white'}`}
+                        className={`flex-1 ${newPayout.duplicatePayouts === 'disable' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
                         onClick={() => setNewPayout({ ...newPayout, duplicatePayouts: 'disable' })}
                       >
                         Disable
@@ -294,7 +294,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                         type="button"
                         variant={newPayout.duplicatePayouts === 'enable' ? 'default' : 'ghost'}
                         size="sm"
-                        className={`flex-1 ${newPayout.duplicatePayouts === 'enable' ? 'bg-blue-600 hover:bg-blue-700' : 'text-gray-300 hover:text-white'}`}
+                        className={`flex-1 ${newPayout.duplicatePayouts === 'enable' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
                         onClick={() => setNewPayout({ ...newPayout, duplicatePayouts: 'enable' })}
                       >
                         Enable
@@ -303,7 +303,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                         type="button"
                         variant={newPayout.duplicatePayouts === 'time_limit' ? 'default' : 'ghost'}
                         size="sm"
-                        className={`flex-1 ${newPayout.duplicatePayouts === 'time_limit' ? 'bg-blue-600 hover:bg-blue-700' : 'text-gray-300 hover:text-white'}`}
+                        className={`flex-1 ${newPayout.duplicatePayouts === 'time_limit' ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
                         onClick={() => setNewPayout({ ...newPayout, duplicatePayouts: 'time_limit' })}
                       >
                         Time Limit
@@ -314,7 +314,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                   {/* Payout Hours */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Label className="text-gray-300">Payout Hours</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">Payout Hours</Label>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
@@ -338,7 +338,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                   {/* Limit Payout */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Label className="text-gray-300">Limit Payout</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">Limit Payout</Label>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
@@ -360,7 +360,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                 {/* Tag Filters Section */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-medium">Tag Filters for Payout</h3>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">Tag Filters for Payout</h3>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger>
@@ -373,7 +373,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                     </TooltipProvider>
                   </div>
                   
-                  <Button type="button" variant="outline" size="sm" className="gap-2 border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white">
+                  <Button type="button" variant="outline" size="sm" className="gap-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white">
                     <Plus className="h-4 w-4" />
                     ADD FILTER
                   </Button>
@@ -383,7 +383,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                 <div className="flex gap-3 pt-4">
                   <Button 
                     onClick={handleAddPayout}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
                     disabled={!newPayout.event || !newPayout.amount}
                   >
                     ADD PAYOUT
@@ -391,7 +391,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                   <Button 
                     variant="outline" 
                     onClick={() => setIsOpen(false)}
-                    className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                    className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     CANCEL
                   </Button>
