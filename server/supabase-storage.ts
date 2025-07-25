@@ -1,4 +1,4 @@
-import { eq, desc, count, sql, and, isNull, gte, isNotNull, ne, inArray } from 'drizzle-orm';
+import { eq, desc, count, sql, and, isNull, gte, isNotNull, ne, inArray, or } from 'drizzle-orm';
 import { db } from './db';
 import { 
   campaigns, 
@@ -512,15 +512,17 @@ export class SupabaseStorage implements IStorage {
     try {
       // Get user's campaigns first
       const userCampaigns = await this.getCampaigns(userId);
-      const campaignIds = userCampaigns.map(c => c.id);
+      const campaignIds = userCampaigns.map(c => c.id.toString()); // Ensure string format
       
       if (campaignIds.length === 0) {
         return [];
       }
       
-      // Get calls for those campaigns using inArray
+      // Use OR conditions for better compatibility with UUID strings
+      const conditions = campaignIds.map(id => eq(calls.campaignId, id));
+      
       const result = await db.select().from(calls)
-        .where(inArray(calls.campaignId, campaignIds))
+        .where(or(...conditions))
         .orderBy(desc(calls.createdAt));
       return result;
     } catch (error) {

@@ -298,9 +298,9 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
         </Button>
       </SheetTrigger>
       <SheetContent className="w-[400px] sm:w-[500px]" side="right">
-        <SheetHeader>
-          <SheetTitle>Customize Columns</SheetTitle>
-          <SheetDescription>
+        <SheetHeader className="bg-gradient-to-r from-blue-500 to-indigo-600 border-b border-blue-200 -mx-6 -mt-6 px-6 pt-6 pb-4 mb-4 shadow-sm">
+          <SheetTitle className="text-white font-bold text-lg">Customize Columns</SheetTitle>
+          <SheetDescription className="text-blue-50">
             Select which columns to display in your call details table.
           </SheetDescription>
         </SheetHeader>
