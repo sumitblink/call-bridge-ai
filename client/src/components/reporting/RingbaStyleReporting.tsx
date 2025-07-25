@@ -258,7 +258,7 @@ export default function RingbaStyleReporting() {
         </div>
       </div>
 
-      {/* Four-Panel Architecture Selection */}
+      {/* Two-Panel Architecture Selection */}
       <div className="bg-white border-b px-4 py-2">
         <div className="flex items-center gap-2">
           <Button
@@ -267,15 +267,7 @@ export default function RingbaStyleReporting() {
             onClick={() => setActiveReportPanel("timeline")}
             className="h-7 px-3 text-xs font-medium"
           >
-            Timeline Report
-          </Button>
-          <Button
-            size="sm"
-            variant={activeReportPanel === "summary" ? "default" : "outline"}
-            onClick={() => setActiveReportPanel("summary")}
-            className="h-7 px-3 text-xs font-medium"
-          >
-            Summary Report
+            Timeline Report and Summary
           </Button>
           <Button
             size="sm"
@@ -301,7 +293,7 @@ export default function RingbaStyleReporting() {
         onActionComplete={handleActionComplete}
       />
 
-      {/* Four-Panel Report Content */}
+      {/* Two-Panel Report Content */}
       <div className="p-4 space-y-4">
         {activeReportPanel === "timeline" && (
           <div className="space-y-6">
@@ -319,14 +311,6 @@ export default function RingbaStyleReporting() {
               onFilterClick={handleFilterClick}
             />
           </div>
-        )}
-
-        {activeReportPanel === "summary" && (
-          <SummaryReport
-            filters={activeFilters}
-            dateRange={dateRange}
-            onFilterClick={handleFilterClick}
-          />
         )}
 
         {activeReportPanel === "details" && (
