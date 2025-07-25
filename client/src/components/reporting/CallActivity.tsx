@@ -720,19 +720,19 @@ export default function CallActivity() {
           <div className="rounded-md border">
             <div 
               ref={tableContainerRef}
-              className="overflow-auto max-h-[600px]"
+              className="overflow-auto max-h-[600px] relative"
               style={{ scrollBehavior: 'smooth' }}
             >
               <Table ref={tableRef} className="relative">
-                <TableHeader className="sticky top-0 z-20 bg-gray-100 shadow-sm">
-                  <TableRow className="bg-gray-100 border-b border-gray-300">
-                    <TableHead className="text-xs font-semibold bg-gray-100 text-gray-800 w-8 sticky top-0 z-20"></TableHead>
+                <TableHeader className="sticky top-0 z-30 bg-white border-b-2 border-gray-200">
+                  <TableRow className="bg-white">
+                    <TableHead className="text-xs font-semibold bg-white text-gray-800 w-8 sticky top-0 z-30 border-r border-gray-200"></TableHead>
                     {visibleColumns.map((column, columnIndex) => {
                       const columnDef = getDynamicColumnDefinition(column);
                       return (
                         <TableHead 
                           key={`header-${columnIndex}-${column}`} 
-                          className="text-xs font-semibold relative bg-gray-100 text-gray-800 sticky top-0 z-20"
+                          className="text-xs font-semibold relative bg-white text-gray-800 sticky top-0 z-30 border-r border-gray-200"
                           style={{ 
                             width: columnWidths[column] || columnDef?.width || 'auto',
                             minWidth: '60px'
