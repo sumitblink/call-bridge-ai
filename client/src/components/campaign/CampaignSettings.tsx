@@ -476,8 +476,17 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
               />
 
               {/* Financial Settings Section */}
-              <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Financial Settings</h3>
+              <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Financial Settings</h3>
+                  {/* Ringba-style Payout Display */}
+                  <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-md">
+                    {watchedPayoutModel === "revenue_share" || watchedPayoutModel === "profit_share" 
+                      ? `${form.watch("defaultPayout") || "0"}% ${watchedPayoutModel === "revenue_share" ? "Revenue" : "Profit"} Share`
+                      : `$${form.watch("defaultPayout") || "0"} ${watchedPayoutModel === "per_call" ? "per Call" : watchedPayoutModel === "per_minute" ? "per Minute" : "per Conversion"}`
+                    }
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
@@ -518,6 +527,7 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                                   placeholder="0.00" 
                                   className="pr-8"
                                   {...field}
+                                  value={field.value || ""}
                                 />
                                 <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">%</span>
                               </>
@@ -530,6 +540,7 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                                   placeholder="0.00" 
                                   className="pl-8"
                                   {...field}
+                                  value={field.value || ""}
                                 />
                               </>
                             )}
@@ -563,7 +574,7 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                             </Tooltip>
                           </TooltipProvider>
                         </div>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select payout model" />
@@ -603,7 +614,7 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                             </Tooltip>
                           </TooltipProvider>
                         </div>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select revenue model" />
