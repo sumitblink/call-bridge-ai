@@ -47,6 +47,83 @@ const requireAuth = (req: any, res: Response, next: NextFunction) => {
 /**
  * Trigger RedTrack postback for call completion
  */
+// Tracking Pixel Helper for Event-Based Firing
+async function fireTrackingPixelsForEvent(call: any, callStatus: string, duration?: string) {
+  try {
+    // Map call status to pixel events
+    const eventMapping: { [key: string]: string } = {
+      'ringing': 'incoming',
+      'in-progress': 'connected', 
+      'completed': 'completed',
+      'busy': 'completed',
+      'no-answer': 'completed',
+      'failed': 'completed'
+    };
+    
+    const pixelEvent = eventMapping[callStatus] || callStatus;
+    
+    // Get campaign from call record
+    const campaign = call.campaignId ? await storage.getCampaign(call.campaignId) : null;
+    if (!campaign) {
+      console.log(`[Pixel] No campaign found for call ${call.id}`);
+      return;
+    }
+    
+    // Get tracking pixels for this campaign that should fire on this event
+    const pixels = await storage.getCampaignTrackingPixels(campaign.id);
+    const eventPixels = pixels.filter(p => 
+      p.isActive && 
+      p.fireOnEvent === pixelEvent
+    );
+    
+    console.log(`[Pixel] Found ${eventPixels.length} pixels configured for '${pixelEvent}' event`);
+    
+    for (const pixel of eventPixels) {
+      let fireUrl = pixel.code;
+      
+      // Replace token macros with actual values
+      const clickId = call.clickId || 'unknown';
+      const payout = call.payout || '0.00';
+      const callDuration = duration || call.duration || '0';
+      
+      fireUrl = fireUrl.replace(/\[tag:User:clickid\]/g, clickId);
+      fireUrl = fireUrl.replace(/\[Call:ConversionPayout\]/g, payout);
+      fireUrl = fireUrl.replace(/\{clickid\}/g, clickId);
+      fireUrl = fireUrl.replace(/\{sum\}/g, payout);
+      fireUrl = fireUrl.replace(/\{campaign_id\}/g, campaign.id);
+      fireUrl = fireUrl.replace(/\{call_id\}/g, call.id.toString());
+      fireUrl = fireUrl.replace(/\{duration\}/g, callDuration);
+      fireUrl = fireUrl.replace(/\{status\}/g, callStatus);
+      
+      // Determine conversion type for RedTrack
+      let conversionType = 'RAWCall';
+      if (callStatus === 'completed') {
+        const durationSecs = parseInt(callDuration) || 0;
+        if (durationSecs > 30) {
+          conversionType = 'ConvertedCall';
+        } else if (durationSecs > 0) {
+          conversionType = 'AnsweredCall';
+        }
+      }
+      fireUrl = fireUrl.replace(/\{type\}/g, conversionType);
+      
+      // Fire the pixel (async, don't wait for response)
+      fetch(fireUrl, { 
+        method: pixel.httpMethod || 'GET',
+        headers: {
+          'User-Agent': 'CallCenter-Pro-Tracking/1.0'
+        }
+      }).catch(err => 
+        console.log(`[Pixel] ${pixel.name} fire failed:`, err.message)
+      );
+      
+      console.log(`🔥 PIXEL FIRED [${pixelEvent}]: ${pixel.name} → ${fireUrl}`);
+    }
+  } catch (error) {
+    console.error('[Pixel] Error firing tracking pixels:', error);
+  }
+}
+
 async function triggerRedTrackPostback(call: any, statusData: any) {
   try {
     console.log('[Webhook] Checking call for RedTrack data:', {
@@ -1717,39 +1794,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const callRecord = await storage.createCall(callData);
       console.log('[Pool Webhook] Call record created with clickId:', callData.clickId);
 
-      // Fire tracking pixels for "incoming" event
-      try {
-        const pixels = await storage.getTrackingPixels();
-        const campaignPixels = pixels.filter(p => 
-          p.isActive && 
-          p.fireOnEvent === 'incoming' && 
-          p.assignedCampaigns.includes(campaign.id)
-        );
-
-        for (const pixel of campaignPixels) {
-          let fireUrl = pixel.code;
-          
-          // Replace token macros with actual values
-          const clickId = callRecord.clickId || 'unknown';
-          const payout = callRecord.payout || '0.00';
-          
-          fireUrl = fireUrl.replace(/\[tag:User:clickid\]/g, clickId);
-          fireUrl = fireUrl.replace(/\[Call:ConversionPayout\]/g, payout);
-          fireUrl = fireUrl.replace(/\{clickid\}/g, clickId);
-          fireUrl = fireUrl.replace(/\{sum\}/g, payout);
-          fireUrl = fireUrl.replace(/\{campaign_id\}/g, campaign.id);
-          fireUrl = fireUrl.replace(/\{call_id\}/g, callRecord.id.toString());
-
-          // Fire the postback pixel (async, don't wait for response)
-          fetch(fireUrl, { method: 'GET' }).catch(err => 
-            console.log('Tracking pixel fire failed:', err.message)
-          );
-
-          console.log(`🔥 POOL POSTBACK FIRED: ${fireUrl}`);
-        }
-      } catch (pixelError) {
-        console.error('Pool tracking pixel firing error:', pixelError);
-      }
+      // Fire tracking pixels for "incoming" event using event-based firing
+      await fireTrackingPixelsForEvent(callRecord, 'ringing', '0');
 
       // Generate TwiML to forward the call with appropriate messaging
       const connectMessage = routingMethod === 'rtb' 
@@ -2193,6 +2239,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             Duration: finalDuration
           });
         }
+        
+        // Fire tracking pixels based on call status
+        await fireTrackingPixelsForEvent(call, CallStatus.toLowerCase(), finalDuration);
       }
       
       res.status(200).send('OK');
