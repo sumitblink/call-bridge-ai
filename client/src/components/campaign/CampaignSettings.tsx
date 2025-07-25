@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { z } from "zod";
+import RingbaPayoutSettings from './RingbaPayoutSettings';
 
 const campaignFormSchema = insertCampaignSchema.extend({
   name: insertCampaignSchema.shape.name.min(1, "Name is required"),
@@ -475,162 +476,13 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                 )}
               />
 
-              {/* Financial Settings Section */}
+              {/* Ringba-Style Payout Settings */}
               <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Financial Settings</h3>
-                  {/* Ringba-style Payout Display */}
-                  <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-md">
-                    {watchedPayoutModel === "revenue_share" || watchedPayoutModel === "profit_share" 
-                      ? `${form.watch("defaultPayout") || "0"}% ${watchedPayoutModel === "revenue_share" ? "Revenue" : "Profit"} Share`
-                      : `$${form.watch("defaultPayout") || "0"} ${watchedPayoutModel === "per_call" ? "per Call" : watchedPayoutModel === "per_minute" ? "per Minute" : "per Conversion"}`
-                    }
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="defaultPayout"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center gap-2">
-                          <FormLabel>
-                            {(watchedPayoutModel === "revenue_share" || watchedPayoutModel === "profit_share") 
-                              ? "Default Payout (%)" 
-                              : "Default Payout ($)"}
-                          </FormLabel>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <Info className="h-4 w-4 text-muted-foreground" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  {(watchedPayoutModel === "revenue_share" || watchedPayoutModel === "profit_share") 
-                                    ? "Percentage of revenue or profit shared with affiliates/buyers" 
-                                    : "Fixed amount paid per call/conversion"}<br/>
-                                  Used for revenue calculations and RedTrack postbacks
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                        <FormControl>
-                          <div className="relative">
-                            {(watchedPayoutModel === "revenue_share" || watchedPayoutModel === "profit_share") ? (
-                              <>
-                                <Input 
-                                  type="number" 
-                                  step="0.01"
-                                  min="0"
-                                  max="100"
-                                  placeholder="0.00" 
-                                  className="pr-8"
-                                  {...field}
-                                  value={field.value || ""}
-                                />
-                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">%</span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-                                <Input 
-                                  type="number" 
-                                  step="0.01"
-                                  placeholder="0.00" 
-                                  className="pl-8"
-                                  {...field}
-                                  value={field.value || ""}
-                                />
-                              </>
-                            )}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="payoutModel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center gap-2">
-                          <FormLabel>Payout Model</FormLabel>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <Info className="h-4 w-4 text-muted-foreground" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>How payouts are calculated<br/>
-                                  Per Call: fixed amount per call<br/>
-                                  Per Minute: amount per minute of talk time<br/>
-                                  Per Conversion: amount per converted call<br/>
-                                  Revenue Share: percentage of total revenue<br/>
-                                  Profit Share: percentage of profit after costs</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select payout model" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="per_call">Per Call</SelectItem>
-                            <SelectItem value="per_minute">Per Minute</SelectItem>
-                            <SelectItem value="per_conversion">Per Conversion</SelectItem>
-                            <SelectItem value="revenue_share">Revenue Share (%)</SelectItem>
-                            <SelectItem value="profit_share">Profit Share (%)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="revenueModel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center gap-2">
-                          <FormLabel>Revenue Model</FormLabel>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <Info className="h-4 w-4 text-muted-foreground" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>How revenue is calculated<br/>
-                                  Per Call: fixed amount per call<br/>
-                                  Per Minute: amount per minute of talk time<br/>
-                                  Per Conversion: amount per converted call</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select revenue model" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="per_call">Per Call</SelectItem>
-                            <SelectItem value="per_minute">Per Minute</SelectItem>
-                            <SelectItem value="per_conversion">Per Conversion</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <RingbaPayoutSettings 
+                  campaignId={campaignId} 
+                  currentPayout={form.watch("defaultPayout") || "5.00"}
+                  currentModel={form.watch("payoutModel") || "per_call"}
+                />
               </div>
 
               <div className="flex justify-end">
