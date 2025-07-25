@@ -323,14 +323,14 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
 
         <Separator />
 
-        <ScrollArea className="h-[calc(100vh-200px)] py-4">
+        <ScrollArea className="h-[calc(100vh-200px)] py-2">
           {Object.entries(columnsByCategory).map(([category, columns]) => (
-            <div key={category} className="mb-4">
+            <div key={category} className="mb-1.5">
               <Collapsible
                 open={expandedCategories.has(category)}
                 onOpenChange={() => toggleCategory(category)}
               >
-                <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground rounded-md">
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-1.5 px-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground rounded-md">
                   <div className="flex items-center gap-2">
                     {expandedCategories.has(category) ? (
                       <ChevronDownIcon className="h-4 w-4" />
@@ -343,9 +343,9 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
                     </Badge>
                   </div>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-2 pt-2 pb-4">
+                <CollapsibleContent className="space-y-0.5 pt-1 pb-2">
                   {(columns as ColumnDefinition[]).map((column: ColumnDefinition) => (
-                    <div key={column.id} className="flex items-center space-x-2 pl-8">
+                    <div key={column.id} className="flex items-center space-x-2 pl-8 py-0.5">
                       <div className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -390,7 +390,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
           ))}
         </ScrollArea>
 
-        <div className="flex items-center justify-between pt-4 border-t">
+        <div className="flex items-center justify-between pt-2 border-t">
           <Button
             variant="outline"
             onClick={() => setIsOpen(false)}

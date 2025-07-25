@@ -1,4 +1,4 @@
-import { eq, desc, count, sql, and, isNull, gte, isNotNull, ne } from 'drizzle-orm';
+import { eq, desc, count, sql, and, isNull, gte, isNotNull, ne, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { 
   campaigns, 
@@ -518,9 +518,9 @@ export class SupabaseStorage implements IStorage {
         return [];
       }
       
-      // Get calls for those campaigns
+      // Get calls for those campaigns using inArray
       const result = await db.select().from(calls)
-        .where(sql`${calls.campaignId} = ANY(${campaignIds})`)
+        .where(inArray(calls.campaignId, campaignIds))
         .orderBy(desc(calls.createdAt));
       return result;
     } catch (error) {
