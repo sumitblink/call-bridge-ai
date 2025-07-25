@@ -1436,9 +1436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const campaignIds = userCampaigns.map(c => String(c.id));
       
       const allCalls = await storage.getCalls();
-      console.log(`User ${userId} has ${userCampaigns.length} campaigns, ${allCalls.length} total calls`);
       const userCalls = allCalls.filter(call => campaignIds.includes(String(call.campaignId)));
-      console.log(`Filtered to ${userCalls.length} user calls`);
       
       // Apply pagination
       const totalCount = userCalls.length;
