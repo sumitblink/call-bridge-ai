@@ -840,6 +840,7 @@ export class SupabaseStorage implements IStorage {
         pixelType: data.pixelType || 'postback',
         fireOnEvent: data.fire_on_event || data.fireOnEvent || 'incoming',
         code: data.code || data.url,
+        httpMethod: data.httpMethod || (data.pixelType === 'postback' ? 'POST' : 'GET'),
         assignedCampaigns: [data.campaignId], // Store campaign ID in array
         isActive: data.is_active !== false && data.active !== false,
       }).returning();
@@ -862,7 +863,7 @@ export class SupabaseStorage implements IStorage {
           name: data.name,
           fireOnEvent: data.fireOnEvent,
           code: data.code,
-          httpMethod: data.httpMethod || 'GET',
+          httpMethod: data.httpMethod || 'POST',
           headers: data.headers || '[]',
           authenticationType: data.authenticationType || 'none',
           isActive: data.active !== false,

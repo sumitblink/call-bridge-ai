@@ -368,6 +368,9 @@ export const trackingPixels = pgTable("tracking_pixels", {
   pixelType: varchar("pixel_type", { length: 50 }).notNull(), // 'postback', 'image', 'javascript'
   fireOnEvent: varchar("fire_on_event", { length: 50 }).notNull(), // 'incoming', 'connected', 'completed', 'converted', 'error', 'payout', 'recording', 'finalized'
   code: text("code").notNull(), // contains macros like {call_id}, {phone_number}, {timestamp}
+  httpMethod: varchar("http_method", { length: 10 }).default("POST").notNull(), // 'GET', 'POST', 'PUT', 'PATCH'
+  headers: text("headers").default("[]"), // JSON string of key-value pairs
+  authenticationType: varchar("authentication_type", { length: 50 }).default("none"), // 'none', 'basic', 'bearer', 'api_key'
   assignedCampaigns: text("assigned_campaigns").array(), // array of campaign IDs
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
