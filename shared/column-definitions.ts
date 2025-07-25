@@ -663,7 +663,7 @@ export function createUrlParameterColumn(urlParam: any): ColumnDefinition {
   
   return {
     id: urlParam.parameterName,
-    label: `${menuName}:${reportName}`, // Show "Category:Name" format
+    label: reportName, // Show just report name for customizer
     category: menuName,
     dataType: urlParam.parameterType === 'integer' ? 'number' : 
               urlParam.parameterType === 'decimal' ? 'number' : 'string',

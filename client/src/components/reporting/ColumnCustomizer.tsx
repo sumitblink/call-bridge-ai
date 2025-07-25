@@ -72,7 +72,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
   const urlParameterColumns: ColumnDefinition[] = (urlParameters || []).map((param: any) => {
     return {
       id: param.parameterName,
-      label: `${param.reportingMenuName}:${param.reportName}`, // Show "Category:Name" format
+      label: param.reportName, // Show just the report name in customizer
       category: param.reportingMenuName,
       dataType: param.parameterType as any,
       defaultVisible: false,
