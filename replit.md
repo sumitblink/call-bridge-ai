@@ -122,6 +122,14 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
   - **Visual Indicators**: Added loading spinners, scroll hints, and total count display for better user experience
   - **Smooth Scrolling**: Implemented scroll-triggered loading 200px from bottom with smooth scroll behavior
   - **Status**: Large call datasets now load instantly with sticky headers and progressive loading as user scrolls through data
+- July 25, 2025: **CALL TRACKING TAGS JAVASCRIPT GENERATOR FIXED FOR REDTRACK INTEGRATION** - Updated JavaScript code generator to use working endpoint and capture all RedTrack sub parameters
+  - **Fixed Endpoint**: Updated from broken `/api/dni/track` to working `/api/dni/track-simple` endpoint in generated JavaScript code
+  - **RedTrack Sub Parameters**: Added complete sub1-sub8 parameter capture to generated tracking scripts for Facebook dynamic variables
+  - **Enhanced Parameter Capture**: Generated code now captures clickid, UTM parameters, and all RedTrack tracking data
+  - **Console Logging Verification**: Real-time console output shows successful parameter capture and database storage
+  - **Facebook Dynamic Variables Support**: Generated scripts now properly capture {{ad.id}}, {{campaign.id}}, {{adset.id}} and other Facebook variables
+  - **End-to-End Verification**: Confirmed complete data flow from RedTrack URL → JavaScript capture → database storage → console logging
+  - **Status**: Call Tracking Tags feature now generates fully functional JavaScript code for RedTrack affiliate tracking with Facebook dynamic variables
 - July 25, 2025: **DNI SERVICE PERFORMANCE OPTIMIZED BY 99%** - Eliminated 3-second page load delays by implementing caching, query optimization, and reduced logging in Dynamic Number Insertion system
   - **Response Time Improvement**: Reduced DNI API response time from 3+ seconds to 20-25ms (99% faster)
   - **Database Query Optimization**: Combined multiple sequential database queries into single optimized queries with LIMIT clauses
