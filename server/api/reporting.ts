@@ -24,7 +24,18 @@ router.get('/summary', requireAuth, async (req, res) => {
         call.status === 'completed' && call.duration && call.duration > 30
       ).length;
 
+      // Calculate real financial data from call records
+      const totalRevenue = campaignCalls.reduce((sum, call) => sum + parseFloat(call.revenue || '0'), 0);
+      const totalCost = campaignCalls.reduce((sum, call) => sum + parseFloat(call.cost || '0'), 0);
+      const totalPayout = campaignCalls.reduce((sum, call) => sum + parseFloat(call.payout || '0'), 0);
+      const profit = totalRevenue - totalCost;
+      const avgCallLength = completedCalls > 0 ? 
+        campaignCalls.filter(c => c.duration).reduce((sum, c) => sum + (c.duration || 0), 0) / completedCalls : 0;
+
       return {
+        // Match SummaryReport interface requirements
+        groupBy: 'campaign',
+        groupValue: campaign.name,
         campaignId: campaign.id,
         campaignName: campaign.name,
         publisher: 'Direct',
@@ -33,9 +44,10 @@ router.get('/summary', requireAuth, async (req, res) => {
         dialedNumbers: [campaign.phoneNumber || '+1234567890'],
         numberPool: campaign.routingType === 'pool' ? 'Campaign Pool' : 'Direct',
         lastCallDate: campaignCalls.length > 0 ? 
-          Math.max(...campaignCalls.map(c => new Date(c.createdAt).getTime())) : null,
+          new Date(Math.max(...campaignCalls.map(c => new Date(c.createdAt).getTime()))).toISOString().split('T')[0] : null,
         duplicate: 'No',
         tags: ['campaign', 'active'],
+        totalCalls,
         incoming: totalCalls,
         live: campaignCalls.filter(call => call.status === 'in-progress').length,
         completed: completedCalls,
@@ -45,17 +57,18 @@ router.get('/summary', requireAuth, async (req, res) => {
         converted: convertedCalls,
         noConnection: campaignCalls.filter(call => call.status === 'failed').length,
         blocked: 0,
+        duplicate: 0,
         ivrHangup: campaignCalls.filter(call => call.status === 'busy').length,
-        rpc: convertedCalls > 0 ? 5.50 : 0,
-        revenue: convertedCalls * 5.50,
-        payout: convertedCalls * 5.00,
-        profit: convertedCalls * 0.50,
-        margin: convertedCalls > 0 ? 9.1 : 0,
-        conversionRate: totalCalls > 0 ? (convertedCalls / totalCalls) * 100 : 0,
-        tcl: completedCalls > 0 ? 180 : 0, // Average call length in seconds
-        acl: completedCalls > 0 ? 45 : 0,  // Average call length
-        totalCost: totalCalls * 0.15,
-        totalCalls
+        rpc: totalCalls > 0 ? totalRevenue / totalCalls : 0,
+        revenue: totalRevenue,
+        payout: totalPayout,
+        profit: profit,
+        margin: totalRevenue > 0 ? profit / totalRevenue : 0,
+        conversionRate: totalCalls > 0 ? (convertedCalls / totalCalls) : 0,
+        avgCallLength: avgCallLength,
+        tcl: avgCallLength, // Average call length in seconds
+        acl: avgCallLength,  // Average call length
+        totalCost: totalCost
       };
     });
 
