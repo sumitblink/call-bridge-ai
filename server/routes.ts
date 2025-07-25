@@ -5468,6 +5468,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
     
     try {
+      console.log('=== DNI Track Handler Called ===');
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
       
       // Ringba-style UTM parameter validation and spam prevention
       const userAgent = req.headers['user-agent'] || '';
@@ -5543,8 +5545,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Processing validated tracking request
       
-      // Extract the request data properly including clickid and publisher
-      const { tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId, clickid, publisher } = req.body;
+      // Extract the request data properly including clickid, publisher, and RedTrack sub parameters
+      const { 
+        tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId, clickid, publisher,
+        // RedTrack Sub Parameters
+        sub1, sub2, sub3, sub4, sub5, sub6, sub7, sub8,
+        // Additional tracking parameters
+        gclid, fbclid, msclkid, ttclid, twclid, liclid, subid, affid, pubid,
+        source, medium, campaign, content, term, keyword, placement, adgroup, creative,
+        device, network, matchtype, adposition, target, targetid, loc_physical_ms, loc_interest_ms
+      } = req.body;
+      
+      console.log('Extracted RedTrack sub parameters:', { sub1, sub2, sub3, sub4, sub5, sub6, sub7, sub8 });
+      console.log('Extracted tracking data:', { clickid, publisher, utmSource, utmMedium, utmCampaign });
       
       if (!tagCode) {
         return res.status(400).json({
@@ -5573,7 +5586,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           domain,
           visitorId,
           clickid,  // Include clickid in customFields
-          publisher // FIX: Include publisher in customFields for attribution
+          publisher, // FIX: Include publisher in customFields for attribution
+          // RedTrack Sub Parameters
+          sub1, sub2, sub3, sub4, sub5, sub6, sub7, sub8,
+          // Additional tracking parameters
+          gclid, fbclid, msclkid, ttclid, twclid, liclid, subid, affid, pubid,
+          source, medium, campaign, content, term, keyword, placement, adgroup, creative,
+          device, network, matchtype, adposition, target, targetid, loc_physical_ms, loc_interest_ms
         }
       };
       

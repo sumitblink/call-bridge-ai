@@ -244,6 +244,8 @@ export class DNIService {
         campaign: request.campaign,
         sessionId: request.sessionId
       });
+      
+      console.log('DNI CustomFields received:', request.customFields);
 
       // Store visitor session in database for real-time tracking
       const { neon } = await import('@neondatabase/serverless');
