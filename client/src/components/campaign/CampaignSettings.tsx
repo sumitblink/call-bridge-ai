@@ -80,6 +80,9 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
 
   // Watch routing type to handle conditional fields
   const watchedRoutingType = form.watch("routingType");
+  
+  // Watch payout model to handle dynamic input display
+  const watchedPayoutModel = form.watch("payoutModel");
 
   // Handle routing type changes - clear conflicting fields
   React.useEffect(() => {
@@ -482,29 +485,54 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center gap-2">
-                          <FormLabel>Default Payout</FormLabel>
+                          <FormLabel>
+                            {(watchedPayoutModel === "revenue_share" || watchedPayoutModel === "profit_share") 
+                              ? "Default Payout (%)" 
+                              : "Default Payout ($)"}
+                          </FormLabel>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
                                 <Info className="h-4 w-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Amount paid per call/conversion<br/>
-                                  Used for revenue calculations and RedTrack postbacks</p>
+                                <p>
+                                  {(watchedPayoutModel === "revenue_share" || watchedPayoutModel === "profit_share") 
+                                    ? "Percentage of revenue or profit shared with affiliates/buyers" 
+                                    : "Fixed amount paid per call/conversion"}<br/>
+                                  Used for revenue calculations and RedTrack postbacks
+                                </p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </div>
                         <FormControl>
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-                            <Input 
-                              type="number" 
-                              step="0.01"
-                              placeholder="0.00" 
-                              className="pl-8"
-                              {...field}
-                            />
+                            {(watchedPayoutModel === "revenue_share" || watchedPayoutModel === "profit_share") ? (
+                              <>
+                                <Input 
+                                  type="number" 
+                                  step="0.01"
+                                  min="0"
+                                  max="100"
+                                  placeholder="0.00" 
+                                  className="pr-8"
+                                  {...field}
+                                />
+                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">%</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input 
+                                  type="number" 
+                                  step="0.01"
+                                  placeholder="0.00" 
+                                  className="pl-8"
+                                  {...field}
+                                />
+                              </>
+                            )}
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -528,7 +556,9 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                                 <p>How payouts are calculated<br/>
                                   Per Call: fixed amount per call<br/>
                                   Per Minute: amount per minute of talk time<br/>
-                                  Per Conversion: amount per converted call</p>
+                                  Per Conversion: amount per converted call<br/>
+                                  Revenue Share: percentage of total revenue<br/>
+                                  Profit Share: percentage of profit after costs</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -543,6 +573,8 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                             <SelectItem value="per_call">Per Call</SelectItem>
                             <SelectItem value="per_minute">Per Minute</SelectItem>
                             <SelectItem value="per_conversion">Per Conversion</SelectItem>
+                            <SelectItem value="revenue_share">Revenue Share (%)</SelectItem>
+                            <SelectItem value="profit_share">Profit Share (%)</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

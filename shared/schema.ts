@@ -60,7 +60,7 @@ export const campaigns = pgTable("campaigns", {
   
   // Payout & Revenue
   defaultPayout: decimal("default_payout", { precision: 10, scale: 2 }).default("0.00"),
-  payoutModel: varchar("payout_model", { length: 50 }).default("per_call"), // per_call, per_minute, per_conversion
+  payoutModel: varchar("payout_model", { length: 50 }).default("per_call"), // per_call, per_minute, per_conversion, revenue_share, profit_share
   revenueModel: varchar("revenue_model", { length: 50 }).default("per_call"),
   
   // Tracking & Analytics
