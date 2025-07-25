@@ -629,7 +629,15 @@ ${generateJavaScriptCode(tag)}`;
                     onValueChange={(value) => setFormData(prev => ({ ...prev, primaryNumberId: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Publisher Number" />
+                      <SelectValue placeholder="Select Publisher Number">
+                        {formData.primaryNumberId && formData.primaryNumberId !== "none" ? (
+                          formatPhoneNumber(
+                            availablePhoneNumbers.find(n => n.id.toString() === formData.primaryNumberId)?.phoneNumber || ""
+                          )
+                        ) : (
+                          formData.primaryNumberId === "none" ? "No primary number" : "Select Publisher Number"
+                        )}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No primary number</SelectItem>
@@ -1105,7 +1113,15 @@ ${generateJavaScriptCode(tag)}`;
                   onValueChange={(value) => setSettingsData(prev => ({ ...prev, primaryNumberId: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select phone number" />
+                    <SelectValue placeholder="Select phone number">
+                      {settingsData.primaryNumberId && settingsData.primaryNumberId !== "none" ? (
+                        formatPhoneNumber(
+                          phoneNumbers.find(n => n.id.toString() === settingsData.primaryNumberId)?.phoneNumber || ""
+                        )
+                      ) : (
+                        settingsData.primaryNumberId === "none" ? "No primary number" : "Select phone number"
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">No primary number</SelectItem>
