@@ -105,28 +105,43 @@ export function CampaignReadinessDashboard({ campaignId, campaignStatus }: Campa
 
   return (
     <div className="space-y-4">
-      {/* Setup Progress */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                Campaign Setup Progress
-                <Badge variant={getStatusColor() as any}>{getStatusText()}</Badge>
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Complete all required steps to activate your campaign
-              </CardDescription>
-            </div>
-            {campaignStatus === "active" ? (
+      {/* For active campaigns, show compact status bar instead of full setup progress */}
+      {campaignStatus === "active" ? (
+        <Card>
+          <CardContent className="py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Live
+                </Badge>
+                <span className="text-sm text-gray-600">Campaign is active and receiving calls</span>
+              </div>
               <Button 
                 variant="outline" 
+                size="sm"
                 onClick={() => pauseMutation.mutate()}
                 disabled={pauseMutation.isPending}
               >
                 {pauseMutation.isPending ? "Pausing..." : "Pause Campaign"}
               </Button>
-            ) : (
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        /* Full setup progress for non-active campaigns */
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  Campaign Setup Progress
+                  <Badge variant={getStatusColor() as any}>{getStatusText()}</Badge>
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Complete all required steps to activate your campaign
+                </CardDescription>
+              </div>
               <Button 
                 onClick={() => activateMutation.mutate()}
                 disabled={!validation.canActivate || activateMutation.isPending}
@@ -135,46 +150,46 @@ export function CampaignReadinessDashboard({ campaignId, campaignStatus }: Campa
                 <Zap className="h-4 w-4 mr-2" />
                 {activateMutation.isPending ? "Activating..." : "Activate Campaign"}
               </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {/* Progress Bar */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span>Progress</span>
-              <span>{validation.completionPercentage}% Complete</span>
             </div>
-            <Progress 
-              value={validation.completionPercentage} 
-              className="h-1.5"
-            />
-          </div>
-
-          {/* Setup Steps */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {validation.steps.map((step) => (
-              <div 
-                key={step.id}
-                className={`flex items-center gap-1.5 p-2 rounded-md border ${
-                  step.completed 
-                    ? "bg-green-50 border-green-200" 
-                    : step.required 
-                    ? "bg-yellow-50 border-yellow-200" 
-                    : "bg-gray-50 border-gray-200"
-                }`}
-              >
-                {getStatusIcon(step.completed, step.required)}
-                <span className={`text-xs font-medium ${
-                  step.completed ? "text-green-800" : "text-gray-700"
-                }`}>
-                  {step.label}
-                </span>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {/* Progress Bar */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span>Progress</span>
+                <span>{validation.completionPercentage}% Complete</span>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              <Progress 
+                value={validation.completionPercentage} 
+                className="h-1.5"
+              />
+            </div>
+
+            {/* Setup Steps */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {validation.steps.map((step) => (
+                <div 
+                  key={step.id}
+                  className={`flex items-center gap-1.5 p-2 rounded-md border ${
+                    step.completed 
+                      ? "bg-green-50 border-green-200" 
+                      : step.required 
+                      ? "bg-yellow-50 border-yellow-200" 
+                      : "bg-gray-50 border-gray-200"
+                  }`}
+                >
+                  {getStatusIcon(step.completed, step.required)}
+                  <span className={`text-xs font-medium ${
+                    step.completed ? "text-green-800" : "text-gray-700"
+                  }`}>
+                    {step.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Validation Issues */}
       {validation.issues.length > 0 && (
