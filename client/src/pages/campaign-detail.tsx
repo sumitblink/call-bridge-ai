@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings, Users, Phone, Globe, Zap, Target, Database, MousePointer } from "lucide-react";
+import { ArrowLeft, Settings, Users, Phone, Globe, Zap, Target, Database, MousePointer, TestTube } from "lucide-react";
 import Layout from "@/components/Layout";
 
 // Individual tab components
@@ -19,6 +19,7 @@ import { CampaignReadinessDashboard } from "@/components/campaign/CampaignReadin
 import { RTBTargetAssignment } from "@/components/campaign/RTBTargetAssignment";
 import CampaignUrlParameters from "@/components/campaign/CampaignUrlParameters";
 import CampaignTrackingPixels from "@/components/campaign/CampaignTrackingPixels";
+import CampaignTestCallFlow from "@/components/campaign/CampaignTestCallFlow";
 
 export default function CampaignDetail() {
   const { campaignId } = useParams();
@@ -107,7 +108,7 @@ export default function CampaignDetail() {
 
         {/* Campaign Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-8" : "grid-cols-7") : (campaign.routingType === "pool" ? "grid-cols-7" : "grid-cols-6")}`}>
+          <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-9" : "grid-cols-8") : (campaign.routingType === "pool" ? "grid-cols-8" : "grid-cols-7")}`}>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
@@ -143,6 +144,10 @@ export default function CampaignDetail() {
             <TabsTrigger value="publishers" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Publishers</span>
+            </TabsTrigger>
+            <TabsTrigger value="test" className="flex items-center space-x-2">
+              <TestTube className="h-4 w-4" />
+              <span className="hidden sm:inline">Test</span>
             </TabsTrigger>
           </TabsList>
 
@@ -185,6 +190,13 @@ export default function CampaignDetail() {
               />
             </TabsContent>
           )}
+
+          <TabsContent value="test">
+            <CampaignTestCallFlow 
+              campaignId={campaign.id} 
+              campaign={campaign}
+            />
+          </TabsContent>
         </Tabs>
       </div>
     </Layout>
