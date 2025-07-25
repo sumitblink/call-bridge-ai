@@ -597,7 +597,8 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                               <TooltipContent>
                                 <p>How revenue is calculated<br/>
                                   Per Call: fixed amount per call<br/>
-                                  Per Minute: amount per minute of talk time</p>
+                                  Per Minute: amount per minute of talk time<br/>
+                                  Per Conversion: amount per converted call</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -611,6 +612,7 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                           <SelectContent>
                             <SelectItem value="per_call">Per Call</SelectItem>
                             <SelectItem value="per_minute">Per Minute</SelectItem>
+                            <SelectItem value="per_conversion">Per Conversion</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

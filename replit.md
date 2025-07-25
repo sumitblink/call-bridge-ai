@@ -114,6 +114,15 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 25, 2025: **RINGBA-STYLE PERCENTAGE PAYOUT MODELS IMPLEMENTED** - Enhanced Financial Settings with comprehensive percentage-based payout calculations
+  - **Revenue Share & Profit Share Models**: Added "Revenue Share (%)" and "Profit Share (%)" options to Payout Model dropdown
+  - **Dynamic Input Interface**: Default Payout field now shows "$" prefix for fixed amounts and "%" suffix for percentage models
+  - **Smart Label Updates**: Form labels change to "Default Payout ($)" or "Default Payout (%)" based on selected model
+  - **Enhanced Tooltips**: Context-aware tooltips explain percentage vs fixed amount calculations
+  - **Revenue Model Enhancement**: Added "Per Conversion" option to Revenue Model dropdown for complete functionality
+  - **Validation Logic**: Percentage models include 0-100% range validation with proper min/max constraints
+  - **Professional Implementation**: Matches Ringba's percentage share mechanism for affiliate/buyer payouts
+  - **Status**: Financial Settings now support both traditional fixed payouts and modern percentage-based revenue sharing models
 - July 25, 2025: **PHONE NUMBER ASSIGNMENT DROPDOWN FILTERING FIXED** - Resolved issue where tracking tag Primary Number dropdown showed already assigned phone numbers
   - **Root Cause**: Primary Number dropdown displayed all phone numbers regardless of pool/campaign assignment status
   - **Filtering Logic Added**: Added availablePhoneNumbers filter to exclude numbers with "Pool", "Campaign Direct", or any assignment in friendly name
