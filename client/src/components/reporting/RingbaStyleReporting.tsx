@@ -281,34 +281,22 @@ export default function RingbaStyleReporting() {
         />
 
         {/* Call Details below Summary */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-900">Call Details</h3>
-            <div className="text-xs text-gray-500">
-              {activeFilters.length > 0 && (
-                <span>{activeFilters.length} active filter{activeFilters.length !== 1 ? 's' : ''}</span>
-              )}
-            </div>
-          </div>
-          
-          {/* Call Activity with enhanced integration */}
-          <CallActivity
-            selectedRows={selectedRows}
-            onRowSelect={(rowId, isSelected) => {
-              const newSelection = new Set(selectedRows);
-              if (isSelected) {
-                newSelection.add(rowId);
-              } else {
-                newSelection.delete(rowId);
-              }
-              setSelectedRows(newSelection);
-              
-              // Update selected calls for bulk actions
-              const callsToUpdate = Array.from(newSelection);
-              setSelectedCalls(callsToUpdate.map(id => ({ id, callId: id })));
-            }}
-          />
-        </div>
+        <CallActivity
+          selectedRows={selectedRows}
+          onRowSelect={(rowId, isSelected) => {
+            const newSelection = new Set(selectedRows);
+            if (isSelected) {
+              newSelection.add(rowId);
+            } else {
+              newSelection.delete(rowId);
+            }
+            setSelectedRows(newSelection);
+            
+            // Update selected calls for bulk actions
+            const callsToUpdate = Array.from(newSelection);
+            setSelectedCalls(callsToUpdate.map(id => ({ id, callId: id })));
+          }}
+        />
       </div>
 
       {/* Active Filters Display */}
