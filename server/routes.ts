@@ -1886,7 +1886,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[Webhook RTB] Campaign financial config - Payout:', payout, 'Revenue:', revenue, 'Profit:', profit);
       
       // Create call record with RTB data
-      const callData = {
+      let callData = {
         campaignId: campaign.id,
         buyerId: selectedBuyer.id,
         callSid: CallSid,
@@ -1905,9 +1905,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       };
       
-      // RTB data is stored in routingData JSON field above
+      // Enrich call data with visitor session attribution
+      console.log('[Webhook RTB] Looking for visitor session data for attribution...');
+      try {
+        // Get recent visitor sessions to find attribution data
+        console.log('[Webhook RTB] Calling getVisitorSessions for userId:', campaign.userId);
+        const recentSessions = await storage.getVisitorSessions(campaign.userId);
+        console.log('[Webhook RTB] Found', recentSessions.length, 'recent visitor sessions');
+        console.log('[Webhook RTB] Sample session structure:', JSON.stringify(recentSessions[0], null, 2));
+        
+        // Find the most recent session with tracking data (within last 30 minutes)
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+        console.log('[Webhook RTB] Looking for sessions newer than:', thirtyMinutesAgo);
+        
+        const recentSessionsWithTrackingData = recentSessions.filter(session => session.utmSource || session.redtrackClickId);
+        console.log('[Webhook RTB] Found', recentSessionsWithTrackingData.length, 'sessions with tracking data');
+        
+        // First try to find sessions with click IDs, then fall back to any UTM sessions
+        const recentSessionsInWindow = recentSessions
+          .filter(session => session.lastActivity && session.lastActivity > thirtyMinutesAgo)
+          .sort((a, b) => (b.lastActivity?.getTime() || 0) - (a.lastActivity?.getTime() || 0));
+        
+        console.log('[Webhook RTB] Recent sessions in time window:', recentSessionsInWindow.length);
+        console.log('[Webhook RTB] Sessions with click IDs:', recentSessionsInWindow.filter(s => s.redtrackClickId).length);
+          
+        const sessionWithClickId = recentSessionsInWindow.find(session => session.redtrackClickId);
+        const sessionWithUtm = recentSessionsInWindow.find(session => session.utmSource);
+        
+        console.log('[Webhook RTB] Session with click ID found:', !!sessionWithClickId, sessionWithClickId?.redtrackClickId);
+        console.log('[Webhook RTB] Session with UTM found:', !!sessionWithUtm);
+        
+        const matchingSession = sessionWithClickId || sessionWithUtm;
+        
+        if (matchingSession) {
+          console.log('[Webhook RTB] Found matching visitor session with clickId:', matchingSession.redtrackClickId);
+          console.log('[Webhook RTB] Session details:', JSON.stringify(matchingSession, null, 2));
+          console.log('[Webhook RTB] About to enrich call data...');
+          
+          // Enrich call data with visitor session attribution
+          callData = {
+            ...callData,
+            sessionId: matchingSession.sessionId,
+            clickId: matchingSession.redtrackClickId, // Use correct camelCase property name
+            publisherName: matchingSession.publisher || matchingSession.source, // Extract publisher attribution
+            utmSource: matchingSession.utmSource,
+            utmMedium: matchingSession.utmMedium,
+            utmCampaign: matchingSession.utmCampaign,
+            utmContent: matchingSession.utmContent,
+            utmTerm: matchingSession.utmTerm,
+            referrer: matchingSession.referrer,
+            landingPage: matchingSession.landingPage,
+            userAgent: matchingSession.userAgent,
+            ipAddress: matchingSession.ipAddress,
+            geoLocation: matchingSession.location,
+          };
+        } else {
+          console.log('[Webhook RTB] No recent visitor session found for attribution');
+        }
+      } catch (error) {
+        console.error('[Webhook RTB] Error enriching call with visitor session:', error);
+      }
       
       await storage.createCall(callData);
+      console.log('[Webhook RTB] Call record created with clickId:', callData.clickId);
       
       // Generate TwiML to dial the selected buyer
       const connectMessage = routingMethod === 'rtb' 
