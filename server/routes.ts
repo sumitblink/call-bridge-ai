@@ -1546,8 +1546,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('[Pool Webhook] Error enriching call with visitor session:', error);
       }
       
-      await storage.createCall(callData);
+      const callRecord = await storage.createCall(callData);
       console.log('[Pool Webhook] Call record created with clickId:', callData.clickId);
+
+      // Fire tracking pixels for "incoming" event
+      try {
+        const pixels = await storage.getTrackingPixels();
+        const campaignPixels = pixels.filter(p => 
+          p.isActive && 
+          p.fireOnEvent === 'incoming' && 
+          p.assignedCampaigns.includes(campaign.id)
+        );
+
+        for (const pixel of campaignPixels) {
+          let fireUrl = pixel.code;
+          
+          // Replace token macros with actual values
+          const clickId = callRecord.clickId || 'unknown';
+          const payout = callRecord.payout || '0.00';
+          
+          fireUrl = fireUrl.replace(/\[tag:User:clickid\]/g, clickId);
+          fireUrl = fireUrl.replace(/\[Call:ConversionPayout\]/g, payout);
+          fireUrl = fireUrl.replace(/\{clickid\}/g, clickId);
+          fireUrl = fireUrl.replace(/\{sum\}/g, payout);
+          fireUrl = fireUrl.replace(/\{campaign_id\}/g, campaign.id);
+          fireUrl = fireUrl.replace(/\{call_id\}/g, callRecord.id.toString());
+
+          // Fire the postback pixel (async, don't wait for response)
+          fetch(fireUrl, { method: 'GET' }).catch(err => 
+            console.log('Tracking pixel fire failed:', err.message)
+          );
+
+          console.log(`🔥 POOL POSTBACK FIRED: ${fireUrl}`);
+        }
+      } catch (pixelError) {
+        console.error('Pool tracking pixel firing error:', pixelError);
+      }
 
       // Generate TwiML to forward the call with appropriate messaging
       const connectMessage = routingMethod === 'rtb' 

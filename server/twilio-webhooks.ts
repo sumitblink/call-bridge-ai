@@ -320,6 +320,40 @@ export async function handleIncomingCall(req: Request, res: Response) {
     const callRecord = await storage.createCall(enrichedCallData);
     console.log('[Webhook] Call record created:', callRecord.id, 'with clickId:', callRecord.clickId);
 
+    // Fire tracking pixels for "incoming" event
+    try {
+      const pixels = await storage.getTrackingPixels();
+      const campaignPixels = pixels.filter(p => 
+        p.isActive && 
+        p.fireOnEvent === 'incoming' && 
+        p.assignedCampaigns.includes(campaign.id)
+      );
+
+      for (const pixel of campaignPixels) {
+        let fireUrl = pixel.code;
+        
+        // Replace token macros with actual values
+        const clickId = callRecord.clickId || 'unknown';
+        const payout = callRecord.payout || '0.00';
+        
+        fireUrl = fireUrl.replace(/\[tag:User:clickid\]/g, clickId);
+        fireUrl = fireUrl.replace(/\[Call:ConversionPayout\]/g, payout);
+        fireUrl = fireUrl.replace(/\{clickid\}/g, clickId);
+        fireUrl = fireUrl.replace(/\{sum\}/g, payout);
+        fireUrl = fireUrl.replace(/\{campaign_id\}/g, campaign.id);
+        fireUrl = fireUrl.replace(/\{call_id\}/g, callRecord.id.toString());
+
+        // Fire the postback pixel (async, don't wait for response)
+        fetch(fireUrl, { method: 'GET' }).catch(err => 
+          console.log('Tracking pixel fire failed:', err.message)
+        );
+
+        console.log(`🔥 POSTBACK FIRED: ${fireUrl}`);
+      }
+    } catch (pixelError) {
+      console.error('Tracking pixel firing error:', pixelError);
+    }
+
     // Log routing decision
     await storage.createCallLog({
       callId: callRecord.id,
