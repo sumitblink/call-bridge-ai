@@ -5368,7 +5368,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         target,
         targetid,
         loc_physical_ms,
-        loc_interest_ms
+        loc_interest_ms,
+        // RedTrack Sub Parameters
+        sub1,
+        sub2,
+        sub3,
+        sub4,
+        sub5,
+        sub6,
+        sub7,
+        sub8
       } = req.body;
 
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
@@ -5410,7 +5419,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           target,
           targetid,
           loc_physical_ms,
-          loc_interest_ms
+          loc_interest_ms,
+          // RedTrack Sub Parameters
+          sub1,
+          sub2,
+          sub3,
+          sub4,
+          sub5,
+          sub6,
+          sub7,
+          sub8
         }
       };
 

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RedTrack Test Landing Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .tracking-info {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .phone-number {
+            background: #007bff;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        .param-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RedTrack Test Landing Page</h1>
+        <p>This page will capture RedTrack parameters and display dynamic phone numbers.</p>
+        
+        <div class="tracking-info">
+            <h3>Detected Parameters:</h3>
+            <div id="params-display"></div>
+        </div>
+        
+        <div style="text-align: center;">
+            <h2>Call Now for Free Quote!</h2>
+            <a href="tel:+15551234567" class="phone-number tracking-number" data-tracking-number>
+                +1 (555) 123-4567
+            </a>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <h3>Test RedTrack URL Parameters:</h3>
+            <div class="param-display">
+                <strong>Test Your RedTrack URL:</strong><br>
+                <a href="?sub1=23847616348&sub2=23847614264&sub3=23847614264&sub4=Test%20Ad%20Name&sub5=Test%20Adset%20Name&sub6=Healthcare%20Campaign&sub7=facebook&sub8=facebook.com&utm_source=facebook&utm_medium=paid&clickid=TEST_REDTRACK_CLICKID_789" 
+                   style="color: #007bff; text-decoration: underline;">
+                   Click here to test with sample RedTrack parameters
+                </a>
+                <br><br>
+                <strong>Your RedTrack URL Pattern:</strong><br>
+                https://cy9n0.rdtk.io/6883a9f9969fe3c7bd0bab49?sub1={{ad.id}}&sub2={{adset.id}}&sub3={{campaign.id}}&sub4={{ad.name}}&sub5={{adset.name}}&sub6={{campaign.name}}&sub7={{placement}}&sub8={{site_source_name}}&utm_source=facebook&utm_medium=paid
+            </div>
+        </div>
+    </div>
+
+    <!-- DNI Tracking Script -->
+    <script>
+    (function() {
+        'use strict';
+        
+        // Display current URL parameters
+        function displayParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const paramsDiv = document.getElementById('params-display');
+            let html = '';
+            
+            if (urlParams.toString()) {
+                urlParams.forEach((value, key) => {
+                    html += `<div class="param-display"><strong>${key}:</strong> ${value}</div>`;
+                });
+            } else {
+                html = '<div class="param-display">No URL parameters detected</div>';
+            }
+            
+            paramsDiv.innerHTML = html;
+        }
+        
+        var DNI = {
+            config: {
+                campaignId: 'b14514dc-b985-4790-a6e1-fd2d8db5467e', // Healthcare Campaign ID
+                apiUrl: 'https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/api/dni/track-simple',
+                timeout: 5000,
+                captureUserData: true,
+                debug: true
+            },
+            
+            init: function() {
+                displayParameters();
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', this.replaceNumbers.bind(this));
+                } else {
+                    this.replaceNumbers();
+                }
+            },
+            
+            replaceNumbers: function() {
+                var elements = document.querySelectorAll('.tracking-number, [data-tracking-number]');
+                if (elements.length === 0) {
+                    console.warn('DNI: No tracking number elements found');
+                    return;
+                }
+                
+                this.getTrackingNumber(function(response) {
+                    if (response.phoneNumber) {
+                        console.log('DNI Response:', response);
+                        for (var i = 0; i < elements.length; i++) {
+                            elements[i].textContent = response.formattedNumber || response.phoneNumber;
+                            if (elements[i].tagName === 'A') {
+                                elements[i].href = 'tel:' + response.phoneNumber;
+                            }
+                        }
+                    }
+                });
+            },
+            
+            getTrackingNumber: function(callback) {
+                var urlParams = new URLSearchParams(window.location.search);
+                
+                var requestData = {
+                    campaignId: this.config.campaignId,
+                    sessionId: this.getSessionId(),
+                    domain: window.location.hostname,
+                    referrer: document.referrer,
+                    userAgent: navigator.userAgent,
+                    // UTM Parameters
+                    source: urlParams.get('utm_source'),
+                    medium: urlParams.get('utm_medium'),
+                    campaign: urlParams.get('utm_campaign'),
+                    content: urlParams.get('utm_content'),
+                    term: urlParams.get('utm_term'),
+                    // RedTrack Parameters
+                    clickid: urlParams.get('clickid'),
+                    subid: urlParams.get('subid'),
+                    // RedTrack Sub Parameters
+                    sub1: urlParams.get('sub1'),
+                    sub2: urlParams.get('sub2'),
+                    sub3: urlParams.get('sub3'),
+                    sub4: urlParams.get('sub4'),
+                    sub5: urlParams.get('sub5'),
+                    sub6: urlParams.get('sub6'),
+                    sub7: urlParams.get('sub7'),
+                    sub8: urlParams.get('sub8'),
+                    // Additional tracking
+                    publisher: urlParams.get('publisher'),
+                    affid: urlParams.get('affid'),
+                    gclid: urlParams.get('gclid'),
+                    fbclid: urlParams.get('fbclid')
+                };
+                
+                console.log('DNI Request Data:', requestData);
+                
+                fetch(this.config.apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData),
+                    mode: 'cors'
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(callback)
+                .catch(function(error) {
+                    console.error('DNI Error:', error);
+                });
+            },
+            
+            getSessionId: function() {
+                var sessionId = sessionStorage.getItem('dni_session_id');
+                if (!sessionId) {
+                    sessionId = 'dni_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    sessionStorage.setItem('dni_session_id', sessionId);
+                }
+                return sessionId;
+            }
+        };
+        
+        DNI.init();
+    })();
+    </script>
+</body>
+</html>

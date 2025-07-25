@@ -261,14 +261,15 @@ export class DNIService {
           source, medium, campaign, publisher, utm_source, utm_medium, utm_campaign, 
           utm_term, utm_content, landing_page, current_page,
           first_visit, last_activity, is_active, has_converted,
-          redtrack_clickid
+          redtrack_clickid, redtrack_sub_1, redtrack_sub_2, redtrack_sub_3, redtrack_sub_4, redtrack_sub_5
         ) VALUES (
           ${uniqueSessionId}, ${userId}, ${request.ipAddress || '127.0.0.1'}, ${request.userAgent || 'unknown'}, ${request.referrer || ''},
           ${request.source || ''}, ${request.medium || ''}, ${request.campaign || ''}, ${request.customFields?.publisher || null},
           ${request.source || ''}, ${request.medium || ''}, ${request.campaign || ''},
           ${request.term || null}, ${request.content || null}, ${request.customFields?.domain || 'unknown'}, ${request.customFields?.domain || 'unknown'},
           NOW(), NOW(), true, false,
-          ${request.customFields?.clickid || null}
+          ${request.customFields?.clickid || null}, ${request.customFields?.sub1 || null}, ${request.customFields?.sub2 || null}, 
+          ${request.customFields?.sub3 || null}, ${request.customFields?.sub4 || null}, ${request.customFields?.sub5 || null}
         )
         ON CONFLICT (session_id) 
         DO UPDATE SET
@@ -280,7 +281,12 @@ export class DNIService {
           medium = EXCLUDED.medium,
           campaign = EXCLUDED.campaign,
           publisher = EXCLUDED.publisher,
-          redtrack_clickid = EXCLUDED.redtrack_clickid
+          redtrack_clickid = EXCLUDED.redtrack_clickid,
+          redtrack_sub_1 = EXCLUDED.redtrack_sub_1,
+          redtrack_sub_2 = EXCLUDED.redtrack_sub_2,
+          redtrack_sub_3 = EXCLUDED.redtrack_sub_3,
+          redtrack_sub_4 = EXCLUDED.redtrack_sub_4,
+          redtrack_sub_5 = EXCLUDED.redtrack_sub_5
       `;
       
       console.log(`✅ DNI Session stored: ${uniqueSessionId} with UTM: ${request.source}/${request.medium}/${request.campaign}`);
