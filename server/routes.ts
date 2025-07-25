@@ -1756,21 +1756,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Find the most recent session with tracking data (within last 30 minutes)
         const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+        
         const matchingSession = recentSessions
-          .filter(session => session.createdAt && session.createdAt > thirtyMinutesAgo)
-          .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0))
-          .find(session => session.utmSource || session.clickId || session.redtrackClickId);
+          .filter(session => {
+            const sessionTime = session.lastActivity || session.firstVisit;
+            return sessionTime && sessionTime > thirtyMinutesAgo;
+          })
+          .sort((a, b) => {
+            const timeA = (b.lastActivity || b.firstVisit)?.getTime() || 0;
+            const timeB = (a.lastActivity || a.firstVisit)?.getTime() || 0; 
+            return timeA - timeB;
+          })
+          .find(session => {
+            console.log('[Pool Webhook] Checking session', session.sessionId, 'for tracking data:', {
+              utmSource: session.utmSource,
+              redtrackClickId: session.redtrackClickId,
+              publisher: session.publisher,
+              gclid: session.gclid
+            });
+            
+            return session.utmSource || 
+              session.redtrackClickId ||
+              session.publisher ||
+              session.gclid ||
+              session.fbclid;
+          });
         
         if (matchingSession) {
           console.log('[Pool Webhook] Found matching visitor session:', matchingSession.sessionId);
-          console.log('[Pool Webhook] Session clickid:', matchingSession.clickId || matchingSession.redtrackClickId);
+          console.log('[Pool Webhook] Session clickId:', matchingSession.redtrackClickId);
           
           // Enrich call data with visitor session attribution
           callData = {
             ...callData,
             sessionId: matchingSession.sessionId,
-            clickId: matchingSession.redtrackClickId || matchingSession.clickId, // Store in clickId field for database
-            publisherName: matchingSession.publisher || matchingSession.source, // Extract publisher attribution
+            clickId: matchingSession.redtrackClickId || matchingSession.clickId, // Use the correct field
+            publisherName: matchingSession.publisher || matchingSession.source,
             utmSource: matchingSession.utmSource,
             utmMedium: matchingSession.utmMedium,
             utmCampaign: matchingSession.utmCampaign,

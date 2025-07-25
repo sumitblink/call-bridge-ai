@@ -285,12 +285,25 @@ export async function handleIncomingCall(req: Request, res: Response) {
       // Find the most recent session with tracking data (within last 30 minutes)
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
       const matchingSession = recentSessions
-        .filter(session => session.createdAt && session.createdAt > thirtyMinutesAgo)
-        .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0))
-        .find(session => session.utmSource || session.clickId || session.redtrackClickId);
+        .filter(session => {
+          const sessionTime = session.lastActivity || session.firstVisit;
+          return sessionTime && sessionTime > thirtyMinutesAgo;
+        })
+        .sort((a, b) => {
+          const timeA = (b.lastActivity || b.firstVisit)?.getTime() || 0;
+          const timeB = (a.lastActivity || a.firstVisit)?.getTime() || 0; 
+          return timeA - timeB;
+        })
+        .find(session => 
+          session.utmSource || 
+          session.redtrackClickId ||
+          session.publisher ||
+          session.gclid ||
+          session.fbclid
+        );
       
       if (matchingSession) {
-        console.log('[Webhook] Found matching visitor session with clickId:', matchingSession.clickId || matchingSession.redtrackClickId);
+        console.log('[Webhook] Found matching visitor session with clickId:', matchingSession.redtrackClickId);
         
         // Enrich call data with visitor session attribution
         enrichedCallData = {
