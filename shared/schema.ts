@@ -120,6 +120,7 @@ export const calls = pgTable("calls", {
   buyerId: integer("buyer_id").references(() => buyers.id),
   publisherId: integer("publisher_id").references(() => publishers.id), // Publisher/affiliate who generated the call
   publisherName: varchar("publisher_name", { length: 255 }), // Publisher name from DNI tracking
+  trackingTagId: integer("tracking_tag_id").references(() => callTrackingTags.id), // Tracking tag that generated this call
   callSid: varchar("call_sid", { length: 100 }),
   fromNumber: varchar("from_number", { length: 20 }).notNull(),
   toNumber: varchar("to_number", { length: 20 }).notNull(),

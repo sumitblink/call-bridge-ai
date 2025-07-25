@@ -4397,6 +4397,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/webhooks/twilio/status', handleCallStatus);
   app.post('/api/webhooks/twilio/recording', handleRecordingStatus);
 
+  // Tracking Tag Webhook Endpoints
+  // Handle incoming calls to tracking tag primary numbers
+  app.post('/api/webhooks/tracking-tag/:tagId/voice', async (req, res) => {
+    try {
+      const { tagId } = req.params;
+      console.log(`Incoming call to tracking tag ${tagId}`);
+      
+      // Get tracking tag details
+      const tag = await db.select().from(callTrackingTags)
+        .where(eq(callTrackingTags.id, parseInt(tagId)))
+        .limit(1);
+      
+      if (tag.length === 0) {
+        console.error(`Tracking tag ${tagId} not found`);
+        return res.status(404).send('Tracking tag not found');
+      }
+      
+      // Get campaign for this tracking tag
+      const campaign = await db.select().from(campaigns)
+        .where(eq(campaigns.id, tag[0].campaignId))
+        .limit(1);
+      
+      if (campaign.length === 0) {
+        console.error(`Campaign for tracking tag ${tagId} not found`);
+        return res.status(404).send('Campaign not found');
+      }
+      
+      // Use the same call routing logic as campaigns
+      const { CallRouter } = await import('./call-routing');
+      const callerNumber = req.body.From || 'unknown';
+      
+      console.log(`Routing call from ${callerNumber} via tracking tag ${tagId} for campaign ${campaign[0].name}`);
+      
+      const routingResult = await CallRouter.selectBuyer(campaign[0].id, callerNumber);
+      
+      if (routingResult.selectedBuyer) {
+        // Create call record for tracking tag
+        const callData = {
+          campaignId: campaign[0].id,
+          trackingTagId: parseInt(tagId),
+          callerNumber: callerNumber,
+          dialedNumber: req.body.To || '',
+          buyerId: routingResult.selectedBuyer.id,
+          status: 'in-progress',
+          startTime: new Date(),
+          userId: campaign[0].userId
+        };
+        
+        await db.insert(calls).values(callData);
+        
+        // Generate TwiML to connect to buyer
+        const twiML = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="alice">Connecting you to our specialist.</Say>
+  <Dial timeout="30">
+    <Number>${routingResult.selectedBuyer.phoneNumber}</Number>
+  </Dial>
+</Response>`;
+        
+        res.type('text/xml').send(twiML);
+      } else {
+        // No available buyer
+        const twiML = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="alice">We're sorry, all representatives are currently busy. Please call back later.</Say>
+  <Hangup/>
+</Response>`;
+        
+        res.type('text/xml').send(twiML);
+      }
+    } catch (error) {
+      console.error('Error handling tracking tag voice webhook:', error);
+      
+      const errorTwiML = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="alice">We're experiencing technical difficulties. Please try again later.</Say>
+  <Hangup/>
+</Response>`;
+      
+      res.type('text/xml').send(errorTwiML);
+    }
+  });
+
+  // Handle call status updates for tracking tag calls
+  app.post('/api/webhooks/tracking-tag/:tagId/status', async (req, res) => {
+    try {
+      const { tagId } = req.params;
+      const callSid = req.body.CallSid;
+      const callStatus = req.body.CallStatus;
+      const callDuration = req.body.CallDuration ? parseInt(req.body.CallDuration) : 0;
+      
+      console.log(`Tracking tag ${tagId} call status update: ${callStatus} (Duration: ${callDuration}s)`);
+      
+      // Update call record with final status
+      if (callStatus === 'completed') {
+        await db.update(calls)
+          .set({
+            status: 'completed',
+            endTime: new Date(),
+            duration: callDuration
+          })
+          .where(eq(calls.sid, callSid));
+        
+        console.log(`Tracking tag call ${callSid} completed after ${callDuration} seconds`);
+      } else if (callStatus === 'failed' || callStatus === 'canceled' || callStatus === 'busy' || callStatus === 'no-answer') {
+        await db.update(calls)
+          .set({
+            status: callStatus,
+            endTime: new Date(),
+            duration: callDuration
+          })
+          .where(eq(calls.sid, callSid));
+      }
+      
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Error handling tracking tag status webhook:', error);
+      res.sendStatus(500);
+    }
+  });
+
   // Test webhook endpoint for development
   app.get('/api/webhooks/twilio/test', (req, res) => {
     res.json({
@@ -5378,6 +5499,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const [newTag] = await db.insert(callTrackingTags).values([tagData]).returning();
       
+      // Configure webhook for primary number if assigned
+      if (tagData.primaryNumberId && tagData.primaryNumberId !== 'none') {
+        try {
+          const phoneNumber = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, parseInt(tagData.primaryNumberId))).limit(1);
+          
+          if (phoneNumber.length > 0) {
+            const phone = phoneNumber[0];
+            console.log(`Configuring webhook for tracking tag primary number: ${phone.phoneNumber}`);
+            
+            // Configure webhook to route to tracking tag endpoint
+            const { TwilioWebhookService } = await import('./twilio-webhook-service');
+            const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhooks/tracking-tag/${newTag.id}/voice`;
+            
+            const webhookResult = await TwilioWebhookService.configurePhoneNumberWebhook(
+              phone.phoneNumberSid,
+              webhookUrl,
+              `${req.protocol}://${req.get('host')}/api/webhooks/tracking-tag/${newTag.id}/status`
+            );
+            
+            if (webhookResult) {
+              // Update friendly name to indicate tracking tag assignment
+              await TwilioWebhookService.updatePhoneNumberFriendlyName(
+                phone.phoneNumberSid,
+                `Tracking Tag: ${tagData.name}`
+              );
+              
+              // Update database friendly name
+              await db.update(phoneNumbers)
+                .set({ friendlyName: `Tracking Tag: ${tagData.name}` })
+                .where(eq(phoneNumbers.id, phone.id));
+              
+              console.log(`Successfully configured webhook for tracking tag primary number: ${phone.phoneNumber}`);
+            } else {
+              console.warn(`Failed to configure webhook for tracking tag primary number: ${phone.phoneNumber}`);
+            }
+          }
+        } catch (webhookError) {
+          console.error('Error configuring tracking tag webhook:', webhookError);
+          // Don't fail the tag creation if webhook configuration fails
+        }
+      }
+      
       // Generate JavaScript code for the tag
       const domain = req.get('host') || 'localhost:5000';
       const jsCode = CallTrackingService.generateJavaScriptCode(
@@ -5437,6 +5600,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const userId = req.user?.id;
       
+      // Get existing tag to compare primary number changes
+      const existingTag = await db.select().from(callTrackingTags)
+        .where(and(
+          eq(callTrackingTags.id, parseInt(id)),
+          eq(callTrackingTags.userId, userId)
+        ))
+        .limit(1);
+      
+      if (existingTag.length === 0) {
+        return res.status(404).json({ error: 'Tracking tag not found' });
+      }
+      
       const validatedData = insertCallTrackingTagSchema.partial().parse(req.body);
       
       const updatedTag = await db
@@ -5451,8 +5626,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ))
         .returning();
       
-      if (updatedTag.length === 0) {
-        return res.status(404).json({ error: 'Tracking tag not found' });
+      // Handle primary number changes
+      const oldPrimaryNumberId = existingTag[0].primaryNumberId;
+      const newPrimaryNumberId = validatedData.primaryNumberId;
+      
+      if (oldPrimaryNumberId !== newPrimaryNumberId) {
+        try {
+          // Clear old primary number webhook if it existed
+          if (oldPrimaryNumberId) {
+            const oldPhoneNumber = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, oldPrimaryNumberId)).limit(1);
+            if (oldPhoneNumber.length > 0) {
+              const { TwilioWebhookService } = await import('./twilio-webhook-service');
+              await TwilioWebhookService.removeWebhooks([oldPhoneNumber[0]]);
+              
+              // Reset friendly name
+              await TwilioWebhookService.updatePhoneNumberFriendlyName(
+                oldPhoneNumber[0].phoneNumberSid,
+                'Unassigned'
+              );
+              
+              await db.update(phoneNumbers)
+                .set({ friendlyName: 'Unassigned' })
+                .where(eq(phoneNumbers.id, oldPhoneNumber[0].id));
+            }
+          }
+          
+          // Configure new primary number webhook if assigned
+          if (newPrimaryNumberId && newPrimaryNumberId !== 'none') {
+            const newPhoneNumber = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, parseInt(newPrimaryNumberId))).limit(1);
+            if (newPhoneNumber.length > 0) {
+              const phone = newPhoneNumber[0];
+              console.log(`Configuring webhook for updated tracking tag primary number: ${phone.phoneNumber}`);
+              
+              const { TwilioWebhookService } = await import('./twilio-webhook-service');
+              const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhooks/tracking-tag/${id}/voice`;
+              
+              const webhookResult = await TwilioWebhookService.configurePhoneNumberWebhook(
+                phone.phoneNumberSid,
+                webhookUrl,
+                `${req.protocol}://${req.get('host')}/api/webhooks/tracking-tag/${id}/status`
+              );
+              
+              if (webhookResult) {
+                await TwilioWebhookService.updatePhoneNumberFriendlyName(
+                  phone.phoneNumberSid,
+                  `Tracking Tag: ${updatedTag[0].name}`
+                );
+                
+                await db.update(phoneNumbers)
+                  .set({ friendlyName: `Tracking Tag: ${updatedTag[0].name}` })
+                  .where(eq(phoneNumbers.id, phone.id));
+                
+                console.log(`Successfully configured webhook for updated tracking tag primary number: ${phone.phoneNumber}`);
+              }
+            }
+          }
+        } catch (webhookError) {
+          console.error('Error updating tracking tag webhook:', webhookError);
+          // Don't fail the update if webhook configuration fails
+        }
       }
       
       res.json(updatedTag[0]);
@@ -5479,6 +5711,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!existingTag) {
         return res.status(404).json({ error: 'Tracking tag not found' });
+      }
+      
+      // Clear webhook for primary number if assigned
+      if (existingTag.primaryNumberId) {
+        try {
+          const phoneNumber = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, existingTag.primaryNumberId)).limit(1);
+          if (phoneNumber.length > 0) {
+            const { TwilioWebhookService } = await import('./twilio-webhook-service');
+            await TwilioWebhookService.removeWebhooks([phoneNumber[0]]);
+            
+            // Reset friendly name
+            await TwilioWebhookService.updatePhoneNumberFriendlyName(
+              phoneNumber[0].phoneNumberSid,
+              'Unassigned'
+            );
+            
+            await db.update(phoneNumbers)
+              .set({ friendlyName: 'Unassigned' })
+              .where(eq(phoneNumbers.id, phoneNumber[0].id));
+          }
+        } catch (webhookError) {
+          console.error('Error clearing tracking tag webhook during deletion:', webhookError);
+          // Don't fail deletion if webhook cleanup fails
+        }
       }
       
       // Delete dependent records first to handle foreign key constraints
