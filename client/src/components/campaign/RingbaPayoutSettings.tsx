@@ -105,15 +105,15 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Current Payout Rules */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">Active Payout Rules</h4>
+          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Active Payout Rules</h4>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Plus className="h-4 w-4" />
+              <Button variant="outline" size="sm" className="gap-1 text-xs px-2 py-1 h-7">
+                <Plus className="h-3 w-3" />
                 Add Payout Rule
               </Button>
             </DialogTrigger>
@@ -403,28 +403,28 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
 
         {/* Payout Rules List */}
         {payouts.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {payouts.map((payout) => (
               <Card key={payout.id} className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                <CardContent className="p-4">
+                <CardContent className="p-2 py-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {formatPayoutDisplay(payout)}
                       </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex gap-1">
                         {payout.duplicatePayouts !== 'disable' && (
-                          <Badge variant="secondary" className="mr-2">
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4">
                             Duplicates: {payout.duplicatePayouts}
                           </Badge>
                         )}
                         {payout.payoutHours && (
-                          <Badge variant="secondary" className="mr-2">
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4">
                             Time Restricted
                           </Badge>
                         )}
                         {payout.limitPayout && (
-                          <Badge variant="secondary" className="mr-2">
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4">
                             Limited
                           </Badge>
                         )}
@@ -434,9 +434,9 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                       variant="ghost"
                       size="sm"
                       onClick={() => removePayout(payout.id)}
-                      className="text-gray-400 hover:text-red-500"
+                      className="text-gray-400 hover:text-red-500 h-6 w-6 p-0"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3" />
                     </Button>
                   </div>
                 </CardContent>
@@ -444,10 +444,9 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No payout rules configured</p>
-            <p className="text-sm">Add a payout rule to get started</p>
+          <div className="text-center py-3 text-gray-500 dark:text-gray-400">
+            <Settings className="h-6 w-6 mx-auto mb-1 opacity-50" />
+            <p className="text-xs">No payout rules configured</p>
           </div>
         )}
       </div>
