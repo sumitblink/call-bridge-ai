@@ -369,17 +369,18 @@ export default function CallActivity() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery<PaginatedResponse>({
+  } = useInfiniteQuery({
     queryKey: ['/api/calls'],
-    queryFn: ({ pageParam = 1 }) => 
-      fetch(`/api/calls?page=${pageParam}&limit=25`).then(res => res.json()),
-    getNextPageParam: (lastPage) => 
+    queryFn: ({ pageParam }: { pageParam: number }) => 
+      fetch(`/api/calls?page=${pageParam}&limit=25`).then(res => res.json()) as Promise<PaginatedResponse>,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: PaginatedResponse) => 
       lastPage.pagination.hasNextPage ? lastPage.pagination.page + 1 : undefined,
     staleTime: 1000 * 60 * 2, // Cache for 2 minutes
   });
 
   // Flatten all pages into single calls array
-  const calls = callsData?.pages.flatMap(page => page.calls) || [];
+  const calls = callsData?.pages.flatMap((page: PaginatedResponse) => page.calls) || [];
   const totalCalls = callsData?.pages[0]?.pagination.total || 0;
 
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
@@ -722,15 +723,15 @@ export default function CallActivity() {
             style={{ scrollBehavior: 'smooth' }}
           >
             <Table ref={tableRef}>
-              <TableHeader>
+              <TableHeader className="sticky top-0 z-10">
                 <TableRow className="bg-gray-100 border-b border-gray-300">
-                  <TableHead className="text-xs font-semibold bg-gray-100 text-gray-800 w-8"></TableHead>
+                  <TableHead className="text-xs font-semibold bg-gray-100 text-gray-800 w-8 sticky top-0 z-10"></TableHead>
                   {visibleColumns.map((column, columnIndex) => {
                     const columnDef = getDynamicColumnDefinition(column);
                     return (
                       <TableHead 
                         key={`header-${columnIndex}-${column}`} 
-                        className="text-xs font-semibold relative bg-gray-100 text-gray-800"
+                        className="text-xs font-semibold relative bg-gray-100 text-gray-800 sticky top-0 z-10"
                         style={{ 
                           width: columnWidths[column] || columnDef?.width || 'auto',
                           minWidth: '60px'
