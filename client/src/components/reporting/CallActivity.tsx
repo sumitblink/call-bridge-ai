@@ -287,7 +287,7 @@ export default function CallActivity() {
     if (urlParam) {
       return {
         id: urlParam.parameterName,
-        label: urlParam.reportName, // Use Report Name as the label
+        label: `${urlParam.reportingMenuName}:${urlParam.reportName}`, // Show "Category:Name" format
         category: urlParam.reportingMenuName,
         dataType: urlParam.parameterType,
         defaultVisible: false,
