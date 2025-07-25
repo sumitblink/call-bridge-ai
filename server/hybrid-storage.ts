@@ -330,6 +330,13 @@ class HybridStorage implements IStorage {
     );
   }
 
+  async getCallsByUser(userId: number): Promise<Call[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getCallsByUser(userId),
+      () => this.memStorage.getCallsByUser(userId)
+    );
+  }
+
   async createCall(call: InsertCall): Promise<Call> {
     return this.executeOperation(
       () => this.databaseStorage.createCall(call),

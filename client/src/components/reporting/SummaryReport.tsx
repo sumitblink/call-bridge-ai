@@ -39,7 +39,7 @@ export default function SummaryReport({ filters, dateRange, onFilterClick }: Sum
   const [activeTab, setActiveTab] = useState("campaign");
   const [selectedTag, setSelectedTag] = useState("");
 
-  const { data: summaryData = [], isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['/api/reporting/summary', { groupBy: activeTab, filters, dateRange, tag: selectedTag }],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -52,6 +52,8 @@ export default function SummaryReport({ filters, dateRange, onFilterClick }: Sum
       return response.json();
     }
   });
+
+  const summaryData = Array.isArray(data?.summaries) ? data.summaries : [];
 
   const { data: availableTags = [] } = useQuery({
     queryKey: ['/api/reporting/tags'],

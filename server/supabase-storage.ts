@@ -508,6 +508,27 @@ export class SupabaseStorage implements IStorage {
       .orderBy(desc(calls.createdAt));
   }
 
+  async getCallsByUser(userId: number): Promise<Call[]> {
+    try {
+      // Get user's campaigns first
+      const userCampaigns = await this.getCampaigns(userId);
+      const campaignIds = userCampaigns.map(c => c.id);
+      
+      if (campaignIds.length === 0) {
+        return [];
+      }
+      
+      // Get calls for those campaigns
+      const result = await db.select().from(calls)
+        .where(sql`${calls.campaignId} = ANY(${campaignIds})`)
+        .orderBy(desc(calls.createdAt));
+      return result;
+    } catch (error) {
+      console.error('Error fetching calls by user:', error);
+      return [];
+    }
+  }
+
   async createCall(call: InsertCall): Promise<Call> {
     const result = await db.insert(calls).values({
       ...call,

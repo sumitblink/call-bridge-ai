@@ -298,4 +298,22 @@ router.post('/bulk/adjustment', requireAuth, async (req, res) => {
   }
 });
 
+// Tags endpoint for Summary Report
+router.get('/tags', requireAuth, async (req, res) => {
+  try {
+    // Return sample tags for now
+    const tags = [
+      { value: 'healthcare', label: 'Healthcare' },
+      { value: 'insurance', label: 'Insurance' },
+      { value: 'solar', label: 'Solar' },
+      { value: 'finance', label: 'Finance' },
+      { value: 'education', label: 'Education' }
+    ];
+    res.json(tags);
+  } catch (error) {
+    console.error('Error fetching tags:', error);
+    res.status(500).json({ error: 'Failed to fetch tags' });
+  }
+});
+
 export default router;

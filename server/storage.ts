@@ -672,6 +672,21 @@ export class MemStorage implements IStorage {
     return calls;
   }
 
+  async getCallsByUser(userId: number): Promise<Call[]> {
+    // Get user's campaigns first
+    const userCampaigns = await this.getCampaigns(userId);
+    const campaignIds = userCampaigns.map(c => c.id);
+    
+    // Get calls for those campaigns
+    const calls: Call[] = [];
+    for (const call of this.calls.values()) {
+      if (campaignIds.includes(call.campaignId)) {
+        calls.push(call);
+      }
+    }
+    return calls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
   async createCall(call: InsertCall): Promise<Call> {
     const id = this.currentCallId++;
     const newCall: Call = {
