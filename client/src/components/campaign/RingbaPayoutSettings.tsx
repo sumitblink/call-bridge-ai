@@ -9,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Info, Plus, Settings, X } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface PayoutRule {
   id: string;
@@ -29,6 +32,8 @@ interface RingbaPayoutSettingsProps {
 }
 
 export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00", currentModel = "per_call" }: RingbaPayoutSettingsProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [payouts, setPayouts] = useState<PayoutRule[]>([
     {
@@ -43,6 +48,30 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
       filters: []
     }
   ]);
+
+  // Mutation to update campaign with new payout
+  const updateCampaignMutation = useMutation({
+    mutationFn: async (data: { defaultPayout: string; payoutModel: string }) => {
+      return apiRequest(`/api/campaigns/${campaignId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}`] });
+      toast({
+        title: "Success",
+        description: "Payout settings updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update payout settings",
+        variant: "destructive",
+      });
+    },
+  });
   
   const [newPayout, setNewPayout] = useState<Partial<PayoutRule>>({
     type: 'fixed',
@@ -78,7 +107,17 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
         filters: newPayout.filters || []
       };
       
+      // Update local state
       setPayouts([...payouts, payout]);
+      
+      // Update campaign in database
+      const payoutModel = newPayout.type === 'percentage' ? 'profit_share_percent' : 'per_call';
+      updateCampaignMutation.mutate({
+        defaultPayout: newPayout.amount,
+        payoutModel: payoutModel
+      });
+      
+      // Reset form
       setNewPayout({
         type: 'fixed',
         event: '',
@@ -94,7 +133,24 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
   };
 
   const removePayout = (id: string) => {
-    setPayouts(payouts.filter(p => p.id !== id));
+    const updatedPayouts = payouts.filter(p => p.id !== id);
+    setPayouts(updatedPayouts);
+    
+    // If removing the last payout, reset to default
+    if (updatedPayouts.length === 0) {
+      updateCampaignMutation.mutate({
+        defaultPayout: "0.00",
+        payoutModel: "per_call"
+      });
+    } else {
+      // Update with the remaining first payout rule
+      const firstPayout = updatedPayouts[0];
+      const payoutModel = firstPayout.type === 'percentage' ? 'profit_share_percent' : 'per_call';
+      updateCampaignMutation.mutate({
+        defaultPayout: firstPayout.amount,
+        payoutModel: payoutModel
+      });
+    }
   };
 
   const formatPayoutDisplay = (payout: PayoutRule) => {
@@ -384,9 +440,9 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
                   <Button 
                     onClick={handleAddPayout}
                     className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
-                    disabled={!newPayout.event || !newPayout.amount}
+                    disabled={!newPayout.event || !newPayout.amount || updateCampaignMutation.isPending}
                   >
-                    ADD PAYOUT
+                    {updateCampaignMutation.isPending ? "SAVING..." : "ADD PAYOUT"}
                   </Button>
                   <Button 
                     variant="outline" 
