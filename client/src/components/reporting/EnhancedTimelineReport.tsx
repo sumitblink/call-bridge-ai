@@ -46,7 +46,7 @@ export default function EnhancedTimelineReport({
   const [brushDomain, setBrushDomain] = useState<[number, number] | null>(null);
   const chartRef = useRef(null);
 
-  const { data: timelineData = [], isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['/api/reporting/timeline', { filters, dateRange, groupBy }],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -58,6 +58,9 @@ export default function EnhancedTimelineReport({
       return response.json();
     }
   });
+
+  const timelineData = Array.isArray(data?.timeline) ? data.timeline : [];
+  const summary = data?.summary || { totalCalls: 0, totalRevenue: 0, totalConversions: 0, totalCost: 0 };
 
   const groupingOptions = [
     { value: "auto", label: "Auto" },
@@ -133,26 +136,28 @@ export default function EnhancedTimelineReport({
           <div className="space-y-1">
             <div className="flex justify-between gap-4">
               <span className="text-gray-600">Total Calls:</span>
-              <span className="font-medium">{data.totalCalls.toLocaleString()}</span>
+              <span className="font-medium">{(data.calls || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-gray-600">Connected:</span>
-              <span className="font-medium text-green-600">{data.connected.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-600">Converted:</span>
-              <span className="font-medium text-blue-600">{data.converted.toLocaleString()}</span>
+              <span className="text-gray-600">Conversions:</span>
+              <span className="font-medium text-green-600">{(data.conversions || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between gap-4">
               <span className="text-gray-600">Revenue:</span>
               <span className="font-medium text-purple-600">
-                ${data.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${(data.revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-600">Cost:</span>
+              <span className="font-medium text-red-600">
+                ${(data.cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
             <div className="flex justify-between gap-4">
               <span className="text-gray-600">Conversion Rate:</span>
               <span className="font-medium">
-                {data.totalCalls > 0 ? ((data.converted / data.totalCalls) * 100).toFixed(1) : 0}%
+                {(data.calls || 0) > 0 ? (((data.conversions || 0) / (data.calls || 1)) * 100).toFixed(1) : 0}%
               </span>
             </div>
           </div>
@@ -177,8 +182,38 @@ export default function EnhancedTimelineReport({
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Timeline Report</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64 text-red-500">
+            Error loading timeline data
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!timelineData || timelineData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Timeline Report</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64 text-gray-500">
+            No timeline data available for the selected period
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const selectedMetricData = metricOptions.find(m => m.value === selectedMetric);
-  const maxValue = Math.max(...timelineData.map((d: TimelineData) => d[selectedMetric as keyof TimelineData] as number));
+  const maxValue = Math.max(...timelineData.map((d: any) => d[selectedMetric] || 0));
 
   return (
     <Card>
@@ -234,9 +269,9 @@ export default function EnhancedTimelineReport({
         {timelineData.length > 0 && (
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-2">
-              <Badge variant="outline">Total: {timelineData.reduce((sum: number, d: TimelineData) => sum + d.totalCalls, 0).toLocaleString()}</Badge>
-              <Badge variant="outline">Connected: {timelineData.reduce((sum: number, d: TimelineData) => sum + d.connected, 0).toLocaleString()}</Badge>
-              <Badge variant="outline">Converted: {timelineData.reduce((sum: number, d: TimelineData) => sum + d.converted, 0).toLocaleString()}</Badge>
+              <Badge variant="outline">Total: {timelineData.reduce((sum: number, d: any) => sum + (d.calls || 0), 0).toLocaleString()}</Badge>
+              <Badge variant="outline">Connected: {timelineData.reduce((sum: number, d: any) => sum + (d.conversions || 0), 0).toLocaleString()}</Badge>
+              <Badge variant="outline">Revenue: ${timelineData.reduce((sum: number, d: any) => sum + (d.revenue || 0), 0).toLocaleString()}</Badge>
             </div>
           </div>
         )}
@@ -251,7 +286,7 @@ export default function EnhancedTimelineReport({
             <ResponsiveContainer width="100%" height={300} ref={chartRef}>
               <BarChart data={timelineData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                 <XAxis 
-                  dataKey="period" 
+                  dataKey="time" 
                   tick={{ fontSize: 12 }}
                   interval="preserveStartEnd"
                 />
@@ -266,7 +301,7 @@ export default function EnhancedTimelineReport({
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar 
-                  dataKey={selectedMetric}
+                  dataKey={selectedMetric === 'totalCalls' ? 'calls' : selectedMetric}
                   fill={selectedMetricData?.color || "#3b82f6"}
                   radius={[2, 2, 0, 0]}
                   cursor="pointer"
@@ -276,7 +311,7 @@ export default function EnhancedTimelineReport({
                     y={maxValue * 0.8} 
                     stroke="#ef4444" 
                     strokeDasharray="3 3" 
-                    label={{ value: "80% of Peak", position: "topRight" }}
+                    label={{ value: "80% of Peak", position: "top" }}
                   />
                 )}
                 {timelineData.length > 10 && (
