@@ -87,7 +87,6 @@ export default function RingbaStyleReporting() {
     timezone: "UTC",
     visibleColumns: {}
   });
-  const [activeReportPanel, setActiveReportPanel] = useState("timeline");
 
   // Fetch real summary data from API
   const { data: summaryResponse, isLoading: isSummaryLoading } = useQuery({
@@ -258,34 +257,6 @@ export default function RingbaStyleReporting() {
         </div>
       </div>
 
-      {/* Two-Panel Architecture Selection */}
-      <div className="bg-white border-b px-4 py-2">
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant={activeReportPanel === "timeline" ? "default" : "outline"}
-            onClick={() => setActiveReportPanel("timeline")}
-            className="h-7 px-3 text-xs font-medium"
-          >
-            Timeline Report and Summary
-          </Button>
-          <Button
-            size="sm"
-            variant={activeReportPanel === "details" ? "default" : "outline"}
-            onClick={() => setActiveReportPanel("details")}
-            className="h-7 px-3 text-xs font-medium"
-          >
-            Call Details
-          </Button>
-          <div className="flex-1" />
-          <div className="text-xs text-gray-500">
-            {activeFilters.length > 0 && (
-              <span>{activeFilters.length} active filter{activeFilters.length !== 1 ? 's' : ''}</span>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Bulk Actions Bar */}
       <BulkCallActions
         selectedCalls={selectedCalls}
@@ -293,47 +264,51 @@ export default function RingbaStyleReporting() {
         onActionComplete={handleActionComplete}
       />
 
-      {/* Two-Panel Report Content */}
-      <div className="p-4 space-y-4">
-        {activeReportPanel === "timeline" && (
-          <div className="space-y-6">
-            {/* Timeline Report */}
-            <EnhancedTimelineReport
-              filters={activeFilters}
-              dateRange={dateRange}
-              onTimeRangeSelect={handleTimeRangeSelect}
-            />
-            
-            {/* Summary Report below Timeline */}
-            <SummaryReport
-              filters={activeFilters}
-              dateRange={dateRange}
-              onFilterClick={handleFilterClick}
-            />
-          </div>
-        )}
+      {/* Single Unified Report Content */}
+      <div className="p-4 space-y-6">
+        {/* Timeline Report */}
+        <EnhancedTimelineReport
+          filters={activeFilters}
+          dateRange={dateRange}
+          onTimeRangeSelect={handleTimeRangeSelect}
+        />
+        
+        {/* Summary Report below Timeline */}
+        <SummaryReport
+          filters={activeFilters}
+          dateRange={dateRange}
+          onFilterClick={handleFilterClick}
+        />
 
-        {activeReportPanel === "details" && (
-          <div className="space-y-4">
-            {/* Call Activity with enhanced integration */}
-            <CallActivity
-              selectedRows={selectedRows}
-              onRowSelect={(rowId, isSelected) => {
-                const newSelection = new Set(selectedRows);
-                if (isSelected) {
-                  newSelection.add(rowId);
-                } else {
-                  newSelection.delete(rowId);
-                }
-                setSelectedRows(newSelection);
-                
-                // Update selected calls for bulk actions
-                const callsToUpdate = Array.from(newSelection);
-                setSelectedCalls(callsToUpdate.map(id => ({ id, callId: id })));
-              }}
-            />
+        {/* Call Details below Summary */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium text-gray-900">Call Details</h3>
+            <div className="text-xs text-gray-500">
+              {activeFilters.length > 0 && (
+                <span>{activeFilters.length} active filter{activeFilters.length !== 1 ? 's' : ''}</span>
+              )}
+            </div>
           </div>
-        )}
+          
+          {/* Call Activity with enhanced integration */}
+          <CallActivity
+            selectedRows={selectedRows}
+            onRowSelect={(rowId, isSelected) => {
+              const newSelection = new Set(selectedRows);
+              if (isSelected) {
+                newSelection.add(rowId);
+              } else {
+                newSelection.delete(rowId);
+              }
+              setSelectedRows(newSelection);
+              
+              // Update selected calls for bulk actions
+              const callsToUpdate = Array.from(newSelection);
+              setSelectedCalls(callsToUpdate.map(id => ({ id, callId: id })));
+            }}
+          />
+        </div>
       </div>
 
       {/* Active Filters Display */}
