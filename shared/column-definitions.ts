@@ -655,3 +655,21 @@ export function getColumnDefinition(columnId: string): ColumnDefinition | undefi
 export function getReservedColumnIds(): string[] {
   return COLUMN_DEFINITIONS.map(col => col.id);
 }
+
+// Function to create dynamic column definition from URL parameter
+export function createUrlParameterColumn(urlParam: any): ColumnDefinition {
+  return {
+    id: urlParam.parameterName,
+    label: urlParam.reportName || urlParam.parameterName,
+    category: urlParam.reportingMenuName || 'User',
+    dataType: urlParam.parameterType === 'integer' ? 'number' : 
+              urlParam.parameterType === 'decimal' ? 'number' : 'string',
+    defaultVisible: false, // URL parameters are opt-in
+    width: 150,
+    sortable: true,
+    filterable: true,
+    description: `URL parameter: ${urlParam.parameterName}`
+  };
+}
+
+export default COLUMN_DEFINITIONS;

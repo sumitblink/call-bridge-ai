@@ -473,25 +473,66 @@ export default function CallActivity() {
         );
       default:
         // Handle dynamic URL parameter columns
-        // Map URL parameter names to database column names (snake_case)
-        const columnMappings: Record<string, string> = {
-          'clickid': 'click_id',
-          'publisher': 'publisher_name',
-          'utm_campaign': 'utm_campaign',
-          'utm_source': 'utm_source',
-          'utm_medium': 'utm_medium',
-          'utm_content': 'utm_content',
-          'utm_term': 'utm_term',
-          'parameter': 'custom_parameters'
+        // Enhanced mapping for user-created URL parameters to database fields
+        const getUrlParameterValue = (parameterName: string) => {
+          // Direct mapping for common URL parameters to database fields
+          const directMappings: Record<string, string> = {
+            'clickid': 'clickId',
+            'click_id': 'clickId', 
+            'publisher': 'publisherName',
+            'publisher_name': 'publisherName',
+            'utm_campaign': 'utmCampaign',
+            'utm_source': 'utmSource',
+            'utm_medium': 'utmMedium',
+            'utm_content': 'utmContent',
+            'utm_term': 'utmTerm',
+            'referrer': 'referrer',
+            'landing_page': 'landingPage',
+            'user_agent': 'userAgent',
+            'ip_address': 'ipAddress',
+            'geo_location': 'geoLocation',
+            'session_id': 'sessionId'
+          };
+          
+          // Try direct mapping first
+          const mappedField = directMappings[parameterName.toLowerCase()];
+          if (mappedField && call[mappedField as keyof typeof call] !== undefined) {
+            return call[mappedField as keyof typeof call];
+          }
+          
+          // Try camelCase version
+          const camelCase = parameterName.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+          if (call[camelCase as keyof typeof call] !== undefined) {
+            return call[camelCase as keyof typeof call];
+          }
+          
+          // Try snake_case version
+          const snakeCase = parameterName.replace(/([A-Z])/g, '_$1').toLowerCase();
+          if (call[snakeCase as keyof typeof call] !== undefined) {
+            return call[snakeCase as keyof typeof call];
+          }
+          
+          // Try exact match
+          if (call[parameterName as keyof typeof call] !== undefined) {
+            return call[parameterName as keyof typeof call];
+          }
+          
+          return null;
         };
         
-        const dbColumnName = columnMappings[column] || column;
-        const paramValue = (call as any)[dbColumnName];
+        const paramValue = getUrlParameterValue(column);
         
         if (paramValue !== undefined && paramValue !== null && paramValue !== '') {
-          return <div className="truncate text-xs">{paramValue}</div>;
+          // Format display based on parameter type
+          if (column.toLowerCase().includes('clickid') || column.toLowerCase().includes('click_id')) {
+            return <div className="truncate text-xs font-mono text-blue-600">{String(paramValue)}</div>;
+          }
+          if (column.toLowerCase().includes('publisher')) {
+            return <div className="truncate text-xs font-medium">{String(paramValue)}</div>;
+          }
+          return <div className="truncate text-xs">{String(paramValue)}</div>;
         }
-        return <div className="truncate text-xs">-</div>;
+        return <div className="truncate text-xs text-gray-400">-</div>;
     }
   };
 
