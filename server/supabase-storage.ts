@@ -1660,39 +1660,9 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
-  // Tracking Pixels methods
-  async getTrackingPixels(userId: number): Promise<any[]> {
-    return [];
-  }
 
-  async getTrackingPixel(id: number): Promise<any | undefined> {
-    return undefined;
-  }
 
-  async createTrackingPixel(pixel: any): Promise<any> {
-    return { id: Math.floor(Math.random() * 10000), ...pixel, createdAt: new Date().toISOString() };
-  }
 
-  async updateTrackingPixel(id: number, pixel: any): Promise<any | undefined> {
-    return { id, ...pixel, updatedAt: new Date().toISOString() };
-  }
-
-  async deleteTrackingPixel(id: number): Promise<boolean> {
-    return true;
-  }
-
-  // Campaign-specific Tracking Pixels
-  async getCampaignTrackingPixels(campaignId: string): Promise<any[]> {
-    return [];
-  }
-
-  async createCampaignTrackingPixel(data: any): Promise<any> {
-    return { id: Math.floor(Math.random() * 10000), ...data, createdAt: new Date().toISOString() };
-  }
-
-  async deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean> {
-    return true;
-  }
 
   // Custom Reports (temporary implementations for demo)
   async getCustomReports(userId: number): Promise<any[]> {
