@@ -161,8 +161,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     }
     
     try {
-      // Create pixel specifically for this campaign
-      await apiRequest(`/api/campaigns/${campaignId}/tracking-pixels`, 'POST', {
+      const payload = {
         name: formData.name,
         fire_on_event: formData.firePixelOn,
         code: formData.url,
@@ -171,32 +170,50 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
         authentication_type: formData.authentication,
         advanced_options: formData.advancedOptions,
         active: formData.active
-      });
+      };
+
+      if (editingPixel) {
+        // Update existing pixel
+        await apiRequest(`/api/campaigns/${campaignId}/tracking-pixels/${editingPixel.id}`, 'PUT', payload);
+        toast({
+          title: 'Success',
+          description: 'Campaign tracking pixel updated successfully'
+        });
+      } else {
+        // Create new pixel
+        await apiRequest(`/api/campaigns/${campaignId}/tracking-pixels`, 'POST', payload);
+        toast({
+          title: 'Success',
+          description: 'Campaign tracking pixel created successfully'
+        });
+      }
 
       // Invalidate campaign pixels cache
       queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'tracking-pixels'] });
-      
-      toast({
-        title: 'Success',
-        description: 'Campaign tracking pixel created successfully'
-      });
       
       resetForm();
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to create campaign tracking pixel',
+        description: editingPixel ? 'Failed to update campaign tracking pixel' : 'Failed to create campaign tracking pixel',
         variant: 'destructive'
       });
     }
   };
 
   const handleEdit = (pixel: TrackingPixel) => {
-    // Direct users to the Integrations page for editing
-    toast({
-      title: 'Edit in Integrations',
-      description: 'Please use the Integrations page to edit tracking pixels.',
+    setEditingPixel(pixel);
+    setFormData({
+      name: pixel.name,
+      firePixelOn: pixel.firePixelOn,
+      url: pixel.url,
+      httpMethod: pixel.httpMethod,
+      headers: pixel.headers || [],
+      authentication: pixel.authentication,
+      advancedOptions: pixel.advancedOptions,
+      active: pixel.active
     });
+    setIsDialogOpen(true);
   };
 
   const handleDelete = (id: number) => {
@@ -403,7 +420,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Create New Tracking Pixel</DialogTitle>
+              <DialogTitle>{editingPixel ? 'Edit Tracking Pixel' : 'Create New Tracking Pixel'}</DialogTitle>
             </DialogHeader>
 
             {/* Enhanced Form with HTTP Options */}

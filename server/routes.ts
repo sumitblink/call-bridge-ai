@@ -2518,6 +2518,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/campaigns/:id/tracking-pixels/:pixelId', requireAuth, async (req: any, res) => {
+    try {
+      const campaignId = req.params.id;
+      const pixelId = parseInt(req.params.pixelId);
+      const userId = req.user?.id;
+      const { 
+        name, 
+        fire_on_event, 
+        code, 
+        http_method = 'GET',
+        headers = '[]',
+        authentication_type = 'none',
+        advanced_options = false,
+        active = true 
+      } = req.body;
+      
+      // Get all campaigns to find the one with matching ID and user
+      const campaigns = await storage.getCampaigns();
+      const campaign = campaigns.find(c => c.id === campaignId && c.userId === userId);
+      
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found or access denied" });
+      }
+      
+      if (isNaN(pixelId)) {
+        return res.status(400).json({ error: "Invalid pixel ID" });
+      }
+      
+      // Validate required fields
+      if (!name || !fire_on_event || !code) {
+        console.error('Missing required fields:', { name, fire_on_event, code, requestBody: req.body });
+        return res.status(400).json({ error: "Missing required fields: name, fire_on_event, code" });
+      }
+
+      // Validate fire event
+      const validEvents = ['incoming', 'connected', 'completed', 'converted', 'error', 'payout', 'recording', 'finalized'];
+      if (!validEvents.includes(fire_on_event)) {
+        return res.status(400).json({ error: `Invalid fire_on_event. Must be one of: ${validEvents.join(', ')}` });
+      }
+
+      const pixelData = {
+        name,
+        fireOnEvent: fire_on_event,
+        code,
+        httpMethod: http_method,
+        headers,
+        authenticationType: authentication_type,
+        advancedOptions: advanced_options,
+        active,
+        updatedAt: new Date()
+      };
+
+      const updatedPixel = await storage.updateCampaignTrackingPixel(campaignId, pixelId, pixelData);
+      if (!updatedPixel) {
+        return res.status(404).json({ error: "Campaign tracking pixel not found" });
+      }
+      
+      res.json(updatedPixel);
+    } catch (error) {
+      console.error("Error updating campaign tracking pixel:", error);
+      res.status(500).json({ error: "Failed to update campaign tracking pixel" });
+    }
+  });
+
   app.delete('/api/campaigns/:campaignId/tracking-pixels/:pixelId', requireAuth, async (req: any, res) => {
     try {
       const campaignId = req.params.campaignId;

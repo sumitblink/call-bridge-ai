@@ -272,6 +272,7 @@ export interface IStorage {
   // Campaign-specific Tracking Pixels
   getCampaignTrackingPixels(campaignId: string): Promise<any[]>;
   createCampaignTrackingPixel(data: any): Promise<any>;
+  updateCampaignTrackingPixel(campaignId: string, pixelId: number, data: any): Promise<any | undefined>;
   deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean>;
 
   // Custom Reports
@@ -1022,6 +1023,26 @@ export class MemStorage implements IStorage {
     console.log('Campaign pixels after creation:', this.campaignTrackingPixels.get(data.campaignId));
     
     return pixel;
+  }
+
+  async updateCampaignTrackingPixel(campaignId: string, pixelId: number, data: any): Promise<any | undefined> {
+    const campaignPixels = this.campaignTrackingPixels.get(campaignId) || [];
+    const pixelIndex = campaignPixels.findIndex(p => p.id === pixelId);
+    
+    if (pixelIndex === -1) {
+      return undefined; // Pixel not found
+    }
+    
+    const updatedPixel = {
+      ...campaignPixels[pixelIndex],
+      ...data,
+      updatedAt: new Date()
+    };
+    
+    campaignPixels[pixelIndex] = updatedPixel;
+    this.campaignTrackingPixels.set(campaignId, campaignPixels);
+    
+    return updatedPixel;
   }
 
   async deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean> {

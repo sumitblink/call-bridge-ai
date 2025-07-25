@@ -852,6 +852,33 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
+  async updateCampaignTrackingPixel(campaignId: string, pixelId: number, data: any): Promise<any | undefined> {
+    console.log('SupabaseStorage: Updating campaign tracking pixel:', { campaignId, pixelId, data });
+    
+    try {
+      // Update the tracking pixel with the new data
+      const [result] = await db.update(trackingPixels)
+        .set({
+          name: data.name,
+          fireOnEvent: data.fireOnEvent,
+          code: data.code,
+          httpMethod: data.httpMethod || 'GET',
+          headers: data.headers || '[]',
+          authenticationType: data.authenticationType || 'none',
+          isActive: data.active !== false,
+          updatedAt: new Date()
+        })
+        .where(eq(trackingPixels.id, pixelId))
+        .returning();
+      
+      console.log('SupabaseStorage: Campaign tracking pixel updated:', result);
+      return result;
+    } catch (error) {
+      console.error('SupabaseStorage: Error updating campaign tracking pixel:', error);
+      throw error;
+    }
+  }
+
   async deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean> {
     // For now, always return true until we have a separate table
     return true;
