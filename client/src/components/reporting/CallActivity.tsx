@@ -717,36 +717,37 @@ export default function CallActivity() {
             </p>
           </div>
         ) : (
-          <div 
-            ref={tableContainerRef}
-            className="rounded-md border overflow-auto max-h-[600px]"
-            style={{ scrollBehavior: 'smooth' }}
-          >
-            <Table ref={tableRef}>
-              <TableHeader className="sticky top-0 z-10">
-                <TableRow className="bg-gray-100 border-b border-gray-300">
-                  <TableHead className="text-xs font-semibold bg-gray-100 text-gray-800 w-8 sticky top-0 z-10"></TableHead>
-                  {visibleColumns.map((column, columnIndex) => {
-                    const columnDef = getDynamicColumnDefinition(column);
-                    return (
-                      <TableHead 
-                        key={`header-${columnIndex}-${column}`} 
-                        className="text-xs font-semibold relative bg-gray-100 text-gray-800 sticky top-0 z-10"
-                        style={{ 
-                          width: columnWidths[column] || columnDef?.width || 'auto',
-                          minWidth: '60px'
-                        }}
-                      >
-                        {columnDef?.label || column}
-                        <div 
-                          className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500"
-                          onMouseDown={(e) => handleMouseDown(e, column)}
-                        />
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              </TableHeader>
+          <div className="rounded-md border">
+            <div 
+              ref={tableContainerRef}
+              className="overflow-auto max-h-[600px]"
+              style={{ scrollBehavior: 'smooth' }}
+            >
+              <Table ref={tableRef} className="relative">
+                <TableHeader className="sticky top-0 z-20 bg-gray-100 shadow-sm">
+                  <TableRow className="bg-gray-100 border-b border-gray-300">
+                    <TableHead className="text-xs font-semibold bg-gray-100 text-gray-800 w-8 sticky top-0 z-20"></TableHead>
+                    {visibleColumns.map((column, columnIndex) => {
+                      const columnDef = getDynamicColumnDefinition(column);
+                      return (
+                        <TableHead 
+                          key={`header-${columnIndex}-${column}`} 
+                          className="text-xs font-semibold relative bg-gray-100 text-gray-800 sticky top-0 z-20"
+                          style={{ 
+                            width: columnWidths[column] || columnDef?.width || 'auto',
+                            minWidth: '60px'
+                          }}
+                        >
+                          {columnDef?.label || column}
+                          <div 
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500"
+                            onMouseDown={(e) => handleMouseDown(e, column)}
+                          />
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {filteredCalls.flatMap((call, callIndex) => {
                   const rows = [
@@ -855,6 +856,7 @@ export default function CallActivity() {
                 )}
               </div>
             )}
+            </div>
           </div>
         )}
       </CardContent>
