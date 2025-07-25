@@ -10,55 +10,158 @@ router.get('/summary', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId!;
     const dateRange = req.query.dateRange as string || 'today';
+    const groupBy = req.query.groupBy as string || 'campaign';
     const filters = req.query.filters ? JSON.parse(req.query.filters as string) : [];
 
     // Get campaign data with summary statistics
     const campaigns = await storage.getCampaigns(userId);
     const calls = await storage.getCallsByUser(userId);
+    const buyers = await storage.getBuyers(userId);
     
-    const summaryData = campaigns.map(campaign => {
-      const campaignCalls = calls.filter(call => call.campaignId === campaign.id);
-      const totalCalls = campaignCalls.length;
-      const completedCalls = campaignCalls.filter(call => call.status === 'completed').length;
-      const convertedCalls = campaignCalls.filter(call => 
+    // Group data based on the groupBy parameter
+    let summaryData: any[] = [];
+    
+    if (groupBy === 'campaign') {
+      summaryData = campaigns.map(campaign => {
+        const campaignCalls = calls.filter(call => call.campaignId === campaign.id);
+        return createSummaryRecord(campaignCalls, 'campaign', campaign.name, campaign);
+      });
+    } else if (groupBy === 'target') {
+      // Group by target/buyer
+      const targetGroups = new Map<string, any[]>();
+      calls.forEach(call => {
+        const buyer = buyers.find(b => b.id === call.buyerId);
+        const targetName = buyer ? buyer.name : 'Unknown Target';
+        if (!targetGroups.has(targetName)) {
+          targetGroups.set(targetName, []);
+        }
+        targetGroups.get(targetName)!.push(call);
+      });
+      
+      summaryData = Array.from(targetGroups.entries()).map(([targetName, targetCalls]) => {
+        return createSummaryRecord(targetCalls, 'target', targetName);
+      });
+    } else if (groupBy === 'buyer') {
+      // Group by buyer
+      const buyerGroups = new Map<string, any[]>();
+      calls.forEach(call => {
+        const buyer = buyers.find(b => b.id === call.buyerId);
+        const buyerName = buyer ? buyer.name : 'Unknown Buyer';
+        if (!buyerGroups.has(buyerName)) {
+          buyerGroups.set(buyerName, []);
+        }
+        buyerGroups.get(buyerName)!.push(call);
+      });
+      
+      summaryData = Array.from(buyerGroups.entries()).map(([buyerName, buyerCalls]) => {
+        return createSummaryRecord(buyerCalls, 'buyer', buyerName);
+      });
+    } else if (groupBy === 'publisher') {
+      // Group by publisher from call data
+      const publisherGroups = new Map<string, any[]>();
+      calls.forEach(call => {
+        const publisherName = call.publisher || 'Direct';
+        if (!publisherGroups.has(publisherName)) {
+          publisherGroups.set(publisherName, []);
+        }
+        publisherGroups.get(publisherName)!.push(call);
+      });
+      
+      summaryData = Array.from(publisherGroups.entries()).map(([publisherName, publisherCalls]) => {
+        return createSummaryRecord(publisherCalls, 'publisher', publisherName);
+      });
+    } else if (groupBy === 'dialedNumber') {
+      // Group by dialed number
+      const numberGroups = new Map<string, any[]>();
+      calls.forEach(call => {
+        const dialedNumber = call.toNumber || 'Unknown';
+        if (!numberGroups.has(dialedNumber)) {
+          numberGroups.set(dialedNumber, []);
+        }
+        numberGroups.get(dialedNumber)!.push(call);
+      });
+      
+      summaryData = Array.from(numberGroups.entries()).map(([dialedNumber, numberCalls]) => {
+        return createSummaryRecord(numberCalls, 'dialedNumber', dialedNumber);
+      });
+    } else if (groupBy === 'pool') {
+      // Group by number pool
+      const poolGroups = new Map<string, any[]>();
+      calls.forEach(call => {
+        const poolName = call.numberPoolId ? `Pool ${call.numberPoolId}` : 'Direct';
+        if (!poolGroups.has(poolName)) {
+          poolGroups.set(poolName, []);
+        }
+        poolGroups.get(poolName)!.push(call);
+      });
+      
+      summaryData = Array.from(poolGroups.entries()).map(([poolName, poolCalls]) => {
+        return createSummaryRecord(poolCalls, 'pool', poolName);
+      });
+    } else if (groupBy === 'date') {
+      // Group by date
+      const dateGroups = new Map<string, any[]>();
+      calls.forEach(call => {
+        const callDate = new Date(call.createdAt).toISOString().split('T')[0];
+        if (!dateGroups.has(callDate)) {
+          dateGroups.set(callDate, []);
+        }
+        dateGroups.get(callDate)!.push(call);
+      });
+      
+      summaryData = Array.from(dateGroups.entries()).map(([date, dateCalls]) => {
+        return createSummaryRecord(dateCalls, 'date', date);
+      });
+    } else {
+      // Default to campaign grouping
+      summaryData = campaigns.map(campaign => {
+        const campaignCalls = calls.filter(call => call.campaignId === campaign.id);
+        return createSummaryRecord(campaignCalls, 'campaign', campaign.name, campaign);
+      });
+    }
+
+    // Helper function to create summary record
+    function createSummaryRecord(callsGroup: any[], groupType: string, groupValue: string, campaign?: any) {
+      const totalCalls = callsGroup.length;
+      const completedCalls = callsGroup.filter(call => call.status === 'completed').length;
+      const convertedCalls = callsGroup.filter(call => 
         call.status === 'completed' && call.duration && call.duration > 30
       ).length;
 
       // Calculate real financial data from call records
-      const totalRevenue = campaignCalls.reduce((sum, call) => sum + parseFloat(call.revenue || '0'), 0);
-      const totalCost = campaignCalls.reduce((sum, call) => sum + parseFloat(call.cost || '0'), 0);
-      const totalPayout = campaignCalls.reduce((sum, call) => sum + parseFloat(call.payout || '0'), 0);
+      const totalRevenue = callsGroup.reduce((sum, call) => sum + parseFloat(call.revenue || '0'), 0);
+      const totalCost = callsGroup.reduce((sum, call) => sum + parseFloat(call.cost || '0'), 0);
+      const totalPayout = callsGroup.reduce((sum, call) => sum + parseFloat(call.payout || '0'), 0);
       const profit = totalRevenue - totalCost;
       const avgCallLength = completedCalls > 0 ? 
-        campaignCalls.filter(c => c.duration).reduce((sum, c) => sum + (c.duration || 0), 0) / completedCalls : 0;
+        callsGroup.filter(c => c.duration).reduce((sum, c) => sum + (c.duration || 0), 0) / completedCalls : 0;
 
       return {
-        // Match SummaryReport interface requirements
-        groupBy: 'campaign',
-        groupValue: campaign.name,
-        campaignId: campaign.id,
-        campaignName: campaign.name,
-        publisher: 'Direct',
-        target: 'Default Target',
-        buyer: 'Primary Buyer',
-        dialedNumbers: [campaign.phoneNumber || '+1234567890'],
-        numberPool: campaign.routingType === 'pool' ? 'Campaign Pool' : 'Direct',
-        lastCallDate: campaignCalls.length > 0 ? 
-          new Date(Math.max(...campaignCalls.map(c => new Date(c.createdAt).getTime()))).toISOString().split('T')[0] : null,
+        groupBy: groupType,
+        groupValue: groupValue,
+        campaignId: campaign?.id || '',
+        campaignName: campaign?.name || 'Multiple Campaigns',
+        publisher: groupType === 'publisher' ? groupValue : 'Mixed',
+        target: groupType === 'target' ? groupValue : 'Mixed',
+        buyer: groupType === 'buyer' ? groupValue : 'Mixed',
+        dialedNumbers: groupType === 'dialedNumber' ? [groupValue] : ['Mixed'],
+        numberPool: groupType === 'pool' ? groupValue : 'Mixed',
+        lastCallDate: callsGroup.length > 0 ? 
+          new Date(Math.max(...callsGroup.map(c => new Date(c.createdAt).getTime()))).toISOString().split('T')[0] : null,
         duplicate: 'No',
-        tags: ['campaign', 'active'],
+        tags: ['summary', groupType],
         totalCalls,
         incoming: totalCalls,
-        live: campaignCalls.filter(call => call.status === 'in-progress').length,
+        live: callsGroup.filter(call => call.status === 'in-progress').length,
         completed: completedCalls,
-        ended: campaignCalls.filter(call => call.status === 'ended').length,
+        ended: callsGroup.filter(call => call.status === 'ended').length,
         connected: completedCalls,
         paid: convertedCalls,
         converted: convertedCalls,
-        noConnection: campaignCalls.filter(call => call.status === 'failed').length,
+        noConnection: callsGroup.filter(call => call.status === 'failed').length,
         blocked: 0,
         duplicate: 0,
-        ivrHangup: campaignCalls.filter(call => call.status === 'busy').length,
+        ivrHangup: callsGroup.filter(call => call.status === 'busy').length,
         rpc: totalCalls > 0 ? totalRevenue / totalCalls : 0,
         revenue: totalRevenue,
         payout: totalPayout,
@@ -66,11 +169,11 @@ router.get('/summary', requireAuth, async (req, res) => {
         margin: totalRevenue > 0 ? profit / totalRevenue : 0,
         conversionRate: totalCalls > 0 ? (convertedCalls / totalCalls) : 0,
         avgCallLength: avgCallLength,
-        tcl: avgCallLength, // Average call length in seconds
-        acl: avgCallLength,  // Average call length
+        tcl: avgCallLength,
+        acl: avgCallLength,
         totalCost: totalCost
       };
-    });
+    }
 
     res.json({ summaries: summaryData, total: summaryData.length });
   } catch (error) {
