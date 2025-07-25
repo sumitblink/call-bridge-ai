@@ -35,41 +35,67 @@ export interface DNIResponse {
 }
 
 export class DNIService {
+  // Simple in-memory cache for campaign lookups to speed up repeated requests
+  private static campaignCache = new Map<string, Campaign>();
+  private static cacheExpiry = new Map<string, number>();
+  private static CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+
+  private static getCachedCampaign(tagCode: string): Campaign | null {
+    const cached = this.campaignCache.get(tagCode);
+    const expiry = this.cacheExpiry.get(tagCode);
+    
+    if (cached && expiry && Date.now() < expiry) {
+      return cached;
+    }
+    
+    // Clean up expired cache
+    if (expiry && Date.now() >= expiry) {
+      this.campaignCache.delete(tagCode);
+      this.cacheExpiry.delete(tagCode);
+    }
+    
+    return null;
+  }
+
+  private static setCachedCampaign(tagCode: string, campaign: Campaign): void {
+    this.campaignCache.set(tagCode, campaign);
+    this.cacheExpiry.set(tagCode, Date.now() + this.CACHE_TTL);
+  }
+
   /**
    * Get a tracking phone number for a campaign based on request parameters
    * Uses pool-based assignment if campaign has a pool, otherwise uses campaign phone number
    */
   static async getTrackingNumber(request: DNIRequest): Promise<DNIResponse> {
     try {
-      console.log('DNI: Service called with request:', JSON.stringify(request, null, 2));
       let campaign: Campaign | undefined;
 
-      // Find campaign by tracking tag code (primary method)
+      // Find campaign by tracking tag code (primary method) - OPTIMIZED with caching
       if (request.tagCode) {
-        console.log('DNI: Looking for tagCode:', request.tagCode);
-        
-        // First, let's verify the tag exists in the database
-        const allTags = await db.select().from(callTrackingTags).where(eq(callTrackingTags.tagCode, request.tagCode));
-        console.log('DNI: Direct tag lookup found:', allTags.length, 'tags');
-        
-        const trackingTagResult = await db
-          .select({ 
-            campaign: campaigns,
-            tag: callTrackingTags 
-          })
-          .from(callTrackingTags)
-          .innerJoin(campaigns, eq(callTrackingTags.campaignId, campaigns.id))
-          .where(and(
-            eq(callTrackingTags.tagCode, request.tagCode),
-            eq(callTrackingTags.isActive, true)
-          ));
-        
-        console.log('DNI: Found', trackingTagResult.length, 'tracking tag results');
-        if (trackingTagResult.length > 0) {
-          campaign = trackingTagResult[0].campaign;
-          console.log('DNI: Using campaign:', campaign.name, 'ID:', campaign.id);
+        // Check cache first
+        const cachedCampaign = this.getCachedCampaign(request.tagCode);
+        if (cachedCampaign) {
+          campaign = cachedCampaign;
         } else {
-          console.log('DNI: No active tracking tag found for tagCode:', request.tagCode);
+          // Fetch from database
+          const trackingTagResult = await db
+            .select({ 
+              campaign: campaigns,
+              tag: callTrackingTags 
+            })
+            .from(callTrackingTags)
+            .innerJoin(campaigns, eq(callTrackingTags.campaignId, campaigns.id))
+            .where(and(
+              eq(callTrackingTags.tagCode, request.tagCode),
+              eq(callTrackingTags.isActive, true)
+            ))
+            .limit(1); // Only need one result
+          
+          if (trackingTagResult.length > 0) {
+            campaign = trackingTagResult[0].campaign;
+            // Cache the result
+            this.setCachedCampaign(request.tagCode, campaign);
+          }
         }
       }
       // Fallback: Find campaign by ID or name
@@ -95,9 +121,9 @@ export class DNIService {
 
       let selectedPhone: PhoneNumber;
 
-      // Use mutually exclusive routing: either direct number OR pool
+      // Use mutually exclusive routing: either direct number OR pool - OPTIMIZED
       if (campaign.routingType === 'pool' && campaign.poolId) {
-        // Pool-based DNI: Get numbers from the assigned pool
+        // Pool-based DNI: Get numbers from the assigned pool - OPTIMIZED single query with limit
         const poolNumbers = await db
           .select({ 
             phoneNumber: phoneNumbers.phoneNumber,
@@ -109,7 +135,8 @@ export class DNIService {
           .where(and(
             eq(numberPoolAssignments.poolId, campaign.poolId),
             eq(phoneNumbers.isActive, true)
-          ));
+          ))
+          .limit(10); // Limit results to speed up query
 
         if (poolNumbers.length === 0) {
           return {

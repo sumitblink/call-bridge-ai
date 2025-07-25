@@ -5392,7 +5392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
-      console.log('DNI: Service called with request:', trackingRequest);
+      // Service request processed
 
       const result = await DNIService.trackVisitorByCampaignId(trackingRequest);
 
@@ -5428,9 +5428,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
     
     try {
-      console.log('=== DNI Track Handler Called ===');
-      console.log('Request body:', JSON.stringify(req.body, null, 2));
-      console.log('Content-Type:', req.headers['content-type']);
       
       // Ringba-style UTM parameter validation and spam prevention
       const userAgent = req.headers['user-agent'] || '';
@@ -5443,7 +5440,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       if (isLikelyBot) {
-        console.log('DNI: Filtered bot request:', userAgent);
         return res.status(400).json({
           phoneNumber: '',
           formattedNumber: '',
@@ -5472,13 +5468,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const explicitGarbageList = ['huihui', 'test', 'spam', 'garbage', 'fake', 'dummy', 'xxx', 'asdf', 'qwerty', '12345', 'hi', 'yo', 'hey', 'lol', 'hehe'];
         
         if (explicitGarbageList.includes(value.toLowerCase())) {
-          console.log(`DNI: Blocked explicit garbage ${paramType} parameter: "${value}"`);
           return false;
         }
 
         // Pure number or special character validation
         if (/^\d+$/.test(value) || /^[!@#$%^&*()]+$/.test(value)) {
-          console.log(`DNI: Blocked invalid format ${paramType} parameter: "${value}"`);
           return false;
         }
 
@@ -5486,7 +5480,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (paramType === 'medium') {
           const validMediums = ['organic', 'cpc', 'email', 'social', 'referral', 'direct', 'affiliate', 'display', 'video'];
           if (!validMediums.includes(value.toLowerCase())) {
-            console.log(`DNI: Auto-correcting invalid medium "${value}" to "referral"`);
             req.body.utmMedium = 'referral'; // Auto-correct to valid medium
           }
         }
@@ -5497,7 +5490,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate all UTM parameters
       for (const [key, value] of Object.entries(utmData)) {
         if (value && !validateUTMParameter(value, key)) {
-          console.log(`DNI: Blocked request due to invalid UTM ${key}: "${value}"`);
           return res.status(400).json({
             phoneNumber: '',
             formattedNumber: '',
@@ -5509,7 +5501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      console.log(`DNI: Processing validated tracking request from: ${origin}`);
+      // Processing validated tracking request
       
       // Extract the request data properly including clickid and publisher
       const { tagCode, sessionId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, domain, visitorId, clickid, publisher } = req.body;
