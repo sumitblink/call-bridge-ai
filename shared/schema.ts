@@ -941,6 +941,13 @@ export const insertPhoneNumberSchema = createInsertSchema(phoneNumbers).omit({
 export type PhoneNumber = typeof phoneNumbers.$inferSelect;
 export type InsertPhoneNumber = z.infer<typeof insertPhoneNumberSchema>;
 
+// Enhanced PhoneNumber type with assignment status information
+export type EnhancedPhoneNumber = PhoneNumber & {
+  status: 'available' | 'assigned';
+  assignedTo?: string | null;
+  assignedType?: 'campaign' | 'pool' | null;
+};
+
 // Call Tracking Tags schemas
 export const insertCallTrackingTagSchema = createInsertSchema(callTrackingTags).omit({
   id: true,

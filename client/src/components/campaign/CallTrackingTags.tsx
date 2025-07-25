@@ -68,6 +68,9 @@ interface PhoneNumber {
   id: number;
   phoneNumber: string;
   friendlyName: string;
+  status: 'available' | 'assigned';
+  assignedTo?: string | null;
+  assignedType?: 'campaign' | 'pool' | null;
 }
 
 interface NumberPool {
@@ -150,12 +153,8 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
 
   // Filter out phone numbers that are already assigned to pools or campaigns
   const availablePhoneNumbers = phoneNumbers.filter(number => {
-    // Only show unassigned numbers or numbers explicitly marked as available
-    const isUnassigned = number.friendlyName === 'Unassigned' || !number.friendlyName;
-    const isNotInPool = !number.friendlyName?.includes('Pool');
-    const isNotCampaignDirect = !number.friendlyName?.includes('Campaign Direct');
-    
-    return isUnassigned && isNotInPool && isNotCampaignDirect;
+    // Use the enhanced status information from the API
+    return number.status === 'available';
   });
 
   // Fetch number pools for dropdown (only if campaign uses pool routing)
