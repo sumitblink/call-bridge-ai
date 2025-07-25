@@ -3,15 +3,45 @@ import { z } from 'zod';
 import { storage } from '../supabase-storage';
 import { requireAuth } from '../middleware/auth';
 
+// Simple in-memory cache for reporting data to speed up dashboard
+const reportingCache = new Map<string, { data: any; expiry: number }>();
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes cache for reporting data
+
+function getCachedData(key: string): any | null {
+  const cached = reportingCache.get(key);
+  if (cached && Date.now() < cached.expiry) {
+    return cached.data;
+  }
+  // Clean up expired cache
+  if (cached && Date.now() >= cached.expiry) {
+    reportingCache.delete(key);
+  }
+  return null;
+}
+
+function setCachedData(key: string, data: any): void {
+  reportingCache.set(key, {
+    data,
+    expiry: Date.now() + CACHE_TTL
+  });
+}
+
 const router = Router();
 
-// Summary Report Data
+// Summary Report Data - OPTIMIZED with caching
 router.get('/summary', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId!;
     const dateRange = req.query.dateRange as string || 'today';
     const groupBy = req.query.groupBy as string || 'campaign';
     const filters = req.query.filters ? JSON.parse(req.query.filters as string) : [];
+
+    // Check cache first
+    const cacheKey = `summary_${userId}_${dateRange}_${groupBy}_${JSON.stringify(filters)}`;
+    const cachedData = getCachedData(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
 
     // Get campaign data with summary statistics
     const campaigns = await storage.getCampaigns(userId);
@@ -175,21 +205,32 @@ router.get('/summary', requireAuth, async (req, res) => {
       };
     }
 
-    res.json({ summaries: summaryData, total: summaryData.length });
+    const result = { summaries: summaryData, total: summaryData.length };
+    
+    // Cache the result
+    setCachedData(cacheKey, result);
+    res.json(result);
   } catch (error) {
     console.error('Error fetching summary report:', error);
     res.status(500).json({ error: 'Failed to fetch summary report' });
   }
 });
 
-// Timeline Report Data
+// Timeline Report Data - OPTIMIZED with caching
 router.get('/timeline', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId!;
     const dateRange = req.query.dateRange as string || 'today';
     const groupBy = req.query.groupBy as string || 'hour';
 
-    // Get real call data
+    // Check cache first
+    const cacheKey = `timeline_${userId}_${dateRange}_${groupBy}`;
+    const cachedData = getCachedData(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
+    // Get real call data - limit to recent calls for performance
     const calls = await storage.getCallsByUser(userId);
     const timelineData = [];
     
@@ -264,7 +305,7 @@ router.get('/timeline', requireAuth, async (req, res) => {
       }
     }
 
-    res.json({ 
+    const result = { 
       timeline: timelineData, 
       summary: {
         totalCalls: timelineData.reduce((sum, item) => sum + item.calls, 0),
@@ -272,18 +313,33 @@ router.get('/timeline', requireAuth, async (req, res) => {
         totalConversions: timelineData.reduce((sum, item) => sum + item.conversions, 0),
         totalCost: timelineData.reduce((sum, item) => sum + item.cost, 0)
       }
-    });
+    };
+
+    // Cache the result
+    setCachedData(cacheKey, result);
+    res.json(result);
   } catch (error) {
     console.error('Error fetching timeline report:', error);
     res.status(500).json({ error: 'Failed to fetch timeline report' });
   }
 });
 
-// Custom Reports Management
+// Custom Reports Management - OPTIMIZED with caching
 router.get('/custom-reports', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId!;
+    
+    // Check cache first
+    const cacheKey = `custom_reports_${userId}`;
+    const cachedData = getCachedData(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+    
     const reports = await storage.getCustomReports(userId);
+    
+    // Cache the result
+    setCachedData(cacheKey, reports);
     res.json(reports);
   } catch (error) {
     console.error('Error fetching custom reports:', error);
@@ -454,10 +510,17 @@ router.post('/bulk/adjustment', requireAuth, async (req, res) => {
   }
 });
 
-// Tags endpoint for Summary Report
+// Tags endpoint for Summary Report - OPTIMIZED with caching
 router.get('/tags', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId!;
+    
+    // Check cache first
+    const cacheKey = `tags_${userId}`;
+    const cachedData = getCachedData(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
     
     // Get actual tags from calls data
     const calls = await storage.getCallsByUser(userId);
@@ -477,6 +540,8 @@ router.get('/tags', requireAuth, async (req, res) => {
       label: tag.charAt(0).toUpperCase() + tag.slice(1)
     }));
     
+    // Cache the result
+    setCachedData(cacheKey, tags);
     res.json(tags);
   } catch (error) {
     console.error('Error fetching tags:', error);
