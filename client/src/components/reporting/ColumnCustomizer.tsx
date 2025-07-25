@@ -70,10 +70,9 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
 
   // Convert URL parameters to column definitions
   const urlParameterColumns: ColumnDefinition[] = (urlParameters || []).map((param: any) => {
-
     return {
       id: param.parameterName,
-      label: param.reportName, // This should display the "Report Name" from database
+      label: `${param.reportingMenuName}:${param.reportName}`, // Show "Category:Name" format
       category: param.reportingMenuName,
       dataType: param.parameterType as any,
       defaultVisible: false,

@@ -658,10 +658,13 @@ export function getReservedColumnIds(): string[] {
 
 // Function to create dynamic column definition from URL parameter
 export function createUrlParameterColumn(urlParam: any): ColumnDefinition {
+  const menuName = urlParam.reportingMenuName || 'User';
+  const reportName = urlParam.reportName || urlParam.parameterName;
+  
   return {
     id: urlParam.parameterName,
-    label: urlParam.reportName || urlParam.parameterName,
-    category: urlParam.reportingMenuName || 'User',
+    label: `${menuName}:${reportName}`, // Show "Category:Name" format
+    category: menuName,
     dataType: urlParam.parameterType === 'integer' ? 'number' : 
               urlParam.parameterType === 'decimal' ? 'number' : 'string',
     defaultVisible: false, // URL parameters are opt-in
