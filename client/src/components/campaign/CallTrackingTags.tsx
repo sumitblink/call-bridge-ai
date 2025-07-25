@@ -148,6 +148,16 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
     queryKey: ["/api/phone-numbers"],
   });
 
+  // Filter out phone numbers that are already assigned to pools or campaigns
+  const availablePhoneNumbers = phoneNumbers.filter(number => {
+    // Only show unassigned numbers or numbers explicitly marked as available
+    const isUnassigned = number.friendlyName === 'Unassigned' || !number.friendlyName;
+    const isNotInPool = !number.friendlyName?.includes('Pool');
+    const isNotCampaignDirect = !number.friendlyName?.includes('Campaign Direct');
+    
+    return isUnassigned && isNotInPool && isNotCampaignDirect;
+  });
+
   // Fetch number pools for dropdown (only if campaign uses pool routing)
   const { data: numberPools = [] } = useQuery<NumberPool[]>({
     queryKey: ["/api/number-pools"],
@@ -615,11 +625,16 @@ ${generateJavaScriptCode(tag)}`;
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No primary number</SelectItem>
-                      {phoneNumbers.map((number) => (
+                      {availablePhoneNumbers.map((number) => (
                         <SelectItem key={number.id} value={number.id.toString()}>
                           {number.friendlyName || formatPhoneNumber(number.phoneNumber)}
                         </SelectItem>
                       ))}
+                      {availablePhoneNumbers.length === 0 && (
+                        <SelectItem value="" disabled>
+                          No available phone numbers
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

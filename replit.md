@@ -114,6 +114,18 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 25, 2025: **PHONE NUMBER ASSIGNMENT DROPDOWN FILTERING FIXED** - Resolved issue where tracking tag Primary Number dropdown showed already assigned phone numbers
+  - **Root Cause**: Primary Number dropdown displayed all phone numbers regardless of pool/campaign assignment status
+  - **Filtering Logic Added**: Added availablePhoneNumbers filter to exclude numbers with "Pool", "Campaign Direct", or any assignment in friendly name
+  - **User Experience**: Dropdown now only shows truly unassigned phone numbers preventing assignment conflicts
+  - **Visual Feedback**: Added "No available phone numbers" message when all numbers are assigned
+  - **Status**: Tracking tag creation now prevents selecting numbers already assigned to pools or campaigns
+- July 25, 2025: **CLICK ID ATTRIBUTION SYSTEM FULLY OPERATIONAL** - Successfully fixed critical click ID attribution bug in RTB webhook handler
+  - **Property Name Mapping Fixed**: Updated from snake_case (redtrackClickid) to camelCase (redtrackClickId) for storage interface compatibility
+  - **Prioritized Session Matching**: Implemented prioritized lookup to select sessions with click IDs before UTM-only sessions
+  - **Comprehensive Debugging**: Added detailed session selection logging to track attribution chain from visitor sessions to call records
+  - **End-to-End Verification**: Confirmed click IDs like "DEBUG_ENHANCED_CLICKID_999" now properly flow from visitor sessions to call records
+  - **Status**: Click ID attribution working completely - visitor sessions with RedTrack click IDs now properly attributed to phone calls
 - July 25, 2025: **CLICK ID COLUMN ADDED TO CALL DETAILS TABLE** - Fixed missing Click ID column by adding proper column definition and rendering logic
   - **Column Definition Added**: Added clickId to Popular category in shared/column-definitions.ts with defaultVisible: true
   - **Rendering Logic**: Added case for 'clickId' in CallActivity.tsx renderColumnValue function with blue monospace styling
