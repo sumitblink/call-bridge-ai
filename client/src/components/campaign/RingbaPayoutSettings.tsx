@@ -52,10 +52,7 @@ export default function RingbaPayoutSettings({ campaignId, currentPayout = "5.00
   // Mutation to update campaign with new payout
   const updateCampaignMutation = useMutation({
     mutationFn: async (data: { defaultPayout: string; payoutModel: string }) => {
-      return apiRequest(`/api/campaigns/${campaignId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-      });
+      return apiRequest(`/api/campaigns/${campaignId}`, 'PATCH', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}`] });
