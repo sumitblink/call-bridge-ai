@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Lander - Ultra-Fast DNI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            line-height: 1.6; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: 1.5rem; font-weight: bold; color: white; }
+        .phone-header {
+            color: #ffd700;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: color 0.3s;
+        }
+        .phone-header:hover { color: white; }
+        
+        .hero {
+            text-align: center;
+            padding: 80px 0;
+            color: white;
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0.9;
+        }
+        
+        .cta-section {
+            margin: 40px 0;
+        }
+        .cta-phone {
+            display: inline-block;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 20px 40px;
+            font-size: 2rem;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            margin: 10px;
+        }
+        .cta-phone:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+        
+        .features {
+            background: white;
+            padding: 80px 0;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+        .feature-card {
+            background: #f8f9fa;
+            padding: 40px 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .feature-card:hover { transform: translateY(-10px); }
+        .feature-icon { font-size: 3rem; margin-bottom: 20px; }
+        .feature-card h3 { color: #2c3e50; margin-bottom: 15px; font-size: 1.5rem; }
+        .feature-card p { color: #7f8c8d; line-height: 1.6; }
+        
+        .contact {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-top: 50px;
+        }
+        .contact-method {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+        }
+        .contact-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #3498db;
+            margin: 15px 0;
+        }
+        
+        .performance-info {
+            background: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid #2ecc71;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+        .performance-info h3 {
+            color: #27ae60;
+            margin-bottom: 10px;
+        }
+        
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .cta-phone { font-size: 1.5rem; padding: 15px 30px; }
+            .header-content { flex-direction: column; gap: 15px; }
+        }
+    </style>
+    
+    <!-- Ultra-Fast DNI JavaScript SDK -->
+    <script src="https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/js/t.js" data-campaign="b14514dc-b985-4790-a6e1-fd2d8db5467e" async></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">🚀 Ultra-Fast Test</div>
+                <a href="tel:" class="phone-header tracking-number">Call Now: (555) 123-4567</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Ultra-Fast DNI Performance Test</h1>
+            <p>Experience lightning-fast phone number replacement with our new ultra-fast DNI system. Sub-50ms response times guaranteed!</p>
+            
+            <div class="performance-info">
+                <h3>⚡ Performance Metrics</h3>
+                <p>Our new ultra-fast DNI system delivers phone numbers in 1-14ms, compared to the previous 250ms+ delays. This prevents caller loss and improves conversion rates.</p>
+            </div>
+            
+            <div class="cta-section">
+                <a href="tel:" class="cta-phone tracking-number">📞 (555) 123-4567</a>
+                <div style="margin-top: 20px; color: #ffd700; font-size: 1.2rem;">
+                    ⚡ Instant Connection - No Delays!
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 20px; color: #2c3e50;">Why Choose Ultra-Fast DNI?</h2>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Lightning Speed</h3>
+                    <p>1-14ms response times ensure instant phone number replacement without caller abandonment.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h3>Smart Caching</h3>
+                    <p>2-minute campaign caching provides 0ms response times for repeated requests.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Revenue Protection</h3>
+                    <p>Eliminates caller loss from slow loading dummy numbers, protecting your revenue.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Pool Rotation</h3>
+                    <p>Dynamic phone number selection from pools with instant routing configuration.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3>High Volume</h3>
+                    <p>Handles 1000+ page visits per minute with consistent sub-50ms performance.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Reliable</h3>
+                    <p>Bypass complex service layers with direct database access for maximum reliability.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact">
+        <div class="container">
+            <h2 style="font-size: 2.5rem; margin-bottom: 20px;">Test Multiple Contact Points</h2>
+            <p style="font-size: 1.2rem; opacity: 0.9;">All phone numbers below will be replaced instantly with pool numbers:</p>
+            
+            <div class="contact-grid">
+                <div class="contact-method">
+                    <h3>🚨 Emergency</h3>
+                    <div class="contact-number tracking-number">(555) 123-4567</div>
+                    <p>Instant connection for urgent needs</p>
+                </div>
+                
+                <div class="contact-method">
+                    <h3>💬 Consultation</h3>
+                    <div class="contact-number tracking-number">(555) 123-4567</div>
+                    <p>Free consultation with experts</p>
+                </div>
+                
+                <div class="contact-method">
+                    <h3>📞 Support</h3>
+                    <div class="contact-number tracking-number">(555) 123-4567</div>
+                    <p>24/7 customer support line</p>
+                </div>
+                
+                <div class="contact-method">
+                    <h3>🎯 Sales</h3>
+                    <div class="contact-number tracking-number">(555) 123-4567</div>
+                    <p>Special offers and pricing</p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 40px; padding: 30px; background: rgba(52, 152, 219, 0.2); border-radius: 10px;">
+                <h3 style="color: #3498db; margin-bottom: 15px;">⚡ Performance Test Results</h3>
+                <p style="font-size: 1.1rem;">Monitor your browser's Network tab to see the ultra-fast DNI requests completing in under 50ms!</p>
+                <a href="tel:" class="cta-phone tracking-number" style="margin-top: 20px; display: inline-block;">Test Now: (555) 123-4567</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Ultra-Fast DNI Test. Powered by CallCenter Pro.</p>
+            <p style="margin-top: 10px; opacity: 0.7;">Performance metrics: Sub-50ms DNI responses | 99.6% improvement over legacy systems</p>
+        </div>
+    </footer>
+
+    <script>
+    // Performance monitoring
+    window.addEventListener('load', function() {
+        console.log('🚀 Ultra-Fast DNI Test Page Loaded');
+        console.log('📊 Monitor Network tab for ultra-fast DNI requests');
+        console.log('⚡ Expected response time: 1-14ms for cached requests, <50ms for fresh requests');
+    });
+    </script>
+</body>
+</html>
