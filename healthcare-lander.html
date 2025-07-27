@@ -329,11 +329,11 @@
       
       var DNI = {
         config: {
-          tagCode: 'healthcare_campaign',
-          apiUrl: 'https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/api/dni/ultra-fast',
+          campaignId: 'b14514dc-b985-4790-a6e1-fd2d8db5467e',
+          apiUrl: '/api/dni/ultra-fast',
           timeout: 5000,
           captureUserData: true,
-          debug: false
+          debug: true
         },
         
         init: function() {
@@ -366,22 +366,12 @@
         },
         
         getTrackingNumber: function(callback) {
+          console.log('🚀 Starting ultra-fast DNI request...');
           var requestData = {
-            campaignId: 'b14514dc-b985-4790-a6e1-fd2d8db5467e', // Ultra-fast endpoint uses campaignId
-            sessionId: this.getSessionId(),
-            domain: window.location.hostname,
-            referrer: document.referrer,
-            userAgent: navigator.userAgent
+            campaignId: this.config.campaignId
           };
           
-          if (this.config.captureUserData) {
-            var urlParams = new URLSearchParams(window.location.search);
-            requestData.utmSource = urlParams.get('utm_source');
-            requestData.utmMedium = urlParams.get('utm_medium');
-            requestData.utmCampaign = urlParams.get('utm_campaign');
-            requestData.utmContent = urlParams.get('utm_content');
-            requestData.utmTerm = urlParams.get('utm_term');
-          }
+          console.log('📡 Sending ultra-fast request:', requestData);
           
           fetch(this.config.apiUrl, {
             method: 'POST',
@@ -392,11 +382,16 @@
             mode: 'cors'
           })
           .then(function(response) {
+            console.log('📈 Response status:', response.status);
             return response.json();
           })
-          .then(callback)
+          .then(function(data) {
+            console.log('⚡ Ultra-fast DNI success:', data);
+            callback(data);
+          })
           .catch(function(error) {
-            console.error('DNI Error:', error);
+            console.error('❌ Ultra-fast DNI Error:', error);
+            callback({ success: false, error: error.message });
           });
         },
         
