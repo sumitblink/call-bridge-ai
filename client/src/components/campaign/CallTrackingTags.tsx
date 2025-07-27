@@ -807,9 +807,13 @@ ${generateJavaScriptCode(tag)}`;
                   <Input
                     id="stickyDuration"
                     type="number"
+                    min="60"
+                    max="2592000"
                     value={formData.stickyDuration}
                     onChange={(e) => setFormData(prev => ({ ...prev, stickyDuration: parseInt(e.target.value) }))}
+                    placeholder="86400 (24 hours)"
                   />
+                  <p className="text-xs text-muted-foreground">Minimum 60 seconds (1 minute), maximum 2,592,000 seconds (30 days)</p>
                 </div>
               </div>
 
@@ -1252,9 +1256,11 @@ ${generateJavaScriptCode(tag)}`;
                     type="number"
                     value={settingsData.stickyDuration}
                     onChange={(e) => setSettingsData(prev => ({ ...prev, stickyDuration: parseInt(e.target.value) || 86400 }))}
-                    min="3600"
+                    min="60"
                     max="2592000"
+                    placeholder="86400 (24 hours)"
                   />
+                  <p className="text-xs text-muted-foreground">Minimum 60 seconds (1 minute), maximum 2,592,000 seconds (30 days)</p>
                 </div>
               </div>
             </div>

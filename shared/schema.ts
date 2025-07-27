@@ -960,7 +960,7 @@ export const insertCallTrackingTagSchema = createInsertSchema(callTrackingTags).
   tagCode: z.string().min(1, "Tag code is required").regex(/^[a-zA-Z0-9_-]+$/, "Tag code must contain only letters, numbers, underscores, and hyphens"),
   rotationStrategy: z.enum(["round_robin", "sticky", "random", "priority"]).optional(),
   sessionTimeout: z.number().min(60).max(86400).optional(),
-  stickyDuration: z.number().min(3600).max(2592000).optional(),
+  stickyDuration: z.number().min(60).max(2592000).optional(), // Min 1 minute instead of 1 hour for testing
 });
 
 export const insertDniSessionSchema = createInsertSchema(dniSessions).omit({
