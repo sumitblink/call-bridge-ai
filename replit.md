@@ -114,6 +114,19 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 27, 2025: **RTB AUCTION ACTIVITY SIMPLIFIED TO DETAILED VIEW ONLY** - Removed compact view toggle from auction analytics to streamline interface per user request
+  - **Compact View Eliminated**: Removed "Compact View" button and all associated card-based layout code from auction analytics
+  - **Simplified Interface**: RTB auction activity now shows only the comprehensive detailed table view
+  - **Clean Header Layout**: Relocated auction count badge to align right since view toggle buttons were removed
+  - **Consistent Experience**: Users now get immediate access to all 14 columns of auction data without interface switching
+  - **Status**: RTB auction analytics provides streamlined detailed-only interface matching user preference for comprehensive data visibility
+- July 27, 2025: **TRACKING PIXELS UI CONVERTED TO TABLE FORMAT** - Successfully changed Integrations tracking pixels from card-based layout to professional row-based table format
+  - **Row-Based Table Design**: Converted grid card layout to clean table with columns: Name, Fire Pixel On, URL, Method, Status, Actions
+  - **Consistent Interface**: Tracking pixels now match URL Parameters table design throughout Integrations page
+  - **Professional Appearance**: Added proper table headers, hover states, and uniform spacing for better data scanning
+  - **Better Information Density**: More pixels visible at once with organized column structure
+  - **Enhanced User Experience**: Table format allows easier comparison and management of tracking pixels
+  - **Status**: Integrations page now provides unified table-based interface across all sections
 - July 26, 2025: **UNIFIED REPORTING INTERFACE IMPLEMENTED** - Combined timeline, summary, and call details into single scrollable view per user request
   - **Single Page Layout**: Removed separate tabs for "Timeline Report and Summary" vs "Call Details" - now shows all sections in unified view
   - **Vertical Flow**: Timeline chart → Summary table → Call Details table flow in single scrollable interface

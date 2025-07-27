@@ -475,284 +475,186 @@ export default function SimplifiedRTBManagementPage() {
                 <CardDescription>RTB auction requests and responses</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="mb-4 flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant={viewMode === 'table' ? 'default' : 'outline'} 
-                      size="sm"
-                      onClick={() => setViewMode('table')}
-                    >
-                      <List className="h-4 w-4 mr-2" />
-                      Detailed View
-                    </Button>
-                    <Button 
-                      variant={viewMode === 'cards' ? 'default' : 'outline'} 
-                      size="sm"
-                      onClick={() => setViewMode('cards')}
-                    >
-                      <Grid3X3 className="h-4 w-4 mr-2" />
-                      Compact View
-                    </Button>
-                  </div>
+                <div className="mb-4 flex justify-end items-center">
                   <Badge variant="secondary">
                     {bidRequests.length} Total Auctions
                   </Badge>
                 </div>
 
-                {viewMode === 'table' ? (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-32">Request ID</TableHead>
-                          <TableHead>Campaign</TableHead>
-                          <TableHead>Caller ID</TableHead>
-                          <TableHead>Call Start</TableHead>
-                          <TableHead>Targets Pinged</TableHead>
-                          <TableHead>Successful Bids</TableHead>
-                          <TableHead>Failed Bids</TableHead>
-                          <TableHead>Winner</TableHead>
-                          <TableHead>Winning Bid</TableHead>
-                          <TableHead>Destination Number</TableHead>
-                          <TableHead>Avg Response Time</TableHead>
-                          <TableHead>Total Auction Time</TableHead>
-                          <TableHead>Auction Status</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {bidRequests.slice(0, 15).map((request) => {
-                          const avgResponseTime = request.totalResponseTimeMs && request.successfulResponses 
-                            ? Math.round(request.totalResponseTimeMs / request.successfulResponses)
-                            : null;
-                          const failedBids = request.totalTargetsPinged - request.successfulResponses;
-                          const hasWinner = request.winningTargetId && request.winningBidAmount;
-                          
-                          return (
-                            <TableRow key={request.id} className="hover:bg-muted/50">
-                              <TableCell className="font-mono text-xs">
-                                <div className="flex flex-col">
-                                  <span className="font-semibold">{request.requestId.slice(-8)}...</span>
-                                  <span className="text-muted-foreground text-[10px]">#{request.id}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium text-sm">{getCampaignName(request.campaignId)}</span>
-                                  <span className="text-muted-foreground text-xs">ID: {request.campaignId}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="font-mono text-sm">
-                                {request.callerId ? (
-                                  <div className="flex flex-col">
-                                    <span>{request.callerId}</span>
-                                    <span className="text-muted-foreground text-xs">
-                                      {request.callerId.startsWith('+1') ? 'US Number' : 'International'}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground">Not available</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                <div className="flex flex-col">
-                                  <span>{new Date(request.callStartTime).toLocaleTimeString()}</span>
-                                  <span className="text-muted-foreground text-xs">
-                                    {new Date(request.callStartTime).toLocaleDateString()}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="bg-blue-50">
-                                  <Target className="h-3 w-3 mr-1" />
-                                  {request.totalTargetsPinged}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="bg-green-50 text-green-700">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  {request.successfulResponses}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {failedBids > 0 ? (
-                                  <Badge variant="outline" className="bg-red-50 text-red-700">
-                                    <XCircle className="h-3 w-3 mr-1" />
-                                    {failedBids}
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="bg-gray-50">
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    0
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium text-sm">
-                                    {request.winningTargetId 
-                                      ? getTargetName(request.winningTargetId)
-                                      : 'No winner'
-                                    }
-                                  </span>
-                                  {request.winningTargetId && (
-                                    <span className="text-muted-foreground text-xs">
-                                      Target ID: {request.winningTargetId}
-                                    </span>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                {request.winningBidAmount ? (
-                                  <div className="flex flex-col">
-                                    <span className="font-semibold text-green-600">
-                                      ${request.winningBidAmount}
-                                    </span>
-                                    <span className="text-muted-foreground text-xs">
-                                      {((request.winningBidAmount / request.totalTargetsPinged) * 100).toFixed(0)}% above avg
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground">-</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="font-mono text-sm">
-                                {request.destinationNumber ? (
-                                  <div className="flex flex-col">
-                                    <span className="font-medium text-blue-600">
-                                      {request.destinationNumber}
-                                    </span>
-                                    <span className="text-muted-foreground text-xs">
-                                      External Route
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <div className="flex flex-col">
-                                    <span className="text-muted-foreground">Not available</span>
-                                    <span className="text-muted-foreground text-xs">No winner</span>
-                                  </div>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {avgResponseTime ? (
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{avgResponseTime}ms</span>
-                                    <span className={`text-xs ${avgResponseTime < 500 ? 'text-green-600' : avgResponseTime < 1000 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                      {avgResponseTime < 500 ? 'Fast' : avgResponseTime < 1000 ? 'Medium' : 'Slow'}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground">-</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">
-                                    {request.totalResponseTimeMs ? `${request.totalResponseTimeMs}ms` : '-'}
-                                  </span>
-                                  <span className="text-muted-foreground text-xs">
-                                    Total duration
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge 
-                                  variant={hasWinner ? "default" : "secondary"}
-                                  className={hasWinner ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}
-                                >
-                                  {hasWinner ? "Won" : request.successfulResponses > 0 ? "No Winner" : "Failed"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Button variant="ghost" size="sm">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {bidRequests.slice(0, 12).map((request) => {
-                      const avgResponseTime = request.totalResponseTimeMs && request.successfulResponses 
-                        ? Math.round(request.totalResponseTimeMs / request.successfulResponses)
-                        : null;
-                      const failedBids = request.totalTargetsPinged - request.successfulResponses;
-                      const hasWinner = request.winningTargetId && request.winningBidAmount;
-                      
-                      return (
-                        <Card key={request.id} className="hover:shadow-md transition-shadow">
-                          <CardHeader className="pb-3">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <CardTitle className="text-sm font-mono">
-                                  {request.requestId.slice(-8)}...
-                                </CardTitle>
-                                <CardDescription className="text-xs">
-                                  {getCampaignName(request.campaignId)}
-                                </CardDescription>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-32">Request ID</TableHead>
+                        <TableHead>Campaign</TableHead>
+                        <TableHead>Caller ID</TableHead>
+                        <TableHead>Call Start</TableHead>
+                        <TableHead>Targets Pinged</TableHead>
+                        <TableHead>Successful Bids</TableHead>
+                        <TableHead>Failed Bids</TableHead>
+                        <TableHead>Winner</TableHead>
+                        <TableHead>Winning Bid</TableHead>
+                        <TableHead>Destination Number</TableHead>
+                        <TableHead>Avg Response Time</TableHead>
+                        <TableHead>Total Auction Time</TableHead>
+                        <TableHead>Auction Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {bidRequests.slice(0, 15).map((request) => {
+                        const avgResponseTime = request.totalResponseTimeMs && request.successfulResponses 
+                          ? Math.round(request.totalResponseTimeMs / request.successfulResponses)
+                          : null;
+                        const failedBids = request.totalTargetsPinged - request.successfulResponses;
+                        const hasWinner = request.winningTargetId && request.winningBidAmount;
+                        
+                        return (
+                          <TableRow key={request.id} className="hover:bg-muted/50">
+                            <TableCell className="font-mono text-xs">
+                              <div className="flex flex-col">
+                                <span className="font-semibold">{request.requestId.slice(-8)}...</span>
+                                <span className="text-muted-foreground text-[10px]">#{request.id}</span>
                               </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-sm">{getCampaignName(request.campaignId)}</span>
+                                <span className="text-muted-foreground text-xs">ID: {request.campaignId}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {request.callerId ? (
+                                <div className="flex flex-col">
+                                  <span>{request.callerId}</span>
+                                  <span className="text-muted-foreground text-xs">
+                                    {request.callerId.startsWith('+1') ? 'US Number' : 'International'}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">Not available</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              <div className="flex flex-col">
+                                <span>{new Date(request.callStartTime).toLocaleTimeString()}</span>
+                                <span className="text-muted-foreground text-xs">
+                                  {new Date(request.callStartTime).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-blue-50">
+                                <Target className="h-3 w-3 mr-1" />
+                                {request.totalTargetsPinged}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                {request.successfulResponses}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {failedBids > 0 ? (
+                                <Badge variant="outline" className="bg-red-50 text-red-700">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  {failedBids}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-gray-50">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  0
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-sm">
+                                  {request.winningTargetId 
+                                    ? getTargetName(request.winningTargetId)
+                                    : 'No winner'
+                                  }
+                                </span>
+                                {request.winningTargetId && (
+                                  <span className="text-muted-foreground text-xs">
+                                    Target ID: {request.winningTargetId}
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {request.winningBidAmount ? (
+                                <div className="flex flex-col">
+                                  <span className="font-semibold text-green-600">
+                                    ${request.winningBidAmount}
+                                  </span>
+                                  <span className="text-muted-foreground text-xs">
+                                    {((request.winningBidAmount / request.totalTargetsPinged) * 100).toFixed(0)}% above avg
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {request.destinationNumber ? (
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-blue-600">
+                                    {request.destinationNumber}
+                                  </span>
+                                  <span className="text-muted-foreground text-xs">
+                                    External Route
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col">
+                                  <span className="text-muted-foreground">Not available</span>
+                                  <span className="text-muted-foreground text-xs">No winner</span>
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {avgResponseTime ? (
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{avgResponseTime}ms</span>
+                                  <span className={`text-xs ${avgResponseTime < 500 ? 'text-green-600' : avgResponseTime < 1000 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                    {avgResponseTime < 500 ? 'Fast' : avgResponseTime < 1000 ? 'Medium' : 'Slow'}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {request.totalResponseTimeMs ? `${request.totalResponseTimeMs}ms` : '-'}
+                                </span>
+                                <span className="text-muted-foreground text-xs">
+                                  Total duration
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
                               <Badge 
                                 variant={hasWinner ? "default" : "secondary"}
-                                className={`text-xs ${hasWinner ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}
+                                className={hasWinner ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}
                               >
                                 {hasWinner ? "Won" : request.successfulResponses > 0 ? "No Winner" : "Failed"}
                               </Badge>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div className="flex items-center space-x-1">
-                                <Target className="h-3 w-3 text-blue-500" />
-                                <span className="text-muted-foreground">Pinged:</span>
-                                <span className="font-medium">{request.totalTargetsPinged}</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <CheckCircle className="h-3 w-3 text-green-500" />
-                                <span className="text-muted-foreground">Responded:</span>
-                                <span className="font-medium">{request.successfulResponses}</span>
-                              </div>
-                            </div>
-                            
-                            {request.winningBidAmount && (
-                              <div className="flex justify-between items-center p-2 bg-green-50 rounded-md">
-                                <span className="text-sm font-medium text-green-800">Winning Bid:</span>
-                                <span className="font-semibold text-green-600">${request.winningBidAmount}</span>
-                              </div>
-                            )}
-                            
-                            {request.destinationNumber && (
-                              <div className="flex justify-between items-center p-2 bg-blue-50 rounded-md">
-                                <span className="text-sm font-medium text-blue-800">Destination:</span>
-                                <span className="font-mono text-sm text-blue-600">{request.destinationNumber}</span>
-                              </div>
-                            )}
-                            
-                            {avgResponseTime && (
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground flex items-center">
-                                  <Timer className="h-3 w-3 mr-1" />
-                                  Avg Response:
-                                </span>
-                                <span className={`font-medium ${avgResponseTime < 500 ? 'text-green-600' : avgResponseTime < 1000 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                  {avgResponseTime}ms
-                                </span>
-                              </div>
-                            )}
-                            
-                            <div className="flex justify-between items-center text-xs text-muted-foreground">
-                              <span>{new Date(request.callStartTime).toLocaleDateString()}</span>
-                              <span>{new Date(request.callStartTime).toLocaleTimeString()}</span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                )}
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
