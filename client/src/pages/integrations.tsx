@@ -856,12 +856,15 @@ export default function IntegrationsPage() {
               </div>
             </div>
 
-            {/* Pixels List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Pixels List - Table Format */}
+            <div className="bg-white rounded-lg border">
               {isLoadingPixels ? (
-                <div className="col-span-full text-center py-8">Loading pixels...</div>
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Loading tracking pixels...</p>
+                </div>
               ) : filteredPixels.length === 0 ? (
-                <div className="col-span-full text-center py-8">
+                <div className="text-center py-12">
                   <Code className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium mb-2">No Tracking Pixels</h3>
                   <p className="text-gray-600 mb-4">Create your first tracking pixel to start monitoring conversions</p>
@@ -875,56 +878,81 @@ export default function IntegrationsPage() {
                   </Button>
                 </div>
               ) : (
-                filteredPixels.map((pixel) => (
-                  <Card key={pixel.id} className="relative">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          {getPixelTypeIcon(pixel.pixelType)}
-                          <CardTitle className="text-base">{pixel.name}</CardTitle>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditPixel(pixel)}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeletePixel(pixel.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          {pixel.pixelType}
-                        </Badge>
-                        <Badge className={`text-xs ${getEventBadgeColor(pixel.fireOnEvent)}`}>
-                          {pixel.fireOnEvent}
-                        </Badge>
-                        <Badge variant={pixel.isActive ? "default" : "secondary"} className="text-xs">
-                          {pixel.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-gray-500 font-mono truncate">
-                        {pixel.code.substring(0, 80)}...
-                      </div>
-                      {pixel.assignedCampaigns && pixel.assignedCampaigns.length > 0 && (
-                        <div className="text-xs text-gray-600">
-                          Campaigns: {pixel.assignedCampaigns.length} assigned
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))
+                <div className="overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fire Pixel On</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredPixels.map((pixel) => (
+                        <tr key={pixel.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center">
+                              {getPixelTypeIcon(pixel.pixelType)}
+                              <div className="ml-2">
+                                <div className="text-sm font-medium text-gray-900">{pixel.name}</div>
+                                <div className="text-xs text-gray-500">
+                                  <Badge variant="outline" className="text-xs">
+                                    {pixel.pixelType}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <Badge className={`text-xs ${getEventBadgeColor(pixel.fireOnEvent)}`}>
+                              {pixel.fireOnEvent}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 max-w-xs">
+                            <div className="text-xs text-gray-500 font-mono truncate">
+                              {pixel.code.substring(0, 60)}...
+                            </div>
+                            {pixel.assignedCampaigns && pixel.assignedCampaigns.length > 0 && (
+                              <div className="text-xs text-gray-600 mt-1">
+                                Campaigns: {pixel.assignedCampaigns.length} assigned
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <Badge variant="outline" className="text-xs">
+                              {pixel.httpMethod || 'GET'}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4">
+                            <Badge variant={pixel.isActive ? "default" : "secondary"} className="text-xs">
+                              {pixel.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 text-sm space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditPixel(pixel)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeletePixel(pixel.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </TabsContent>
