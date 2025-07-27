@@ -5671,60 +5671,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ))
         .returning();
       
-      // Handle primary number changes
+      // Handle primary number changes and ensure webhook is always configured
       const oldPrimaryNumberId = existingTag[0].primaryNumberId;
       const newPrimaryNumberId = validatedData.primaryNumberId;
       
-      if (oldPrimaryNumberId !== newPrimaryNumberId) {
+      // Always configure webhook if primary number is assigned (even if unchanged)
+      if (newPrimaryNumberId && newPrimaryNumberId !== 'none') {
         try {
-          // Clear old primary number webhook if it existed
-          if (oldPrimaryNumberId) {
+          // Clear old primary number webhook if it's being changed
+          if (oldPrimaryNumberId && oldPrimaryNumberId !== newPrimaryNumberId) {
             const oldPhoneNumber = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, oldPrimaryNumberId)).limit(1);
-            if (oldPhoneNumber.length > 0) {
-              const { TwilioWebhookService } = await import('./twilio-webhook-service');
-              await TwilioWebhookService.removeWebhooks([oldPhoneNumber[0]]);
-              
-              // Reset friendly name
+          if (oldPhoneNumber.length > 0) {
+            const { TwilioWebhookService } = await import('./twilio-webhook-service');
+            await TwilioWebhookService.removeWebhooks([oldPhoneNumber[0]]);
+            
+            // Reset friendly name
+            await TwilioWebhookService.updatePhoneNumberFriendlyName(
+              oldPhoneNumber[0].phoneNumberSid,
+              'Unassigned'
+            );
+            
+            await db.update(phoneNumbers)
+              .set({ friendlyName: 'Unassigned' })
+              .where(eq(phoneNumbers.id, oldPhoneNumber[0].id));
+          }
+        }
+        
+        // Configure webhook for primary number (always ensure it's properly configured)
+          const newPhoneNumber = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, parseInt(newPrimaryNumberId))).limit(1);
+          if (newPhoneNumber.length > 0) {
+            const phone = newPhoneNumber[0];
+            console.log(`Configuring webhook for tracking tag primary number: ${phone.phoneNumber}`);
+            
+            const { TwilioWebhookService } = await import('./twilio-webhook-service');
+            const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhooks/tracking-tag/${id}/voice`;
+            
+            const webhookResult = await TwilioWebhookService.configurePhoneNumberWebhook(
+              phone.phoneNumberSid,
+              webhookUrl,
+              `${req.protocol}://${req.get('host')}/api/webhooks/tracking-tag/${id}/status`
+            );
+            
+            if (webhookResult) {
               await TwilioWebhookService.updatePhoneNumberFriendlyName(
-                oldPhoneNumber[0].phoneNumberSid,
-                'Unassigned'
+                phone.phoneNumberSid,
+                `Tracking Tag: ${updatedTag[0].name}`
               );
               
               await db.update(phoneNumbers)
-                .set({ friendlyName: 'Unassigned' })
-                .where(eq(phoneNumbers.id, oldPhoneNumber[0].id));
+                .set({ friendlyName: `Tracking Tag: ${updatedTag[0].name}` })
+                .where(eq(phoneNumbers.id, phone.id));
+              
+              console.log(`Successfully configured webhook for tracking tag primary number: ${phone.phoneNumber}`);
+            } else {
+              console.warn(`Failed to configure webhook for tracking tag primary number: ${phone.phoneNumber}`);
             }
           }
-          
-          // Configure new primary number webhook if assigned
-          if (newPrimaryNumberId && newPrimaryNumberId !== 'none') {
-            const newPhoneNumber = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, parseInt(newPrimaryNumberId))).limit(1);
-            if (newPhoneNumber.length > 0) {
-              const phone = newPhoneNumber[0];
-              console.log(`Configuring webhook for updated tracking tag primary number: ${phone.phoneNumber}`);
-              
-              const { TwilioWebhookService } = await import('./twilio-webhook-service');
-              const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhooks/tracking-tag/${id}/voice`;
-              
-              const webhookResult = await TwilioWebhookService.configurePhoneNumberWebhook(
-                phone.phoneNumberSid,
-                webhookUrl,
-                `${req.protocol}://${req.get('host')}/api/webhooks/tracking-tag/${id}/status`
-              );
-              
-              if (webhookResult) {
-                await TwilioWebhookService.updatePhoneNumberFriendlyName(
-                  phone.phoneNumberSid,
-                  `Tracking Tag: ${updatedTag[0].name}`
-                );
-                
-                await db.update(phoneNumbers)
-                  .set({ friendlyName: `Tracking Tag: ${updatedTag[0].name}` })
-                  .where(eq(phoneNumbers.id, phone.id));
-                
-                console.log(`Successfully configured webhook for updated tracking tag primary number: ${phone.phoneNumber}`);
-              }
-            }
+        } catch (webhookError) {
+          console.error('Error updating tracking tag webhook:', webhookError);
+          // Don't fail the update if webhook configuration fails
+        }
+      } else if (oldPrimaryNumberId && (!newPrimaryNumberId || newPrimaryNumberId === 'none')) {
+        // Handle case where primary number is being removed
+        try {
+          const oldPhoneNumber = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, oldPrimaryNumberId)).limit(1);
+          if (oldPhoneNumber.length > 0) {
+            const { TwilioWebhookService } = await import('./twilio-webhook-service');
+            await TwilioWebhookService.removeWebhooks([oldPhoneNumber[0]]);
+            
+            // Reset friendly name
+            await TwilioWebhookService.updatePhoneNumberFriendlyName(
+              oldPhoneNumber[0].phoneNumberSid,
+              'Unassigned'
+            );
+            
+            await db.update(phoneNumbers)
+              .set({ friendlyName: 'Unassigned' })
+              .where(eq(phoneNumbers.id, oldPhoneNumber[0].id));
           }
         } catch (webhookError) {
           console.error('Error updating tracking tag webhook:', webhookError);
