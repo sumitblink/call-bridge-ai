@@ -330,7 +330,7 @@
       var DNI = {
         config: {
           tagCode: 'healthcare_campaign',
-          apiUrl: 'https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/api/dni/track',
+          apiUrl: 'https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/api/dni/ultra-fast',
           timeout: 5000,
           captureUserData: true,
           debug: false
@@ -352,7 +352,8 @@
           }
           
           this.getTrackingNumber(function(response) {
-            if (response.success && response.formattedNumber) {
+            if (response.phoneNumber && response.formattedNumber) {
+              console.log('✅ Ultra-fast DNI Response:', response.responseTime);
               for (var i = 0; i < elements.length; i++) {
                 elements[i].textContent = response.formattedNumber;
                 // Update href if it's a link
@@ -366,7 +367,7 @@
         
         getTrackingNumber: function(callback) {
           var requestData = {
-            tagCode: this.config.tagCode,
+            campaignId: 'b14514dc-b985-4790-a6e1-fd2d8db5467e', // Ultra-fast endpoint uses campaignId
             sessionId: this.getSessionId(),
             domain: window.location.hostname,
             referrer: document.referrer,

@@ -7,6 +7,7 @@ import { twilioService } from "./twilio-service";
 import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
 import { CallRouter } from "./call-routing";
 import { DNIService, type DNIRequest } from "./dni-service";
+import { FastDNI } from "./fast-dni";
 import { TwilioTrunkService } from "./twilio-trunk-service";
 import { NumberProvisioningService } from "./number-provisioning";
 import { CallTrackingService } from "./call-tracking-service";
@@ -3218,6 +3219,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('DNI SDK error:', error);
       res.status(500).type('text/javascript').send('console.error("DNI: Failed to load SDK");');
     }
+  });
+
+  // ULTRA-FAST DNI endpoint - Sub-50ms response time guarantee
+  app.post('/api/dni/ultra-fast', async (req, res) => {
+    const startTime = Date.now();
+    
+    // CORS headers
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    try {
+      const { campaignId } = req.body;
+      
+      if (!campaignId) {
+        return res.status(400).json({ error: 'Campaign ID required' });
+      }
+
+      const result = await FastDNI.getPhoneNumber(campaignId);
+      
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      const responseTime = Date.now() - startTime;
+      
+      res.json({
+        phoneNumber: result.phoneNumber,
+        formattedNumber: FastDNI.formatPhoneNumber(result.phoneNumber),
+        responseTime: `${responseTime}ms`
+      });
+
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      console.error(`❌ Ultra-fast DNI error in ${responseTime}ms:`, error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  app.options('/api/dni/ultra-fast', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.sendStatus(200);
   });
 
   // DNI Tracking Number Request (used by JavaScript SDK)

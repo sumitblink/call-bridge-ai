@@ -174,11 +174,11 @@
   
   // Make the tracking request
   function requestTrackingNumber() {
-    console.log('CallCenter Pro: Making request to:', baseUrl + '/api/dni/track-simple');
+    console.log('CallCenter Pro: Making request to:', baseUrl + '/api/dni/ultra-fast');
     console.log('CallCenter Pro: Campaign ID:', campaignId);
     
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', baseUrl + '/api/dni/track-simple', true);
+    xhr.open('POST', baseUrl + '/api/dni/ultra-fast', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     
     xhr.onreadystatechange = function() {
