@@ -61,9 +61,9 @@ export class CallRouter {
             buyer,
             metrics,
             priority: buyer.priority || 1,
-            campaignPriority: buyer.priority || 1
+            campaignPriority: buyer.priority || 1  // buyer.priority already contains campaign-specific priority from database join
           });
-          console.log(`[Router] Buyer ${buyer.name} is AVAILABLE`);
+          console.log(`[Router] Buyer ${buyer.name} is AVAILABLE with campaign priority ${buyer.priority}`);
         } else {
           unavailableBuyers.push(buyer);
           console.log(`[Router] Buyer ${buyer.name} is UNAVAILABLE: ${availability.reason}`);
@@ -78,23 +78,39 @@ export class CallRouter {
         };
       }
 
-      // Sort by priority (highest first), then by call count (lowest first)
+      // Sort by priority (LOWEST NUMBER = HIGHEST PRIORITY), then by call count (lowest first)
+      console.log(`[Router] Before sorting - Available buyers:`, availableBuyers.map(ab => ({
+        name: ab.buyer.name,
+        campaignPriority: ab.campaignPriority,
+        priority: ab.priority,
+        callsToday: ab.metrics.callsToday
+      })));
+      
       availableBuyers.sort((a, b) => {
-        // Primary sort: Campaign-specific priority (highest first)
+        // Primary sort: Campaign-specific priority (LOWEST NUMBER FIRST - Priority 1 beats Priority 3)
         if (a.campaignPriority !== b.campaignPriority) {
-          return b.campaignPriority - a.campaignPriority;
+          console.log(`[Router] Sorting by campaign priority: ${a.buyer.name}(${a.campaignPriority}) vs ${b.buyer.name}(${b.campaignPriority}) = ${a.campaignPriority - b.campaignPriority}`);
+          return a.campaignPriority - b.campaignPriority;  // Fixed: 1-3=-2 (Priority 1 goes first)
         }
         
-        // Secondary sort: General priority (highest first)
+        // Secondary sort: General priority (LOWEST NUMBER FIRST)
         if (a.priority !== b.priority) {
-          return b.priority - a.priority;
+          return a.priority - b.priority;  // Fixed: 1-3=-2 (Priority 1 goes first)
         }
         
         // Tertiary sort: Calls today (lowest first for load balancing)
         return a.metrics.callsToday - b.metrics.callsToday;
       });
+      
+      console.log(`[Router] After sorting - Available buyers:`, availableBuyers.map(ab => ({
+        name: ab.buyer.name,
+        campaignPriority: ab.campaignPriority,
+        priority: ab.priority,
+        callsToday: ab.metrics.callsToday
+      })));
 
       const selectedBuyer = availableBuyers[0].buyer;
+      console.log(`[Router] FINAL SELECTION: ${selectedBuyer.name} with priority ${selectedBuyer.priority}`);
       const alternativeBuyers = availableBuyers.slice(1).map(ab => ab.buyer);
 
       console.log(`[Router] Selected buyer: ${selectedBuyer.name} (Priority: ${selectedBuyer.priority}, Calls today: ${availableBuyers[0].metrics.callsToday})`);
