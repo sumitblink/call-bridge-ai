@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -199,16 +199,24 @@ export default function SimplifiedRTBManagementPage() {
     } else {
       newExpanded.add(auctionId);
       
-      // Fetch detailed auction data if not already cached
+      // Fetch detailed auction data including individual bidder responses if not already cached
       if (!auctionDetails[auctionId]) {
         try {
-          const response = await fetch(`/api/rtb/auctions/${auctionId}/details`);
-          if (response.ok) {
-            const detailData = await response.json();
-            setAuctionDetails(prev => ({
-              ...prev,
-              [auctionId]: detailData
-            }));
+          // Get the bid request first
+          const bidRequest = bidRequests.find(req => req.id === auctionId);
+          if (bidRequest) {
+            // Fetch individual bid responses for this auction
+            const response = await fetch(`/api/rtb/bid-requests/${bidRequest.requestId}/responses`);
+            if (response.ok) {
+              const bidResponses = await response.json();
+              setAuctionDetails(prev => ({
+                ...prev,
+                [auctionId]: {
+                  bidRequest,
+                  bidResponses
+                }
+              }));
+            }
           }
         } catch (error) {
           console.error("Failed to fetch auction details:", error);
@@ -453,8 +461,8 @@ export default function SimplifiedRTBManagementPage() {
                         const isExpanded = expandedAuctions.has(request.id);
                         
                         return (
-                          <>
-                            <TableRow key={request.id} className="hover:bg-muted/50">
+                          <React.Fragment key={request.id}>
+                            <TableRow className="hover:bg-muted/50">
                               <TableCell>
                                 <Button
                                   variant="ghost"
@@ -625,6 +633,97 @@ export default function SimplifiedRTBManagementPage() {
                                     </Badge>
                                   </div>
 
+                                  {/* Individual Bidder Results Table */}
+                                  {auctionDetails[request.id]?.bidResponses && auctionDetails[request.id].bidResponses.length > 0 && (
+                                    <div className="space-y-3">
+                                      <div className="flex items-center space-x-2">
+                                        <Users className="h-4 w-4 text-gray-500" />
+                                        <span className="text-sm font-medium text-gray-700">Individual Bidder Results</span>
+                                      </div>
+                                      <div className="border rounded-lg overflow-hidden">
+                                        <Table>
+                                          <TableHeader>
+                                            <TableRow className="bg-gray-50">
+                                              <TableHead className="text-xs">Bidder</TableHead>
+                                              <TableHead className="text-xs">Bid Amount</TableHead>
+                                              <TableHead className="text-xs">Response Time</TableHead>
+                                              <TableHead className="text-xs">Destination</TableHead>
+                                              <TableHead className="text-xs">Status</TableHead>
+                                              <TableHead className="text-xs">Winner</TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {auctionDetails[request.id].bidResponses
+                                              .sort((a: any, b: any) => parseFloat(b.bidAmount) - parseFloat(a.bidAmount))
+                                              .map((response: any, idx: number) => (
+                                              <TableRow key={response.id} className="text-sm">
+                                                <TableCell>
+                                                  <div className="flex items-center space-x-2">
+                                                    {response.isWinningBid && (
+                                                      <div className="text-yellow-500">👑</div>
+                                                    )}
+                                                    <div>
+                                                      <div className="font-medium">{getTargetName(response.rtbTargetId)}</div>
+                                                      <div className="text-xs text-gray-500">ID: {response.rtbTargetId}</div>
+                                                    </div>
+                                                  </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                  <div className="font-semibold text-green-600">
+                                                    ${parseFloat(response.bidAmount).toFixed(2)}
+                                                  </div>
+                                                  <div className="text-xs text-gray-500">{response.bidCurrency}</div>
+                                                </TableCell>
+                                                <TableCell>
+                                                  <div className="font-mono text-sm">
+                                                    {response.responseTimeMs}ms
+                                                  </div>
+                                                  <div className={`text-xs ${
+                                                    response.responseTimeMs < 500 ? 'text-green-600' : 
+                                                    response.responseTimeMs < 1000 ? 'text-yellow-600' : 'text-red-600'
+                                                  }`}>
+                                                    {response.responseTimeMs < 500 ? 'Fast' : 
+                                                     response.responseTimeMs < 1000 ? 'Medium' : 'Slow'}
+                                                  </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                  <div className="font-mono text-blue-600 text-sm">
+                                                    {response.destinationNumber}
+                                                  </div>
+                                                  <div className="text-xs text-gray-500">External Route</div>
+                                                </TableCell>
+                                                <TableCell>
+                                                  <Badge 
+                                                    variant={response.responseStatus === 'success' ? 'default' : 'destructive'}
+                                                    className="text-xs"
+                                                  >
+                                                    {response.responseStatus}
+                                                  </Badge>
+                                                  {response.rejectionReason && (
+                                                    <div className="text-xs text-red-600 mt-1">
+                                                      {response.rejectionReason}
+                                                    </div>
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {response.isWinningBid ? (
+                                                    <Badge variant="default" className="bg-yellow-100 text-yellow-800 text-xs">
+                                                      🏆 Winner
+                                                    </Badge>
+                                                  ) : (
+                                                    <span className="text-gray-400 text-xs">
+                                                      #{idx + 1}
+                                                    </span>
+                                                  )}
+                                                </TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                      </div>
+                                    </div>
+                                  )}
+
                                   {/* Auction metrics grid */}
                                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {/* Timing section */}
@@ -741,7 +840,7 @@ export default function SimplifiedRTBManagementPage() {
                               </TableCell>
                             </TableRow>
                           )}
-                        </>
+                          </React.Fragment>
                         );
                       })}
                     </TableBody>
