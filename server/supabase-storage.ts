@@ -881,8 +881,21 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean> {
-    // For now, always return true until we have a separate table
-    return true;
+    console.log('SupabaseStorage: Deleting campaign tracking pixel:', { campaignId, pixelId });
+    
+    try {
+      // Delete the tracking pixel from the database
+      const result = await db.delete(trackingPixels)
+        .where(eq(trackingPixels.id, pixelId))
+        .returning();
+      
+      const deleted = result.length > 0;
+      console.log('SupabaseStorage: Campaign tracking pixel deletion result:', { deleted, pixelId });
+      return deleted;
+    } catch (error) {
+      console.error('SupabaseStorage: Error deleting campaign tracking pixel:', error);
+      throw error;
+    }
   }
 
   async getWebhookConfigs(): Promise<any[]> {
