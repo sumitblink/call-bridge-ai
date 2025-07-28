@@ -2831,9 +2831,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/campaigns/:campaignId/tracking-pixels/:pixelId', requireAuth, async (req: any, res) => {
+  app.delete('/api/campaigns/:id/tracking-pixels/:pixelId', requireAuth, async (req: any, res) => {
     try {
-      const campaignId = req.params.campaignId;
+      const campaignId = req.params.id;
       const pixelId = parseInt(req.params.pixelId);
       const userId = req.user?.id;
       
