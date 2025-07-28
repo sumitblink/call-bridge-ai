@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Plus, Edit, Trash2, Download, ExternalLink, Info } from 'lucide-react';
+import { Copy, Plus, Edit, Trash2, Download, ExternalLink, Info, Search, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -54,6 +56,109 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     advancedOptions: false,
     active: true
   });
+
+  const [isTokenSearchOpen, setIsTokenSearchOpen] = useState(false);
+  const urlInputRef = useRef<HTMLInputElement>(null);
+
+  // Comprehensive token library organized by categories
+  const tokenLibrary = {
+    'Call Data': [
+      { token: '{call_id}', description: 'Unique call identifier' },
+      { token: '{phone_number}', description: 'Dialed phone number' },
+      { token: '{caller_id}', description: 'Caller\'s phone number' },
+      { token: '{duration}', description: 'Call duration in seconds' },
+      { token: '{status}', description: 'Call status (completed, busy, no-answer, failed)' },
+      { token: '{recording_url}', description: 'Call recording URL' },
+      { token: '{timestamp}', description: 'Call timestamp' }
+    ],
+    'Campaign & Routing': [
+      { token: '{campaign_id}', description: 'Campaign identifier' },
+      { token: '{buyer_id}', description: 'Assigned buyer ID' },
+      { token: '{agent_id}', description: 'Agent ID (if applicable)' }
+    ],
+    'RedTrack Integration': [
+      { token: '[tag:User:clickid]', description: 'RedTrack click ID' },
+      { token: '[Call:ConversionPayout]', description: 'Call payout value' },
+      { token: '{redtrack_campaign_id}', description: 'RedTrack campaign ID' },
+      { token: '{redtrack_offer_id}', description: 'RedTrack offer ID' },
+      { token: '{redtrack_affiliate_id}', description: 'RedTrack affiliate ID' },
+      { token: '{redtrack_sub_id}', description: 'RedTrack sub ID' }
+    ],
+    'UTM Parameters': [
+      { token: '{utm_source}', description: 'UTM source parameter' },
+      { token: '{utm_medium}', description: 'UTM medium parameter' },
+      { token: '{utm_campaign}', description: 'UTM campaign parameter' },
+      { token: '{utm_content}', description: 'UTM content parameter' },
+      { token: '{utm_term}', description: 'UTM term parameter' }
+    ],
+    'RedTrack Sub Parameters': [
+      { token: '{clickid}', description: 'Click ID parameter' },
+      { token: '{sub1}', description: 'RedTrack sub parameter 1' },
+      { token: '{sub2}', description: 'RedTrack sub parameter 2' },
+      { token: '{sub3}', description: 'RedTrack sub parameter 3' },
+      { token: '{sub4}', description: 'RedTrack sub parameter 4' },
+      { token: '{sub5}', description: 'RedTrack sub parameter 5' },
+      { token: '{sub6}', description: 'RedTrack sub parameter 6' },
+      { token: '{sub7}', description: 'RedTrack sub parameter 7' },
+      { token: '{sub8}', description: 'RedTrack sub parameter 8' }
+    ],
+    'Traffic Source Parameters': [
+      { token: '{publisher}', description: 'Publisher parameter' },
+      { token: '{gclid}', description: 'Google Ads click ID' },
+      { token: '{fbclid}', description: 'Facebook click ID' },
+      { token: '{msclkid}', description: 'Microsoft Ads click ID' },
+      { token: '{ttclid}', description: 'TikTok click ID' },
+      { token: '{twclid}', description: 'Twitter click ID' },
+      { token: '{liclid}', description: 'LinkedIn click ID' },
+      { token: '{subid}', description: 'Sub ID parameter' },
+      { token: '{affid}', description: 'Affiliate ID parameter' },
+      { token: '{pubid}', description: 'Publisher ID parameter' }
+    ],
+    'Ad Platform Parameters': [
+      { token: '{source}', description: 'Traffic source' },
+      { token: '{medium}', description: 'Traffic medium' },
+      { token: '{content}', description: 'Content parameter' },
+      { token: '{term}', description: 'Term parameter' },
+      { token: '{keyword}', description: 'Keyword parameter' },
+      { token: '{placement}', description: 'Placement parameter' },
+      { token: '{adgroup}', description: 'Ad group parameter' },
+      { token: '{creative}', description: 'Creative parameter' },
+      { token: '{device}', description: 'Device parameter' },
+      { token: '{network}', description: 'Network parameter' },
+      { token: '{matchtype}', description: 'Match type parameter' },
+      { token: '{adposition}', description: 'Ad position parameter' },
+      { token: '{target}', description: 'Target parameter' },
+      { token: '{targetid}', description: 'Target ID parameter' }
+    ],
+    'Custom Fields': [
+      { token: '{custom_field_1}', description: 'Custom field 1' },
+      { token: '{custom_field_2}', description: 'Custom field 2' },
+      { token: '{custom_field_3}', description: 'Custom field 3' },
+      { token: '{loc_physical_ms}', description: 'Physical location parameter' },
+      { token: '{loc_interest_ms}', description: 'Interest location parameter' }
+    ]
+  };
+
+  // Function to insert token at cursor position
+  const insertTokenAtCursor = (token: string) => {
+    const input = urlInputRef.current;
+    if (!input) return;
+
+    const start = input.selectionStart || 0;
+    const end = input.selectionEnd || 0;
+    const currentValue = formData.url;
+    const newValue = currentValue.substring(0, start) + token + currentValue.substring(end);
+    
+    setFormData({ ...formData, url: newValue });
+    setIsTokenSearchOpen(false);
+    
+    // Focus back to input and position cursor after inserted token
+    setTimeout(() => {
+      input.focus();
+      const newPosition = start + token.length;
+      input.setSelectionRange(newPosition, newPosition);
+    }, 0);
+  };
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -462,29 +567,57 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                 <div>
                   <div className="flex items-center gap-2">
                     <Label htmlFor="url">Custom Pixel URL</Label>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="text-xs h-6 px-2"
-                      onClick={() => {
-                        toast({
-                          title: 'Available Tokens',
-                          description: 'Use these tokens in your URL: {call_id}, {phone_number}, {campaign_id}, {timestamp}, {duration}, {status}'
-                        });
-                      }}
-                    >
-                      TOKENS
-                    </Button>
+                    <Popover open={isTokenSearchOpen} onOpenChange={setIsTokenSearchOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-6 px-2 gap-1"
+                        >
+                          <Search className="w-3 h-3" />
+                          SEARCH TOKEN
+                          <ChevronDown className="w-3 h-3" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[480px] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search tokens..." className="h-9" />
+                          <CommandList className="max-h-[400px]">
+                            <CommandEmpty>No tokens found.</CommandEmpty>
+                            {Object.entries(tokenLibrary).map(([category, tokens]) => (
+                              <CommandGroup key={category} heading={category}>
+                                {tokens.map((tokenItem, index) => (
+                                  <CommandItem
+                                    key={`${category}-${index}`}
+                                    value={`${tokenItem.token} ${tokenItem.description}`}
+                                    onSelect={() => insertTokenAtCursor(tokenItem.token)}
+                                    className="flex flex-col items-start gap-1 py-2"
+                                  >
+                                    <div className="font-mono text-blue-600 font-medium">
+                                      {tokenItem.token}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {tokenItem.description}
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            ))}
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <Input
+                    ref={urlInputRef}
                     id="url"
                     value={formData.url}
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                     placeholder="https://example.com/postback?clickid={call_id}&campaign={campaign_id}"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Available tokens: {'{call_id}'}, {'{phone_number}'}, {'{campaign_id}'}, {'{timestamp}'}, {'{duration}'}, {'{status}'}
+                    Click "Search Token" to browse and insert available tracking parameters into your URL
                   </p>
                 </div>
 
