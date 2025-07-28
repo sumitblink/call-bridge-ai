@@ -3254,7 +3254,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
     try {
-      const { campaignId } = req.body;
+      console.log('🚀 DNI ULTRA-FAST REQUEST:', {
+        body: req.body,
+        headers: {
+          'user-agent': req.get('user-agent'),
+          'referer': req.get('referer'),
+          'origin': req.get('origin')
+        },
+        ip: req.ip,
+        timestamp: new Date().toISOString()
+      });
+
+      const { campaignId, publisher, clickid, utm_source, utm_medium } = req.body;
       
       if (!campaignId) {
         return res.status(400).json({ error: 'Campaign ID required' });
@@ -3268,11 +3279,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const responseTime = Date.now() - startTime;
       
-      res.json({
+      const response = {
         phoneNumber: result.phoneNumber,
         formattedNumber: FastDNI.formatPhoneNumber(result.phoneNumber),
-        responseTime: `${responseTime}ms`
-      });
+        responseTime: `${responseTime}ms`,
+        sessionData: {
+          campaignId,
+          publisher: publisher || 'unknown',
+          clickid: clickid || 'unknown',
+          utm_source: utm_source || '',
+          utm_medium: utm_medium || ''
+        }
+      };
+
+      console.log('✅ DNI ULTRA-FAST RESPONSE:', response);
+      
+      res.json(response);
 
     } catch (error) {
       const responseTime = Date.now() - startTime;
@@ -5962,7 +5984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionId,
         source: utmSource || source,
         medium: utmMedium || medium,
-        campaign: utmCampaign || campaign,
+        campaign: campaignId, // Store campaignId in campaign field for visitor session
         content: utmContent || content,
         term: utmTerm || term,
         referrer: referrer || '',

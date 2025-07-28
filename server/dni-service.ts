@@ -249,6 +249,8 @@ export class DNIService {
         sessionId: request.sessionId
       });
       
+
+      
       console.log('DNI CustomFields received:', request.customFields);
 
       // Store visitor session in database for real-time tracking
@@ -549,7 +551,8 @@ export class DNIService {
       const trackingRequest = {
         ...request,
         campaignId: campaignRecord.id,
-        campaignName: campaignRecord.name
+        campaignName: campaignRecord.name,
+        campaign: campaignRecord.id // Ensure campaign field is set for visitor session
       };
 
       return await DNIService.getTrackingNumber(trackingRequest);

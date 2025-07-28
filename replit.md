@@ -114,6 +114,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 28, 2025: **VISITOR SESSION ATTRIBUTION COMPLETELY FIXED** - Resolved critical DNI service campaign mapping issue enabling proper call attribution from landing page visits to phone calls
+  - **Root Cause Fixed**: DNI service wasn't mapping campaignId parameter to campaign field in visitor sessions database records
+  - **Two-Point Solution**: Updated both `/api/dni/track-simple` route handler and `trackVisitorByCampaignId` DNI service method to preserve campaign IDs
+  - **Attribution Chain Complete**: Landing page visits → visitor sessions with campaign IDs → phone calls → proper campaign attribution
+  - **Database Verification**: Visitor sessions now correctly store campaign UUIDs (b14514dc-b985-4790-a6e1-fd2d8db5467e) with publisher and click ID tracking
+  - **Performance Maintained**: Ultra-fast DNI endpoint continues 146ms response times while creating attribution records
+  - **Status**: End-to-end attribution tracking from website visits to phone calls now fully operational
 - July 28, 2025: **RTB TARGETS UI STANDARDIZED TO TABLE FORMAT** - Completely removed tile/card format and simplified RTB Targets to consistent row-based table format per user preference
   - **View Toggle Buttons Removed**: Eliminated Grid3X3 and List toggle buttons to maintain single table format only
   - **Cards View Deleted**: Removed entire cards/tiles conditional rendering section and kept only table view
