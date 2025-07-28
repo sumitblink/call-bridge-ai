@@ -12,7 +12,7 @@ import { Phase1AdvancedBiddingDialog } from "@/components/rtb/Phase1AdvancedBidd
 import { Phase2GeographicTargetingDialog } from "@/components/rtb/Phase2GeographicTargetingDialog";
 import Phase3AdvancedFilteringDialog from "@/components/rtb/Phase3AdvancedFilteringDialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone, Globe } from "lucide-react";
+import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone, Globe, Info } from "lucide-react";
 
 // RTB Target type
 type RtbTarget = {
@@ -72,6 +72,8 @@ export default function SimplifiedRTBManagementPage() {
   const [phase2Target, setPhase2Target] = useState<RtbTarget | null>(null);
   const [phase3DialogOpen, setPhase3DialogOpen] = useState(false);
   const [phase3Target, setPhase3Target] = useState<RtbTarget | null>(null);
+  const [expandedAuctions, setExpandedAuctions] = useState<Set<number>>(new Set());
+  const [auctionDetails, setAuctionDetails] = useState<{[key: number]: any}>({});
 
   
   const { toast } = useToast();
@@ -186,6 +188,35 @@ export default function SimplifiedRTBManagementPage() {
   const getTargetName = (targetId: number) => {
     const target = targets?.find(t => t.id === targetId);
     return target ? target.name : `Target ${targetId}`;
+  };
+
+  // Toggle auction row expansion
+  const toggleAuctionRow = async (auctionId: number) => {
+    const newExpanded = new Set(expandedAuctions);
+    
+    if (expandedAuctions.has(auctionId)) {
+      newExpanded.delete(auctionId);
+    } else {
+      newExpanded.add(auctionId);
+      
+      // Fetch detailed auction data if not already cached
+      if (!auctionDetails[auctionId]) {
+        try {
+          const response = await fetch(`/api/rtb/auctions/${auctionId}/details`);
+          if (response.ok) {
+            const detailData = await response.json();
+            setAuctionDetails(prev => ({
+              ...prev,
+              [auctionId]: detailData
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to fetch auction details:", error);
+        }
+      }
+    }
+    
+    setExpandedAuctions(newExpanded);
   };
 
   const openEditDialog = (target: RtbTarget) => {
@@ -395,6 +426,7 @@ export default function SimplifiedRTBManagementPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-8"></TableHead>
                         <TableHead className="w-32">Request ID</TableHead>
                         <TableHead>Campaign</TableHead>
                         <TableHead>Caller ID</TableHead>
@@ -418,10 +450,26 @@ export default function SimplifiedRTBManagementPage() {
                           : null;
                         const failedBids = request.totalTargetsPinged - request.successfulResponses;
                         const hasWinner = request.winningTargetId && request.winningBidAmount;
+                        const isExpanded = expandedAuctions.has(request.id);
                         
                         return (
-                          <TableRow key={request.id} className="hover:bg-muted/50">
-                            <TableCell className="font-mono text-xs">
+                          <>
+                            <TableRow key={request.id} className="hover:bg-muted/50">
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleAuctionRow(request.id)}
+                                  className="p-1 h-6 w-6"
+                                >
+                                  {isExpanded ? (
+                                    <ChevronDown className="h-3 w-3" />
+                                  ) : (
+                                    <ChevronRight className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">
                               <div className="flex flex-col">
                                 <span className="font-semibold">{request.requestId.slice(-8)}...</span>
                                 <span className="text-muted-foreground text-[10px]">#{request.id}</span>
@@ -560,6 +608,140 @@ export default function SimplifiedRTBManagementPage() {
                               </Button>
                             </TableCell>
                           </TableRow>
+                          
+                          {/* Expandable auction details row */}
+                          {isExpanded && (
+                            <TableRow>
+                              <TableCell colSpan={15} className="bg-muted/30 border-t-0">
+                                <div className="py-4 space-y-4">
+                                  {/* Basic auction info header */}
+                                  <div className="flex items-center space-x-4 pb-3 border-b border-border/40">
+                                    <div className="flex items-center space-x-2">
+                                      <Activity className="h-4 w-4 text-blue-600" />
+                                      <span className="font-medium">Auction Details</span>
+                                    </div>
+                                    <Badge variant="outline" className="text-xs">
+                                      Request ID: {request.requestId}
+                                    </Badge>
+                                  </div>
+
+                                  {/* Auction metrics grid */}
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {/* Timing section */}
+                                    <div className="space-y-3">
+                                      <div className="flex items-center space-x-2">
+                                        <Clock className="h-4 w-4 text-gray-500" />
+                                        <span className="text-sm font-medium text-gray-700">Auction Timing</span>
+                                      </div>
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Call Start:</span>
+                                          <span className="font-mono">{new Date(request.callStartTime).toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Total Duration:</span>
+                                          <span className="font-mono">{request.totalResponseTimeMs || 0}ms</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Avg Response:</span>
+                                          <span className="font-mono">{avgResponseTime || 0}ms</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Bidding statistics */}
+                                    <div className="space-y-3">
+                                      <div className="flex items-center space-x-2">
+                                        <TrendingUp className="h-4 w-4 text-gray-500" />
+                                        <span className="text-sm font-medium text-gray-700">Bid Statistics</span>
+                                      </div>
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Targets Pinged:</span>
+                                          <Badge variant="outline" className="text-xs">{request.totalTargetsPinged}</Badge>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Successful Bids:</span>
+                                          <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">{request.successfulResponses}</Badge>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Failed Bids:</span>
+                                          <Badge variant="outline" className="bg-red-50 text-red-700 text-xs">{failedBids}</Badge>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Success Rate:</span>
+                                          <span className="font-semibold">{request.totalTargetsPinged > 0 ? Math.round((request.successfulResponses / request.totalTargetsPinged) * 100) : 0}%</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Winner details */}
+                                    <div className="space-y-3">
+                                      <div className="flex items-center space-x-2">
+                                        <Users className="h-4 w-4 text-gray-500" />
+                                        <span className="text-sm font-medium text-gray-700">Auction Winner</span>
+                                      </div>
+                                      <div className="space-y-2 text-sm">
+                                        {hasWinner ? (
+                                          <>
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">Winner:</span>
+                                              <span className="font-medium text-blue-600">{getTargetName(request.winningTargetId!)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">Winning Bid:</span>
+                                              <span className="font-semibold text-green-600">${request.winningBidAmount}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">Destination:</span>
+                                              <span className="font-mono text-blue-600">{request.destinationNumber || 'N/A'}</span>
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <div className="text-center py-2">
+                                            <span className="text-gray-500 italic">No auction winner</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Additional technical details */}
+                                  <div className="pt-3 border-t border-border/40">
+                                    <div className="flex items-center space-x-2 mb-3">
+                                      <Info className="h-4 w-4 text-gray-500" />
+                                      <span className="text-sm font-medium text-gray-700">Technical Details</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                      <div className="space-y-1">
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Campaign ID:</span>
+                                          <span className="font-mono">{request.campaignId}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Caller ID:</span>
+                                          <span className="font-mono">{request.callerId || 'Not available'}</span>
+                                        </div>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Auction Status:</span>
+                                          <Badge variant={hasWinner ? "default" : "secondary"}>
+                                            {hasWinner ? "Won" : request.successfulResponses > 0 ? "No Winner" : "Failed"}
+                                          </Badge>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Created:</span>
+                                          <span className="text-xs text-gray-500">{new Date(request.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </>
                         );
                       })}
                     </TableBody>
