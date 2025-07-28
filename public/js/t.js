@@ -176,6 +176,7 @@
   function requestTrackingNumber() {
     console.log('CallCenter Pro: Making request to:', baseUrl + '/api/dni/ultra-fast');
     console.log('CallCenter Pro: Campaign ID:', campaignId);
+    console.log('CallCenter Pro: Tracking data:', trackingData);
     
     var xhr = new XMLHttpRequest();
     xhr.open('POST', baseUrl + '/api/dni/ultra-fast', true);
@@ -188,6 +189,10 @@
             var response = JSON.parse(xhr.responseText);
             if (response.phoneNumber && response.formattedNumber) {
               replacePhoneNumbers(response.phoneNumber, response.formattedNumber);
+              
+              // CRITICAL: Create visitor session for call attribution
+              console.log('CallCenter Pro: Creating visitor session for attribution...');
+              createVisitorSession();
             }
           } catch (e) {
             console.error('CallCenter Pro: Invalid response format');
@@ -199,6 +204,33 @@
     };
     
     xhr.send(JSON.stringify(trackingData));
+  }
+  
+  // Create visitor session for call attribution
+  function createVisitorSession() {
+    console.log('CallCenter Pro: Creating visitor session with data:', trackingData);
+    
+    var sessionXhr = new XMLHttpRequest();
+    sessionXhr.open('POST', baseUrl + '/api/dni/track-simple', true);
+    sessionXhr.setRequestHeader('Content-Type', 'application/json');
+    
+    sessionXhr.onreadystatechange = function() {
+      if (sessionXhr.readyState === 4) {
+        if (sessionXhr.status === 200) {
+          try {
+            var sessionResponse = JSON.parse(sessionXhr.responseText);
+            console.log('CallCenter Pro: Visitor session created successfully:', sessionResponse.trackingId);
+          } catch (e) {
+            console.error('CallCenter Pro: Invalid session response format');
+          }
+        } else {
+          console.error('CallCenter Pro: Visitor session creation failed:', sessionXhr.status);
+        }
+      }
+    };
+    
+    // Send same tracking data to create visitor session
+    sessionXhr.send(JSON.stringify(trackingData));
   }
   
   // Enhanced phone click tracking with RedTrack conversion events
