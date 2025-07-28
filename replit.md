@@ -114,6 +114,15 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 28, 2025: **REDTRACK CLICK ID ATTRIBUTION COMPLETELY FIXED** - Resolved critical issue where real URL click IDs weren't being used in postbacks, causing attribution to use old test data instead of actual visitor parameters
+  - **Root Cause Fixed**: JavaScript tracking script was calling ultra-fast DNI endpoint but not creating visitor sessions with actual URL parameters
+  - **Tracking Script Enhanced**: Updated `/js/t.js` to call both ultra-fast DNI endpoint AND `/api/dni/track-simple` to create visitor sessions for attribution
+  - **Landing Page Integration**: Added tracking script to `public/lander.html` with proper campaign ID for automatic visitor session creation
+  - **Real Attribution Verified**: System now captures actual click IDs (68876de66e121e5c7ea4dc1d) from RedTrack URLs instead of using debug_click_123 test data  
+  - **Database Confirmation**: Visitor sessions correctly store real click IDs from URL parameters enabling proper call attribution
+  - **Postback Testing**: Confirmed RedTrack postback fires with correct click ID (HTTP 200 OK to cy9n0.rdtk.io/postback?clickid=68876de66e121e5c7ea4dc1d)
+  - **End-to-End Flow**: Landing page visit with RedTrack URL → visitor session creation → phone call → postback with real click ID
+  - **Status**: RedTrack attribution now uses authentic visitor click IDs instead of test data for accurate campaign tracking
 - July 28, 2025: **VISITOR SESSION ATTRIBUTION COMPLETELY FIXED** - Resolved critical DNI service campaign mapping issue enabling proper call attribution from landing page visits to phone calls
   - **Root Cause Fixed**: DNI service wasn't mapping campaignId parameter to campaign field in visitor sessions database records
   - **Two-Point Solution**: Updated both `/api/dni/track-simple` route handler and `trackVisitorByCampaignId` DNI service method to preserve campaign IDs
