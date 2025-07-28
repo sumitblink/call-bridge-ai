@@ -1,412 +1,539 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Health Insurance - Save $500+ Monthly | Get Instant Quote</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Arial', sans-serif; 
-            line-height: 1.6; 
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            min-height: 100vh;
-        }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-        
-        .header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 15px 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .logo { 
-            font-size: 1.8rem; 
-            font-weight: bold; 
-            color: white; 
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        .phone-header {
-            color: #00ff88;
-            font-weight: bold;
-            text-decoration: none;
-            font-size: 1.4rem;
-            transition: all 0.3s;
-            animation: pulse 2s infinite;
-            border: 2px solid #00ff88;
-            padding: 8px 16px;
-            border-radius: 25px;
-        }
-        .phone-header:hover { 
-            color: white; 
-            background: #00ff88;
-            transform: scale(1.05);
-        }
-        
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
-        }
-        
-        .hero {
-            text-align: center;
-            padding: 60px 0;
-            color: white;
-        }
-        .hero h1 {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            animation: fadeInUp 1s ease-out;
-        }
-        .hero .subtitle {
-            font-size: 1.8rem;
-            margin-bottom: 30px;
-            color: #00ff88;
-            font-weight: bold;
-            animation: fadeInUp 1s ease-out 0.2s both;
-        }
-        .hero p {
-            font-size: 1.4rem;
-            margin-bottom: 40px;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-            opacity: 0.95;
-            animation: fadeInUp 1s ease-out 0.4s both;
-        }
-        
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .urgency-banner {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
-            color: white;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 10px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-align: center;
-            animation: shake 2s infinite;
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-        
-        .cta-section {
-            margin: 50px 0;
-        }
-        .cta-phone {
-            display: inline-block;
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            color: white;
-            padding: 25px 50px;
-            font-size: 2.5rem;
-            font-weight: bold;
-            text-decoration: none;
-            border-radius: 50px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-            transition: all 0.3s;
-            margin: 15px;
-            animation: bounce 2s infinite;
-            border: 3px solid #fff;
-        }
-        .cta-phone:hover {
-            transform: translateY(-8px) scale(1.05);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-10px); }
-            60% { transform: translateY(-5px); }
-        }
-        
-        .social-proof {
-            background: rgba(255, 255, 255, 0.95);
-            color: #2c3e50;
-            padding: 40px 0;
-            margin: 40px 0;
-            border-radius: 15px;
-        }
-        .testimonial {
-            text-align: center;
-            padding: 30px;
-            font-style: italic;
-            font-size: 1.3rem;
-            line-height: 1.8;
-        }
-        .testimonial-author {
-            font-weight: bold;
-            color: #e74c3c;
-            margin-top: 20px;
-            font-size: 1.1rem;
-        }
-        
-        .benefits {
-            background: white;
-            padding: 80px 0;
-            color: #2c3e50;
-        }
-        .benefits h2 {
-            text-align: center;
-            font-size: 3rem;
-            margin-bottom: 50px;
-            color: #e74c3c;
-        }
-        .benefits-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 40px;
-            margin-top: 50px;
-        }
-        .benefit-card {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            padding: 40px 30px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transition: transform 0.3s;
-        }
-        .benefit-card:hover { transform: translateY(-15px) rotate(2deg); }
-        .benefit-icon { 
-            font-size: 4rem; 
-            margin-bottom: 20px; 
-            display: block;
-        }
-        .benefit-card h3 { 
-            font-size: 1.8rem;
-            margin-bottom: 15px; 
-        }
-        .benefit-card p { 
-            font-size: 1.1rem;
-            line-height: 1.6; 
-            opacity: 0.9;
-        }
-        
-        .guarantee {
-            background: linear-gradient(45deg, #2ecc71, #27ae60);
-            color: white;
-            padding: 60px 0;
-            text-align: center;
-        }
-        .guarantee h2 {
-            font-size: 2.8rem;
-            margin-bottom: 30px;
-        }
-        .guarantee p {
-            font-size: 1.4rem;
-            max-width: 800px;
-            margin: 0 auto 40px;
-        }
-        
-        .final-cta {
-            background: linear-gradient(135deg, #2c3e50, #34495e);
-            color: white;
-            padding: 80px 0;
-            text-align: center;
-        }
-        .countdown {
-            background: rgba(231, 76, 60, 0.9);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 30px 0;
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-        
-        .footer {
-            background: #2c3e50;
-            color: white;
-            padding: 40px 0;
-            text-align: center;
-        }
-        
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2.8rem; }
-            .cta-phone { font-size: 1.8rem; padding: 20px 35px; }
-            .header-content { flex-direction: column; gap: 15px; }
-            .benefits-grid { grid-template-columns: 1fr; }
-        }
-    </style>
-    
-    <!-- Ultra-Fast DNI JavaScript SDK -->
-    <script src="https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/js/t.js" data-campaign="b14514dc-b985-4790-a6e1-fd2d8db5467e" async></script>
-</head>
-<body>
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">🏥 Premium Health Insurance</div>
-                <a href="tel:" class="phone-header tracking-number">GET INSTANT QUOTE: (555) 123-4567</a>
-            </div>
-        </div>
-    </header>
-
-    <section class="hero">
-        <div class="container">
-            <h1>SAVE $500+ MONTHLY!</h1>
-            <div class="subtitle">Premium Health Insurance at Unbeatable Prices</div>
-            <p>Don't pay outrageous premiums! Our exclusive health insurance plans offer comprehensive coverage with savings up to 60% compared to marketplace plans. Get instant quotes and same-day approval!</p>
-            
-            <div class="urgency-banner">
-                ⚠️ OPEN ENROLLMENT ENDS SOON - LIMITED TIME TO ENROLL! ⚠️
-            </div>
-            
-            <div class="cta-section">
-                <a href="tel:" class="cta-phone tracking-number">📞 GET INSTANT QUOTE<br>(555) 123-4567</a>
-                <div style="margin-top: 20px; color: #00ff88; font-size: 1.4rem; font-weight: bold;">
-                    💚 CALL NOW - SAVE HUNDREDS TODAY!
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="social-proof">
-        <div class="container">
-            <div class="testimonial">
-                "I was paying $1,200 monthly for family coverage. Now I pay just $450 with BETTER benefits! The savings are life-changing."
-                <div class="testimonial-author">- Maria Rodriguez, Mother of 3 from Austin, TX</div>
-            </div>
-        </div>
-    </section>
-
-    <section class="benefits">
-        <div class="container">
-            <h2>Why Families Choose Premium Health Insurance</h2>
-            
-            <div class="benefits-grid">
-                <div class="benefit-card">
-                    <div class="benefit-icon">💰</div>
-                    <h3>Save Up to 60%</h3>
-                    <p>Stop overpaying for health insurance! Our exclusive plans offer the same coverage as expensive marketplace plans for a fraction of the cost.</p>
-                </div>
-                
-                <div class="benefit-card">
-                    <div class="benefit-icon">🏥</div>
-                    <h3>Top-Rated Doctors</h3>
-                    <p>Access to 500,000+ doctors nationwide including specialists at Mayo Clinic, Johns Hopkins, and Cleveland Clinic.</p>
-                </div>
-                
-                <div class="benefit-card">
-                    <div class="benefit-icon">💊</div>
-                    <h3>$0 Prescription Drugs</h3>
-                    <p>Most generic medications cost $0. Even brand-name drugs have low copays. Never worry about medication costs again.</p>
-                </div>
-                
-                <div class="benefit-card">
-                    <div class="benefit-icon">🚑</div>
-                    <h3>Emergency Coverage</h3>
-                    <p>Full emergency room coverage nationwide. No surprise bills, no network restrictions during emergencies.</p>
-                </div>
-                
-                <div class="benefit-card">
-                    <div class="benefit-icon">👨‍⚕️</div>
-                    <h3>Preventive Care FREE</h3>
-                    <p>Annual checkups, screenings, vaccines, and wellness visits at $0 cost. Stay healthy and catch problems early.</p>
-                </div>
-                
-                <div class="benefit-card">
-                    <div class="benefit-icon">📱</div>
-                    <h3>Telemedicine Included</h3>
-                    <p>24/7 virtual doctor visits from your phone. Skip the waiting room for minor illnesses and prescriptions.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="guarantee">
-        <div class="container">
-            <h2>🔒 30-DAY SATISFACTION GUARANTEE</h2>
-            <p>We're so confident you'll love your new health insurance that if you're not completely satisfied within 30 days, we'll help you find a better plan or refund your first month's premium!</p>
-            <a href="tel:" class="cta-phone tracking-number">GET GUARANTEED SAVINGS: (555) 123-4567</a>
-        </div>
-    </section>
-
-    <section class="final-cta">
-        <div class="container">
-            <h2 style="font-size: 3rem; margin-bottom: 30px;">Don't Miss Open Enrollment!</h2>
-            
-            <div class="countdown">
-                ⏰ OPEN ENROLLMENT ENDS SOON: CALL TODAY ⏰
-            </div>
-            
-            <p style="font-size: 1.6rem; margin-bottom: 40px;">
-                Join 50,000+ families already saving hundreds monthly with our premium health insurance plans.
-            </p>
-            
-            <div style="background: rgba(231, 76, 60, 0.2); padding: 30px; border-radius: 15px; margin: 40px 0;">
-                <h3 style="color: #e74c3c; font-size: 2rem; margin-bottom: 20px;">🚨 DON'T WAIT - ENROLLMENT CLOSES SOON! 🚨</h3>
-                <p style="font-size: 1.3rem; margin-bottom: 30px;">
-                    Without health insurance, one medical emergency could cost you $50,000+ out of pocket!
-                </p>
-                <a href="tel:" class="cta-phone tracking-number">📞 SECURE YOUR COVERAGE NOW<br>(555) 123-4567</a>
-            </div>
-            
-            <div style="margin-top: 40px; font-size: 1.1rem; opacity: 0.9;">
-                <p>✅ Instant quotes • ✅ Same-day approval • ✅ No medical exams • ✅ Coverage starts next month</p>
-            </div>
-        </div>
-    </section>
-
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025 Premium Health Insurance - Your #1 Choice for Affordable Healthcare</p>
-            <p style="margin-top: 10px; opacity: 0.7;">Trusted by 50,000+ families • A+ rated insurance partners • Licensed agents available 24/7</p>
-        </div>
-    </footer>
-
-    <script>
-    // Performance monitoring and urgency effects
-    window.addEventListener('load', function() {
-        console.log('🚀 Ultra-Fast Ad Page Loaded');
-        
-        // Add urgency countdown effect
-        let timeLeft = 24 * 60 * 60; // 24 hours in seconds
-        const countdownElement = document.querySelector('.countdown');
-        
-        if (countdownElement) {
-            setInterval(() => {
-                timeLeft--;
-                const hours = Math.floor(timeLeft / 3600);
-                const minutes = Math.floor((timeLeft % 3600) / 60);
-                const seconds = timeLeft % 60;
-                
-                countdownElement.innerHTML = `⏰ OPEN ENROLLMENT ENDS IN: ${hours}h ${minutes}m ${seconds}s ⏰`;
-                
-                if (timeLeft <= 0) {
-                    countdownElement.innerHTML = '🚨 ENROLLMENT PERIOD ENDED - CALL FOR SPECIAL ENROLLMENT! 🚨';
-                    timeLeft = 24 * 60 * 60; // Reset for next day
-                }
-            }, 1000);
-        }
-        
-        // Add exit-intent detection
-        let exitIntentShown = false;
-        document.addEventListener('mouseleave', function(e) {
-            if (e.clientY <= 0 && !exitIntentShown) {
-                exitIntentShown = true;
-                alert('WAIT! Don\'t leave without getting your FREE health insurance quote! Call (555) 123-4567 now!');
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>
+            Premium Health Insurance - Save $500+ Monthly | Get Instant Quote
+        </title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
             }
-        });
-    });
-    </script>
-</body>
+            body {
+                font-family: "Arial", sans-serif;
+                line-height: 1.6;
+                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                min-height: 100vh;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 20px;
+            }
+
+            .header {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                padding: 15px 0;
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+            }
+            .header-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .logo {
+                font-size: 1.8rem;
+                font-weight: bold;
+                color: white;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            .phone-header {
+                color: #00ff88;
+                font-weight: bold;
+                text-decoration: none;
+                font-size: 1.4rem;
+                transition: all 0.3s;
+                animation: pulse 2s infinite;
+                border: 2px solid #00ff88;
+                padding: 8px 16px;
+                border-radius: 25px;
+            }
+            .phone-header:hover {
+                color: white;
+                background: #00ff88;
+                transform: scale(1.05);
+            }
+
+            @keyframes pulse {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
+                }
+                70% {
+                    box-shadow: 0 0 0 10px rgba(0, 255, 136, 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
+                }
+            }
+
+            .hero {
+                text-align: center;
+                padding: 60px 0;
+                color: white;
+            }
+            .hero h1 {
+                font-size: 4rem;
+                margin-bottom: 20px;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+                animation: fadeInUp 1s ease-out;
+            }
+            .hero .subtitle {
+                font-size: 1.8rem;
+                margin-bottom: 30px;
+                color: #00ff88;
+                font-weight: bold;
+                animation: fadeInUp 1s ease-out 0.2s both;
+            }
+            .hero p {
+                font-size: 1.4rem;
+                margin-bottom: 40px;
+                max-width: 800px;
+                margin-left: auto;
+                margin-right: auto;
+                opacity: 0.95;
+                animation: fadeInUp 1s ease-out 0.4s both;
+            }
+
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .urgency-banner {
+                background: linear-gradient(45deg, #e74c3c, #c0392b);
+                color: white;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 10px;
+                font-size: 1.2rem;
+                font-weight: bold;
+                text-align: center;
+                animation: shake 2s infinite;
+            }
+
+            @keyframes shake {
+                0%,
+                100% {
+                    transform: translateX(0);
+                }
+                25% {
+                    transform: translateX(-5px);
+                }
+                75% {
+                    transform: translateX(5px);
+                }
+            }
+
+            .cta-section {
+                margin: 50px 0;
+            }
+            .cta-phone {
+                display: inline-block;
+                background: linear-gradient(45deg, #27ae60, #2ecc71);
+                color: white;
+                padding: 25px 50px;
+                font-size: 2.5rem;
+                font-weight: bold;
+                text-decoration: none;
+                border-radius: 50px;
+                box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+                transition: all 0.3s;
+                margin: 15px;
+                animation: bounce 2s infinite;
+                border: 3px solid #fff;
+            }
+            .cta-phone:hover {
+                transform: translateY(-8px) scale(1.05);
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            }
+
+            @keyframes bounce {
+                0%,
+                20%,
+                50%,
+                80%,
+                100% {
+                    transform: translateY(0);
+                }
+                40% {
+                    transform: translateY(-10px);
+                }
+                60% {
+                    transform: translateY(-5px);
+                }
+            }
+
+            .social-proof {
+                background: rgba(255, 255, 255, 0.95);
+                color: #2c3e50;
+                padding: 40px 0;
+                margin: 40px 0;
+                border-radius: 15px;
+            }
+            .testimonial {
+                text-align: center;
+                padding: 30px;
+                font-style: italic;
+                font-size: 1.3rem;
+                line-height: 1.8;
+            }
+            .testimonial-author {
+                font-weight: bold;
+                color: #e74c3c;
+                margin-top: 20px;
+                font-size: 1.1rem;
+            }
+
+            .benefits {
+                background: white;
+                padding: 80px 0;
+                color: #2c3e50;
+            }
+            .benefits h2 {
+                text-align: center;
+                font-size: 3rem;
+                margin-bottom: 50px;
+                color: #e74c3c;
+            }
+            .benefits-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                gap: 40px;
+                margin-top: 50px;
+            }
+            .benefit-card {
+                background: linear-gradient(135deg, #3498db, #2980b9);
+                color: white;
+                padding: 40px 30px;
+                border-radius: 20px;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                transition: transform 0.3s;
+            }
+            .benefit-card:hover {
+                transform: translateY(-15px) rotate(2deg);
+            }
+            .benefit-icon {
+                font-size: 4rem;
+                margin-bottom: 20px;
+                display: block;
+            }
+            .benefit-card h3 {
+                font-size: 1.8rem;
+                margin-bottom: 15px;
+            }
+            .benefit-card p {
+                font-size: 1.1rem;
+                line-height: 1.6;
+                opacity: 0.9;
+            }
+
+            .guarantee {
+                background: linear-gradient(45deg, #2ecc71, #27ae60);
+                color: white;
+                padding: 60px 0;
+                text-align: center;
+            }
+            .guarantee h2 {
+                font-size: 2.8rem;
+                margin-bottom: 30px;
+            }
+            .guarantee p {
+                font-size: 1.4rem;
+                max-width: 800px;
+                margin: 0 auto 40px;
+            }
+
+            .final-cta {
+                background: linear-gradient(135deg, #2c3e50, #34495e);
+                color: white;
+                padding: 80px 0;
+                text-align: center;
+            }
+            .countdown {
+                background: rgba(231, 76, 60, 0.9);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 30px 0;
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+
+            .footer {
+                background: #2c3e50;
+                color: white;
+                padding: 40px 0;
+                text-align: center;
+            }
+
+            @media (max-width: 768px) {
+                .hero h1 {
+                    font-size: 2.8rem;
+                }
+                .cta-phone {
+                    font-size: 1.8rem;
+                    padding: 20px 35px;
+                }
+                .header-content {
+                    flex-direction: column;
+                    gap: 15px;
+                }
+                .benefits-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+
+        <!-- Ultra-Fast DNI JavaScript SDK -->
+        <script
+            src="https://db49e81b-0f19-4f98-81dc-9b5f42c77491-00-229f5d5g77v1k.spock.replit.dev/js/t.js"
+            data-campaign="b14514dc-b985-4790-a6e1-fd2d8db5467e"
+            async
+        ></script>
+    </head>
+    <body>
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">🏥 Premium Health Insurance</div>
+                    <a href="tel:" class="phone-header tracking-number"
+                        >GET INSTANT QUOTE: (555) 123-4567</a
+                    >
+                </div>
+            </div>
+        </header>
+
+        <section class="hero">
+            <div class="container">
+                <h1>SAVE $500+ MONTHLY!</h1>
+                <div class="subtitle">
+                    Premium Health Insurance at Unbeatable Prices
+                </div>
+                <p>
+                    Don't pay outrageous premiums! Our exclusive health
+                    insurance plans offer comprehensive coverage with savings up
+                    to 60% compared to marketplace plans. Get instant quotes and
+                    same-day approval!
+                </p>
+
+                <div class="urgency-banner">
+                    ⚠️ OPEN ENROLLMENT ENDS SOON - LIMITED TIME TO ENROLL! ⚠️
+                </div>
+
+                <div class="cta-section">
+                    <a href="tel:" class="cta-phone tracking-number"
+                        >📞 GET INSTANT QUOTE<br />(555) 123-4567</a
+                    >
+                    <div
+                        style="
+                            margin-top: 20px;
+                            color: #00ff88;
+                            font-size: 1.4rem;
+                            font-weight: bold;
+                        "
+                    >
+                        💚 CALL NOW - SAVE HUNDREDS TODAY!
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="social-proof">
+            <div class="container">
+                <div class="testimonial">
+                    "I was paying $1,200 monthly for family coverage. Now I pay
+                    just $450 with BETTER benefits! The savings are
+                    life-changing."
+                    <div class="testimonial-author">
+                        - Maria Rodriguez, Mother of 3 from Austin, TX
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="benefits">
+            <div class="container">
+                <h2>Why Families Choose Premium Health Insurance</h2>
+
+                <div class="benefits-grid">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">💰</div>
+                        <h3>Save Up to 60%</h3>
+                        <p>
+                            Stop overpaying for health insurance! Our exclusive
+                            plans offer the same coverage as expensive
+                            marketplace plans for a fraction of the cost.
+                        </p>
+                    </div>
+
+                    <div class="benefit-card">
+                        <div class="benefit-icon">🏥</div>
+                        <h3>Top-Rated Doctors</h3>
+                        <p>
+                            Access to 500,000+ doctors nationwide including
+                            specialists at Mayo Clinic, Johns Hopkins, and
+                            Cleveland Clinic.
+                        </p>
+                    </div>
+
+                    <div class="benefit-card">
+                        <div class="benefit-icon">💊</div>
+                        <h3>$0 Prescription Drugs</h3>
+                        <p>
+                            Most generic medications cost $0. Even brand-name
+                            drugs have low copays. Never worry about medication
+                            costs again.
+                        </p>
+                    </div>
+
+                    <div class="benefit-card">
+                        <div class="benefit-icon">🚑</div>
+                        <h3>Emergency Coverage</h3>
+                        <p>
+                            Full emergency room coverage nationwide. No surprise
+                            bills, no network restrictions during emergencies.
+                        </p>
+                    </div>
+
+                    <div class="benefit-card">
+                        <div class="benefit-icon">👨‍⚕️</div>
+                        <h3>Preventive Care FREE</h3>
+                        <p>
+                            Annual checkups, screenings, vaccines, and wellness
+                            visits at $0 cost. Stay healthy and catch problems
+                            early.
+                        </p>
+                    </div>
+
+                    <div class="benefit-card">
+                        <div class="benefit-icon">📱</div>
+                        <h3>Telemedicine Included</h3>
+                        <p>
+                            24/7 virtual doctor visits from your phone. Skip the
+                            waiting room for minor illnesses and prescriptions.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="guarantee">
+            <div class="container">
+                <h2>🔒 30-DAY SATISFACTION GUARANTEE</h2>
+                <p>
+                    We're so confident you'll love your new health insurance
+                    that if you're not completely satisfied within 30 days,
+                    we'll help you find a better plan or refund your first
+                    month's premium!
+                </p>
+                <a href="tel:" class="cta-phone tracking-number"
+                    >GET GUARANTEED SAVINGS: (555) 123-4567</a
+                >
+            </div>
+        </section>
+
+        <section class="final-cta">
+            <div class="container">
+                <h2 style="font-size: 3rem; margin-bottom: 30px">
+                    Don't Miss Open Enrollment!
+                </h2>
+
+                <div class="countdown">
+                    ⏰ OPEN ENROLLMENT ENDS SOON: CALL TODAY ⏰
+                </div>
+
+                <p style="font-size: 1.6rem; margin-bottom: 40px">
+                    Join 50,000+ families already saving hundreds monthly with
+                    our premium health insurance plans.
+                </p>
+
+                <div
+                    style="
+                        background: rgba(231, 76, 60, 0.2);
+                        padding: 30px;
+                        border-radius: 15px;
+                        margin: 40px 0;
+                    "
+                >
+                    <h3
+                        style="
+                            color: #e74c3c;
+                            font-size: 2rem;
+                            margin-bottom: 20px;
+                        "
+                    >
+                        🚨 DON'T WAIT - ENROLLMENT CLOSES SOON! 🚨
+                    </h3>
+                    <p style="font-size: 1.3rem; margin-bottom: 30px">
+                        Without health insurance, one medical emergency could
+                        cost you $50,000+ out of pocket!
+                    </p>
+                    <a href="tel:" class="cta-phone tracking-number"
+                        >📞 SECURE YOUR COVERAGE NOW<br />(555) 123-4567</a
+                    >
+                </div>
+
+                <div style="margin-top: 40px; font-size: 1.1rem; opacity: 0.9">
+                    <p>
+                        ✅ Instant quotes • ✅ Same-day approval • ✅ No medical
+                        exams • ✅ Coverage starts next month
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="container">
+                <p>
+                    &copy; 2025 Premium Health Insurance - Your #1 Choice for
+                    Affordable Healthcare
+                </p>
+                <p style="margin-top: 10px; opacity: 0.7">
+                    Trusted by 50,000+ families • A+ rated insurance partners •
+                    Licensed agents available 24/7
+                </p>
+            </div>
+        </footer>
+
+        <script>
+            // Performance monitoring and urgency effects
+            window.addEventListener("load", function () {
+                console.log("🚀 Ultra-Fast Ad Page Loaded");
+
+                // Add urgency countdown effect
+                let timeLeft = 24 * 60 * 60; // 24 hours in seconds
+                const countdownElement = document.querySelector(".countdown");
+
+                if (countdownElement) {
+                    setInterval(() => {
+                        timeLeft--;
+                        const hours = Math.floor(timeLeft / 3600);
+                        const minutes = Math.floor((timeLeft % 3600) / 60);
+                        const seconds = timeLeft % 60;
+
+                        countdownElement.innerHTML = `⏰ OPEN ENROLLMENT ENDS IN: ${hours}h ${minutes}m ${seconds}s ⏰`;
+
+                        if (timeLeft <= 0) {
+                            countdownElement.innerHTML =
+                                "🚨 ENROLLMENT PERIOD ENDED - CALL FOR SPECIAL ENROLLMENT! 🚨";
+                            timeLeft = 24 * 60 * 60; // Reset for next day
+                        }
+                    }, 1000);
+                }
+            });
+        </script>
+    </body>
 </html>
