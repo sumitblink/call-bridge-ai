@@ -51,11 +51,46 @@ function BuyerCount({ campaignId }: { campaignId: string }) {
   return <span>{buyers.length}</span>;
 }
 
+function useCampaignStats(campaignId: string) {
+  const { data: calls = [] } = useQuery({
+    queryKey: [`/api/campaigns/${campaignId}/calls`],
+    retry: false,
+  });
+
+  // Calculate statistics from actual call data
+  const today = new Date();
+  const todayString = today.toISOString().split('T')[0];
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+
+  const todayCalls = calls.filter((call: any) => {
+    if (!call.createdAt) return false;
+    const callDate = new Date(call.createdAt).toISOString().split('T')[0];
+    return callDate === todayString;
+  }).length;
+
+  const monthCalls = calls.filter((call: any) => {
+    if (!call.createdAt) return false;
+    const callDate = new Date(call.createdAt);
+    return callDate.getMonth() === currentMonth && callDate.getFullYear() === currentYear;
+  }).length;
+
+  const totalCalls = calls.length;
+
+  return {
+    today: todayCalls,
+    month: monthCalls,
+    total: totalCalls
+  };
+}
+
 function CampaignCard({ campaign, onDelete, onEdit }: { 
   campaign: Campaign; 
   onDelete: (campaign: Campaign) => void;
   onEdit?: (campaign: Campaign) => void;
 }) {
+  const stats = useCampaignStats(campaign.id);
+  
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-6">
@@ -96,17 +131,17 @@ function CampaignCard({ campaign, onDelete, onEdit }: {
               
               <div className="text-center">
                 <p className="text-gray-500 mb-1">Today</p>
-                <p className="font-bold text-lg">0</p>
+                <p className="font-bold text-lg">{stats.today}</p>
               </div>
               
               <div className="text-center">
                 <p className="text-gray-500 mb-1">Month</p>
-                <p className="font-bold text-lg">0</p>
+                <p className="font-bold text-lg">{stats.month}</p>
               </div>
               
               <div className="text-center">
                 <p className="text-gray-500 mb-1">Total</p>
-                <p className="font-bold text-lg">0</p>
+                <p className="font-bold text-lg">{stats.total}</p>
               </div>
               
               <div className="text-center">
