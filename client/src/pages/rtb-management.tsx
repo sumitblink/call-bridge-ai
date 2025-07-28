@@ -12,7 +12,7 @@ import { Phase1AdvancedBiddingDialog } from "@/components/rtb/Phase1AdvancedBidd
 import { Phase2GeographicTargetingDialog } from "@/components/rtb/Phase2GeographicTargetingDialog";
 import Phase3AdvancedFilteringDialog from "@/components/rtb/Phase3AdvancedFilteringDialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone, Globe, Grid3X3, List } from "lucide-react";
+import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone, Globe } from "lucide-react";
 
 // RTB Target type
 type RtbTarget = {
@@ -72,7 +72,7 @@ export default function SimplifiedRTBManagementPage() {
   const [phase2Target, setPhase2Target] = useState<RtbTarget | null>(null);
   const [phase3DialogOpen, setPhase3DialogOpen] = useState(false);
   const [phase3Target, setPhase3Target] = useState<RtbTarget | null>(null);
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -299,172 +299,82 @@ export default function SimplifiedRTBManagementPage() {
 
           {/* RTB Targets Tab */}
           <TabsContent value="targets" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant={viewMode === 'cards' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('cards')}
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                >
-                  <List className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => clearAllMutation.mutate()}
-                  disabled={clearAllMutation.isPending}
-                >
-                  Clear All
-                </Button>
-              </div>
+            <div className="flex justify-end items-center">
+              <Button 
+                variant="outline" 
+                onClick={() => clearAllMutation.mutate()}
+                disabled={clearAllMutation.isPending}
+              >
+                Clear All
+              </Button>
             </div>
 
-            {/* Targets View */}
-            {viewMode === 'cards' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {targets.map((target) => (
-                  <Card key={target.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <CardTitle className="text-lg">{target.name}</CardTitle>
-                          <CardDescription>{target.companyName || target.endpointUrl}</CardDescription>
-                        </div>
-                        <Badge 
-                          variant={target.isActive ? 'default' : 'secondary'}
-                          className={target.isActive ? 'bg-green-100 text-green-800' : ''}
-                        >
-                          {target.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Bid Range:</span>
-                          <span>${target.minBidAmount} - ${target.maxBidAmount}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Daily Cap:</span>
-                          <span>{target.dailyCap}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Success Rate:</span>
-                          <span>
-                            {target.totalPings > 0 
-                              ? Math.round((target.successfulBids / target.totalPings) * 100)
-                              : 0}%
-                          </span>
-                        </div>
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(target)}
+            {/* RTB Targets Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>RTB Targets</CardTitle>
+                <CardDescription>Manage your real-time bidding endpoints</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Target</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Bid Range</TableHead>
+                      <TableHead>Success Rate</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {targets.map((target) => (
+                      <TableRow key={target.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{target.name}</div>
+                            <div className="text-sm text-muted-foreground">{target.endpointUrl}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{target.companyName || '-'}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={target.isActive ? 'default' : 'secondary'}
+                            className={target.isActive ? 'bg-green-100 text-green-800' : ''}
                           >
-                            <Edit className="w-3 h-3 mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setPhase1Target(target);
-                              setPhase1DialogOpen(true);
-                            }}
-                          >
-                            <Settings className="w-3 h-3 mr-1" />
-                            Bidding
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setDeleteingTarget(target)}
-                          >
-                            <Trash2 className="w-3 h-3 mr-1" />
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>RTB Targets</CardTitle>
-                  <CardDescription>Manage your real-time bidding endpoints</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Target</TableHead>
-                        <TableHead>Company</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Bid Range</TableHead>
-                        <TableHead>Success Rate</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {targets.map((target) => (
-                        <TableRow key={target.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{target.name}</div>
-                              <div className="text-sm text-muted-foreground">{target.endpointUrl}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{target.companyName || '-'}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={target.isActive ? 'default' : 'secondary'}
-                              className={target.isActive ? 'bg-green-100 text-green-800' : ''}
+                            {target.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>${target.minBidAmount} - ${target.maxBidAmount}</TableCell>
+                        <TableCell>
+                          {target.totalPings > 0 
+                            ? Math.round((target.successfulBids / target.totalPings) * 100)
+                            : 0}%
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditDialog(target)}
                             >
-                              {target.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>${target.minBidAmount} - ${target.maxBidAmount}</TableCell>
-                          <TableCell>
-                            {target.totalPings > 0 
-                              ? Math.round((target.successfulBids / target.totalPings) * 100)
-                              : 0}%
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openEditDialog(target)}
-                              >
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setDeleteingTarget(target)}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            )}
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setDeleteingTarget(target)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Analytics Tab */}
