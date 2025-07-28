@@ -1133,6 +1133,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Campaign Calls endpoint
+  app.get('/api/campaigns/:id/calls', requireAuth, async (req: any, res) => {
+    try {
+      const campaignId = req.params.id; // UUID string, no parsing needed
+      const userId = req.user?.id;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      // Get all calls and filter by campaign ID
+      const allCalls = await storage.getCalls();
+      const campaignCalls = allCalls.filter(call => String(call.campaignId) === String(campaignId));
+      
+      res.json(campaignCalls);
+    } catch (error) {
+      console.error("Error fetching campaign calls:", error);
+      res.status(500).json({ error: "Failed to fetch campaign calls" });
+    }
+  });
+
   // Campaign-Buyer relationships
   app.get('/api/campaigns/:id/buyers', requireAuth, async (req: any, res) => {
     try {

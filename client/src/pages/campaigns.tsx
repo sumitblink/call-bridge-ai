@@ -52,9 +52,19 @@ function BuyerCount({ campaignId }: { campaignId: string }) {
 }
 
 function useCampaignStats(campaignId: string) {
-  const { data: calls = [] } = useQuery({
+  const { data: calls = [], isLoading, error } = useQuery({
     queryKey: [`/api/campaigns/${campaignId}/calls`],
     retry: false,
+  });
+
+  // Debug logging
+  console.log('Campaign Stats Debug:', {
+    campaignId,
+    calls,
+    callsLength: calls.length,
+    isLoading,
+    error,
+    sampleCall: calls[0]
   });
 
   // Calculate statistics from actual call data
@@ -64,14 +74,14 @@ function useCampaignStats(campaignId: string) {
   const currentYear = today.getFullYear();
 
   const todayCalls = calls.filter((call: any) => {
-    if (!call.createdAt) return false;
-    const callDate = new Date(call.createdAt).toISOString().split('T')[0];
+    if (!call.createdAt && !call.created_at) return false;
+    const callDate = new Date(call.createdAt || call.created_at).toISOString().split('T')[0];
     return callDate === todayString;
   }).length;
 
   const monthCalls = calls.filter((call: any) => {
-    if (!call.createdAt) return false;
-    const callDate = new Date(call.createdAt);
+    if (!call.createdAt && !call.created_at) return false;
+    const callDate = new Date(call.createdAt || call.created_at);
     return callDate.getMonth() === currentMonth && callDate.getFullYear() === currentYear;
   }).length;
 
@@ -80,7 +90,8 @@ function useCampaignStats(campaignId: string) {
   return {
     today: todayCalls,
     month: monthCalls,
-    total: totalCalls
+    total: totalCalls,
+    isLoading
   };
 }
 
