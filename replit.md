@@ -114,6 +114,14 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 28, 2025: **TEST DATA CLEANUP AND CALL ROUTING PRIORITY BUG FIXED** - Removed test parameters from database and resolved critical call routing priority issue
+  - **Test Data Cleaned**: Removed test parameters (real_live_test_12345, test_publisher_live) from visitor_sessions database to prevent confusion
+  - **Priority Routing Fixed**: Corrected backwards sorting logic that was routing calls to Priority #3 instead of Priority #1 buyers
+  - **Campaign-Specific Priorities**: System now properly uses campaign-specific buyer priorities from campaign_buyers table
+  - **Sorting Logic Corrected**: Fixed priority comparison from `b.priority - a.priority` to `a.priority - b.priority` (lower numbers = higher priority)
+  - **Database Integration**: Routing system correctly pulls campaign-specific priorities instead of buyer general priorities
+  - **Verified Working**: Test calls now properly route to Healthcare Partners (Priority #1) instead of Premium Insurance Co (Priority #3)
+  - **Attribution System Stable**: RedTrack click ID attribution continues working correctly with authentic visitor parameters
 - July 28, 2025: **REDTRACK CLICK ID ATTRIBUTION COMPLETELY FIXED** - Resolved critical issue where real URL click IDs weren't being used in postbacks, causing attribution to use old test data instead of actual visitor parameters
   - **Root Cause Fixed**: JavaScript tracking script was calling ultra-fast DNI endpoint but not creating visitor sessions with actual URL parameters
   - **Tracking Script Enhanced**: Updated `/js/t.js` to call both ultra-fast DNI endpoint AND `/api/dni/track-simple` to create visitor sessions for attribution
