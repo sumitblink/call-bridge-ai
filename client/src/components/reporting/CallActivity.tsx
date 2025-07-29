@@ -393,9 +393,16 @@ export default function CallActivity() {
         },
       }).then(res => {
         if (!res.ok) {
+          console.error('Calls API Error:', res.status, res.statusText);
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         return res.json();
+      }).then(data => {
+        console.log('Calls API Response:', data);
+        return data;
+      }).catch(error => {
+        console.error('Calls API Fetch Error:', error);
+        throw error;
       }) as Promise<PaginatedResponse>,
     initialPageParam: 1,
     getNextPageParam: (lastPage: PaginatedResponse) => 
@@ -407,15 +414,17 @@ export default function CallActivity() {
   const calls = callsData?.pages.flatMap((page: PaginatedResponse) => page.calls) || [];
   const totalCalls = callsData?.pages[0]?.pagination.total || 0;
 
-  // Debug pagination state (remove in production)
-  // console.log('Pagination Debug:', {
-  //   pagesLoaded: callsData?.pages.length || 0,
-  //   totalCalls,
-  //   currentCallsCount: calls.length,
-  //   hasNextPage,
-  //   isFetchingNextPage,
-  //   isLoadingCalls
-  // });
+  // Debug pagination state - temporarily enabled to debug issue
+  console.log('Pagination Debug:', {
+    pagesLoaded: callsData?.pages.length || 0,
+    totalCalls,
+    currentCallsCount: calls.length,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoadingCalls,
+    firstPageData: callsData?.pages[0] || null,
+    error: callsData?.pages.length === 0 ? 'No pages loaded' : null
+  });
 
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"]
