@@ -120,26 +120,26 @@ export default function RingbaStyleReporting() {
 
   const chartData = timelineResponse?.timeline || [];
 
-  // Auto refresh functionality
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (autoRefresh) {
-      interval = setInterval(() => {
-        // Invalidate and refetch all reporting queries
-        queryClient.invalidateQueries({ queryKey: ['/api/reporting/summary'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/reporting/timeline'] });
-        // Reset infinite query to first page to prevent conflicts
-        queryClient.resetQueries({ queryKey: ['/api/calls'] });
-      }, 120000); // Refresh every 2 minutes
-    }
-    
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [autoRefresh, queryClient]);
+  // Auto refresh functionality - DISABLED to prevent freezing
+  // useEffect(() => {
+  //   let interval: NodeJS.Timeout;
+  //   
+  //   if (autoRefresh) {
+  //     interval = setInterval(() => {
+  //       // Invalidate and refetch all reporting queries
+  //       queryClient.invalidateQueries({ queryKey: ['/api/reporting/summary'] });
+  //       queryClient.invalidateQueries({ queryKey: ['/api/reporting/timeline'] });
+  //       // Reset infinite query to first page to prevent conflicts
+  //       queryClient.resetQueries({ queryKey: ['/api/calls'] });
+  //     }, 120000); // Refresh every 2 minutes
+  //   }
+  //   
+  //   return () => {
+  //     if (interval) {
+  //       clearInterval(interval);
+  //     }
+  //   };
+  // }, [autoRefresh, queryClient]);
 
   // Manual refresh function
   const handleManualRefresh = useCallback(() => {
@@ -282,14 +282,11 @@ export default function RingbaStyleReporting() {
             </Button>
             <Button
               size="sm"
-              variant={autoRefresh ? "default" : "outline"}
-              onClick={() => {
-                setAutoRefresh(!autoRefresh);
-                if (!autoRefresh) handleManualRefresh(); // Trigger refresh when enabling auto-refresh
-              }}
-              className="h-7 px-2 text-xs"
+              variant="outline"
+              disabled
+              className="h-7 px-2 text-xs opacity-50"
             >
-              AUTO REFRESH {autoRefresh ? 'ON' : 'OFF'}
+              AUTO REFRESH DISABLED
             </Button>
             <Button size="sm" variant="outline" onClick={exportCsv} className="h-7 px-2 text-xs">
               <Download className="h-3 w-3 mr-1" />

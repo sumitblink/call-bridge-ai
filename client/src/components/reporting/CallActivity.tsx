@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -438,25 +438,31 @@ export default function CallActivity() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Attach scroll listener
-  useEffect(() => {
-    const container = tableContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
-    }
-  }, [handleScroll]);
+  // Attach scroll listener - DISABLED to prevent freezing
+  // useEffect(() => {
+  //   const container = tableContainerRef.current;
+  //   if (container) {
+  //     container.addEventListener('scroll', handleScroll);
+  //     return () => container.removeEventListener('scroll', handleScroll);
+  //   }
+  // }, [handleScroll]);
 
-  const filteredCalls = calls.filter(call => {
-    const matchesStatus = statusFilter === "all" || call.status === statusFilter;
-    const matchesCampaign = campaignFilter === "all" || call.campaignId === campaignFilter;
-    const matchesSearch = searchTerm === "" || 
-      call.fromNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      call.toNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      call.callSid.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredCalls = useMemo(() => {
+    if (!calls || !Array.isArray(calls)) return [];
     
-    return matchesStatus && matchesCampaign && matchesSearch;
-  });
+    return calls.filter(call => {
+      if (!call) return false;
+      
+      const matchesStatus = statusFilter === "all" || call.status === statusFilter;
+      const matchesCampaign = campaignFilter === "all" || call.campaignId === campaignFilter;
+      const matchesSearch = searchTerm === "" || 
+        (call.fromNumber && call.fromNumber.toLowerCase().includes(searchTerm.toLowerCase())) || 
+        (call.toNumber && call.toNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (call.callSid && call.callSid.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      return matchesStatus && matchesCampaign && matchesSearch;
+    });
+  }, [calls, statusFilter, campaignFilter, searchTerm]);
 
   // Debug: log filtered calls count
 
@@ -783,7 +789,7 @@ export default function CallActivity() {
                   </TableRow>
                 </TableHeader>
               <TableBody>
-                {filteredCalls.flatMap((call, callIndex) => {
+                {filteredCalls.slice(0, 50).flatMap((call, callIndex) => {
                   const rows = [
                     <TableRow key={`call-row-${call.id}`} className="hover:bg-muted/30">
                       <TableCell className="py-2 w-8">
