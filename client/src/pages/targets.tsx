@@ -45,16 +45,19 @@ export default function TargetsPage() {
   });
 
   // Fetch buyers for the select dropdown
-  const { data: buyers = [] } = useQuery({
+  const { data: buyersData, isLoading: buyersLoading, error: buyersError } = useQuery({
     queryKey: ['/api/buyers'],
     queryFn: () => apiRequest('/api/buyers') as Promise<Buyer[]>,
   });
 
+  // Ensure buyers is always an array
+  const buyers = Array.isArray(buyersData) ? buyersData : [];
+
   // Enhanced targets with buyer names
-  const enhancedTargets: EnhancedTarget[] = targets.map(target => ({
+  const enhancedTargets: EnhancedTarget[] = Array.isArray(targets) ? targets.map(target => ({
     ...target,
     buyerName: buyers.find(b => b.id === target.buyerId)?.name || 'Unknown Buyer'
-  }));
+  })) : [];
 
   // Filter targets by selected buyer
   const filteredTargets = selectedBuyerId 

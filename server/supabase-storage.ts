@@ -6,6 +6,7 @@ import {
   calls, 
   users,
   buyers,
+  targets,
   campaignBuyers,
   callLogs,
   urlParameters,
@@ -36,6 +37,8 @@ import {
   type InsertUser,
   type Buyer,
   type InsertBuyer,
+  type Target,
+  type InsertTarget,
   type CampaignBuyer,
   type InsertCampaignBuyer,
   type CallLog,
@@ -361,6 +364,80 @@ export class SupabaseStorage implements IStorage {
     // Delete the buyer
     const result = await db.delete(buyers).where(eq(buyers.id, id));
     return result.rowCount > 0;
+  }
+
+  // Targets
+  async getTargets(userId?: number): Promise<Target[]> {
+    try {
+      let query = db.select().from(targets);
+      if (userId) {
+        query = query.where(eq(targets.userId, userId));
+      }
+      return await query;
+    } catch (error) {
+      console.error('Error fetching targets:', error);
+      return [];
+    }
+  }
+
+  async getTargetsByBuyer(buyerId: number): Promise<Target[]> {
+    try {
+      return await db.select()
+        .from(targets)
+        .where(eq(targets.buyerId, buyerId));
+    } catch (error) {
+      console.error('Error fetching targets by buyer:', error);
+      return [];
+    }
+  }
+
+  async getTarget(id: number): Promise<Target | undefined> {
+    try {
+      const result = await db.select()
+        .from(targets)
+        .where(eq(targets.id, id))
+        .limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching target:', error);
+      return undefined;
+    }
+  }
+
+  async createTarget(target: InsertTarget): Promise<Target> {
+    try {
+      const result = await db.insert(targets)
+        .values(target)
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating target:', error);
+      throw error;
+    }
+  }
+
+  async updateTarget(id: number, target: Partial<InsertTarget>): Promise<Target | undefined> {
+    try {
+      const result = await db.update(targets)
+        .set({ ...target, updatedAt: new Date() })
+        .where(eq(targets.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating target:', error);
+      return undefined;
+    }
+  }
+
+  async deleteTarget(id: number): Promise<boolean> {
+    try {
+      await db.delete(targets)
+        .where(eq(targets.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting target:', error);
+      return false;
+    }
   }
 
   // Campaign-Buyer Relations
