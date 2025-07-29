@@ -196,6 +196,48 @@ function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps
             </div>
           </div>
         </div>
+
+        {/* Pixel Fire Details */}
+        {call.id === 85 && (
+          <div>
+            <h4 className="flex items-center gap-2 text-sm font-medium mb-1">
+              <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="w-2 h-2 bg-white rounded-full" />
+              </div>
+              Pixel Fire
+            </h4>
+            <div className="bg-gray-50 p-2 rounded">
+              <div className="bg-white p-2 rounded border text-xs space-y-1">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-gray-600">Timestamp:</span>
+                    <div className="font-mono">Jul 29 04:40:40 PM</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Field:</span>
+                    <div>Tag Fire: User - Vertical (empty)</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Setting Id:</span>
+                    <div className="font-mono">6888c6c36a77d44662342c40</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Setting Name:</span>
+                    <div>RedTrack New Test - INCOMING</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Trigger On:</span>
+                    <div className="capitalize">incoming</div>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-gray-600">URL:</span>
+                    <div className="font-mono text-blue-600 break-all">http://cy9n0.rdtk.io/postback?clickid=6888c6c36a77d44662342c40&type=CTC</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

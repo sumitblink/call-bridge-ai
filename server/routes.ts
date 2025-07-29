@@ -119,6 +119,27 @@ async function fireTrackingPixelsForEvent(call: any, callStatus: string, duratio
       );
       
       console.log(`🔥 PIXEL FIRED [${pixelEvent}]: ${pixel.name} → ${fireUrl}`);
+      
+      // Log pixel fire event for tracking in call details
+      try {
+        await storage.addCallEvent(call.id, {
+          eventType: 'pixel_fired',
+          nodeType: 'pixel',
+          nodeName: pixel.name,
+          stepName: pixelEvent,
+          metadata: {
+            pixelId: pixel.id,
+            pixelName: pixel.name,
+            pixelType: pixel.pixelType,
+            fireUrl,
+            triggerEvent: pixelEvent,
+            clickId: call.clickId || 'unknown',
+            status: 'fired'
+          }
+        });
+      } catch (eventError) {
+        console.error('[Pixel] Error logging pixel fire event:', eventError);
+      }
     }
   } catch (error) {
     console.error('[Pixel] Error firing tracking pixels:', error);

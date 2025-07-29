@@ -97,6 +97,10 @@ export interface IStorage {
   // Call Logs
   getCallLogs(callId: number): Promise<CallLog[]>;
   createCallLog(log: InsertCallLog): Promise<CallLog>;
+  
+  // Call Events
+  getCallEvents(callId: number): Promise<any[]>;
+  addCallEvent(callId: number, event: any): Promise<any>;
 
   // Stats
   getStats(): Promise<{
@@ -297,6 +301,7 @@ export class MemStorage implements IStorage {
   private agents: Map<number, Agent> = new Map();
   private calls: Map<number, Call> = new Map();
   private callLogs: Map<number, CallLog> = new Map();
+  private callEvents: any[] = [];
   private publishers: Map<number, any> = new Map();
   private publisherCampaigns: Map<string, any> = new Map();
   private phoneNumberTags: Map<number, any> = new Map();
@@ -908,6 +913,22 @@ export class MemStorage implements IStorage {
     };
     this.callLogs.set(id, newLog);
     return newLog;
+  }
+
+  // Call Events implementation
+  async getCallEvents(callId: number): Promise<any[]> {
+    return this.callEvents.filter(event => event.callId === callId);
+  }
+
+  async addCallEvent(callId: number, event: any): Promise<any> {
+    const newEvent = {
+      id: this.callEvents.length + 1,
+      callId,
+      ...event,
+      timestamp: new Date()
+    };
+    this.callEvents.push(newEvent);
+    return newEvent;
   }
 
   // Stats
