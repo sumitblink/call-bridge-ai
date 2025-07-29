@@ -190,7 +190,7 @@ export default function RingbaStyleReporting() {
       `$${summary.totalCost.toFixed(2)}`
     ]);
 
-    const csv = [headers.join(','), ...csvData.map(row => row.join(','))].join('\n');
+    const csv = [headers.join(','), ...csvData.map((row: any[]) => row.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -203,10 +203,10 @@ export default function RingbaStyleReporting() {
   // Handle filter clicks for cross-panel navigation
   const handleFilterClick = (field: string, value: string) => {
     const newFilter = { field, operator: 'equals', value };
-    setActiveFilters([...activeFilters, newFilter]);
+    setActiveFilters([...activeFilters, newFilter] as any);
     setCurrentReportConfig({
       ...currentReportConfig,
-      filters: [...currentReportConfig.filters, newFilter]
+      filters: [...(currentReportConfig.filters || []), newFilter] as any
     });
   };
 
@@ -228,7 +228,7 @@ export default function RingbaStyleReporting() {
 
   // Handle saving report configuration
   const handleSaveReportConfig = (name: string, description: string, isShared: boolean) => {
-    console.log('Save report config:', { name, description, isShared, config: currentReportConfig });
+    // console.log('Save report config:', { name, description, isShared, config: currentReportConfig });
   };
 
   // Clear call selection
@@ -321,8 +321,10 @@ export default function RingbaStyleReporting() {
 
         {/* Call Details below Summary */}
         <CallActivity
+          filters={activeFilters}
+          dateRange={dateRange}
           selectedRows={selectedRows}
-          onRowSelect={(rowId, isSelected) => {
+          onRowSelect={(rowId: number, isSelected: boolean) => {
             const newSelection = new Set(selectedRows);
             if (isSelected) {
               newSelection.add(rowId);

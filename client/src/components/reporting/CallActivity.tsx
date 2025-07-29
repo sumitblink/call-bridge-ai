@@ -398,7 +398,7 @@ export default function CallActivity() {
         }
         return res.json();
       }).then(data => {
-        console.log('Calls API Response:', data);
+        // console.log('Calls API Response:', data);
         return data;
       }).catch(error => {
         console.error('Calls API Fetch Error:', error);
@@ -447,23 +447,23 @@ export default function CallActivity() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Attach scroll listener with throttling to prevent freezing
-  useEffect(() => {
-    const container = tableContainerRef.current;
-    if (!container) return;
+  // Infinite scroll DISABLED to prevent freezing - use manual Load More button instead
+  // useEffect(() => {
+  //   const container = tableContainerRef.current;
+  //   if (!container) return;
 
-    let timeoutId: number;
-    const throttledHandleScroll = () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = window.setTimeout(handleScroll, 150); // Throttle to 150ms
-    };
+  //   let timeoutId: number;
+  //   const throttledHandleScroll = () => {
+  //     if (timeoutId) clearTimeout(timeoutId);
+  //     timeoutId = window.setTimeout(handleScroll, 500); // Throttle to 500ms to reduce CPU load
+  //   };
 
-    container.addEventListener('scroll', throttledHandleScroll, { passive: true });
-    return () => {
-      container.removeEventListener('scroll', throttledHandleScroll);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [handleScroll]);
+  //   container.addEventListener('scroll', throttledHandleScroll, { passive: true });
+  //   return () => {
+  //     container.removeEventListener('scroll', throttledHandleScroll);
+  //     if (timeoutId) clearTimeout(timeoutId);
+  //   };
+  // }, [handleScroll]);
 
   const filteredCalls = useMemo(() => {
     if (!calls || !Array.isArray(calls)) return [];
