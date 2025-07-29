@@ -12,6 +12,7 @@ import CampaignDetail from "@/pages/campaign-detail";
 import Buyers from "@/pages/buyers";
 import Publishers from "@/pages/publishers";
 import Agents from "@/pages/agents";
+import Targets from "@/pages/targets";
 import CallControl from "@/pages/call-control";
 import IVRSetup from "@/pages/ivr-setup";
 import Integrations from "@/pages/integrations";
@@ -63,6 +64,7 @@ function Router() {
           <Route path="/buyers" component={Buyers} />
           <Route path="/publishers" component={Publishers} />
           <Route path="/agents" component={Agents} />
+          <Route path="/targets" component={Targets} />
 
           <Route path="/phone-numbers" component={PhoneNumbers} />
           <Route path="/rtb-management" component={RTBManagement} />

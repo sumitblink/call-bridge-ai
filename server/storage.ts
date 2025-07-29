@@ -9,6 +9,8 @@ import {
   type InsertUser,
   type Buyer,
   type InsertBuyer,
+  type Target,
+  type InsertTarget,
   type CampaignBuyer,
   type InsertCampaignBuyer,
   type CallLog,
@@ -71,6 +73,14 @@ export interface IStorage {
   getBuyerCampaignAssignments(buyerId: number): Promise<Campaign[]>;
   addBuyerToCampaign(campaignId: string | number, buyerId: number, priority?: number): Promise<CampaignBuyer>;
   removeBuyerFromCampaign(campaignId: string | number, buyerId: number): Promise<boolean>;
+
+  // Targets
+  getTargets(userId?: number): Promise<Target[]>;
+  getTargetsByBuyer(buyerId: number): Promise<Target[]>;
+  getTarget(id: number): Promise<Target | undefined>;
+  createTarget(target: InsertTarget): Promise<Target>;
+  updateTarget(id: number, target: Partial<InsertTarget>): Promise<Target | undefined>;
+  deleteTarget(id: number): Promise<boolean>;
   
 
   
