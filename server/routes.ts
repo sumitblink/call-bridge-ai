@@ -7620,6 +7620,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount call details router for enhanced call tracking
   app.use(callDetailsRouter);
 
+  // Recording playback endpoint with authentication
+  app.get('/api/recordings/:recordingSid', requireAuth, async (req: any, res) => {
+    try {
+      const { recordingSid } = req.params;
+      const userId = req.user?.id;
+      
+      // Verify the recording belongs to a call from user's campaigns
+      const userCampaigns = await storage.getCampaigns(userId);
+      const campaignIds = userCampaigns.map(c => String(c.id));
+      
+      const allCalls = await storage.getCalls();
+      const userCall = allCalls.find(call => 
+        call.recordingSid === recordingSid && 
+        campaignIds.includes(String(call.campaignId))
+      );
+      
+      if (!userCall) {
+        return res.status(404).json({ error: "Recording not found or access denied" });
+      }
+      
+      // Use Twilio service to get authenticated recording URL
+      try {
+        const recordingStatus = await twilioService.getRecordingStatus(recordingSid);
+        
+        if (recordingStatus.recordingUrl) {
+          // For now, we'll return the direct Twilio URL
+          // In production, you might want to proxy the audio through your server
+          res.json({ 
+            recordingUrl: recordingStatus.recordingUrl,
+            status: recordingStatus.status,
+            duration: recordingStatus.duration
+          });
+        } else {
+          res.status(404).json({ error: "Recording URL not available" });
+        }
+      } catch (twilioError) {
+        console.error("Twilio recording error:", twilioError);
+        res.status(500).json({ error: "Failed to retrieve recording from Twilio" });
+      }
+      
+    } catch (error) {
+      console.error("Error fetching recording:", error);
+      res.status(500).json({ error: "Failed to fetch recording" });
+    }
+  });
+
   // ============================================================================
   // TEST WEBHOOK ENDPOINTS FOR CALL FLOW TESTING
   // ============================================================================

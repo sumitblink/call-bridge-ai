@@ -144,15 +144,15 @@ function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="col-span-2">
                 <span className="text-gray-600">Recording:</span> 
-                {call.recordingUrl ? (
+                {call.recordingSid ? (
                   <div className="mt-1">
                     <audio controls className="w-full max-w-md">
-                      <source src={call.recordingUrl} type="audio/mpeg" />
+                      <source src={`/api/recordings/${call.recordingSid}`} type="audio/mpeg" />
                       Your browser does not support the audio element.
                     </audio>
                     <div className="text-xs text-gray-500 mt-1">
                       Duration: {call.recordingDuration ? `${call.recordingDuration}s` : 'Unknown'} | 
-                      Status: {call.recordingStatus || 'Unknown'}
+                      Status: {call.recordingStatus || 'completed'}
                     </div>
                   </div>
                 ) : (
@@ -407,16 +407,15 @@ export default function CallActivity() {
   const calls = callsData?.pages.flatMap((page: PaginatedResponse) => page.calls) || [];
   const totalCalls = callsData?.pages[0]?.pagination.total || 0;
 
-  // Debug pagination state
-  console.log('Pagination Debug:', {
-    pagesLoaded: callsData?.pages.length || 0,
-    totalCalls,
-    currentCallsCount: calls.length,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoadingCalls,
-    callsDataStructure: callsData?.pages?.[0] // Show the first page structure
-  });
+  // Debug pagination state (remove in production)
+  // console.log('Pagination Debug:', {
+  //   pagesLoaded: callsData?.pages.length || 0,
+  //   totalCalls,
+  //   currentCallsCount: calls.length,
+  //   hasNextPage,
+  //   isFetchingNextPage,
+  //   isLoadingCalls
+  // });
 
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"]
@@ -434,19 +433,7 @@ export default function CallActivity() {
     const { scrollTop, scrollHeight, clientHeight } = container;
     const scrolledToBottom = scrollTop + clientHeight >= scrollHeight - 200; // Load when 200px from bottom
 
-    console.log('Scroll Debug:', { 
-      scrollTop, 
-      scrollHeight, 
-      clientHeight, 
-      scrolledToBottom, 
-      hasNextPage, 
-      isFetchingNextPage,
-      totalCalls,
-      currentCallsCount: calls.length 
-    });
-
     if (scrolledToBottom) {
-      console.log('Triggering fetchNextPage...');
       fetchNextPage();
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, calls.length, totalCalls]);
