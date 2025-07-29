@@ -1133,7 +1133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Campaign Calls endpoint
+  // Campaign Calls endpoint - OPTIMIZED
   app.get('/api/campaigns/:id/calls', requireAuth, async (req: any, res) => {
     try {
       const campaignId = req.params.id; // UUID string, no parsing needed
@@ -1145,9 +1145,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Campaign not found" });
       }
       
-      // Get all calls and filter by campaign ID
-      const allCalls = await storage.getCalls();
-      const campaignCalls = allCalls.filter(call => String(call.campaignId) === String(campaignId));
+      // Use efficient method that directly queries by campaign ID
+      const campaignCalls = await storage.getCallsByCampaign(campaignId);
       
       res.json(campaignCalls);
     } catch (error) {

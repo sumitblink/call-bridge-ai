@@ -86,7 +86,7 @@ export interface IStorage {
 
   // Calls
   getCalls(): Promise<Call[]>;
-  getCallsByCampaign(campaignId: number): Promise<Call[]>;
+  getCallsByCampaign(campaignId: string | number): Promise<Call[]>;
   createCall(call: InsertCall): Promise<Call>;
   updateCall(id: number, updates: Partial<InsertCall>): Promise<Call | undefined>;
   
@@ -667,14 +667,15 @@ export class MemStorage implements IStorage {
     return calls;
   }
 
-  async getCallsByCampaign(campaignId: number): Promise<Call[]> {
+  async getCallsByCampaign(campaignId: string | number): Promise<Call[]> {
     const calls: Call[] = [];
+    const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
     for (const call of this.calls.values()) {
-      if (call.campaignId === campaignId) {
+      if (String(call.campaignId) === campaignIdStr) {
         calls.push(call);
       }
     }
-    return calls;
+    return calls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   async getCallsByUser(userId: number): Promise<Call[]> {

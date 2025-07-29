@@ -506,11 +506,12 @@ export class SupabaseStorage implements IStorage {
     return await db.select().from(calls).orderBy(desc(calls.createdAt));
   }
 
-  async getCallsByCampaign(campaignId: number): Promise<Call[]> {
-    const campaignIdStr = campaignId.toString();
+  async getCallsByCampaign(campaignId: string | number): Promise<Call[]> {
+    const campaignIdStr = typeof campaignId === 'string' ? campaignId : campaignId.toString();
     return await db.select().from(calls)
       .where(eq(calls.campaignId, campaignIdStr))
-      .orderBy(desc(calls.createdAt));
+      .orderBy(desc(calls.createdAt))
+      .limit(500); // Limit to prevent massive queries
   }
 
   async getCallsByUser(userId: number): Promise<Call[]> {
