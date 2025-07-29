@@ -121,10 +121,22 @@ export function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpand
           <span className="font-medium">Technical Details</span>
         </div>
         
-        <div className="flex flex-wrap gap-x-8 gap-y-2">
+        <div className="space-y-3">
           <div>
             <span className="text-gray-500">Recording:</span>
-            <span className="ml-2">{call.recordingUrl ? 'Available' : 'Not available'}</span>
+            {call.recordingUrl ? (
+              <div className="mt-2">
+                <audio controls className="w-full max-w-md">
+                  <source src={call.recordingUrl} type="audio/mpeg" />
+                  Your browser does not support the audio element.
+                </audio>
+                <div className="text-xs text-gray-400 mt-1">
+                  Status: Available | Format: MP3
+                </div>
+              </div>
+            ) : (
+              <span className="ml-2">Not available</span>
+            )}
           </div>
           <div>
             <span className="text-gray-500">Quality:</span>

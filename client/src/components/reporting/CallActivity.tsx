@@ -142,8 +142,22 @@ function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps
           </h4>
           <div className="bg-gray-50 p-2 rounded">
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-gray-600">Recording:</span> {call.recordingUrl ? 'Available' : 'Not available'}
+              <div className="col-span-2">
+                <span className="text-gray-600">Recording:</span> 
+                {call.recordingUrl ? (
+                  <div className="mt-1">
+                    <audio controls className="w-full max-w-md">
+                      <source src={call.recordingUrl} type="audio/mpeg" />
+                      Your browser does not support the audio element.
+                    </audio>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Duration: {call.recordingDuration ? `${call.recordingDuration}s` : 'Unknown'} | 
+                      Status: {call.recordingStatus || 'Unknown'}
+                    </div>
+                  </div>
+                ) : (
+                  <span className="ml-2">Not available</span>
+                )}
               </div>
               <div>
                 <span className="text-gray-600">Transcription:</span> {call.transcription ? 'Available' : 'Not available'}
