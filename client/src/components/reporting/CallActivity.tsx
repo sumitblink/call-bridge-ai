@@ -383,6 +383,16 @@ export default function CallActivity() {
   const calls = callsData?.pages.flatMap((page: PaginatedResponse) => page.calls) || [];
   const totalCalls = callsData?.pages[0]?.pagination.total || 0;
 
+  // Debug pagination state
+  console.log('Pagination Debug:', {
+    pagesLoaded: callsData?.pages.length || 0,
+    totalCalls,
+    currentCallsCount: calls.length,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoadingCalls
+  });
+
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"]
   });
@@ -399,10 +409,22 @@ export default function CallActivity() {
     const { scrollTop, scrollHeight, clientHeight } = container;
     const scrolledToBottom = scrollTop + clientHeight >= scrollHeight - 200; // Load when 200px from bottom
 
+    console.log('Scroll Debug:', { 
+      scrollTop, 
+      scrollHeight, 
+      clientHeight, 
+      scrolledToBottom, 
+      hasNextPage, 
+      isFetchingNextPage,
+      totalCalls,
+      currentCallsCount: calls.length 
+    });
+
     if (scrolledToBottom) {
+      console.log('Triggering fetchNextPage...');
       fetchNextPage();
     }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, calls.length, totalCalls]);
 
   // Attach scroll listener
   useEffect(() => {
