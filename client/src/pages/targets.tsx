@@ -227,7 +227,7 @@ export default function TargetsPage() {
               Create Target
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingTarget ? "Edit Target" : "Create New Target"}
@@ -237,203 +237,500 @@ export default function TargetsPage() {
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="buyerId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Buyer</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                
+                {/* Basic Information Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-lg font-semibold text-blue-600">
+                    <div className="w-1 h-6 bg-blue-600 rounded"></div>
+                    Basic Information
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="buyerId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Associated Buyer *</FormLabel>
+                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select buyer" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {buyers.map((buyer) => (
+                                <SelectItem key={buyer.id} value={buyer.id.toString()}>
+                                  {buyer.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Target Name *</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select buyer" />
-                            </SelectTrigger>
+                            <Input {...field} placeholder="Enter target name" />
                           </FormControl>
-                          <SelectContent>
-                            {buyers.map((buyer) => (
-                              <SelectItem key={buyer.id} value={buyer.id.toString()}>
-                                {buyer.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Target Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Target name" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Target Type</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="call">Call</SelectItem>
+                              <SelectItem value="lead">Lead</SelectItem>
+                              <SelectItem value="conversion">Conversion</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                    <FormField
+                      control={form.control}
+                      name="destination"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Destination Number *</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
+                            <Input {...field} placeholder="+1234567890" />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="call">Call</SelectItem>
-                            <SelectItem value="lead">Lead</SelectItem>
-                            <SelectItem value="conversion">Conversion</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="destination"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Destination</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Phone number or endpoint" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="paused">Paused</SelectItem>
+                              <SelectItem value="inactive">Inactive</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="paused">Paused</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Rate ($)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            value={field.value || 0}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="timeZone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Time Zone</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="UTC">UTC</SelectItem>
+                              <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                              <SelectItem value="America/Chicago">Central Time</SelectItem>
+                              <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                              <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
+                {/* Revenue & Rates Section */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Advanced Settings</h3>
-                  
+                  <div className="flex items-center gap-2 text-lg font-semibold text-green-600">
+                    <div className="w-1 h-6 bg-green-600 rounded"></div>
+                    Revenue & Rates
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="rate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Rate ($)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              value={field.value || 0}
+                              placeholder="0.00"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="estimatedRevenue"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Estimated Revenue ($)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              value={field.value || 0}
+                              placeholder="0.00"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="useEstimatedRevenue"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2 pt-8">
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                          <FormLabel>Use Estimated Revenue</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Carrier Settings Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-lg font-semibold text-purple-600">
+                    <div className="w-1 h-6 bg-purple-600 rounded"></div>
+                    Carrier Settings
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="maxConcurrency"
+                      name="carrier"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Max Concurrency</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              {...field} 
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 5)}
-                              value={field.value || 5}
-                            />
-                          </FormControl>
+                          <FormLabel>Carrier Type</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="conversion">Conversion</SelectItem>
+                              <SelectItem value="verizon">Verizon</SelectItem>
+                              <SelectItem value="att">AT&T</SelectItem>
+                              <SelectItem value="tmobile">T-Mobile</SelectItem>
+                              <SelectItem value="sprint">Sprint</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="priorityBump"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Priority Bump (-10 to +10)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              min="-10" 
-                              max="10" 
-                              {...field} 
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              value={field.value || 0}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                    <div className="space-y-3">
+                      <FormField
+                        control={form.control}
+                        name="globalCarrier"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel>Global Carrier</FormLabel>
+                          </FormItem>
+                        )}
+                      />
 
-                  <div className="space-y-2">
-                    <FormField
-                      control={form.control}
-                      name="enableMaxConcurrency"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <FormLabel>Enable Max Concurrency</FormLabel>
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name="healthCalc"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel>Health Calculation</FormLabel>
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="enablePredictiveRouting"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <FormLabel>Enable Predictive Routing</FormLabel>
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name="callCalc"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel>Call Calculation</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="hanifCalc"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel>Hanif Calculation</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-2">
+                {/* Concurrency & Capacity Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-lg font-semibold text-orange-600">
+                    <div className="w-1 h-6 bg-orange-600 rounded"></div>
+                    Concurrency & Capacity
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="enableMaxConcurrency"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel>Enable Max Concurrency</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="maxConcurrency"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Max Concurrent Calls</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="1"
+                                max="100"
+                                {...field} 
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 5)}
+                                value={field.value || 5}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="enableHourlyConcurrency"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel>Enable Hourly Limits</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="hourlyConcurrency"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Hourly Call Limit</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="1"
+                                max="1000"
+                                {...field} 
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 10)}
+                                value={field.value || 10}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Routing & Restrictions Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-lg font-semibold text-red-600">
+                    <div className="w-1 h-6 bg-red-600 rounded"></div>
+                    Routing & Restrictions
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="restrictDuplicates"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Restrict Duplicates</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="do_not_restrict">Do Not Restrict</SelectItem>
+                                <SelectItem value="by_phone">By Phone Number</SelectItem>
+                                <SelectItem value="by_caller_id">By Caller ID</SelectItem>
+                                <SelectItem value="by_both">By Phone & Caller ID</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="restrictDuplicatesCallSetting"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel>Apply to Call Settings</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="priorityBump"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Priority Bump (-10 to +10)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="-10" 
+                                max="10" 
+                                {...field} 
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                value={field.value || 0}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="enablePredictiveRouting"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel>Enable Predictive Routing</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="enableShareableTags"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel>Enable Shareable Tags</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="overrideShareableTags"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel>Override Shareable Tags</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="enableTagRoutingFilters"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel>Enable Tag Routing Filters</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-4 pt-6 border-t">
                   <Button 
                     type="button" 
                     variant="outline" 
@@ -444,6 +741,7 @@ export default function TargetsPage() {
                   <Button 
                     type="submit" 
                     disabled={createTargetMutation.isPending || updateTargetMutation.isPending}
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
                     {(createTargetMutation.isPending || updateTargetMutation.isPending) 
                       ? "Saving..." 
