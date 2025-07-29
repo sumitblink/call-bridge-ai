@@ -206,13 +206,13 @@ export default function TargetsPage() {
     setEditingTarget(target);
     form.reset({
       name: target.name || "",
-      subId: target.subId || "",
+      subId: (target as any).subId || "",
       type: (target.type as "number" | "sip") || "number",
       destination: target.destination || "",
-      connectionTimeout: target.connectionTimeout || 30,
-      disableRecording: target.disableRecording || false,
+      connectionTimeout: (target as any).connectionTimeout || 30,
+      disableRecording: (target as any).disableRecording || false,
       timeZone: target.timeZone || "UTC",
-      hoursOfOperation: (target.hoursOfOperation as "basic" | "advanced") || "basic",
+      hoursOfOperation: ((target as any).hoursOfOperation as "basic" | "advanced") || "basic",
       status: target.status || "active",
       buyerId: target.buyerId,
       rate: typeof target.rate === 'string' ? parseFloat(target.rate) : target.rate || 0,
@@ -339,14 +339,14 @@ export default function TargetsPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Buyer <span className="text-sm text-muted-foreground">(The Buyer that owns this target - optional)</span></FormLabel>
-                          <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : null)} value={field.value?.toString() || ""}>
+                          <Select onValueChange={(value) => field.onChange(value === "no_buyer" ? null : parseInt(value))} value={field.value?.toString() || "no_buyer"}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select buyer (optional)" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">No buyer</SelectItem>
+                              <SelectItem value="no_buyer">No buyer</SelectItem>
                               {buyers.map((buyer) => (
                                 <SelectItem key={buyer.id} value={buyer.id.toString()}>
                                   {buyer.name}

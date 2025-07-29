@@ -886,7 +886,7 @@ export const insertTargetSchema = createInsertSchema(targets).omit({
   updatedAt: true,
 }).extend({
   userId: z.number().optional(),
-  buyerId: z.number().optional(), // Made optional as per user requirements
+  buyerId: z.number().optional().nullable(), // Made optional and nullable as per user requirements
   name: z.string().min(1, "Target name is required"),
   subId: z.string().optional(),
   type: z.enum(["number", "sip"]).default("number"),
