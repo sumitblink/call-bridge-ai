@@ -231,10 +231,43 @@ router.get('/timeline', requireAuth, async (req, res) => {
     }
 
     // Get real call data - limit to recent calls for performance
-    const calls = await storage.getCallsByUser(userId);
+    const allCalls = await storage.getCallsByUser(userId);
+    
+    // Filter calls based on date range
+    let calls = allCalls;
+    const now = new Date();
+    
+    if (dateRange === 'today') {
+      const today = now.toISOString().split('T')[0];
+      calls = allCalls.filter(call => call.createdAt.startsWith(today));
+    } else if (dateRange === 'yesterday') {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      calls = allCalls.filter(call => call.createdAt.startsWith(yesterdayStr));
+    } else if (dateRange === '7days') {
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      calls = allCalls.filter(call => new Date(call.createdAt) >= sevenDaysAgo);
+    } else if (dateRange === '30days') {
+      const thirtyDaysAgo = new Date(now);
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      calls = allCalls.filter(call => new Date(call.createdAt) >= thirtyDaysAgo);
+    }
+    
     const timelineData = [];
     
-    if (groupBy === 'hour') {
+    // Determine grouping - auto chooses best based on date range
+    let actualGroupBy = groupBy;
+    if (groupBy === 'auto') {
+      if (dateRange === 'today' || dateRange === 'yesterday') {
+        actualGroupBy = 'hour';
+      } else {
+        actualGroupBy = 'day';
+      }
+    }
+    
+    if (actualGroupBy === 'hour') {
       // Group calls by hour
       const callsByHour = new Map<string, any[]>();
       
@@ -267,7 +300,7 @@ router.get('/timeline', requireAuth, async (req, res) => {
           cost
         });
       }
-    } else if (groupBy === 'day') {
+    } else if (actualGroupBy === 'day') {
       // Group calls by day for last 7 days
       const callsByDay = new Map<string, any[]>();
       
@@ -281,11 +314,20 @@ router.get('/timeline', requireAuth, async (req, res) => {
         callsByDay.get(day)!.push(call);
       });
       
-      // Generate last 7 days
-      const now = new Date();
-      for (let i = 6; i >= 0; i--) {
+      // Generate days based on date range
+      let daysToShow = 7;
+      if (dateRange === '30days') daysToShow = 30;
+      if (dateRange === '7days') daysToShow = 7;
+      if (dateRange === 'today') daysToShow = 1;
+      if (dateRange === 'yesterday') daysToShow = 1;
+      
+      for (let i = daysToShow - 1; i >= 0; i--) {
         const date = new Date(now);
-        date.setDate(date.getDate() - i);
+        if (dateRange === 'yesterday') {
+          date.setDate(date.getDate() - 1);
+        } else {
+          date.setDate(date.getDate() - i);
+        }
         const day = date.toISOString().split('T')[0];
         const dayCalls = callsByDay.get(day) || [];
         const callCount = dayCalls.length;
