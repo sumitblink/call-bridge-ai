@@ -516,67 +516,17 @@ export class SupabaseStorage implements IStorage {
 
   async getCallsByUser(userId: number): Promise<Call[]> {
     try {
-      // Use direct JOIN query instead of two-step process for better performance
+      // Use simple select to avoid field mapping issues
       const result = await db
-        .select({
-          id: calls.id,
-          campaignId: calls.campaignId,
-          buyerId: calls.buyerId,
-          publisherId: calls.publisherId,
-          callSid: calls.callSid,
-          fromNumber: calls.fromNumber,
-          toNumber: calls.toNumber,
-          dialedNumber: calls.dialedNumber,
-          duration: calls.duration,
-          ringTime: calls.ringTime,
-          talkTime: calls.talkTime,
-          holdTime: calls.holdTime,
-          status: calls.status,
-          disposition: calls.disposition,
-          hangupCause: calls.hangupCause,
-          callQuality: calls.callQuality,
-          connectionTime: calls.connectionTime,
-          audioQuality: calls.audioQuality,
-          isDuplicate: calls.isDuplicate,
-          cost: calls.cost,
-          revenue: calls.revenue,
-          payout: calls.payout,
-          profit: calls.profit,
-          margin: calls.margin,
-          tags: calls.tags,
-          utmSource: calls.utmSource,
-          utmMedium: calls.utmMedium,
-          utmCampaign: calls.utmCampaign,
-          utmContent: calls.utmContent,
-          utmTerm: calls.utmTerm,
-          referrer: calls.referrer,
-          landingPage: calls.landingPage,
-          geoLocation: calls.geoLocation,
-          city: calls.city,
-          state: calls.state,
-          country: calls.country,
-          zipCode: calls.zipCode,
-          ipAddress: calls.ipAddress,
-          deviceType: calls.deviceType,
-          browser: calls.browser,
-          os: calls.os,
-          clickId: calls.clickId,
-          conversionPayout: calls.conversionPayout,
-          createdAt: calls.createdAt,
-          updatedAt: calls.updatedAt,
-          recordingUrl: calls.recordingUrl,
-          recordingSid: calls.recordingSid,
-          routingDecisionId: calls.routingDecisionId,
-          rtbRequestId: calls.rtbRequestId,
-          numberPoolId: calls.numberPoolId,
-        })
+        .select()
         .from(calls)
         .innerJoin(campaigns, eq(calls.campaignId, campaigns.id))
         .where(eq(campaigns.userId, userId))
         .orderBy(desc(calls.createdAt))
         .limit(1000); // Limit to prevent massive queries
       
-      return result;
+      // Extract just the calls data from the joined result
+      return result.map(row => row.calls);
     } catch (error) {
       console.error('Error fetching calls by user:', error);
       return [];
