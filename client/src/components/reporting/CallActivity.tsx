@@ -438,14 +438,23 @@ export default function CallActivity() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Attach scroll listener - DISABLED to prevent freezing
-  // useEffect(() => {
-  //   const container = tableContainerRef.current;
-  //   if (container) {
-  //     container.addEventListener('scroll', handleScroll);
-  //     return () => container.removeEventListener('scroll', handleScroll);
-  //   }
-  // }, [handleScroll]);
+  // Attach scroll listener with throttling to prevent freezing
+  useEffect(() => {
+    const container = tableContainerRef.current;
+    if (!container) return;
+
+    let timeoutId: number;
+    const throttledHandleScroll = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(handleScroll, 150); // Throttle to 150ms
+    };
+
+    container.addEventListener('scroll', throttledHandleScroll, { passive: true });
+    return () => {
+      container.removeEventListener('scroll', throttledHandleScroll);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [handleScroll]);
 
   const filteredCalls = useMemo(() => {
     if (!calls || !Array.isArray(calls)) return [];
@@ -887,13 +896,35 @@ export default function CallActivity() {
               </div>
             )}
             
-            {/* Total count indicator */}
+            {/* Load More Button and Total count indicator */}
             {calls.length > 0 && (
-              <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-t text-xs text-muted-foreground">
-                <span>Showing {calls.length} of {totalCalls} total calls</span>
-                {hasNextPage && !isFetchingNextPage && (
-                  <span>Scroll down to load more</span>
+              <div className="border-t bg-muted/20">
+                {hasNextPage && (
+                  <div className="flex justify-center py-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                      className="text-xs"
+                    >
+                      {isFetchingNextPage ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                          <span>Loading...</span>
+                        </div>
+                      ) : (
+                        `Load More Calls (${totalCalls - calls.length} remaining)`
+                      )}
+                    </Button>
+                  </div>
                 )}
+                <div className="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground">
+                  <span>Showing {calls.length} of {totalCalls} total calls</span>
+                  {hasNextPage && !isFetchingNextPage && (
+                    <span>Scroll down or click "Load More" to see more</span>
+                  )}
+                </div>
               </div>
             )}
             </div>

@@ -114,6 +114,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 29, 2025: **INFINITE SCROLL LOAD MORE FUNCTIONALITY RESTORED** - Fixed disabled infinite scroll in Enhanced Reporting Call Details table that was preventing "scroll down to load more" from working
+  - **Infinite Scroll Re-enabled**: Restored scroll listener with throttling (150ms) and passive event handling to prevent performance issues
+  - **Load More Button Added**: Added manual "Load More" button as backup option showing remaining call count
+  - **Performance Optimized**: Implemented proper throttling and cleanup to prevent the freezing issues that caused original disable
+  - **Dual Interface**: Users can now either scroll down OR click "Load More" button to paginate through large call datasets
+  - **Status**: Both infinite scroll and manual load more now fully operational for Enhanced Reporting pagination
 - July 29, 2025: **RTB AUCTION DATA DISPLAY BUG COMPLETELY FIXED** - Resolved critical issue where frontend displayed incorrect auction data (6 bidders, 2 winners) instead of actual data (3 bidders, 1 winner per auction)
   - **Root Cause Fixed**: supabase-storage.ts getRtbBidResponses method was returning ALL bid responses instead of filtering by specific requestId
   - **Database Query Corrected**: Added proper WHERE clause filtering and orderBy descending bid amount for accurate data retrieval
