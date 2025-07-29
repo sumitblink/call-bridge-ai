@@ -4692,6 +4692,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Recording playback endpoint
+  app.get('/api/recordings/:recordingSid', async (req, res) => {
+    try {
+      const { recordingSid } = req.params;
+      
+      if (!recordingSid) {
+        return res.status(400).json({ error: "Recording SID is required" });
+      }
+
+      const recordingStatus = await twilioService.getRecordingStatus(recordingSid);
+      
+      if (recordingStatus.recordingUrl) {
+        // Proxy the audio through our server to handle authentication
+        const response = await fetch(recordingStatus.recordingUrl, {
+          headers: {
+            'Authorization': 'Basic ' + Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')
+          }
+        });
+        
+        if (response.ok) {
+          res.setHeader('Content-Type', 'audio/mpeg');
+          res.setHeader('Content-Disposition', `inline; filename="recording-${recordingSid}.mp3"`);
+          response.body?.pipe(res);
+        } else {
+          res.status(404).json({ error: "Recording not accessible" });
+        }
+      } else {
+        res.status(404).json({ error: "Recording URL not available" });
+      }
+    } catch (error) {
+      console.error("Error fetching recording:", error);
+      res.status(500).json({ error: "Failed to fetch recording" });
+    }
+  });
+
   // Campaign-specific test call endpoint
   app.post('/api/campaigns/test-call', async (req, res) => {
     try {
@@ -7638,8 +7673,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const recordingStatus = await twilioService.getRecordingStatus(recordingSid);
         
         if (recordingStatus.recordingUrl) {
-          // Redirect to the actual Twilio recording URL for direct audio streaming
-          res.redirect(recordingStatus.recordingUrl);
+          // Proxy the audio through our server to handle authentication
+          const response = await fetch(recordingStatus.recordingUrl, {
+            headers: {
+              'Authorization': 'Basic ' + Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')
+            }
+          });
+          
+          if (response.ok) {
+            res.setHeader('Content-Type', 'audio/mpeg');
+            res.setHeader('Content-Disposition', `inline; filename="recording-${recordingSid}.mp3"`);
+            response.body?.pipe(res);
+          } else {
+            res.status(404).json({ error: "Recording not accessible" });
+          }
         } else {
           res.status(404).json({ error: "Recording URL not available" });
         }
