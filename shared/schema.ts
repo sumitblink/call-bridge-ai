@@ -122,7 +122,7 @@ export const targets = pgTable("targets", {
   
   // Time & Date Filtering
   timeZone: varchar("time_zone", { length: 50 }).default("UTC"),
-  operatingHours: json("operating_hours"), // {start: "09:00", end: "17:00", days: ["mon", "tue"]}
+  operatingHours: json("operating_hours"), // {mode: "basic|advanced", basic: {start: "09:00", end: "17:00", breaks: []}, advanced: {days: {...}}}
   operatingDays: json("operating_days"), // array of allowed days
   operatingMonths: json("operating_months"), // array of allowed months
   

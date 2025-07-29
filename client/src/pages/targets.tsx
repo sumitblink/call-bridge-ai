@@ -13,12 +13,23 @@ import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTargetSchema, type Target, type InsertTarget, type Buyer } from "@shared/schema";
-import { Plus, Edit, Trash2, Target as TargetIcon, User, Phone, DollarSign, Clock, AlertCircle } from "lucide-react";
+import { Plus, Edit, Trash2, Target as TargetIcon, User, Phone, DollarSign, Clock, AlertCircle, Settings, Zap, Shield, Filter, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
+// Comprehensive timezone list
+const TIMEZONES = [
+  "UTC", "GMT", "EST", "CST", "MST", "PST", "EDT", "CDT", "MDT", "PDT",
+  "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+  "America/Phoenix", "America/Anchorage", "Pacific/Honolulu", "Europe/London",
+  "Europe/Paris", "Europe/Berlin", "Europe/Rome", "Europe/Madrid", "Europe/Amsterdam",
+  "Asia/Tokyo", "Asia/Shanghai", "Asia/Mumbai", "Asia/Dubai", "Australia/Sydney",
+  "America/Toronto", "America/Vancouver", "America/Mexico_City", "America/Sao_Paulo",
+  "Africa/Cairo", "Asia/Singapore", "Asia/Hong_Kong", "Europe/Stockholm"
+];
+
 const targetFormSchema = insertTargetSchema.extend({
-  buyerId: z.number().min(1, "Buyer is required"),
+  buyerId: z.number().optional().nullable(),
   name: z.string().min(1, "Target name is required"),
   destination: z.string().min(1, "Destination is required"),
   rate: z.number().min(0, "Rate must be positive").optional(),
@@ -35,6 +46,7 @@ export default function TargetsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
   const [selectedBuyerId, setSelectedBuyerId] = useState<number | null>(null);
+  const [hoursMode, setHoursMode] = useState<"basic" | "advanced">("basic");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -451,12 +463,12 @@ export default function TargetsPage() {
                               <SelectValue placeholder="UTC" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="UTC">UTC</SelectItem>
-                            <SelectItem value="America/New_York">Eastern</SelectItem>
-                            <SelectItem value="America/Chicago">Central</SelectItem>
-                            <SelectItem value="America/Denver">Mountain</SelectItem>
-                            <SelectItem value="America/Los_Angeles">Pacific</SelectItem>
+                          <SelectContent className="max-h-40">
+                            {TIMEZONES.map((tz) => (
+                              <SelectItem key={tz} value={tz} className="text-xs">
+                                {tz}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -473,19 +485,25 @@ export default function TargetsPage() {
                         <div className="flex border rounded p-0.5 bg-muted">
                           <Button
                             type="button"
-                            variant={field.value === "basic" ? "default" : "ghost"}
+                            variant={hoursMode === "basic" ? "default" : "ghost"}
                             size="sm"
                             className="flex-1 h-6 text-xs px-1"
-                            onClick={() => field.onChange("basic")}
+                            onClick={() => {
+                              setHoursMode("basic");
+                              field.onChange("basic");
+                            }}
                           >
                             Basic
                           </Button>
                           <Button
                             type="button"
-                            variant={field.value === "advanced" ? "default" : "ghost"}
+                            variant={hoursMode === "advanced" ? "default" : "ghost"}
                             size="sm"
                             className="flex-1 h-6 text-xs px-1"
-                            onClick={() => field.onChange("advanced")}
+                            onClick={() => {
+                              setHoursMode("advanced");
+                              field.onChange("advanced");
+                            }}
                           >
                             Advanced
                           </Button>
@@ -546,6 +564,141 @@ export default function TargetsPage() {
                       </FormItem>
                     )}
                   />
+                </div>
+
+                {/* Hours of Operation Configuration */}
+                {hoursMode === "basic" && (
+                  <div className="mt-4 p-3 border rounded-lg bg-gray-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Basic Hours of Operation
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-gray-600">Open Time</label>
+                        <Input className="h-7 text-xs mt-1" type="time" defaultValue="09:00" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">Close Time</label>
+                        <Input className="h-7 text-xs mt-1" type="time" defaultValue="17:00" />
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <Button type="button" variant="outline" size="sm" className="h-6 text-xs">
+                        Add Break
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {hoursMode === "advanced" && (
+                  <div className="mt-4 p-3 border rounded-lg bg-gray-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
+                      <Settings className="h-3 w-3" />
+                      Advanced Hours of Operation
+                    </h4>
+                    <div className="space-y-2">
+                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                        <div key={day} className="flex items-center gap-2">
+                          <Switch className="h-4 w-6" defaultChecked />
+                          <span className="text-xs w-16">{day.slice(0, 3)}</span>
+                          <Input className="h-6 text-xs flex-1" type="time" defaultValue="09:00" />
+                          <span className="text-xs">to</span>
+                          <Input className="h-6 text-xs flex-1" type="time" defaultValue="17:00" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Enhanced Settings Sections */}
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Cap Settings */}
+                  <div className="p-3 border rounded-lg bg-blue-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-blue-700">
+                      <Shield className="h-3 w-3" />
+                      Cap Settings
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Switch className="h-4 w-6" />
+                        <span className="text-xs">Daily Cap</span>
+                        <Input className="h-6 text-xs w-16 ml-auto" type="number" placeholder="100" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch className="h-4 w-6" />
+                        <span className="text-xs">Hourly Cap</span>
+                        <Input className="h-6 text-xs w-16 ml-auto" type="number" placeholder="10" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Concurrency Settings */}
+                  <div className="p-3 border rounded-lg bg-green-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-green-700">
+                      <Zap className="h-3 w-3" />
+                      Concurrency Settings
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Switch className="h-4 w-6" />
+                        <span className="text-xs">Max Concurrent</span>
+                        <Input className="h-6 text-xs w-16 ml-auto" type="number" placeholder="5" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch className="h-4 w-6" />
+                        <span className="text-xs">Hourly Limit</span>
+                        <Input className="h-6 text-xs w-16 ml-auto" type="number" placeholder="50" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Duplicate Call Settings */}
+                  <div className="p-3 border rounded-lg bg-yellow-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-yellow-700">
+                      <Filter className="h-3 w-3" />
+                      Restrict Duplicate Call Settings
+                    </h4>
+                    <div className="space-y-2">
+                      <Select defaultValue="do_not_restrict">
+                        <SelectTrigger className="h-6 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="do_not_restrict">Do Not Restrict</SelectItem>
+                          <SelectItem value="by_phone">By Phone Number</SelectItem>
+                          <SelectItem value="by_caller_id">By Caller ID</SelectItem>
+                          <SelectItem value="by_both">By Both</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex items-center gap-2">
+                        <Switch className="h-4 w-6" />
+                        <span className="text-xs">Enable Call Setting</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Predictive Routing Settings */}
+                  <div className="p-3 border rounded-lg bg-purple-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-purple-700">
+                      <Pencil className="h-3 w-3" />
+                      Predictive Routing Settings
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Switch className="h-4 w-6" />
+                        <span className="text-xs">Enable Predictive</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">Priority Bump</span>
+                        <Input className="h-6 text-xs w-16 ml-auto" type="number" placeholder="0" min="-10" max="10" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch className="h-4 w-6" />
+                        <span className="text-xs">Shareable Tags</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <DialogFooter>
