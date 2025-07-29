@@ -291,201 +291,172 @@ export default function TargetsPage() {
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
                 
-                {/* Basic Target Information */}
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Target ID</label>
-                      <Input 
-                        value={editingTarget?.id ? `Target #${editingTarget.id}` : "Auto-generated"} 
-                        disabled 
-                        className="bg-muted"
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name *</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Enter target name" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="subId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Sub ID</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Enter sub ID" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="buyerId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Buyer <span className="text-sm text-muted-foreground">(The Buyer that owns this target - optional)</span></FormLabel>
-                          <Select onValueChange={(value) => field.onChange(value === "no_buyer" ? null : parseInt(value))} value={field.value?.toString() || "no_buyer"}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select buyer (optional)" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="no_buyer">No buyer</SelectItem>
-                              {buyers.map((buyer) => (
-                                <SelectItem key={buyer.id} value={buyer.id.toString()}>
-                                  {buyer.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                {/* Row 1: Basic Info */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div>
+                    <label className="text-xs font-medium">Target ID</label>
+                    <Input 
+                      value={editingTarget?.id ? `#${editingTarget.id}` : "Auto-gen"} 
+                      disabled 
+                      className="bg-muted h-7 text-xs"
                     />
                   </div>
 
-                  {/* Type Selection with Tabs */}
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Type <span className="text-sm text-muted-foreground">(Select either a phone number or SIP endpoint to route your calls to this target)</span></FormLabel>
-                          <div className="flex space-x-1 border rounded-lg p-1 bg-muted">
-                            <Button
-                              type="button"
-                              variant={field.value === "number" ? "default" : "ghost"}
-                              className="flex-1"
-                              onClick={() => field.onChange("number")}
-                            >
-                              Number
-                            </Button>
-                            <Button
-                              type="button"
-                              variant={field.value === "sip" ? "default" : "ghost"}
-                              className="flex-1"
-                              onClick={() => field.onChange("sip")}
-                            >
-                              SIP
-                            </Button>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Name *</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Target name" className="h-7 text-xs" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={form.control}
-                      name="destination"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            {form.watch("type") === "sip" ? "SIP Endpoint" : "Number"} *
-                            {form.watch("type") === "number" && (
-                              <span className="text-sm text-muted-foreground block">
-                                Phone number should follow this format +(country code)(phonenumber)
-                              </span>
-                            )}
-                          </FormLabel>
+                  <FormField
+                    control={form.control}
+                    name="subId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Sub ID</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Sub ID" className="h-7 text-xs" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="buyerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Buyer</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(value === "no_buyer" ? null : parseInt(value))} value={field.value?.toString() || "no_buyer"}>
                           <FormControl>
-                            <Input 
-                              {...field} 
-                              placeholder={form.watch("type") === "sip" ? "sip:user@domain.com" : "+1234567890"}
-                              required
-                            />
+                            <SelectTrigger className="h-7 text-xs">
+                              <SelectValue placeholder="Optional" />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                          <SelectContent>
+                            <SelectItem value="no_buyer">No buyer</SelectItem>
+                            {buyers.map((buyer) => (
+                              <SelectItem key={buyer.id} value={buyer.id.toString()}>
+                                {buyer.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                  {/* Connection and Settings */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="connectionTimeout"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Connection Timeout (seconds)
-                            <span className="text-sm text-muted-foreground block">
-                              If this target does not answer a call within the specified amount of seconds, the call will be re-routed. If the duration is set to 0, it will assume a default of 30 seconds.
-                            </span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              min="0"
-                              max="300"
-                              {...field} 
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              value={field.value || 30}
-                              placeholder="30"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                {/* Row 2: Type & Destination */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Type</FormLabel>
+                        <div className="flex border rounded p-0.5 bg-muted">
+                          <Button
+                            type="button"
+                            variant={field.value === "number" ? "default" : "ghost"}
+                            size="sm"
+                            className="flex-1 h-6 text-xs px-1"
+                            onClick={() => field.onChange("number")}
+                          >
+                            Number
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={field.value === "sip" ? "default" : "ghost"}
+                            size="sm"
+                            className="flex-1 h-6 text-xs px-1"
+                            onClick={() => field.onChange("sip")}
+                          >
+                            SIP
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={form.control}
-                      name="disableRecording"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 pt-8">
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <FormLabel>Disable Recording</FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="destination"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel className="text-xs">
+                          {form.watch("type") === "sip" ? "SIP Endpoint" : "Number"} *
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder={form.watch("type") === "sip" ? "sip:user@domain.com" : "+(country)(number)"}
+                            className="h-7 text-xs"
+                            required
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                  {/* Timezone */}
+                  <FormField
+                    control={form.control}
+                    name="connectionTimeout"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Timeout (sec)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="0"
+                            max="300"
+                            {...field} 
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            value={field.value || 30}
+                            placeholder="30"
+                            className="h-7 text-xs"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Row 3: Settings */}
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
                   <FormField
                     control={form.control}
                     name="timeZone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Timezone</FormLabel>
+                        <FormLabel className="text-xs">Timezone</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select timezone" />
+                            <SelectTrigger className="h-7 text-xs">
+                              <SelectValue placeholder="UTC" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="UTC">UTC - Coordinated Universal Time</SelectItem>
-                            <SelectItem value="America/New_York">Eastern Time (EST/EDT)</SelectItem>
-                            <SelectItem value="America/Chicago">Central Time (CST/CDT)</SelectItem>
-                            <SelectItem value="America/Denver">Mountain Time (MST/MDT)</SelectItem>
-                            <SelectItem value="America/Los_Angeles">Pacific Time (PST/PDT)</SelectItem>
-                            <SelectItem value="America/Phoenix">Arizona Time (MST)</SelectItem>
-                            <SelectItem value="America/Anchorage">Alaska Time (AKST/AKDT)</SelectItem>
-                            <SelectItem value="Pacific/Honolulu">Hawaii Time (HST)</SelectItem>
-                            <SelectItem value="Europe/London">London Time (GMT/BST)</SelectItem>
-                            <SelectItem value="Europe/Paris">Central European Time (CET/CEST)</SelectItem>
-                            <SelectItem value="Asia/Tokyo">Japan Time (JST)</SelectItem>
-                            <SelectItem value="Australia/Sydney">Australian Eastern Time (AEST/AEDT)</SelectItem>
+                            <SelectItem value="UTC">UTC</SelectItem>
+                            <SelectItem value="America/New_York">Eastern</SelectItem>
+                            <SelectItem value="America/Chicago">Central</SelectItem>
+                            <SelectItem value="America/Denver">Mountain</SelectItem>
+                            <SelectItem value="America/Los_Angeles">Pacific</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -493,18 +464,18 @@ export default function TargetsPage() {
                     )}
                   />
 
-                  {/* Hours of Operation */}
                   <FormField
                     control={form.control}
                     name="hoursOfOperation"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Hours of Operation</FormLabel>
-                        <div className="flex space-x-1 border rounded-lg p-1 bg-muted">
+                        <FormLabel className="text-xs">Hours</FormLabel>
+                        <div className="flex border rounded p-0.5 bg-muted">
                           <Button
                             type="button"
                             variant={field.value === "basic" ? "default" : "ghost"}
-                            className="flex-1"
+                            size="sm"
+                            className="flex-1 h-6 text-xs px-1"
                             onClick={() => field.onChange("basic")}
                           >
                             Basic
@@ -512,7 +483,8 @@ export default function TargetsPage() {
                           <Button
                             type="button"
                             variant={field.value === "advanced" ? "default" : "ghost"}
-                            className="flex-1"
+                            size="sm"
+                            className="flex-1 h-6 text-xs px-1"
                             onClick={() => field.onChange("advanced")}
                           >
                             Advanced
@@ -522,229 +494,46 @@ export default function TargetsPage() {
                       </FormItem>
                     )}
                   />
-                </div>
 
-                {/* Cap Settings */}
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="text-lg font-semibold">Cap Settings</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="carrier"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cap On</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Connection" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="connection">Connection</SelectItem>
-                                <SelectItem value="conversion">Conversion</SelectItem>
-                                <SelectItem value="answered">Answered</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                  <FormField
+                    control={form.control}
+                    name="disableRecording"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="text-xs">Disable Recording</FormLabel>
+                      </FormItem>
+                    )}
+                  />
 
-                      <div className="space-y-2">
-                        <FormField
-                          control={form.control}
-                          name="globalCarrier"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                              </FormControl>
-                              <FormLabel>Global Cap On</FormLabel>
-                            </FormItem>
-                          )}
-                        />
+                  <FormField
+                    control={form.control}
+                    name="enableMaxConcurrency"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="text-xs">Max Concurrency</FormLabel>
+                      </FormItem>
+                    )}
+                  />
 
-                        <FormField
-                          control={form.control}
-                          name="healthCalc"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                              </FormControl>
-                              <FormLabel>Monthly Cap On</FormLabel>
-                            </FormItem>
-                          )}
-                        />
+                  <FormField
+                    control={form.control}
+                    name="enablePredictiveRouting"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="text-xs">Predictive Routing</FormLabel>
+                      </FormItem>
+                    )}
+                  />
 
-                        <FormField
-                          control={form.control}
-                          name="callCalc"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                              </FormControl>
-                              <FormLabel>Daily Cap On</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="hanifCalc"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                              </FormControl>
-                              <FormLabel>Hourly Cap On</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className="text-right text-sm text-muted-foreground">
-                        <div>None</div>
-                        <div>None</div>
-                        <div>50 <Button variant="ghost" size="sm" className="ml-2 text-blue-600">ADVANCED</Button> <Button variant="ghost" size="sm" className="ml-1 text-blue-600">RESET</Button></div>
-                        <div>None</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Concurrency Settings */}
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="text-lg font-semibold">Concurrency Settings</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="enableMaxConcurrency"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <FormLabel>Max Concurrency On</FormLabel>
-                          <div className="ml-auto">2</div>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="enableHourlyConcurrency"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <FormLabel>Hourly Concurrency On</FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Additional Settings from Screenshot */}
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="text-lg font-semibold">Restrict Duplicate Call Settings</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="restrictDuplicates"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Restrict Duplicate</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Buyer Settings (Do not Restrict)" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="do_not_restrict">Buyer Settings (Do not Restrict)</SelectItem>
-                              <SelectItem value="by_phone">By Phone Number</SelectItem>
-                              <SelectItem value="by_caller_id">By Caller ID</SelectItem>
-                              <SelectItem value="by_both">By Phone & Caller ID</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Predictive Routing Settings */}
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="text-lg font-semibold">Predictive Routing Settings</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="estimatedRevenue"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Estimated Revenue</FormLabel>
-                          <div className="flex space-x-1 border rounded-lg p-1 bg-muted">
-                            <Button
-                              type="button"
-                              variant={field.value === "use_campaign" ? "default" : "ghost"}
-                              className="flex-1 text-xs"
-                              onClick={() => field.onChange("use_campaign")}
-                            >
-                              Use Campaign Setting
-                            </Button>
-                            <Button
-                              type="button"
-                              variant={field.value === "use_estimated" ? "default" : "ghost"}
-                              className="flex-1 text-xs"
-                              onClick={() => field.onChange("use_estimated")}
-                            >
-                              Use Estimated Revenue
-                            </Button>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="priorityBump"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Priority Bump</FormLabel>
-                          <div className="flex items-center space-x-2">
-                            <input 
-                              type="range"
-                              min="-10"
-                              max="10"
-                              value={field.value || 0}
-                              onChange={(e) => field.onChange(parseInt(e.target.value))}
-                              className="flex-1"
-                            />
-                            <span className="text-sm text-muted-foreground w-16">Default</span>
-                            <span className="text-sm font-medium w-8">+0</span>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Shareable Tags */}
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="text-lg font-semibold">Shareable Tags</h3>
-                  
                   <FormField
                     control={form.control}
                     name="overrideShareableTags"
@@ -753,32 +542,20 @@ export default function TargetsPage() {
                         <FormControl>
                           <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
-                        <FormLabel>Override Shareable Tags On</FormLabel>
+                        <FormLabel className="text-xs">Override Tags</FormLabel>
                       </FormItem>
                     )}
                   />
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex justify-end space-x-4 pt-6 border-t">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsCreateDialogOpen(false)}
-                  >
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={createTargetMutation.isPending || updateTargetMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {(createTargetMutation.isPending || updateTargetMutation.isPending) 
-                      ? "Saving..." 
-                      : editingTarget ? "Update Target" : "Create Target"
-                    }
+                  <Button type="submit" disabled={createTargetMutation.isPending || updateTargetMutation.isPending}>
+                    {createTargetMutation.isPending || updateTargetMutation.isPending ? "Saving..." : editingTarget ? "Update Target" : "Create Target"}
                   </Button>
-                </div>
+                </DialogFooter>
               </form>
             </Form>
           </DialogContent>
@@ -852,24 +629,39 @@ export default function TargetsPage() {
                     <TableCell>{target.buyerName}</TableCell>
                     <TableCell>{getTypeBadge(target.type)}</TableCell>
                     <TableCell className="font-mono text-sm">{target.destination}</TableCell>
-                    <TableCell>${parseFloat(target.rate || "0").toFixed(2)}</TableCell>
-                    <TableCell>{getStatusBadge(target.status)}</TableCell>
-                    <TableCell>
-                      {target.enableMaxConcurrency ? target.maxConcurrency : "Unlimited"}
-                    </TableCell>
+                    <TableCell>${target.defaultPayout || "0.00"}</TableCell>
+                    <TableCell>{getStatusBadge("Active")}</TableCell>
+                    <TableCell>{target.enableMaxConcurrency ? "2" : "Unlimited"}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleEdit(target)}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingTarget(target);
+                            form.reset({
+                              name: target.name,
+                              subId: target.subId || "",
+                              buyerId: target.buyerId,
+                              type: target.type,
+                              destination: target.destination,
+                              connectionTimeout: target.connectionTimeout || 30,
+                              disableRecording: target.disableRecording || false,
+                              timeZone: target.timeZone || "UTC",
+                              hoursOfOperation: target.operatingHours || "basic",
+                              enableMaxConcurrency: target.enableMaxConcurrency || false,
+                              enablePredictiveRouting: target.enablePredictiveRouting || false,
+                              overrideShareableTags: target.overrideShareableTags || false
+                            });
+                            setIsCreateDialogOpen(true);
+                          }}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleDelete(target)}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteTargetMutation.mutate(target.id)}
                           disabled={deleteTargetMutation.isPending}
                         >
                           <Trash2 className="h-4 w-4" />
