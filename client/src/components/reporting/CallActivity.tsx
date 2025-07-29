@@ -144,10 +144,11 @@ function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="col-span-2">
                 <span className="text-gray-600">Recording:</span> 
-                {call.recordingSid ? (
+                {call.recordingUrl ? (
                   <div className="mt-1">
                     <audio controls className="w-full max-w-md">
-                      <source src={`/api/recordings/${call.recordingSid}`} type="audio/mpeg" />
+                      <source src={call.recordingUrl} type="audio/wav" />
+                      <source src={call.recordingUrl} type="audio/mpeg" />
                       Your browser does not support the audio element.
                     </audio>
                     <div className="text-xs text-gray-500 mt-1">

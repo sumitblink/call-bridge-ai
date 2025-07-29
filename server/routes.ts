@@ -7638,13 +7638,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const recordingStatus = await twilioService.getRecordingStatus(recordingSid);
         
         if (recordingStatus.recordingUrl) {
-          // For now, we'll return the direct Twilio URL
-          // In production, you might want to proxy the audio through your server
-          res.json({ 
-            recordingUrl: recordingStatus.recordingUrl,
-            status: recordingStatus.status,
-            duration: recordingStatus.duration
-          });
+          // Redirect to the actual Twilio recording URL for direct audio streaming
+          res.redirect(recordingStatus.recordingUrl);
         } else {
           res.status(404).json({ error: "Recording URL not available" });
         }
