@@ -425,18 +425,18 @@ export default function CallActivity() {
     queryKey: ["/api/buyers"]
   });
 
-  // Infinite scroll handler
+  // Debounced infinite scroll handler to prevent excessive calls
   const handleScroll = useCallback(() => {
     const container = tableContainerRef.current;
     if (!container || !hasNextPage || isFetchingNextPage) return;
 
     const { scrollTop, scrollHeight, clientHeight } = container;
-    const scrolledToBottom = scrollTop + clientHeight >= scrollHeight - 200; // Load when 200px from bottom
+    const scrolledToBottom = scrollTop + clientHeight >= scrollHeight - 100; // Load when 100px from bottom
 
     if (scrolledToBottom) {
       fetchNextPage();
     }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, calls.length, totalCalls]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Attach scroll listener
   useEffect(() => {

@@ -129,8 +129,9 @@ export default function RingbaStyleReporting() {
         // Invalidate and refetch all reporting queries
         queryClient.invalidateQueries({ queryKey: ['/api/reporting/summary'] });
         queryClient.invalidateQueries({ queryKey: ['/api/reporting/timeline'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/calls'] });
-      }, 30000); // Refresh every 30 seconds
+        // Reset infinite query to first page to prevent conflicts
+        queryClient.resetQueries({ queryKey: ['/api/calls'] });
+      }, 120000); // Refresh every 2 minutes
     }
     
     return () => {
@@ -144,7 +145,8 @@ export default function RingbaStyleReporting() {
   const handleManualRefresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['/api/reporting/summary'] });
     queryClient.invalidateQueries({ queryKey: ['/api/reporting/timeline'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/calls'] });
+    // Reset infinite query to first page to prevent conflicts
+    queryClient.resetQueries({ queryKey: ['/api/calls'] });
   }, [queryClient]);
 
   // Export CSV functionality
