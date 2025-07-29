@@ -372,7 +372,17 @@ export default function CallActivity() {
   } = useInfiniteQuery({
     queryKey: ['/api/calls'],
     queryFn: ({ pageParam }: { pageParam: number }) => 
-      fetch(`/api/calls?page=${pageParam}&limit=25`).then(res => res.json()) as Promise<PaginatedResponse>,
+      fetch(`/api/calls?page=${pageParam}&limit=25`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }).then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      }) as Promise<PaginatedResponse>,
     initialPageParam: 1,
     getNextPageParam: (lastPage: PaginatedResponse) => 
       lastPage.pagination.hasNextPage ? lastPage.pagination.page + 1 : undefined,
@@ -390,7 +400,8 @@ export default function CallActivity() {
     currentCallsCount: calls.length,
     hasNextPage,
     isFetchingNextPage,
-    isLoadingCalls
+    isLoadingCalls,
+    callsDataStructure: callsData?.pages?.[0] // Show the first page structure
   });
 
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
