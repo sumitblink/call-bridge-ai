@@ -353,13 +353,28 @@ router.get('/timeline', requireAuth, async (req, res) => {
       }
     }
 
+    // Calculate comprehensive summary from all calls (not just timeline aggregation)
+    const totalCalls = calls.length;
+    const completedCalls = calls.filter(call => call.status === 'completed').length;
+    const convertedCalls = calls.filter(call => 
+      call.status === 'completed' && call.duration && call.duration > 30
+    ).length;
+    const failedCalls = calls.filter(call => 
+      call.status === 'failed' || call.status === 'busy' || call.status === 'no-answer'
+    ).length;
+    const totalRevenue = calls.reduce((sum, call) => sum + parseFloat(call.revenue || '0'), 0);
+    const totalCost = calls.reduce((sum, call) => sum + parseFloat(call.cost || '0'), 0);
+
     const result = { 
       timeline: timelineData, 
       summary: {
-        totalCalls: timelineData.reduce((sum, item) => sum + item.calls, 0),
-        totalRevenue: timelineData.reduce((sum, item) => sum + item.revenue, 0),
-        totalConversions: timelineData.reduce((sum, item) => sum + item.conversions, 0),
-        totalCost: timelineData.reduce((sum, item) => sum + item.cost, 0)
+        totalCalls,
+        totalRevenue,
+        totalConversions: convertedCalls,
+        totalCost,
+        connected: completedCalls,
+        incomplete: totalCalls - completedCalls,
+        hangup: failedCalls
       }
     };
 

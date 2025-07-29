@@ -414,17 +414,17 @@ export default function CallActivity() {
   const calls = callsData?.pages.flatMap((page: PaginatedResponse) => page.calls) || [];
   const totalCalls = callsData?.pages[0]?.pagination.total || 0;
 
-  // Debug pagination state - temporarily enabled to debug issue
-  console.log('Pagination Debug:', {
-    pagesLoaded: callsData?.pages.length || 0,
-    totalCalls,
-    currentCallsCount: calls.length,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoadingCalls,
-    firstPageData: callsData?.pages[0] || null,
-    error: callsData?.pages.length === 0 ? 'No pages loaded' : null
-  });
+  // Debug pagination state (remove in production)
+  // console.log('Pagination Debug:', {
+  //   pagesLoaded: callsData?.pages.length || 0,
+  //   totalCalls,
+  //   currentCallsCount: calls.length,
+  //   hasNextPage,
+  //   isFetchingNextPage,
+  //   isLoadingCalls,
+  //   firstPageData: callsData?.pages[0] || null,
+  //   error: callsData?.pages.length === 0 ? 'No pages loaded' : null
+  // });
 
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"]

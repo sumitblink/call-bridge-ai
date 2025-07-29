@@ -269,9 +269,11 @@ export default function EnhancedTimelineReport({
         {timelineData.length > 0 && (
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-2">
-              <Badge variant="outline">Total: {timelineData.reduce((sum: number, d: any) => sum + (d.calls || 0), 0).toLocaleString()}</Badge>
-              <Badge variant="outline">Connected: {timelineData.reduce((sum: number, d: any) => sum + (d.conversions || 0), 0).toLocaleString()}</Badge>
-              <Badge variant="outline">Revenue: ${timelineData.reduce((sum: number, d: any) => sum + (d.revenue || 0), 0).toLocaleString()}</Badge>
+              <Badge variant="outline">Total: {summary.totalCalls || 0}</Badge>
+              <Badge variant="outline">Connected: {summary.totalConversions || 0}</Badge>
+              <Badge variant="outline">Incomplete: {(summary.totalCalls || 0) - (summary.totalConversions || 0)}</Badge>
+              <Badge variant="outline">Hangup: {timelineData.reduce((sum: number, d: any) => sum + (d.hangup || 0), 0).toLocaleString()}</Badge>
+              <Badge variant="outline">Revenue: ${(summary.totalRevenue || 0).toLocaleString()}</Badge>
             </div>
           </div>
         )}
