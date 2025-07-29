@@ -144,11 +144,11 @@ function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="col-span-2">
                 <span className="text-gray-600">Recording:</span> 
-                {call.recordingUrl ? (
+                {call.recordingUrl && call.recordingSid ? (
                   <div className="mt-1">
                     <audio controls className="w-full max-w-md">
-                      <source src={call.recordingUrl} type="audio/wav" />
-                      <source src={call.recordingUrl} type="audio/mpeg" />
+                      <source src={`/api/recordings/${call.recordingSid}`} type="audio/wav" />
+                      <source src={`/api/recordings/${call.recordingSid}`} type="audio/mpeg" />
                       Your browser does not support the audio element.
                     </audio>
                     <div className="text-xs text-gray-500 mt-1">
@@ -574,8 +574,8 @@ export default function CallActivity() {
                 
                 <DropdownMenuSeparator />
                 
-                {call.recordingUrl && (
-                  <DropdownMenuItem onClick={() => call.recordingUrl && window.open(call.recordingUrl, '_blank')}>
+                {call.recordingUrl && call.recordingSid && (
+                  <DropdownMenuItem onClick={() => window.open(`/api/recordings/${call.recordingSid}`, '_blank')}>
                     <Play className="h-3 w-3 mr-2" />
                     Play Recording
                   </DropdownMenuItem>
@@ -859,8 +859,8 @@ export default function CallActivity() {
                                 
                                 <DropdownMenuSeparator />
                                 
-                                {call.recordingUrl && (
-                                  <DropdownMenuItem onClick={() => call.recordingUrl && window.open(call.recordingUrl, '_blank')}>
+                                {call.recordingUrl && call.recordingSid && (
+                                  <DropdownMenuItem onClick={() => window.open(`/api/recordings/${call.recordingSid}`, '_blank')}>
                                     <Play className="h-3 w-3 mr-2" />
                                     Play Recording
                                   </DropdownMenuItem>
