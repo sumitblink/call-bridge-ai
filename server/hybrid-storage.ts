@@ -157,10 +157,10 @@ class HybridStorage implements IStorage {
   }
 
   // Campaigns
-  async getCampaigns(): Promise<Campaign[]> {
+  async getCampaigns(userId?: number): Promise<Campaign[]> {
     return this.executeOperation(
-      () => this.databaseStorage.getCampaigns(),
-      () => this.memStorage.getCampaigns()
+      () => this.databaseStorage.getCampaigns(userId),
+      () => this.memStorage.getCampaigns(userId)
     );
   }
 

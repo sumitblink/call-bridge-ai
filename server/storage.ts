@@ -52,7 +52,7 @@ export interface IStorage {
   upsertUser(user: any): Promise<User>;
 
   // Campaigns
-  getCampaigns(): Promise<Campaign[]>;
+  getCampaigns(userId?: number): Promise<Campaign[]>;
   getCampaign(id: string | number): Promise<Campaign | undefined>;
   getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
@@ -494,12 +494,16 @@ export class MemStorage implements IStorage {
   }
 
   // Campaigns
-  async getCampaigns(): Promise<Campaign[]> {
+  async getCampaigns(userId?: number): Promise<Campaign[]> {
     const campaigns: Campaign[] = [];
     for (const campaign of this.campaigns.values()) {
-      campaigns.push(campaign);
+      if (!userId || campaign.userId === userId) {
+        campaigns.push(campaign);
+      }
     }
-    return campaigns;
+    return campaigns.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 
   async getCampaign(id: number): Promise<Campaign | undefined> {

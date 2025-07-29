@@ -1445,28 +1445,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Calls with pagination support for lazy loading
+  // Calls with pagination support for lazy loading - OPTIMIZED  
   app.get('/api/calls', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
       
       // Parse pagination parameters
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
+      const limit = Math.min(parseInt(req.query.limit as string) || 25, 100); // Limit max to 100
       const offset = (page - 1) * limit;
       
-      // Filter calls to only show those belonging to user's campaigns
-      const userCampaigns = await storage.getCampaigns(userId);
-      const campaignIds = userCampaigns.map(c => String(c.id));
-      
-      const allCalls = await storage.getCalls();
-      const userCalls = allCalls.filter(call => campaignIds.includes(String(call.campaignId)));
+      // Get user calls efficiently 
+      const userCalls = await storage.getCallsByUser(userId);
       
       // Apply pagination
       const totalCount = userCalls.length;
-      const paginatedCalls = userCalls
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) // Sort by newest first
-        .slice(offset, offset + limit);
+      const paginatedCalls = userCalls.slice(offset, offset + limit);
       
       res.json({
         calls: paginatedCalls,

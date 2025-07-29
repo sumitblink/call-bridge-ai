@@ -43,7 +43,7 @@ router.get('/summary', requireAuth, async (req, res) => {
       return res.json(cachedData);
     }
 
-    // Get campaign data with summary statistics
+    // Get campaign data with summary statistics - OPTIMIZED
     const campaigns = await storage.getCampaigns(userId);
     const calls = await storage.getCallsByUser(userId);
     const buyers = await storage.getBuyers(userId);
