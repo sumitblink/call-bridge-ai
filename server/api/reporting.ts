@@ -239,12 +239,18 @@ router.get('/timeline', requireAuth, async (req, res) => {
     
     if (dateRange === 'today') {
       const today = now.toISOString().split('T')[0];
-      calls = allCalls.filter(call => call.createdAt.startsWith(today));
+      calls = allCalls.filter(call => {
+        const callDate = typeof call.createdAt === 'string' ? call.createdAt : call.createdAt.toISOString();
+        return callDate.startsWith(today);
+      });
     } else if (dateRange === 'yesterday') {
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split('T')[0];
-      calls = allCalls.filter(call => call.createdAt.startsWith(yesterdayStr));
+      calls = allCalls.filter(call => {
+        const callDate = typeof call.createdAt === 'string' ? call.createdAt : call.createdAt.toISOString();
+        return callDate.startsWith(yesterdayStr);
+      });
     } else if (dateRange === '7days') {
       const sevenDaysAgo = new Date(now);
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);

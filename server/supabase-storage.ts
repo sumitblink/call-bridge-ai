@@ -1400,14 +1400,10 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
-  async getRtbBidResponses(requestId: string): Promise<any[]> {
-    try {
-      const result = await db.select().from(rtbBidResponses);
-      return result;
-    } catch (error) {
-      console.warn('RTB bid responses query failed:', error);
-      return [];
-    }
+  async getRtbBidResponses(requestId: string): Promise<RtbBidResponse[]> {
+    return await db.select().from(rtbBidResponses)
+      .where(eq(rtbBidResponses.requestId, requestId))
+      .orderBy(desc(rtbBidResponses.bidAmount));
   }
 
   async getRtbRouters(userId?: number): Promise<any[]> {
