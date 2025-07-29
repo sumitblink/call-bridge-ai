@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ import {
   Eye,
   EyeOff
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import CallActivity from "./CallActivity";
 import SummaryReport from "./SummaryReport";
@@ -74,6 +74,7 @@ interface CampaignSummary {
 }
 
 export default function RingbaStyleReporting() {
+  const queryClient = useQueryClient();
   const [activeFilters, setActiveFilters] = useState<FilterRule[]>([]);
   const [showFilterDialog, setShowFilterDialog] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState("today");
@@ -118,6 +119,33 @@ export default function RingbaStyleReporting() {
   });
 
   const chartData = timelineResponse?.timeline || [];
+
+  // Auto refresh functionality
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (autoRefresh) {
+      interval = setInterval(() => {
+        // Invalidate and refetch all reporting queries
+        queryClient.invalidateQueries({ queryKey: ['/api/reporting/summary'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/reporting/timeline'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/calls'] });
+      }, 30000); // Refresh every 30 seconds
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [autoRefresh, queryClient]);
+
+  // Manual refresh function
+  const handleManualRefresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['/api/reporting/summary'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/reporting/timeline'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/calls'] });
+  }, [queryClient]);
 
   // Export CSV functionality
   const exportCsv = () => {
@@ -243,11 +271,23 @@ export default function RingbaStyleReporting() {
             </Select>
             <Button
               size="sm"
-              variant={autoRefresh ? "default" : "outline"}
-              onClick={() => setAutoRefresh(!autoRefresh)}
+              variant="outline"
+              onClick={handleManualRefresh}
               className="h-7 px-2 text-xs"
             >
-              AUTO REFRESH
+              <RefreshCw className="h-3 w-3 mr-1" />
+              REFRESH
+            </Button>
+            <Button
+              size="sm"
+              variant={autoRefresh ? "default" : "outline"}
+              onClick={() => {
+                setAutoRefresh(!autoRefresh);
+                if (!autoRefresh) handleManualRefresh(); // Trigger refresh when enabling auto-refresh
+              }}
+              className="h-7 px-2 text-xs"
+            >
+              AUTO REFRESH {autoRefresh ? 'ON' : 'OFF'}
             </Button>
             <Button size="sm" variant="outline" onClick={exportCsv} className="h-7 px-2 text-xs">
               <Download className="h-3 w-3 mr-1" />
