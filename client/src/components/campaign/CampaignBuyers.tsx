@@ -170,7 +170,7 @@ export default function CampaignBuyers({ campaignId }: CampaignBuyersProps) {
                   <SelectContent>
                     {availableBuyers.map((buyer: any) => (
                       <SelectItem key={buyer.id} value={buyer.id.toString()}>
-                        {buyer.name} - {buyer.email}
+                        {buyer.companyName || buyer.name || 'Unnamed Buyer'} {buyer.name && `(${buyer.name})`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -263,7 +263,10 @@ export default function CampaignBuyers({ campaignId }: CampaignBuyersProps) {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{buyer.name}</div>
+                          <div className="font-medium">{buyer.companyName || buyer.name || 'Unnamed Buyer'}</div>
+                          {buyer.name && buyer.companyName && (
+                            <div className="text-sm text-gray-500">Sub ID: {buyer.name}</div>
+                          )}
                           <div className="text-sm text-gray-500">ID: {buyer.id}</div>
                         </div>
                       </TableCell>
