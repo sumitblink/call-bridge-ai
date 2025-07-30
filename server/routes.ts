@@ -3653,6 +3653,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clean up all Twilio webhooks and set friendly names to "Unassigned"
+  app.post('/api/phone-numbers/cleanup-twilio', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      
+      if (!accountSid || !authToken) {
+        return res.status(500).json({
+          error: 'Twilio credentials not configured',
+          details: 'Please set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN environment variables'
+        });
+      }
+
+      // Fetch all Twilio numbers
+      const listUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/IncomingPhoneNumbers.json`;
+      const authHeader = 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+
+      const listResponse = await fetch(listUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+
+      if (!listResponse.ok) {
+        throw new Error(`Failed to fetch Twilio numbers: ${listResponse.status}`);
+      }
+
+      const listData = await listResponse.json() as any;
+      const twilioNumbers = listData.incoming_phone_numbers || [];
+      
+      const cleanedNumbers = [];
+      const errors = [];
+
+      // Clean up each number
+      for (const twilioNumber of twilioNumbers) {
+        try {
+          const updateUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/IncomingPhoneNumbers/${twilioNumber.sid}.json`;
+          
+          const updateData = new URLSearchParams({
+            'FriendlyName': 'Unassigned',
+            'VoiceUrl': '', // Remove webhook URL
+            'VoiceMethod': 'POST',
+            'StatusCallback': '', // Remove status callback
+            'StatusCallbackMethod': 'POST'
+          });
+
+          const updateResponse = await fetch(updateUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': authHeader,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: updateData
+          });
+
+          if (updateResponse.ok) {
+            cleanedNumbers.push(twilioNumber.phone_number);
+            
+            // Also update in our database/memory storage
+            const phoneNumbers = await storage.getPhoneNumbers();
+            const existingNumber = phoneNumbers.find(n => n.phoneNumber === twilioNumber.phone_number);
+            if (existingNumber) {
+              await storage.updatePhoneNumber(existingNumber.id, {
+                ...existingNumber,
+                friendlyName: 'Unassigned',
+                voiceUrl: null,
+                statusCallback: null
+              });
+            }
+          } else {
+            const errorText = await updateResponse.text();
+            errors.push(`${twilioNumber.phone_number}: ${errorText}`);
+          }
+        } catch (error) {
+          errors.push(`${twilioNumber.phone_number}: ${error.message}`);
+        }
+      }
+
+      res.json({
+        success: true,
+        cleaned: cleanedNumbers.length,
+        errors: errors.length,
+        cleanedNumbers,
+        errors: errors,
+        message: `Cleaned ${cleanedNumbers.length} numbers, ${errors.length} errors`
+      });
+    } catch (error) {
+      console.error('Error cleaning Twilio numbers:', error);
+      res.status(500).json({ 
+        error: 'Failed to clean Twilio numbers',
+        details: error.message 
+      });
+    }
+  });
+
   // Import existing Twilio numbers
   app.post('/api/phone-numbers/import', requireAuth, async (req, res) => {
     try {
@@ -3715,7 +3813,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const newNumber = await storage.createPhoneNumber({
           userId,
           phoneNumber: twilioNumber.phone_number,
-          friendlyName: twilioNumber.phone_number, // Use just the phone number as display name
+          friendlyName: 'Unassigned', // Set to Unassigned as requested
           phoneNumberSid: twilioNumber.sid,
           accountSid: twilioNumber.account_sid,
           country: 'US', // Default to US, can be enhanced later
