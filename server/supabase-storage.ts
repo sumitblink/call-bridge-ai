@@ -552,6 +552,9 @@ export class SupabaseStorage implements IStorage {
           id: calls.id,
           campaignId: calls.campaignId,
           buyerId: calls.buyerId,
+          targetId: calls.targetId, // Added missing field
+          numberPoolId: calls.numberPoolId, // Added missing field
+          phoneNumberId: calls.phoneNumberId, // Added missing field
           callSid: calls.callSid,
           fromNumber: calls.fromNumber,
           toNumber: calls.toNumber,

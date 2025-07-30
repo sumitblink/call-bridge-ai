@@ -453,7 +453,7 @@ export default function CallActivity() {
     initialPageParam: 1,
     getNextPageParam: (lastPage: PaginatedResponse) => 
       lastPage.pagination.hasNextPage ? lastPage.pagination.page + 1 : undefined,
-    staleTime: 0, // Force fresh calls data
+    staleTime: 1000 * 60 * 2, // Cache for 2 minutes
   });
 
   // Flatten all pages into single calls array
@@ -553,10 +553,6 @@ export default function CallActivity() {
         return <div className="truncate text-xs">{(buyer as any)?.companyName || buyer?.name || 'No Buyer'}</div>;
       case 'target':
         const target = targets.find((t: any) => t.id === (call as any).targetId);
-        // Debug logging for target display
-        if ((call as any).targetId && !target) {
-          console.log('Target not found:', { targetId: (call as any).targetId, availableTargets: targets });
-        }
         return <div className="truncate text-xs">{target?.name || 'No Target'}</div>;
       case 'fromNumber':
         return <div className="font-mono text-xs">{call.fromNumber}</div>;
@@ -591,10 +587,6 @@ export default function CallActivity() {
         return <div className="text-xs">No</div>;
       case 'numberPool':
         const pool = pools.find(p => p.id === call.numberPoolId);
-        // Debug logging for pool display
-        if (call.numberPoolId && !pool) {
-          console.log('Pool not found:', { poolId: call.numberPoolId, availablePools: pools });
-        }
         return <div className="truncate text-xs">{pool?.name || (call.numberPoolId ? 'Pool ' + call.numberPoolId : 'Direct')}</div>;
       case 'numberPoolId':
         return <div className="text-xs">{call.numberPoolId || '-'}</div>;
