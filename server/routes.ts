@@ -896,8 +896,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = req.params.id;
       const userId = req.user?.id;
+      console.log(`[Campaign GET] Looking for campaign ${id} for user ${userId} (type: ${typeof userId})`);
       const campaign = await storage.getCampaign(id);
-      if (!campaign || campaign.userId !== userId) {
+      console.log(`[Campaign GET] Found campaign:`, campaign ? `${campaign.id} owned by ${campaign.userId} (type: ${typeof campaign.userId})` : 'null');
+      if (!campaign || campaign.userId !== Number(userId)) {
+        console.log(`[Campaign GET] Access denied - Campaign userId: ${campaign?.userId}, Request userId: ${userId} (converted: ${Number(userId)})`);
         return res.status(404).json({ error: "Campaign not found" });
       }
       res.json(campaign);
@@ -910,11 +913,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/campaigns', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
+      console.log(`[Campaign CREATE] Creating campaign for user ${userId} (type: ${typeof userId})`);
       const campaignData = {
         ...req.body,
         userId: Number(userId)
       };
       
+      console.log(`[Campaign CREATE] Campaign data:`, campaignData);
       const validatedData = insertCampaignSchema.parse(campaignData);
       
       // Generate RTB ID if RTB is enabled
@@ -924,6 +929,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const campaign = await storage.createCampaign(validatedData);
+      console.log(`[Campaign CREATE] Created campaign:`, campaign);
       
       res.status(201).json(campaign);
     } catch (error) {
@@ -942,7 +948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get existing campaign to check current RTB status and ownership
       const existingCampaign = await storage.getCampaign(id);
-      if (!existingCampaign || existingCampaign.userId !== userId) {
+      if (!existingCampaign || existingCampaign.userId !== Number(userId)) {
         return res.status(404).json({ error: "Campaign not found" });
       }
       
@@ -999,7 +1005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if campaign exists and belongs to user
       const existingCampaign = await storage.getCampaign(id);
-      if (!existingCampaign || existingCampaign.userId !== userId) {
+      if (!existingCampaign || existingCampaign.userId !== Number(userId)) {
         return res.status(404).json({ error: "Campaign not found" });
       }
       
@@ -1095,10 +1101,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = req.params.id;
       const userId = req.user?.id;
+      console.log(`[Campaign DELETE] Deleting campaign ${id} for user ${userId} (type: ${typeof userId})`);
       
       // Check if campaign exists and belongs to user
       const existingCampaign = await storage.getCampaign(id);
-      if (!existingCampaign || existingCampaign.userId !== userId) {
+      console.log(`[Campaign DELETE] Found campaign:`, existingCampaign ? `${existingCampaign.id} owned by ${existingCampaign.userId} (type: ${typeof existingCampaign.userId})` : 'null');
+      if (!existingCampaign || existingCampaign.userId !== Number(userId)) {
+        console.log(`[Campaign DELETE] Access denied - Campaign userId: ${existingCampaign?.userId}, Request userId: ${userId} (converted: ${Number(userId)})`);
         return res.status(404).json({ error: "Campaign not found" });
       }
       
@@ -1106,6 +1115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!success) {
         return res.status(404).json({ error: "Campaign not found" });
       }
+      console.log(`[Campaign DELETE] Successfully deleted campaign ${id}`);
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting campaign:", error);
@@ -1156,7 +1166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if campaign exists and belongs to user
       const campaign = await storage.getCampaign(campaignId);
-      if (!campaign || campaign.userId !== userId) {
+      if (!campaign || campaign.userId !== Number(userId)) {
         return res.status(404).json({ error: "Campaign not found" });
       }
       
@@ -1178,7 +1188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if campaign exists and belongs to user
       const campaign = await storage.getCampaign(id);
-      if (!campaign || campaign.userId !== userId) {
+      if (!campaign || campaign.userId !== Number(userId)) {
         return res.status(404).json({ error: "Campaign not found" });
       }
       
@@ -1198,13 +1208,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if campaign exists and belongs to user
       const campaign = await storage.getCampaign(campaignId);
-      if (!campaign || campaign.userId !== userId) {
+      if (!campaign || campaign.userId !== Number(userId)) {
         return res.status(404).json({ error: "Campaign not found" });
       }
       
       // Check if buyer exists and belongs to user
       const buyer = await storage.getBuyer(buyerId);
-      if (!buyer || buyer.userId !== userId) {
+      if (!buyer || buyer.userId !== Number(userId)) {
         return res.status(404).json({ error: "Buyer not found" });
       }
       
@@ -1224,13 +1234,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if campaign exists and belongs to user
       const campaign = await storage.getCampaign(campaignId);
-      if (!campaign || campaign.userId !== userId) {
+      if (!campaign || campaign.userId !== Number(userId)) {
         return res.status(404).json({ error: "Campaign not found" });
       }
       
       // Check if buyer exists and belongs to user
       const buyer = await storage.getBuyer(buyerId);
-      if (!buyer || buyer.userId !== userId) {
+      if (!buyer || buyer.userId !== Number(userId)) {
         return res.status(404).json({ error: "Buyer not found" });
       }
       
@@ -1277,7 +1287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if campaign exists and belongs to user
       const campaign = await storage.getCampaign(campaignId);
-      if (!campaign || campaign.userId !== userId) {
+      if (!campaign || campaign.userId !== Number(userId)) {
         return res.status(404).json({ error: "Campaign not found" });
       }
       
