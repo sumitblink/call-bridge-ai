@@ -59,68 +59,86 @@ const targetFormSchema = z.object({
 
 type TargetFormData = z.infer<typeof targetFormSchema>;
 
-export default function TargetsPage() {
+export default function Targets() {
+  const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
-  const { toast } = useToast();
 
   // Fetch targets
-  const { data: targets = [], isLoading: targetsLoading } = useQuery<Target[]>({
-    queryKey: ["/api/targets"],
+  const { data: targets = [], isLoading: targetsLoading, error: targetsError } = useQuery({
+    queryKey: ['/api/targets'],
   });
 
-  // Fetch buyers for the dropdown
-  const { data: buyers = [], isLoading: buyersLoading } = useQuery<Buyer[]>({
-    queryKey: ["/api/buyers"],
+  // Fetch buyers for dropdown
+  const { data: buyers = [], isLoading: buyersLoading } = useQuery({
+    queryKey: ['/api/buyers'],
   });
 
   // Create target mutation
   const createTargetMutation = useMutation({
-    mutationFn: (data: TargetFormData) => apiRequest("/api/targets", "POST", data),
+    mutationFn: (data: any) => apiRequest('/api/targets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/targets"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/targets'] });
       setIsCreateDialogOpen(false);
-      toast({ title: "Target created successfully" });
+      form.reset();
+      toast({
+        title: "Target created",
+        description: "The target has been created successfully.",
+      });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Failed to create target", 
-        description: error.message,
-        variant: "destructive" 
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create target",
+        variant: "destructive",
       });
     },
   });
 
   // Update target mutation
   const updateTargetMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<TargetFormData> }) =>
-      apiRequest(`/api/targets/${id}`, "PUT", data),
+    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest(`/api/targets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/targets"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/targets'] });
       setEditingTarget(null);
-      toast({ title: "Target updated successfully" });
+      form.reset();
+      toast({
+        title: "Target updated",
+        description: "The target has been updated successfully.",
+      });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Failed to update target", 
-        description: error.message,
-        variant: "destructive" 
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update target",
+        variant: "destructive",
       });
     },
   });
 
   // Delete target mutation
   const deleteTargetMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/targets/${id}`, "DELETE"),
+    mutationFn: (id: number) => apiRequest(`/api/targets/${id}`, {
+      method: 'DELETE',
+    }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/targets"] });
-      toast({ title: "Target deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/targets'] });
+      toast({
+        title: "Target deleted",
+        description: "The target has been deleted successfully.",
+      });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Failed to delete target", 
-        description: error.message,
-        variant: "destructive" 
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete target",
+        variant: "destructive",
       });
     },
   });
@@ -200,7 +218,7 @@ export default function TargetsPage() {
 
   const getBuyerName = (buyerId: number) => {
     const buyer = buyers.find(b => b.id === buyerId);
-    return buyer ? buyer.name : `Buyer ${buyerId}`;
+    return buyer ? (buyer.companyName || buyer.name) : `Buyer ${buyerId}`;
   };
 
   const getStatusColor = (status: string) => {
@@ -219,578 +237,578 @@ export default function TargetsPage() {
   return (
     <Layout>
       <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Targets</h1>
-          <p className="text-gray-600 mt-1">
-            Manage individual routing endpoints and destinations under buyers
-          </p>
-        </div>
-        <Dialog open={isCreateDialogOpen || !!editingTarget} onOpenChange={(open) => {
-          if (!open) {
-            setIsCreateDialogOpen(false);
-            setEditingTarget(null);
-            form.reset();
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Target
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingTarget ? "Edit Target" : "Create Target"}
-              </DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                
-                {/* Basic Information Section */}
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <Input placeholder="Required" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="buyerId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Buyer <span className="text-red-500">*</span></FormLabel>
-                          <Select
-                            value={field.value?.toString() || ""}
-                            onValueChange={(value) => field.onChange(parseInt(value))}
-                          >
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Targets</h1>
+            <p className="text-gray-600 mt-1">
+              Manage individual routing endpoints and destinations under buyers
+            </p>
+          </div>
+          <Dialog open={isCreateDialogOpen || !!editingTarget} onOpenChange={(open) => {
+            if (!open) {
+              setIsCreateDialogOpen(false);
+              setEditingTarget(null);
+              form.reset();
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Target
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingTarget ? "Edit Target" : "Create Target"}
+                </DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  
+                  {/* Basic Information Section */}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Name <span className="text-red-500">*</span></FormLabel>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select buyer" />
-                              </SelectTrigger>
+                              <Input placeholder="Required" {...field} />
                             </FormControl>
-                            <SelectContent>
-                              {buyers.filter(buyer => buyer.id).map((buyer) => (
-                                <SelectItem key={buyer.id} value={buyer.id.toString()}>
-                                  {buyer.companyName || buyer.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    /></old_str>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Type <span className="text-red-500">*</span></FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Number">Number</SelectItem>
-                              <SelectItem value="SIP">SIP</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="destination"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Destination <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <Input placeholder="Required" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="connectionTimeout"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Connection Timeout <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 30)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="disableRecording"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                          <div className="space-y-0.5">
-                            <FormLabel>Disable Recording <span className="text-red-500">*</span></FormLabel>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="timeZone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Time Zone <span className="text-red-500">*</span></FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Select Timezone">Select Timezone</SelectItem>
-                              <SelectItem value="EST">Eastern Time</SelectItem>
-                              <SelectItem value="PST">Pacific Time</SelectItem>
-                              <SelectItem value="CST">Central Time</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hoursOfOperation"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Hours of Operation <span className="text-red-500">*</span></FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Always Open">Always Open</SelectItem>
-                              <SelectItem value="Business Hours">Business Hours</SelectItem>
-                              <SelectItem value="Custom">Custom</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Cap Settings Section */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
-                    Cap Settings
-                  </h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="callTo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Call to <span className="text-red-500">*</span></FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="max-w-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Conversion">Conversion</SelectItem>
-                            <SelectItem value="Raw Call">Raw Call</SelectItem>
-                            <SelectItem value="Answered Call">Answered Call</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="globalCallCap"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                          <div className="space-y-0.5">
-                            <FormLabel>Global Call Cap</FormLabel>
-                            <div className="text-xs text-gray-500">None</div>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="monthlyCap"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                          <div className="space-y-0.5">
-                            <FormLabel>Monthly Cap</FormLabel>
-                            <div className="text-xs text-gray-500">None</div>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="dailyCap"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                          <div className="space-y-0.5">
-                            <FormLabel>Daily Cap</FormLabel>
-                            <div className="text-xs text-gray-500">None</div>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hourlyCap"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                          <div className="space-y-0.5">
-                            <FormLabel>Hourly Cap</FormLabel>
-                            <div className="text-xs text-gray-500">None</div>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Concurrency Settings Section */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Concurrency Settings
-                  </h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="maxConcurrency"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                          <div className="space-y-0.5">
-                            <FormLabel>Max Concurrency</FormLabel>
-                            <div className="text-xs text-gray-500">None</div>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hourlyConcurrency"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                          <div className="space-y-0.5">
-                            <FormLabel>Hourly Concurrency</FormLabel>
-                            <div className="text-xs text-gray-500">None</div>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Restrict Duplicate Calls Settings */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Restrict Duplicate Calls Settings</h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="restrictDuplicates"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Restrict Duplicates</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Buyer Settings (Do not Restrict)">Buyer Settings (Do not Restrict)</SelectItem>
-                            <SelectItem value="Restrict by Phone">Restrict by Phone</SelectItem>
-                            <SelectItem value="Restrict by IP">Restrict by IP</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Predictive Routing Settings */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Predictive Routing Settings</h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="estimatedRevenue"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Estimated Revenue</FormLabel>
-                          <div className="flex gap-2">
-                            <Button type="button" variant="outline" size="sm">Use Campaign Setting</Button>
-                            <Button type="button" variant="outline" size="sm">Use Estimated Revenue</Button>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="priorityRank"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Priority Rank</FormLabel>
-                          <FormControl>
-                            <div className="space-y-2">
-                              <Slider
-                                min={0}
-                                max={100}
-                                step={1}
-                                value={[field.value]}
-                                onValueChange={(value) => field.onChange(value[0])}
-                                className="w-full"
-                              />
-                              <div className="flex justify-between text-xs text-gray-500">
-                                <span>0</span>
-                                <span className="font-medium">{field.value}</span>
-                                <span>100</span>
-                              </div>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Shareable Tags */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Shareable Tags</h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="overrideShareableTags"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel>Override Shareable Tags</FormLabel>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Form Actions */}
-                <div className="flex justify-end gap-3 pt-6 border-t">
-                  <Button type="button" variant="outline">Add Filter</Button>
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={() => {
-                      setIsCreateDialogOpen(false);
-                      setEditingTarget(null);
-                      form.reset();
-                    }}
-                  >
-                    Close
-                  </Button>
-                  <Button 
-                    type="submit"
-                    disabled={createTargetMutation.isPending || updateTargetMutation.isPending}
-                  >
-                    Create Target
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Targets List */}
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Target Name</TableHead>
-              <TableHead>Buyer</TableHead>
-              <TableHead>Phone Number</TableHead>
-              <TableHead>Endpoint</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Daily Cap</TableHead>
-              <TableHead>Concurrency</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {targets.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
-                  No targets found. Create your first target to get started.
-                </TableCell>
-              </TableRow>
-            ) : (
-              targets.map((target) => (
-                <TableRow key={target.id} className="hover:bg-gray-50">
-                  <TableCell className="font-medium">{target.name}</TableCell>
-                  <TableCell>{getBuyerName(target.buyerId)}</TableCell>
-                  <TableCell>
-                    {target.phoneNumber ? (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-gray-500" />
-                        <span className="font-mono text-sm">{target.phoneNumber}</span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {target.endpoint ? (
-                      <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm truncate max-w-48" title={target.endpoint}>
-                          {target.endpoint}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">{target.priority || 1}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">{target.dailyCap || 0}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">{target.concurrencyLimit || 1}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(target.status)}>
-                      {target.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(target)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteTargetMutation.mutate(target.id)}
-                        disabled={deleteTargetMutation.isPending}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="buyerId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Buyer <span className="text-red-500">*</span></FormLabel>
+                            <Select
+                              value={field.value?.toString() || ""}
+                              onValueChange={(value) => field.onChange(parseInt(value))}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select buyer" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {buyers.filter(buyer => buyer.id).map((buyer) => (
+                                  <SelectItem key={buyer.id} value={buyer.id.toString()}>
+                                    {buyer.companyName || buyer.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Type <span className="text-red-500">*</span></FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Number">Number</SelectItem>
+                                <SelectItem value="SIP">SIP</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="destination"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Destination <span className="text-red-500">*</span></FormLabel>
+                            <FormControl>
+                              <Input placeholder="Required" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="connectionTimeout"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Connection Timeout <span className="text-red-500">*</span></FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 30)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="disableRecording"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                            <div className="space-y-0.5">
+                              <FormLabel>Disable Recording <span className="text-red-500">*</span></FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="timeZone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Time Zone <span className="text-red-500">*</span></FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Select Timezone">Select Timezone</SelectItem>
+                                <SelectItem value="EST">Eastern Time</SelectItem>
+                                <SelectItem value="PST">Pacific Time</SelectItem>
+                                <SelectItem value="CST">Central Time</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="hoursOfOperation"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Hours of Operation <span className="text-red-500">*</span></FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Always Open">Always Open</SelectItem>
+                                <SelectItem value="Business Hours">Business Hours</SelectItem>
+                                <SelectItem value="Custom">Custom</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Cap Settings Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                      <Settings className="h-5 w-5" />
+                      Cap Settings
+                    </h3>
+                    
+                    <FormField
+                      control={form.control}
+                      name="callTo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Call to <span className="text-red-500">*</span></FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="max-w-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Conversion">Conversion</SelectItem>
+                              <SelectItem value="Raw Call">Raw Call</SelectItem>
+                              <SelectItem value="Answered Call">Answered Call</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="globalCallCap"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                            <div className="space-y-0.5">
+                              <FormLabel>Global Call Cap</FormLabel>
+                              <div className="text-xs text-gray-500">None</div>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="monthlyCap"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                            <div className="space-y-0.5">
+                              <FormLabel>Monthly Cap</FormLabel>
+                              <div className="text-xs text-gray-500">None</div>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="dailyCap"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                            <div className="space-y-0.5">
+                              <FormLabel>Daily Cap</FormLabel>
+                              <div className="text-xs text-gray-500">None</div>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="hourlyCap"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                            <div className="space-y-0.5">
+                              <FormLabel>Hourly Cap</FormLabel>
+                              <div className="text-xs text-gray-500">None</div>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Concurrency Settings Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Concurrency Settings
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="maxConcurrency"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                            <div className="space-y-0.5">
+                              <FormLabel>Max Concurrency</FormLabel>
+                              <div className="text-xs text-gray-500">None</div>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="hourlyConcurrency"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                            <div className="space-y-0.5">
+                              <FormLabel>Hourly Concurrency</FormLabel>
+                              <div className="text-xs text-gray-500">None</div>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Restrict Duplicate Calls Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Restrict Duplicate Calls Settings</h3>
+                    
+                    <FormField
+                      control={form.control}
+                      name="restrictDuplicates"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Restrict Duplicates</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Buyer Settings (Do not Restrict)">Buyer Settings (Do not Restrict)</SelectItem>
+                              <SelectItem value="Restrict by Phone">Restrict by Phone</SelectItem>
+                              <SelectItem value="Restrict by IP">Restrict by IP</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Predictive Routing Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Predictive Routing Settings</h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="estimatedRevenue"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Estimated Revenue</FormLabel>
+                            <div className="flex gap-2">
+                              <Button type="button" variant="outline" size="sm">Use Campaign Setting</Button>
+                              <Button type="button" variant="outline" size="sm">Use Estimated Revenue</Button>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="priorityRank"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Priority Rank</FormLabel>
+                            <FormControl>
+                              <div className="space-y-2">
+                                <Slider
+                                  min={0}
+                                  max={100}
+                                  step={1}
+                                  value={[field.value]}
+                                  onValueChange={(value) => field.onChange(value[0])}
+                                  className="w-full"
+                                />
+                                <div className="flex justify-between text-xs text-gray-500">
+                                  <span>0</span>
+                                  <span className="font-medium">{field.value}</span>
+                                  <span>100</span>
+                                </div>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Shareable Tags */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Shareable Tags</h3>
+                    
+                    <FormField
+                      control={form.control}
+                      name="overrideShareableTags"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel>Override Shareable Tags</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Form Actions */}
+                  <div className="flex justify-end gap-3 pt-6 border-t">
+                    <Button type="button" variant="outline">Add Filter</Button>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => {
+                        setIsCreateDialogOpen(false);
+                        setEditingTarget(null);
+                        form.reset();
+                      }}
+                    >
+                      Close
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={createTargetMutation.isPending || updateTargetMutation.isPending}
+                    >
+                      Create Target
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Targets List */}
+        <div className="border rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Target Name</TableHead>
+                <TableHead>Buyer</TableHead>
+                <TableHead>Phone Number</TableHead>
+                <TableHead>Endpoint</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Daily Cap</TableHead>
+                <TableHead>Concurrency</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {targets.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    No targets found. Create your first target to get started.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : (
+                targets.map((target) => (
+                  <TableRow key={target.id} className="hover:bg-gray-50">
+                    <TableCell className="font-medium">{target.name}</TableCell>
+                    <TableCell>{getBuyerName(target.buyerId)}</TableCell>
+                    <TableCell>
+                      {target.phoneNumber ? (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-gray-500" />
+                          <span className="font-mono text-sm">{target.phoneNumber}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {target.endpoint ? (
+                        <div className="flex items-center gap-2">
+                          <Globe className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm truncate max-w-48" title={target.endpoint}>
+                            {target.endpoint}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{target.priority || 1}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{target.dailyCap || 0}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{target.concurrencyLimit || 1}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(target.status)}>
+                        {target.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(target)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteTargetMutation.mutate(target.id)}
+                          disabled={deleteTargetMutation.isPending}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </Layout>
   );

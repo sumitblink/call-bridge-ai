@@ -27,7 +27,7 @@ export class TargetService {
       }
       throw error;
     }
-  }</old_str>
+  }
 
   async updateTarget(id: number, data: Partial<InsertTarget>): Promise<Target | undefined> {
     const result = await db.update(targets)
