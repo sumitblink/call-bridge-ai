@@ -1,12 +1,18 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Phone, Calendar, DollarSign, TrendingUp, Filter, Download, Settings, Search, RefreshCw, ChevronDown, ChevronUp, Play, Pause, ExternalLink, Clock, MapPin, User, Tag, MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { ColumnCustomizer } from "./ColumnCustomizer";
+import { BulkCallActions } from "./BulkCallActions";
+import { format } from "date-fns";
 import { 
   BarChart, 
   Bar, 
@@ -15,23 +21,12 @@ import {
   ResponsiveContainer,
   Tooltip
 } from "recharts";
-import { 
-  Filter, 
-  Download, 
-  RefreshCw,
-  Calendar,
-  ChevronDown,
-  Settings,
-  Eye,
-  EyeOff
-} from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import CallActivity from "./CallActivity";
 import SummaryReport from "./SummaryReport";
 import CustomReportsManager from "./CustomReportsManager";
 import EnhancedTimelineReport from "./EnhancedTimelineReport";
-import BulkCallActions from "./BulkCallActions";
 
 // Types and Interfaces
 interface FilterRule {
@@ -120,6 +115,48 @@ export default function RingbaStyleReporting() {
 
   const chartData = timelineResponse?.timeline || [];
 
+  // Fetch calls data with enhanced details
+  const { data: callsData, isLoading: callsLoading, refetch: refetchCalls } = useQuery({
+    queryKey: ["/api/calls", activeFilters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      Object.entries(activeFilters).forEach(([key, value]) => {
+        if (value && value !== "all" && value !== "") {
+          params.append(key, value);
+        }
+      });
+
+      const response = await fetch(`/api/calls?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch calls");
+      return response.json();
+    },
+    staleTime: 30000, // Cache for 30 seconds
+  });
+
+  // Clear all call data mutation
+  const clearCallDataMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/calls/clear-all', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error('Failed to clear call data');
+      return response.json();
+    },
+    onSuccess: () => {
+      // Refetch calls data after clearing
+      refetchCalls();
+      // Show success message
+      alert('All call data cleared successfully');
+    },
+    onError: (error) => {
+      console.error('Error clearing call data:', error);
+      alert('Failed to clear call data');
+    },
+  });
+
   // Auto refresh functionality - DISABLED to prevent freezing
   // useEffect(() => {
   //   let interval: NodeJS.Timeout;
@@ -158,7 +195,7 @@ export default function RingbaStyleReporting() {
       'IVR Hangup', 'RPC', 'Revenue', 'Payout', 'Profit', 'Margin %',
       'Conversion Rate %', 'TCL', 'ACL', 'Total Cost'
     ];
-    
+
     const csvData = summaryData.map((summary: any) => [
       summary.campaignName,
       summary.publisher,
@@ -255,7 +292,7 @@ export default function RingbaStyleReporting() {
               onSaveReport={handleSaveReportConfig}
             />
           </div>
-          
+
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-600">Updated a few seconds ago</span>
             <Select value={dateRange} onValueChange={setDateRange}>
@@ -305,39 +342,88 @@ export default function RingbaStyleReporting() {
 
       {/* Single Unified Report Content */}
       <div className="p-4 space-y-6">
-        {/* Timeline Report */}
-        <EnhancedTimelineReport
-          filters={activeFilters}
-          dateRange={dateRange}
-          onTimeRangeSelect={handleTimeRangeSelect}
-        />
-        
-        {/* Summary Report below Timeline */}
-        <SummaryReport
-          filters={activeFilters}
-          dateRange={dateRange}
-          onFilterClick={handleFilterClick}
-        />
+      <Card className="border-none">
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle>
+                Call Details
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setShowColumnCustomizer(true)}>
+                  <Settings className="h-4 w-4 mr-1" />
+                  Columns
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-1" />
+                  Export
+                </Button>
+                <Button variant="outline" size="sm">
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Refresh
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Clear Data
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Clear All Call Data</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action will permanently delete all call records, events, routing decisions, and related data from your database. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => clearCallDataMutation.mutate()}
+                        className="bg-red-600 hover:bg-red-700"
+                        disabled={clearCallDataMutation.isPending}
+                      >
+                        {clearCallDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Timeline Report */}
+              <EnhancedTimelineReport
+                filters={activeFilters}
+                dateRange={dateRange}
+                onTimeRangeSelect={handleTimeRangeSelect}
+              />
 
-        {/* Call Details below Summary */}
-        <CallActivity
-          filters={activeFilters}
-          dateRange={dateRange}
-          selectedRows={selectedRows}
-          onRowSelect={(rowId: number, isSelected: boolean) => {
-            const newSelection = new Set(selectedRows);
-            if (isSelected) {
-              newSelection.add(rowId);
-            } else {
-              newSelection.delete(rowId);
-            }
-            setSelectedRows(newSelection);
-            
-            // Update selected calls for bulk actions
-            const callsToUpdate = Array.from(newSelection);
-            setSelectedCalls(callsToUpdate.map(id => ({ id, callId: id })));
-          }}
-        />
+              {/* Summary Report below Timeline */}
+              <SummaryReport
+                filters={activeFilters}
+                dateRange={dateRange}
+                onFilterClick={handleFilterClick}
+              />
+
+              {/* Call Details below Summary */}
+              <CallActivity
+                filters={activeFilters}
+                dateRange={dateRange}
+                selectedRows={selectedRows}
+                onRowSelect={(rowId: number, isSelected: boolean) => {
+                  const newSelection = new Set(selectedRows);
+                  if (isSelected) {
+                    newSelection.add(rowId);
+                  } else {
+                    newSelection.delete(rowId);
+                  }
+                  setSelectedRows(newSelection);
+
+                  // Update selected calls for bulk actions
+                  const callsToUpdate = Array.from(newSelection);
+                  setSelectedCalls(callsToUpdate.map(id => ({ id, callId: id })));
+                }}
+              />
+            </CardContent>
+          </Card>
       </div>
 
       {/* Active Filters Display */}
