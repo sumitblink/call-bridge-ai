@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, json, index, primaryKey, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, json, index, primaryKey, uuid, numeric } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -30,13 +30,13 @@ export const users = pgTable("users", {
 export const campaigns = pgTable("campaigns", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  
+
   // General Info
   name: varchar("name", { length: 256 }).notNull(),
   description: text("description"),
   status: varchar("status", { length: 50 }).default("active").notNull(),
   category: varchar("category", { length: 100 }), // Insurance, Solar, Education, etc.
-  
+
   // Phone & Routing - Mutually Exclusive
   routingType: varchar("routing_type", { length: 20 }).default("direct").notNull(), // 'direct' or 'pool'
   phoneNumber: varchar("phone_number", { length: 20 }), // Used when routingType = 'direct'
@@ -44,12 +44,12 @@ export const campaigns = pgTable("campaigns", {
   callRoutingStrategy: varchar("call_routing_strategy", { length: 50 }).default("priority").notNull(), // priority, round_robin, geo, time_based, weighted
   maxConcurrentCalls: integer("max_concurrent_calls").default(5).notNull(),
   callCap: integer("call_cap").default(100).notNull(), // daily call cap
-  
+
   // Geographic & Time Settings
   geoTargeting: text("geo_targeting").array(), // allowed states/countries
   timeZoneRestriction: varchar("timezone_restriction", { length: 100 }),
   operatingHours: json("operating_hours"), // {start: "09:00", end: "17:00", timezone: "EST", days: ["mon", "tue"]}
-  
+
   // Spam & Quality Control
   spamFilterEnabled: boolean("spam_filter_enabled").default(true),
   duplicateCallWindow: integer("duplicate_call_window").default(24), // hours
@@ -57,49 +57,60 @@ export const campaigns = pgTable("campaigns", {
   maxCallDuration: integer("max_call_duration").default(1800), // seconds
   blockAnonymousCalls: boolean("block_anonymous_calls").default(false),
   allowInternational: boolean("allow_international").default(false),
-  
+
   // Payout & Revenue
   defaultPayout: decimal("default_payout", { precision: 10, scale: 2 }).default("0.00"),
   payoutModel: varchar("payout_model", { length: 50 }).default("per_call"), // per_call, per_minute, per_conversion, revenue_share, profit_share
   revenueModel: varchar("revenue_model", { length: 50 }).default("per_call"),
-  
+
   // Tracking & Analytics
   enableCallRecording: boolean("enable_call_recording").default(true),
   enableCallTranscription: boolean("enable_call_transcription").default(false),
   enableRealTimeBidding: boolean("enable_real_time_bidding").default(false),
   conversionTracking: boolean("conversion_tracking").default(false),
-  
+
   // Advanced Settings
   customHeaders: json("custom_headers"), // for webhook requests
   integrationSettings: json("integration_settings"), // platform-specific configs
   urlParameters: json("url_parameters"), // tracking parameters
-  
+
   // RTB Integration - Direct Target Assignment
   enableRtb: boolean("enable_rtb").default(false).notNull(),
   rtbId: varchar("rtb_id", { length: 32 }).unique(), // 32-character hexadecimal ID for external RTB operations
-  
+
   // RTB Configuration (moved from routers)
   biddingTimeoutMs: integer("bidding_timeout_ms").default(3000),
   minBiddersRequired: integer("min_bidders_required").default(1),
   enablePredictiveRouting: boolean("enable_predictive_routing").default(false),
   revenueType: varchar("revenue_type", { length: 50 }).default("per_call"), // per_call, per_minute, cpa, cpl
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const buyers = pgTable("buyers", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  name: varchar("name").notNull(),
-  email: varchar("email"),
-  phoneNumber: varchar("phone_number"),
-  endpoint: varchar("endpoint"), // webhook endpoint for ping/post
-  status: varchar("status").default("active"),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 255 }),
+  phoneNumber: varchar("phone_number", { length: 20 }),
+  status: varchar("status", { length: 20 }).default("active"),
   priority: integer("priority").default(1),
-  dailyCap: integer("daily_cap").default(100),
-  concurrencyLimit: integer("concurrency_limit").default(5),
-
+  dailyCap: integer("daily_cap").default(50),
+  concurrencyLimit: integer("concurrency_limit").default(3),
+  acceptanceRate: numeric("acceptance_rate", { precision: 5, scale: 2 }).default("0"),
+  avgResponseTime: integer("avg_response_time"),
+  endpoint: text("endpoint"),
+  company: varchar("company", { length: 255 }),
+  subId: varchar("sub_id", { length: 100 }),
+  allowPauseTargets: boolean("allow_pause_targets").default(false),
+  allowSetTargetCaps: boolean("allow_set_target_caps").default(false),
+  allowDisputeConversions: boolean("allow_dispute_conversions").default(false),
+  limitRevenue: boolean("limit_revenue").default(false),
+  restrictDuplicates: varchar("restrict_duplicates", { length: 50 }).default("Do Not Restrict"),
+  estimatedRevenue: varchar("estimated_revenue", { length: 50 }).default("Use Campaign Setting"),
+  priorityBump: integer("priority_bump").default(0),
+  overrideShareableTags: boolean("override_shareable_tags").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -108,59 +119,59 @@ export const targets = pgTable("targets", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   buyerId: integer("buyer_id").references(() => buyers.id).notNull(),
-  
+
   // Basic Information
   name: varchar("name", { length: 256 }).notNull(),
   type: varchar("type", { length: 50 }).default("number").notNull(), // number, sip
   destination: varchar("destination", { length: 255 }).notNull(), // phone number or SIP endpoint
   status: varchar("status", { length: 20 }).default("active").notNull(), // active, paused, inactive
-  
+
   // SIP Configuration
   sipUsername: varchar("sip_username", { length: 255 }),
   sipPassword: varchar("sip_password", { length: 255 }),
   sipHeaders: json("sip_headers").$type<Record<string, string>>(),
-  
+
   // Rates & Revenue
   rate: decimal("rate", { precision: 10, scale: 2 }).default("0.00"), // payout rate
   estimatedRevenue: decimal("estimated_revenue", { precision: 10, scale: 2 }).default("0.00"),
   useEstimatedRevenue: boolean("use_estimated_revenue").default(false), // vs use campaign setting
-  
+
   // Time & Date Filtering
   timeZone: varchar("time_zone", { length: 50 }).default("UTC"),
   operatingHours: json("operating_hours"), // {mode: "basic|advanced", basic: {start: "09:00", end: "17:00", breaks: []}, advanced: {days: {...}}}
   operatingDays: json("operating_days"), // array of allowed days
   operatingMonths: json("operating_months"), // array of allowed months
-  
+
   // Call Settings
   carrier: varchar("carrier", { length: 50 }).default("conversion"),
   globalCarrier: boolean("global_carrier").default(false),
   healthCalc: boolean("health_calc").default(false),
   callCalc: boolean("call_calc").default(false),
   hanifCalc: boolean("hanif_calc").default(false),
-  
+
   // Concurrency Controls
   maxConcurrency: integer("max_concurrency").default(5),
   enableMaxConcurrency: boolean("enable_max_concurrency").default(false),
   hourlyConcurrency: integer("hourly_concurrency").default(10),
   enableHourlyConcurrency: boolean("enable_hourly_concurrency").default(false),
-  
+
   // Duplicate & Quality Controls
   restrictDuplicates: varchar("restrict_duplicates", { length: 50 }).default("do_not_restrict"),
   restrictDuplicatesCallSetting: boolean("restrict_duplicates_call_setting").default(false),
-  
+
   // Predictive Routing
   priorityBump: integer("priority_bump").default(0), // -10 to +10
   enablePredictiveRouting: boolean("enable_predictive_routing").default(false),
-  
+
   // Shareable Tags
   enableShareableTags: boolean("enable_shareable_tags").default(false),
   overrideShareableTags: boolean("override_shareable_tags").default(false),
   shareableTags: json("shareable_tags"), // array of tag objects
-  
+
   // Tag Routing Filters
   enableTagRoutingFilters: boolean("enable_tag_routing_filters").default(false),
   tagRoutingFilters: json("tag_routing_filters"), // complex filtering rules
-  
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -185,7 +196,7 @@ export const calls = pgTable("calls", {
   callSid: varchar("call_sid", { length: 100 }),
   fromNumber: varchar("from_number", { length: 20 }).notNull(),
   toNumber: varchar("to_number", { length: 20 }).notNull(),
-  
+
   // Call Flow Tracking
   flowExecutionId: varchar("flow_execution_id", { length: 100 }), // UUID for tracking flow execution
   ringTreeId: varchar("ring_tree_id", { length: 100 }), // Ring tree identifier
@@ -195,7 +206,7 @@ export const calls = pgTable("calls", {
   dialedNumber: varchar("dialed_number", { length: 20 }), // The number that was actually dialed (from pool)
   numberPoolId: integer("number_pool_id").references(() => numberPools.id), // Pool used for this call
   phoneNumberId: integer("phone_number_id").references(() => phoneNumbers.id), // Specific number from pool
-  
+
   // Call Details & Timing
   duration: integer("duration").default(0).notNull(),
   ringTime: integer("ring_time").default(0), // seconds before answered
@@ -204,21 +215,21 @@ export const calls = pgTable("calls", {
   status: varchar("status", { length: 50 }).notNull(), // ringing, in_progress, completed, failed, busy, no_answer
   disposition: varchar("disposition", { length: 50 }), // connected, no_answer, busy, failed, voicemail
   hangupCause: varchar("hangup_cause", { length: 50 }), // caller_hangup, callee_hangup, timeout, error
-  
+
   // Quality & Performance
   callQuality: varchar("call_quality", { length: 20 }), // excellent, good, fair, poor
   connectionTime: integer("connection_time"), // milliseconds to connect
   audioQuality: varchar("audio_quality", { length: 20 }), // excellent, good, poor
   isDuplicate: boolean("is_duplicate").default(false), // duplicate call detection
   duplicateOfCallId: integer("duplicate_of_call_id"),
-  
+
   // Financial Tracking
   cost: decimal("cost", { precision: 10, scale: 4 }).default("0.0000"), // Actual cost (Twilio charges)
   payout: decimal("payout", { precision: 10, scale: 4 }).default("0.0000"), // Amount paid to publisher
   revenue: decimal("revenue", { precision: 10, scale: 4 }).default("0.0000"), // Revenue from buyer
   profit: decimal("profit", { precision: 10, scale: 4 }).default("0.0000"), // revenue - payout - cost
   margin: decimal("margin", { precision: 5, scale: 2 }).default("0.00"), // profit margin percentage
-  
+
   // Attribution & Tracking
   tags: text("tags").array(), // Tags from the phone number used
   utmSource: varchar("utm_source", { length: 255 }),
@@ -228,7 +239,7 @@ export const calls = pgTable("calls", {
   utmTerm: varchar("utm_term", { length: 255 }),
   referrer: text("referrer"),
   landingPage: text("landing_page"),
-  
+
   // Geographic & Technical
   geoLocation: varchar("geo_location", { length: 100 }),
   city: varchar("city", { length: 100 }),
@@ -238,7 +249,7 @@ export const calls = pgTable("calls", {
   userAgent: text("user_agent"),
   ipAddress: varchar("ip_address", { length: 45 }),
   deviceType: varchar("device_type", { length: 50 }), // mobile, desktop, tablet
-  
+
   // Hierarchical sub-tags for advanced filtering (RedTrack-style)
   sub1: varchar("sub1", { length: 255 }), // Product/service type
   sub2: varchar("sub2", { length: 255 }), // Geographic region
@@ -253,7 +264,7 @@ export const calls = pgTable("calls", {
   placement: varchar("placement", { length: 255 }), // Ad placement
   adGroup: varchar("ad_group", { length: 255 }), // Ad group name
   creativeId: varchar("creative_id", { length: 255 }), // Creative/ad ID
-  
+
   // Recording & Transcription
   recordingUrl: varchar("recording_url", { length: 512 }),
   recordingSid: varchar("recording_sid", { length: 100 }),
@@ -262,13 +273,13 @@ export const calls = pgTable("calls", {
   transcription: text("transcription"),
   transcriptionStatus: varchar("transcription_status", { length: 50 }), // pending, completed, failed
   transcriptionConfidence: decimal("transcription_confidence", { precision: 3, scale: 2 }), // 0.00 to 1.00
-  
+
   // Conversion & Revenue Tracking
   isConverted: boolean("is_converted").default(false),
   conversionType: varchar("conversion_type", { length: 50 }), // sale, lead, appointment, quote
   conversionValue: decimal("conversion_value", { precision: 10, scale: 2 }),
   conversionTimestamp: timestamp("conversion_timestamp"),
-  
+
   // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -353,7 +364,7 @@ export const agents = pgTable("agents", {
   supervisorId: integer("supervisor_id"),
   timezone: varchar("timezone", { length: 50 }).default("UTC"),
   workSchedule: text("work_schedule"), // JSON: working hours and days
-  
+
   // Performance metrics
   callsHandled: integer("calls_handled").default(0).notNull(),
   totalTalkTime: integer("total_talk_time").default(0).notNull(), // seconds
@@ -361,13 +372,13 @@ export const agents = pgTable("agents", {
   totalBreakTime: integer("total_break_time").default(0).notNull(), // seconds
   conversationRate: decimal("conversion_rate", { precision: 5, scale: 2 }).default("0.00"), // percentage
   customerSatisfaction: decimal("customer_satisfaction", { precision: 3, scale: 2 }).default("0.00"), // 1-5 rating
-  
+
   // System tracking
   lastActivityAt: timestamp("last_activity_at"),
   lastCallAt: timestamp("last_call_at"),
   loginTime: timestamp("login_time"),
   isOnline: boolean("is_online").default(false).notNull(),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -459,28 +470,28 @@ export const callTrackingTags = pgTable("call_tracking_tags", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
-  
+
   // Tag Configuration
   name: varchar("name", { length: 256 }).notNull(), // Tag Name
   tagCode: varchar("tag_code", { length: 100 }).notNull().unique(), // Unique identifier for JS
   primaryNumberId: integer("primary_number_id").references(() => phoneNumbers.id), // Primary Publisher Number
   numberToReplace: varchar("number_to_replace", { length: 20 }), // Number to Replace
-  
+
   // Pool Configuration
   poolId: integer("pool_id").references(() => numberPools.id), // Assigned pool for rotation
   rotationStrategy: varchar("rotation_strategy", { length: 50 }).default("round_robin").notNull(), // round_robin, sticky, random, priority
-  
+
   // Publisher Assignment
   publisherId: integer("publisher_id").references(() => publishers.id), // Assigned publisher (nullable for historical preservation)
-  
+
   // User Data Collection
   captureUserData: boolean("capture_user_data").default(false).notNull(),
   trackingFields: json("tracking_fields"), // {ip: true, userAgent: true, referrer: true, utm: true}
-  
+
   // Session Management
   sessionTimeout: integer("session_timeout").default(1800).notNull(), // 30 minutes in seconds
   stickyDuration: integer("sticky_duration").default(86400).notNull(), // 24 hours for sticky routing
-  
+
   // Status
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -493,10 +504,10 @@ export const dniSessions = pgTable("dni_sessions", {
   tagId: integer("tag_id").references(() => callTrackingTags.id).notNull(),
   sessionId: varchar("session_id", { length: 128 }).notNull(), // Browser session ID
   visitorId: varchar("visitor_id", { length: 128 }), // Persistent visitor ID
-  
+
   // Assigned Number
   assignedNumberId: integer("assigned_number_id").references(() => phoneNumbers.id).notNull(),
-  
+
   // Session Data
   ipAddress: varchar("ip_address", { length: 45 }),
   userAgent: text("user_agent"),
@@ -504,15 +515,15 @@ export const dniSessions = pgTable("dni_sessions", {
   utmSource: varchar("utm_source", { length: 255 }),
   utmMedium: varchar("utm_medium", { length: 255 }),
   utmCampaign: varchar("utm_campaign", { length: 255 }),
-  utmContent: varchar("utm_content", { length: 255 }),
   utmTerm: varchar("utm_term", { length: 255 }),
-  
+  utmContent: varchar("utm_content", { length: 255 }),
+
   // Tracking
   firstSeen: timestamp("first_seen").defaultNow().notNull(),
   lastSeen: timestamp("last_seen").defaultNow().notNull(),
   pageViews: integer("page_views").default(1).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -521,22 +532,21 @@ export const dniSessions = pgTable("dni_sessions", {
 export const dniSnippets = pgTable("dni_snippets", {
   id: serial("id").primaryKey(),
   tagId: integer("tag_id").references(() => callTrackingTags.id).notNull(),
-  
+
   // Code Generation
-  jsCode: text("js_code").notNull(), // Generated JavaScript code
-  htmlSnippet: text("html_snippet"), // HTML integration snippet
+  jsCode: text("js_code").notNull(),  htmlSnippet: text("html_snippet"), // HTML integration snippet
   version: varchar("version", { length: 10 }).default("1.0").notNull(),
-  
+
   // Configuration
   domains: text("domains").array(), // Allowed domains
   selectors: text("selectors").array(), // CSS selectors to replace numbers
   customConfig: json("custom_config"), // Additional configuration
-  
+
   // Analytics
   impressions: integer("impressions").default(0).notNull(),
   conversions: integer("conversions").default(0).notNull(),
   lastUsed: timestamp("last_used"),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -651,21 +661,21 @@ export const phoneNumberTags = pgTable("phone_number_tags", {
   id: serial("id").primaryKey(),
   phoneNumberId: integer("phone_number_id").references(() => phoneNumbers.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  
+
   // Tag Information
   tagName: varchar("tag_name", { length: 100 }).notNull(), // e.g., "google-ads", "facebook", "affiliate-123"
   tagCategory: varchar("tag_category", { length: 50 }), // traffic-source, publisher, campaign-type, geographic, quality
   tagValue: varchar("tag_value", { length: 255 }), // Additional value for the tag
-  
+
   // Attribution Settings
   priority: integer("priority").default(1), // Priority for this tag in attribution
   isActive: boolean("is_active").default(true).notNull(),
-  
+
   // Performance Tracking
   callCount: integer("call_count").default(0),
   totalRevenue: decimal("total_revenue", { precision: 10, scale: 2 }).default("0.00"),
   conversionRate: decimal("conversion_rate", { precision: 5, scale: 2 }).default("0.00"),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
@@ -681,33 +691,33 @@ export const publishers = pgTable("publishers", {
   email: varchar("email", { length: 256 }),
   phoneNumber: varchar("phone_number", { length: 20 }),
   company: varchar("company", { length: 256 }),
-  
+
   // Publisher Type & Classification
   publisherType: varchar("publisher_type", { length: 50 }).default("affiliate"), // affiliate, network, direct, internal
   trafficSource: varchar("traffic_source", { length: 100 }), // google-ads, facebook, bing, organic, email
   quality: varchar("quality", { length: 20 }).default("standard"), // premium, standard, test, blocked
-  
+
   // Financial Settings
   defaultPayout: decimal("default_payout", { precision: 10, scale: 2 }).default("0.00"),
   payoutModel: varchar("payout_model", { length: 50 }).default("per_call"), // per_call, per_minute, cpa, cpl, revenue_share
   currency: varchar("currency", { length: 10 }).default("USD"),
-  
+
   // Performance Tracking
   callsGenerated: integer("calls_generated").default(0),
   conversions: integer("conversions").default(0),
   totalPayout: decimal("total_payout", { precision: 10, scale: 2 }).default("0.00"),
   avgCallDuration: integer("avg_call_duration").default(0),
   conversionRate: decimal("conversion_rate", { precision: 5, scale: 2 }).default("0.00"),
-  
+
   // Contact & Integration
   postbackUrl: varchar("postback_url", { length: 512 }), // For conversion tracking
   webhookUrl: varchar("webhook_url", { length: 512 }), // For real-time notifications
   apiKey: varchar("api_key", { length: 100 }), // For API access
-  
+
   // Status & Controls
   status: varchar("status", { length: 20 }).default("active"), // active, paused, blocked, pending
   notes: text("notes"),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -718,23 +728,23 @@ export const campaignPublishers = pgTable("campaign_publishers", {
   userId: integer("user_id").references(() => users.id).notNull(),
   campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   publisherId: integer("publisher_id").references(() => publishers.id).notNull(),
-  
+
   // Payout Configuration
   payout: decimal("payout", { precision: 10, scale: 2 }).notNull(),
   payoutModel: varchar("payout_model", { length: 50 }).default("per_call"),
-  
+
   // Caps & Limits
   dailyCap: integer("daily_cap").default(100),
   monthlyCap: integer("monthly_cap").default(3000),
-  
+
   // Performance Requirements
   minCallDuration: integer("min_call_duration").default(30), // seconds
   maxDuplicateRate: decimal("max_duplicate_rate", { precision: 5, scale: 2 }).default("10.00"), // percentage
-  
+
   // Status & Tracking
   isActive: boolean("is_active").default(true).notNull(),
   assignedAt: timestamp("assigned_at").defaultNow().notNull(),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
@@ -749,7 +759,7 @@ export const userColumnPreferences = pgTable("user_column_preferences", {
   visibleColumns: text("visible_columns").array().notNull(), // Array of column IDs that are visible
   columnOrder: text("column_order").array(), // Custom column ordering
   columnWidths: json("column_widths"), // Column width preferences as JSON object
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
@@ -773,20 +783,27 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
   updatedAt: true,
 });
 
-export const insertBuyerSchema = createInsertSchema(buyers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  userId: z.number().optional(), // Made optional for client-side validation
-  name: z.string().min(1, "Buyer name is required"),
-  phoneNumber: z.string().min(1, "Phone number is required"),
-  status: z.string().optional(),
-  priority: z.number().optional(),
-  dailyCap: z.number().optional(),
-  concurrencyLimit: z.number().optional(),
-  email: z.string().email("Invalid email format").optional().or(z.literal("")),
-  endpoint: z.string().url("Invalid endpoint URL").optional().or(z.literal("")),
+export const insertBuyerSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email().optional().or(z.literal("")),
+  phoneNumber: z.string().optional(),
+  status: z.enum(["active", "paused", "inactive"]).optional(),
+  priority: z.number().min(1).max(10).optional(),
+  dailyCap: z.number().min(1).optional(),
+  concurrencyLimit: z.number().min(1).optional(),
+  acceptanceRate: z.number().min(0).max(100).optional(),
+  avgResponseTime: z.number().min(0).optional(),
+  endpoint: z.string().url().optional().or(z.literal("")),
+  company: z.string().optional(),
+  subId: z.string().optional(),
+  allowPauseTargets: z.boolean().optional(),
+  allowSetTargetCaps: z.boolean().optional(),
+  allowDisputeConversions: z.boolean().optional(),
+  limitRevenue: z.boolean().optional(),
+  restrictDuplicates: z.string().optional(),
+  estimatedRevenue: z.string().optional(),
+  priorityBump: z.number().min(-10).max(10).optional(),
+  overrideShareableTags: z.boolean().optional(),
 });
 
 export const insertCampaignBuyerSchema = createInsertSchema(campaignBuyers).omit({
@@ -1094,27 +1111,27 @@ export const callFlows = pgTable("call_flows", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   campaignId: uuid("campaign_id").references(() => campaigns.id),
-  
+
   // Flow Configuration
   name: varchar("name", { length: 256 }).notNull(),
   description: text("description"),
   version: varchar("version", { length: 50 }).default("1.0.0").notNull(),
-  
+
   // Flow Definition (JSON structure)
   flowDefinition: json("flow_definition").notNull(), // Complete flow structure
-  
+
   // Flow Status & Settings
   status: varchar("status", { length: 50 }).default("draft").notNull(), // draft, active, paused, archived
   isActive: boolean("is_active").default(false).notNull(),
   isTemplate: boolean("is_template").default(false).notNull(),
   templateCategory: varchar("template_category", { length: 100 }),
-  
+
   // Performance Tracking
   totalExecutions: integer("total_executions").default(0).notNull(),
   successfulExecutions: integer("successful_executions").default(0).notNull(),
   failedExecutions: integer("failed_executions").default(0).notNull(),
   avgExecutionTime: integer("avg_execution_time").default(0).notNull(), // milliseconds
-  
+
   // Metadata
   tags: text("tags").array(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -1125,25 +1142,25 @@ export const callFlows = pgTable("call_flows", {
 export const callFlowNodes = pgTable("call_flow_nodes", {
   id: serial("id").primaryKey(),
   flowId: integer("flow_id").references(() => callFlows.id).notNull(),
-  
+
   // Node Configuration
   nodeId: varchar("node_id", { length: 100 }).notNull(), // unique within flow
   nodeType: varchar("node_type", { length: 50 }).notNull(), // condition, action, trigger, end
-  
+
   // Node Properties
   name: varchar("name", { length: 256 }).notNull(),
   description: text("description"),
-  
+
   // Node Definition
   config: json("config").notNull(), // node-specific configuration
-  
+
   // Position for visual editor
   position: json("position"), // {x: number, y: number}
-  
+
   // Execution tracking
   executionCount: integer("execution_count").default(0).notNull(),
   lastExecuted: timestamp("last_executed"),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -1151,22 +1168,22 @@ export const callFlowNodes = pgTable("call_flow_nodes", {
 export const callFlowConnections = pgTable("call_flow_connections", {
   id: serial("id").primaryKey(),
   flowId: integer("flow_id").references(() => callFlows.id).notNull(),
-  
+
   // Connection Definition
   fromNodeId: varchar("from_node_id", { length: 100 }).notNull(),
   toNodeId: varchar("to_node_id", { length: 100 }).notNull(),
-  
+
   // Connection Properties
   conditionType: varchar("condition_type", { length: 50 }), // success, failure, timeout, custom
   conditionValue: varchar("condition_value", { length: 256 }),
-  
+
   // Connection styling for visual editor
   style: json("style"), // connection appearance
-  
+
   // Execution tracking
   traversalCount: integer("traversal_count").default(0).notNull(),
   lastTraversed: timestamp("last_traversed"),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -1174,30 +1191,30 @@ export const callFlowExecutions = pgTable("call_flow_executions", {
   id: serial("id").primaryKey(),
   flowId: integer("flow_id").references(() => callFlows.id).notNull(),
   callId: integer("call_id").references(() => calls.id),
-  
+
   // Execution Details
   executionId: varchar("execution_id", { length: 100 }).notNull().unique(),
   status: varchar("status", { length: 50 }).notNull(), // running, completed, failed, timeout
-  
+
   // Execution Path
   startNodeId: varchar("start_node_id", { length: 100 }),
   currentNodeId: varchar("current_node_id", { length: 100 }),
   endNodeId: varchar("end_node_id", { length: 100 }),
-  
+
   // Execution Context
   context: json("context"), // variables and state during execution
   inputData: json("input_data"), // initial data passed to flow
   outputData: json("output_data"), // final result data
-  
+
   // Timing
   startedAt: timestamp("started_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
   duration: integer("duration"), // milliseconds
-  
+
   // Error handling
   errorMessage: text("error_message"),
   errorNode: varchar("error_node", { length: 100 }),
-  
+
   // Metadata
   executedBy: varchar("executed_by", { length: 100 }), // system, user, webhook
   triggerSource: varchar("trigger_source", { length: 100 }), // call, test, manual
@@ -1206,20 +1223,20 @@ export const callFlowExecutions = pgTable("call_flow_executions", {
 export const callFlowVariables = pgTable("call_flow_variables", {
   id: serial("id").primaryKey(),
   flowId: integer("flow_id").references(() => callFlows.id).notNull(),
-  
+
   // Variable Definition
   name: varchar("name", { length: 100 }).notNull(),
   type: varchar("type", { length: 50 }).notNull(), // string, number, boolean, json, array
-  
+
   // Variable Properties
   defaultValue: text("default_value"),
   description: text("description"),
   isRequired: boolean("is_required").default(false).notNull(),
   isGlobal: boolean("is_global").default(false).notNull(), // accessible across all flows
-  
+
   // Validation
   validationRules: json("validation_rules"), // regex, min/max, enum values
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -1228,14 +1245,14 @@ export const callFlowVariables = pgTable("call_flow_variables", {
 export const rtbTargets = pgTable("rtb_targets", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  
+
   // Target Configuration
   name: varchar("name", { length: 256 }).notNull(),
   companyName: varchar("company_name", { length: 256 }),
   contactPerson: varchar("contact_person", { length: 256 }),
   contactEmail: varchar("contact_email", { length: 256 }),
   contactPhone: varchar("contact_phone", { length: 50 }),
-  
+
   // Endpoint Configuration
   endpointUrl: varchar("endpoint_url", { length: 512 }).notNull(),
   httpMethod: varchar("http_method", { length: 10 }).default("POST").notNull(),
@@ -1243,17 +1260,17 @@ export const rtbTargets = pgTable("rtb_targets", {
   requestBody: text("request_body"),
   timeoutMs: integer("timeout_ms").default(3000).notNull(),
   connectionTimeout: integer("connection_timeout").default(5000).notNull(),
-  
+
   // Authentication
   authMethod: varchar("auth_method", { length: 50 }).default("none").notNull(), // none, api_key, bearer, basic
   authToken: varchar("auth_token", { length: 512 }),
   authHeaders: json("auth_headers"), // jsonb for custom headers
-  
+
   // Operational Settings
   timezone: varchar("timezone", { length: 50 }).default("UTC").notNull(),
   hoursOfOperation: json("hours_of_operation"), // jsonb: {monday: {start: "09:00", end: "17:00"}, ...}
   isActive: boolean("is_active").default(true).notNull(),
-  
+
   // Capacity Management
   maxConcurrentCalls: integer("max_concurrent_calls").default(10).notNull(),
   hourlyConcurrency: integer("hourly_concurrency").default(5).notNull(),
@@ -1261,49 +1278,49 @@ export const rtbTargets = pgTable("rtb_targets", {
   hourlyCap: integer("hourly_cap").default(10).notNull(),
   monthlyCap: integer("monthly_cap").default(3000).notNull(),
   globalCallCap: integer("global_call_cap").default(10000).notNull(),
-  
+
   // Sub ID Support for campaign segmentation
   subIdTracking: boolean("sub_id_tracking").default(false).notNull(),
   allowedSubIds: text("allowed_sub_ids").array(), // array of allowed sub IDs
-  
+
   // Dynamic routing capabilities
   enableDynamicNumber: boolean("enable_dynamic_number").default(false).notNull(),
   enableDynamicSip: boolean("enable_dynamic_sip").default(false).notNull(),
-  
+
   // RTB Shareable Tags
   rtbShareableTags: boolean("rtb_shareable_tags").default(false).notNull(),
   sharedTagGroups: text("shared_tag_groups").array(), // group IDs for tag sharing
-  
+
   // IVR Configuration
   enableIvr: boolean("enable_ivr").default(false).notNull(),
   ivrOptions: json("ivr_options"), // jsonb: {prompts: [], routing: {}}
-  
+
   // Duplicate call handling
   restrictDuplicates: boolean("restrict_duplicates").default(false).notNull(),
   duplicateWindow: integer("duplicate_window").default(3600).notNull(), // seconds
   duplicateAction: varchar("duplicate_action", { length: 50 }).default("block").notNull(), // block, route_to_fallback, allow
-  
+
   // Recording settings
   disableRecordings: boolean("disable_recordings").default(false).notNull(),
-  
+
   // Bidding Configuration
   minBidAmount: decimal("min_bid_amount", { precision: 10, scale: 2 }).default("0.00").notNull(),
   maxBidAmount: decimal("max_bid_amount", { precision: 10, scale: 2 }).default("100.00").notNull(),
   currency: varchar("currency", { length: 3 }).default("USD").notNull(),
-  
+
   // Phase 1: Advanced Bidding Features
   bidStrategy: varchar("bid_strategy", { length: 50 }).default("fixed").notNull(), // fixed, percentage, dynamic, auto
   bidFloor: decimal("bid_floor", { precision: 10, scale: 2 }), // minimum acceptable bid
   bidCeiling: decimal("bid_ceiling", { precision: 10, scale: 2 }), // maximum bid limit
   geoBidMultipliers: json("geo_bid_multipliers"), // {CA: 1.5, NY: 1.3, TX: 1.1}
   performanceBidAdjustment: boolean("performance_bid_adjustment").default(false).notNull(),
-  
+
   // Auto-bidding settings
   targetConversionRate: decimal("target_conversion_rate", { precision: 5, scale: 2 }), // 0.00 to 100.00
   maxCostPerAcquisition: decimal("max_cost_per_acquisition", { precision: 10, scale: 2 }),
   bidAdjustmentFrequency: integer("bid_adjustment_frequency").default(3600).notNull(), // seconds
   enableAutoBidding: boolean("enable_auto_bidding").default(false).notNull(),
-  
+
   // Phase 2: Geographic Targeting
   allowedStates: text("allowed_states").array(), // ['CA', 'NY', 'TX']
   blockedStates: text("blocked_states").array(), // ['AL', 'AK']
@@ -1315,7 +1332,7 @@ export const rtbTargets = pgTable("rtb_targets", {
   geoCenter: json("geo_center"), // {lat: 40.7128, lng: -74.0060, city: "New York", state: "NY"}
   enableGeoTargeting: boolean("enable_geo_targeting").default(false).notNull(),
   geoTargetingMode: varchar("geo_targeting_mode", { length: 20 }).default("inclusive").notNull(), // inclusive, exclusive
-  
+
   // Phase 3: Advanced Filtering
   qualityScoreThreshold: integer("quality_score_threshold").default(0), // 0-100 minimum quality score
   enableCallerHistory: boolean("enable_caller_history").default(false).notNull(),
@@ -1334,19 +1351,19 @@ export const rtbTargets = pgTable("rtb_targets", {
   blockedDeviceTypes: text("blocked_device_types").array(), // ['payphone', 'blocked']
   enableCustomFiltering: boolean("enable_custom_filtering").default(false).notNull(),
   customFilteringRules: json("custom_filtering_rules"), // Array of custom filter objects
-  
+
   // Advanced Response Parsing Fields
   bidAmountPath: varchar("bid_amount_path", { length: 255 }),
   destinationNumberPath: varchar("destination_number_path", { length: 255 }),
   acceptancePath: varchar("acceptance_path", { length: 255 }),
   currencyPath: varchar("currency_path", { length: 255 }),
   durationPath: varchar("duration_path", { length: 255 }),
-  
+
   // Performance Tracking
   totalPings: integer("total_pings").default(0).notNull(),
   successfulBids: integer("successful_bids").default(0).notNull(),
   wonCalls: integer("won_calls").default(0).notNull(),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
@@ -1357,35 +1374,35 @@ export const rtbTargets = pgTable("rtb_targets", {
 export const rtbRouters = pgTable("rtb_routers", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  
+
   // Router Configuration
   name: varchar("name", { length: 256 }).notNull(),
   description: text("description"),
   biddingTimeoutMs: integer("bidding_timeout_ms").default(3000).notNull(),
   minBiddersRequired: integer("min_bidders_required").default(1).notNull(),
   enablePredictiveRouting: boolean("enable_predictive_routing").default(false).notNull(),
-  
+
   // Business Logic
   revenueType: varchar("revenue_type", { length: 50 }).default("per_call").notNull(), // per_call, per_minute, cpa, cpl
   conversionTracking: boolean("conversion_tracking").default(false).notNull(),
   minRevenueAmount: decimal("min_revenue_amount", { precision: 10, scale: 2 }).default("0.00").notNull(),
   useRingTreeSettings: boolean("use_ring_tree_settings").default(false).notNull(),
-  
+
   // Error Handling Settings
   inheritFromRingTree: boolean("inherit_from_ring_tree").default(false).notNull(),
   errorHandlingMode: varchar("error_handling_mode", { length: 50 }).default("continue").notNull(), // continue, stop, fallback
-  
+
   // Priority Bump Settings (-10 to +10 scale)
   priorityBumpEnabled: boolean("priority_bump_enabled").default(false).notNull(),
   priorityBumpValue: integer("priority_bump_value").default(0).notNull(), // -10 to +10
-  
+
   // Predictive Routing Advanced Settings
   estimatedRevenue: decimal("estimated_revenue", { precision: 10, scale: 2 }).default("0.00").notNull(),
   useEstimatedRevenue: boolean("use_estimated_revenue").default(false).notNull(),
   useCampaignSettings: boolean("use_campaign_settings").default(true).notNull(),
-  
+
   isActive: boolean("is_active").default(true).notNull(),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
@@ -1398,7 +1415,7 @@ export const campaignRtbTargets = pgTable("campaign_rtb_targets", {
   id: serial("id").primaryKey(),
   campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   rtbTargetId: integer("rtb_target_id").references(() => rtbTargets.id).notNull(),
-  
+
   // Assignment Configuration
   priority: integer("priority").default(1).notNull(),
   weight: integer("weight").default(100).notNull(), // for weighted distribution
@@ -1417,30 +1434,30 @@ export const rtbBidRequests = pgTable("rtb_bid_requests", {
   requestId: varchar("request_id", { length: 128 }).notNull().unique(),
   campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   rtbRouterId: integer("rtb_router_id").references(() => rtbRouters.id).notNull(),
-  
+
   // Call Information
   callerId: varchar("caller_id", { length: 20 }),
   callerState: varchar("caller_state", { length: 2 }),
   callerZip: varchar("caller_zip", { length: 10 }),
   callStartTime: timestamp("call_start_time").notNull(),
-  
+
   // Request Configuration
   tags: json("tags"), // jsonb for flexible metadata
   timeoutMs: integer("timeout_ms").default(3000).notNull(),
-  
+
   // Response Tracking
   totalTargetsPinged: integer("total_targets_pinged").default(0).notNull(),
   successfulResponses: integer("successful_responses").default(0).notNull(),
-  
+
   // Auction Results
   winningBidAmount: decimal("winning_bid_amount", { precision: 10, scale: 2 }),
   winningTargetId: integer("winning_target_id").references(() => rtbTargets.id),
-  
+
   // Performance Metrics
   requestSentAt: timestamp("request_sent_at").defaultNow().notNull(),
   biddingCompletedAt: timestamp("bidding_completed_at"),
   totalResponseTimeMs: integer("total_response_time_ms"),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_rtb_requests_campaign").on(table.campaignId),
@@ -1453,24 +1470,24 @@ export const rtbBidResponses = pgTable("rtb_bid_responses", {
   id: serial("id").primaryKey(),
   requestId: varchar("request_id", { length: 128 }).references(() => rtbBidRequests.requestId).notNull(),
   rtbTargetId: integer("rtb_target_id").references(() => rtbTargets.id).notNull(),
-  
+
   // Bid Information
   bidAmount: decimal("bid_amount", { precision: 10, scale: 2 }).notNull(),
   bidCurrency: varchar("bid_currency", { length: 3 }).default("USD").notNull(),
   requiredDuration: integer("required_duration"), // minimum call duration required
   destinationNumber: varchar("destination_number", { length: 20 }).notNull(),
-  
+
   // Response Tracking
   responseTimeMs: integer("response_time_ms").notNull(),
   responseStatus: varchar("response_status", { length: 50 }).notNull(), // success, timeout, error, invalid
   errorMessage: text("error_message"),
   rawResponse: json("raw_response"), // jsonb for full response storage
-  
+
   // Bid Validation
   isValid: boolean("is_valid").default(true).notNull(),
   isWinningBid: boolean("is_winning_bid").default(false).notNull(),
   rejectionReason: text("rejection_reason"),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_rtb_responses_request").on(table.requestId),
@@ -1501,7 +1518,7 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
   minBidAmount: z.number().min(0).optional(),
   maxBidAmount: z.number().min(0).optional(),
   currency: z.string().length(3).optional(),
-  
+
   // Phase 1: Advanced Bidding Features validation
   bidStrategy: z.enum(["fixed", "percentage", "dynamic", "auto"]).optional(),
   bidFloor: z.number().min(0).optional(),
@@ -1512,7 +1529,7 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
   maxCostPerAcquisition: z.number().min(0).optional(),
   bidAdjustmentFrequency: z.number().min(300).max(86400).optional(),
   enableAutoBidding: z.boolean().optional(),
-  
+
   // Phase 2: Geographic Targeting validation
   allowedStates: z.array(z.string().length(2)).optional(),
   blockedStates: z.array(z.string().length(2)).optional(),
@@ -1529,7 +1546,7 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
   }).optional(),
   enableGeoTargeting: z.boolean().optional(),
   geoTargetingMode: z.enum(["inclusive", "exclusive"]).optional(),
-  
+
   // Phase 3: Advanced Filtering validation
   qualityScoreThreshold: z.number().min(0).max(100).optional(),
   enableCallerHistory: z.boolean().optional(),
@@ -1737,12 +1754,12 @@ export const visitorSessions = pgTable("visitor_sessions", {
   id: serial("id").primaryKey(),
   sessionId: varchar("session_id", { length: 255 }).unique().notNull(),
   userId: integer("user_id").references(() => users.id),
-  
+
   // Session Info
   ipAddress: varchar("ip_address", { length: 45 }),
   userAgent: text("user_agent"),
   referrer: text("referrer"),
-  
+
   // Attribution Data
   source: varchar("source", { length: 255 }), // google, facebook, direct
   medium: varchar("medium", { length: 255 }), // organic, cpc, email, social
@@ -1753,7 +1770,7 @@ export const visitorSessions = pgTable("visitor_sessions", {
   utmCampaign: varchar("utm_campaign", { length: 255 }),
   utmTerm: varchar("utm_term", { length: 255 }),
   utmContent: varchar("utm_content", { length: 255 }),
-  
+
   // RedTrack Integration
   redtrackClickId: varchar("redtrack_clickid", { length: 255 }),
   redtrackCampaignId: varchar("redtrack_campaign_id", { length: 100 }),
@@ -1761,15 +1778,15 @@ export const visitorSessions = pgTable("visitor_sessions", {
   redtrackAffiliateId: varchar("redtrack_affiliate_id", { length: 100 }),
   redtrackSubId: varchar("redtrack_sub_id", { length: 100 }),
   redtrackVisitorId: varchar("redtrack_visitor_id", { length: 255 }),
-  
+
   // Landing Page
   landingPage: text("landing_page"),
   currentPage: text("current_page"),
-  
+
   // Timestamps
   firstVisit: timestamp("first_visit").defaultNow().notNull(),
   lastActivity: timestamp("last_activity").defaultNow().notNull(),
-  
+
   // Tracking State
   isActive: boolean("is_active").default(true).notNull(),
   hasConverted: boolean("has_converted").default(false).notNull(),
@@ -1779,24 +1796,24 @@ export const visitorSessions = pgTable("visitor_sessions", {
 export const redtrackConfigs = pgTable("redtrack_configs", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  
+
   // Configuration Details
   name: varchar("name", { length: 256 }).notNull(),
   domain: varchar("domain", { length: 512 }).notNull(), // RedTrack domain
   apiKey: varchar("api_key", { length: 512 }),
-  
+
   // Postback Settings
   postbackUrl: varchar("postback_url", { length: 512 }).notNull(),
   conversionType: varchar("conversion_type", { length: 50 }).default("ConvertedCall").notNull(),
-  
+
   // Default Values
   defaultRevenue: decimal("default_revenue", { precision: 10, scale: 2 }).default("20.00"),
   currency: varchar("currency", { length: 3 }).default("USD"),
-  
+
   // Status
   isActive: boolean("is_active").default(true).notNull(),
   lastUsed: timestamp("last_used"),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -1806,30 +1823,30 @@ export const conversionEvents = pgTable("conversion_events", {
   sessionId: varchar("session_id", { length: 255 }).references(() => visitorSessions.sessionId).notNull(),
   campaignId: uuid("campaign_id").references(() => campaigns.id),
   callId: integer("call_id").references(() => calls.id),
-  
+
   // Conversion Details
   conversionType: varchar("conversion_type", { length: 50 }).default("call").notNull(), // call, form, chat
   conversionValue: decimal("conversion_value", { precision: 10, scale: 2 }).default("0.00"),
   currency: varchar("currency", { length: 3 }).default("USD").notNull(),
-  
+
   // Call-specific data
   callerNumber: varchar("caller_number", { length: 20 }),
   duration: integer("duration"), // call duration in seconds
   callStatus: varchar("call_status", { length: 50 }), // completed, missed, busy
-  
+
   // Attribution
   attributionModel: varchar("attribution_model", { length: 50 }).default("last_touch").notNull(),
-  
+
   // RedTrack Integration
   redtrackClickId: varchar("redtrack_clickid", { length: 255 }),
   redtrackPostbackSent: boolean("redtrack_postback_sent").default(false).notNull(),
   redtrackPostbackUrl: text("redtrack_postback_url"),
   redtrackPostbackResponse: text("redtrack_postback_response"),
   redtrackPostbackStatus: varchar("redtrack_postback_status", { length: 20 }), // success, failed, pending
-  
+
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  
+
   // Pixel Data
   pixelsFired: boolean("pixels_fired").default(false).notNull(),
   pixelData: json("pixel_data"), // URLs and responses

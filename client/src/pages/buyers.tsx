@@ -12,6 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertBuyerSchema, type Buyer, type InsertBuyer } from "@shared/schema";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { apiRequest } from "@/lib/queryClient";
 import { Trash2, Edit2, Plus, Phone, Mail, Globe, TrendingUp, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -130,7 +132,16 @@ function BuyerForm({
       priority: buyer?.priority || 1,
       dailyCap: buyer?.dailyCap || 50,
       concurrencyLimit: buyer?.concurrencyLimit || 3,
-
+      company: buyer?.company || "",
+      subId: buyer?.subId || "",
+      allowPauseTargets: buyer?.allowPauseTargets || false,
+      allowSetTargetCaps: buyer?.allowSetTargetCaps || false,
+      allowDisputeConversions: buyer?.allowDisputeConversions || false,
+      limitRevenue: buyer?.limitRevenue || false,
+      restrictDuplicates: buyer?.restrictDuplicates || "Do Not Restrict",
+      estimatedRevenue: buyer?.estimatedRevenue || "Use Campaign Setting",
+      priorityBump: buyer?.priorityBump || 0,
+      overrideShareableTags: buyer?.overrideShareableTags || false,
     },
   });
 
@@ -146,7 +157,16 @@ function BuyerForm({
         priority: buyer.priority || 1,
         dailyCap: buyer.dailyCap || 50,
         concurrencyLimit: buyer.concurrencyLimit || 3,
-
+        company: buyer.company || "",
+        subId: buyer.subId || "",
+        allowPauseTargets: buyer.allowPauseTargets || false,
+        allowSetTargetCaps: buyer.allowSetTargetCaps || false,
+        allowDisputeConversions: buyer.allowDisputeConversions || false,
+        limitRevenue: buyer.limitRevenue || false,
+        restrictDuplicates: buyer.restrictDuplicates || "Do Not Restrict",
+        estimatedRevenue: buyer.estimatedRevenue || "Use Campaign Setting",
+        priorityBump: buyer.priorityBump || 0,
+        overrideShareableTags: buyer.overrideShareableTags || false,
       });
     } else if (!buyer && open) {
       // Reset to empty form for new buyer
@@ -159,7 +179,16 @@ function BuyerForm({
         priority: 1,
         dailyCap: 50,
         concurrencyLimit: 3,
-
+        company: "",
+        subId: "",
+        allowPauseTargets: false,
+        allowSetTargetCaps: false,
+        allowDisputeConversions: false,
+        limitRevenue: false,
+        restrictDuplicates: "Do Not Restrict",
+        estimatedRevenue: "Use Campaign Setting",
+        priorityBump: 0,
+        overrideShareableTags: false,
       });
     }
   }, [buyer, open, form]);
@@ -373,6 +402,50 @@ function BuyerForm({
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="company"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Company</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Company name"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="subId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sub Id</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Sub ID"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="endpoint"
@@ -509,6 +582,194 @@ function BuyerForm({
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Buyer Permissions Section */}
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Buyer Permissions</h3>
+              
+              <div className="grid grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="allowPauseTargets"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between space-y-0">
+                      <div className="space-y-1">
+                        <FormLabel className="text-sm">Allow Buyer To Pause Targets</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="allowSetTargetCaps"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between space-y-0">
+                      <div className="space-y-1">
+                        <FormLabel className="text-sm">Allow Buyer To Set Target Caps</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="allowDisputeConversions"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between space-y-0">
+                      <div className="space-y-1">
+                        <FormLabel className="text-sm">Allow Buyer To Dispute Call Conversions</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="limitRevenue"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between space-y-0">
+                      <div className="space-y-1">
+                        <FormLabel className="text-sm">Limit Revenue</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Predictive Routing Settings */}
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Predictive Routing Settings</h3>
+              
+              <FormField
+                control={form.control}
+                name="restrictDuplicates"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Restrict Duplicates</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || "Do Not Restrict"}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Do Not Restrict" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Do Not Restrict">Do Not Restrict</SelectItem>
+                        <SelectItem value="By Phone Number">By Phone Number</SelectItem>
+                        <SelectItem value="By Email">By Email</SelectItem>
+                        <SelectItem value="By IP Address">By IP Address</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="estimatedRevenue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estimated Revenue</FormLabel>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant={field.value === "Use Campaign Setting" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => field.onChange("Use Campaign Setting")}
+                        >
+                          Use Campaign Setting
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={field.value === "Use Estimated Revenue" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => field.onChange("Use Estimated Revenue")}
+                        >
+                          Use Estimated Revenue
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="priorityBump"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Priority Bump ({field.value || 0})</FormLabel>
+                      <FormControl>
+                        <Slider
+                          value={[field.value || 0]}
+                          onValueChange={(value) => field.onChange(value[0])}
+                          min={-10}
+                          max={10}
+                          step={1}
+                          className="w-full"
+                        />
+                      </FormControl>
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>-10</span>
+                        <span>Default</span>
+                        <span>+10</span>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Shareable Tags */}
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Shareable Tags</h3>
+              
+              <FormField
+                control={form.control}
+                name="overrideShareableTags"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between space-y-0">
+                    <div className="space-y-1">
+                      <FormLabel className="text-sm">Override Shareable Tags</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />
