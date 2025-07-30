@@ -115,11 +115,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 
 ## Recent Changes
 - July 30, 2025: **BUYER TABLE STRUCTURE UPDATED TO MATCH RINGBA STANDARDS** - Redesigned buyer table layout to match exact column structure from user screenshots
-  - **Table Headers Updated**: Changed to match Ringba format (Company Name, Sub ID, Can Pause Targets, Can Set Target Call and Concurrency Cap, Can Dispute Conversions, Restrict Duplicates, Hour, Day, Month, Total, Status, Actions)
-  - **Column Data Mapping**: Updated buyer row rendering to display proper permission values (Yes/No format) for all capability columns
+  - **Table Headers Updated**: Changed to match Ringba format (Company & Sub ID, Settings, Status & Type, Actions)
+  - **Column Data Mapping**: Updated buyer row rendering to display proper permission values and settings in clean format
   - **Simplified Display**: Removed complex nested cell layouts in favor of clean single-value columns per Ringba standards
-  - **Data Statistics Ready**: Prepared placeholder columns (Hour, Day, Month, Total) for future call statistics integration
-  - **Status Column Enhanced**: Proper status badge display in dedicated Status column for clear buyer state visibility
+  - **Compact Layout**: Company name, ID, and Sub ID displayed in single column with proper hierarchy
+  - **Settings Column**: Shows duplicate restriction settings and other permissions in clean text format
+  - **Status & Type Display**: Proper status badge and buyer type display in dedicated combined column
   - **User Experience Improved**: Table now matches exact structure from user-provided Ringba screenshots for consistent platform experience
   - **Status**: Buyer table structure successfully updated to match Ringba's exact column layout and data display format
 - July 30, 2025: **COMPREHENSIVE COLUMN DATA MAPPING VERIFICATION COMPLETED** - Audited all 100+ column definitions and implemented complete data mapping for Call Details table
