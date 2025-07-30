@@ -88,20 +88,14 @@ export const campaigns = pgTable("campaigns", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// New Buyers table - top-level companies/organizations
+// New Buyers table - top-level companies/organizations (containers only)
 export const buyers = pgTable("buyers", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  name: varchar("name", { length: 100 }).notNull(),
-  email: varchar("email", { length: 255 }),
-  phoneNumber: varchar("phone_number", { length: 20 }),
-  endpoint: varchar("endpoint", { length: 500 }), // Webhook URL for ping/post
+  name: varchar("name", { length: 100 }).notNull(), // Company/Organization name
+  email: varchar("email", { length: 255 }), // Contact email for the company
   status: varchar("status", { length: 20 }).default("active").notNull(),
-  priority: integer("priority").default(1),
-  dailyCap: integer("daily_cap").default(0), // 0 = unlimited
-  concurrencyLimit: integer("concurrency_limit").default(1),
-  acceptanceRate: varchar("acceptance_rate", { length: 10 }), // Stored as percentage string like "75.50"
-  avgResponseTime: integer("avg_response_time"), // in milliseconds
+  description: text("description"), // Company description
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -753,13 +747,7 @@ export const insertBuyerSchema = createInsertSchema(buyers).omit({
   userId: z.number().optional(),
   name: z.string().min(1, "Buyer name is required"),
   email: z.string().email("Invalid email format").optional().or(z.literal("")),
-  phoneNumber: z.string().optional(),
-  endpoint: z.string().url("Invalid endpoint URL").optional().or(z.literal("")),
-  priority: z.number().min(1).max(10).optional(),
-  dailyCap: z.number().min(0).optional(),
-  concurrencyLimit: z.number().min(1).optional(),
-  acceptanceRate: z.string().optional(),
-  avgResponseTime: z.number().optional(),
+  description: z.string().optional(),
 });
 
 export const insertTargetSchema = createInsertSchema(targets).omit({

@@ -3,15 +3,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertBuyerSchema, type Buyer, type InsertBuyer } from "@shared/schema";
-import { Trash2, Edit2, Plus, Mail, Info } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { Trash2, Edit2, Plus, Phone, Mail, Globe, TrendingUp, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
@@ -113,20 +115,33 @@ function BuyerForm({
 
   const createBuyerMutation = useMutation({
     mutationFn: async (data: InsertBuyer) => {
+
       const response = await fetch("/api/buyers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      console.log("Response status:", response.status);
       if (!response.ok) {
         const error = await response.json();
+        console.error("Error response:", error);
         throw new Error(error.message || "Failed to create buyer");
       }
-      return response.json();
+      const result = await response.json();
+      console.log("Success response:", result);
+      return result;
     },
     onSuccess: () => {
+      // Invalidate all buyer-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
+      // Invalidate campaign buyer queries to update buyer info in campaigns
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0] as string;
+          return key?.includes('/buyers') || key?.includes('/campaigns');
+        }
+      });
       toast({ title: "Success", description: "Buyer created successfully" });
       onOpenChange(false);
       form.reset();
@@ -154,8 +169,16 @@ function BuyerForm({
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all buyer-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
+      // Invalidate campaign buyer queries to update buyer info in campaigns
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0] as string;
+          return key?.includes('/buyers') || key?.includes('/campaigns');
+        }
+      });
       toast({ title: "Success", description: "Buyer updated successfully" });
       onOpenChange(false);
     },
@@ -169,6 +192,7 @@ function BuyerForm({
   });
 
   const onSubmit = (data: InsertBuyer) => {
+    console.log("Submitting buyer data:", data);
     if (buyer) {
       updateBuyerMutation.mutate(data);
     } else {
@@ -178,7 +202,7 @@ function BuyerForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{buyer ? "Edit Buyer" : "Create New Buyer"}</DialogTitle>
           <DialogDescription>
@@ -202,7 +226,7 @@ function BuyerForm({
                             <Info className="h-4 w-4 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Company name or organization<br/>
+                            <p>Name of the buyer or lead partner<br/>
                               This appears in call routing decisions</p>
                           </TooltipContent>
                         </Tooltip>
@@ -240,58 +264,206 @@ function BuyerForm({
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email" 
+                        placeholder="buyer@example.com"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Brief description of this buyer"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
-              name="email"
+              name="endpoint"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Contact Email</FormLabel>
+                  <FormLabel>Webhook Endpoint (Optional)</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="buyer@example.com"
-                      value={field.value || ""}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Brief description of this buyer"
-                      value={field.value || ""}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                    />
+                    <Input {...field} value={field.value || ""} placeholder="https://api.buyer.com/webhook" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Priority (1-10)</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Call routing priority (1=lowest, 10=highest)<br/>
+                              Higher priority buyers receive calls first</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        type="number" 
+                        min="1" 
+                        max="10"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? undefined : parseInt(value) || 1);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="dailyCap"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Daily Cap</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Maximum calls per day for this buyer<br/>
+                              Prevents over-delivery and manages volume</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        type="number" 
+                        min="1"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? undefined : parseInt(value) || 50);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="concurrencyLimit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Concurrency Limit</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="1"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? undefined : parseInt(value) || 3);
+                        }}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="avgResponseTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Avg Response Time (ms)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? undefined : parseInt(value) || 0);
+                        }}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+              >
                 Cancel
               </Button>
               <Button 
                 type="submit" 
                 disabled={createBuyerMutation.isPending || updateBuyerMutation.isPending}
+
               >
-                {createBuyerMutation.isPending || updateBuyerMutation.isPending ? "Saving..." : buyer ? "Update Buyer" : "Create Buyer"}
+                {buyer ? "Update Buyer" : "Create Buyer"}
               </Button>
             </div>
           </form>
@@ -303,8 +475,8 @@ function BuyerForm({
 
 export default function Buyers() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingBuyer, setEditingBuyer] = useState<Buyer | undefined>();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [buyerToDelete, setBuyerToDelete] = useState<number | null>(null);
   const [campaignAssignments, setCampaignAssignments] = useState<any[]>([]);
   const { toast } = useToast();
@@ -312,13 +484,6 @@ export default function Buyers() {
 
   const { data: buyers, isLoading } = useQuery({
     queryKey: ["/api/buyers"],
-    queryFn: async () => {
-      const response = await fetch("/api/buyers");
-      if (!response.ok) {
-        throw new Error("Failed to fetch buyers");
-      }
-      return response.json();
-    },
   });
 
   const deleteBuyerMutation = useMutation({
@@ -330,11 +495,18 @@ export default function Buyers() {
         const error = await response.json();
         throw new Error(error.message || "Failed to delete buyer");
       }
-      return response.json();
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      // Clear all campaign-related cache to ensure fresh data
+      queryClient.removeQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return (typeof key[0] === "string" && key[0].startsWith("/api/campaigns")) as boolean;
+        }
+      });
       toast({ title: "Success", description: "Buyer deleted successfully" });
     },
     onError: (error) => {
@@ -419,101 +591,101 @@ export default function Buyers() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Buyer Management</h1>
-            <p className="text-muted-foreground">Manage buyer companies. Individual targets are managed separately.</p>
+            <p className="text-muted-foreground">Manage your call buyers and routing preferences</p>
           </div>
+        <Button onClick={handleCreate}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Buyer
+        </Button>
+      </div>
+
+      {buyers && Array.isArray(buyers) && buyers.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Buyers</CardTitle>
+            <CardDescription>Manage your call buyers and their settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name & ID</TableHead>
+                  <TableHead>Contact Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(buyers as Buyer[]).map((buyer: Buyer) => (
+                  <BuyerRow
+                    key={buyer.id}
+                    buyer={buyer}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="text-center py-12">
+          <div className="text-gray-500 mb-4">No buyers found</div>
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Buyer
+            Create Your First Buyer
           </Button>
         </div>
+      )}
 
-        {buyers && Array.isArray(buyers) && buyers.length > 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Buyers</CardTitle>
-              <CardDescription>Company-level buyer organizations</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name & ID</TableHead>
-                    <TableHead>Contact Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(buyers as Buyer[]).map((buyer: Buyer) => (
-                    <BuyerRow
-                      key={buyer.id}
-                      buyer={buyer}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-gray-500 mb-4">No buyers found</div>
-            <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Your First Buyer
-            </Button>
-          </div>
-        )}
+      <BuyerForm
+        buyer={editingBuyer}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
 
-        <BuyerForm
-          buyer={editingBuyer}
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-        />
-
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription asChild>
-                <div>
-                  <p>This will permanently delete the buyer and remove them from all campaigns. This action cannot be undone.</p>
-                  
-                  {campaignAssignments.length > 0 && (
-                    <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-                      <div className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                        ⚠️ This buyer is assigned to {campaignAssignments.length} campaign(s):
-                      </div>
-                      <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-                        {campaignAssignments.map((assignment, index) => (
-                          <li key={index} className="flex items-center gap-2">
-                            <span className="font-medium">{assignment.campaignName}</span>
-                            {assignment.isActive && (
-                              <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs rounded-full">
-                                Active
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p>This will permanently delete the buyer and remove them from all campaigns. This action cannot be undone.</p>
+                
+                {campaignAssignments.length > 0 && (
+                  <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                    <div className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                      ⚠️ This buyer is assigned to {campaignAssignments.length} campaign(s):
                     </div>
-                  )}
-                </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={confirmDelete}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Delete Buyer
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                    <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                      {campaignAssignments.map((assignment, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="font-medium">{assignment.campaignName}</span>
+                          {assignment.isActive && (
+                            <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs rounded-full">
+                              Active
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Buyer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </div>
     </Layout>
   );
