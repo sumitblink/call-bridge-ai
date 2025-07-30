@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { targets, buyers } from "../shared/schema";
+import { targets, buyers, calls, campaignTargets } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
 import type { Target, InsertTarget } from "../shared/schema";
 
@@ -43,8 +43,27 @@ export class TargetService {
   }
 
   async deleteTarget(id: number): Promise<boolean> {
-    const result = await db.delete(targets).where(eq(targets.id, id));
-    return (result as any).rowCount > 0;
+    try {
+      // First, delete or update dependent records
+      await db.transaction(async (tx) => {
+        // Update calls to remove target reference (set targetId to null)
+        await tx.update(calls)
+          .set({ targetId: null })
+          .where(eq(calls.targetId, id));
+        
+        // Delete campaign-target relationships
+        await tx.delete(campaignTargets)
+          .where(eq(campaignTargets.targetId, id));
+        
+        // Finally, delete the target
+        await tx.delete(targets).where(eq(targets.id, id));
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('Failed to delete target:', error);
+      throw new Error('Failed to delete target: ' + error.message);
+    }
   }
 }
 
