@@ -63,12 +63,24 @@ interface Buyer {
 }
 
 interface CallDetailsExpandedProps {
-  call: Call;
-  campaign?: Campaign;
-  buyer?: Buyer;
+  call: Call & {
+    buyer?: {
+      id: number;
+      name?: string;
+      companyName?: string;
+      email?: string;
+      phoneNumber?: string;
+    };
+    campaign?: {
+      id: string;
+      name: string;
+    };
+  };
 }
 
-export function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps) {
+export function CallDetailsExpanded({ call }: CallDetailsExpandedProps) {
+  const campaign = call.campaign;
+  const buyer = call.buyer;
   const formatCurrency = (amount: string | number) => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
@@ -155,6 +167,12 @@ export function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpand
           <div>
             <span className="text-gray-500">Campaign:</span>
             <span className="ml-2">{campaign?.name || 'Unknown'}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Buyer:</span>
+            <span className="ml-2">
+              {buyer ? (buyer.companyName || buyer.name || 'Unnamed Buyer') : 'No buyer assigned'}
+            </span>
           </div>
           <div>
             <span className="text-gray-500">Revenue:</span>

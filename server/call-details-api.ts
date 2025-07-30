@@ -46,15 +46,31 @@ router.get("/api/calls/:callId/details", requireAuth, async (req, res) => {
       with: {
         campaign: {
           columns: { id: true, name: true }
-        },
-        buyer: {
-          columns: { id: true, name: true }
-        },
-        publisher: {
-          columns: { id: true, name: true }
         }
       }
     });
+
+    if (!call) {
+      return res.status(404).json({ message: "Call not found" });
+    }
+
+    // Manually fetch buyer and publisher data if they exist
+    let buyer = null;
+    let publisher = null;
+    
+    if (call.buyerId) {
+      buyer = await db.query.buyers.findFirst({
+        where: eq(buyers.id, call.buyerId),
+        columns: { id: true, name: true, companyName: true, email: true, phoneNumber: true }
+      });
+    }
+    
+    if (call.publisherId) {
+      publisher = await db.query.publishers.findFirst({
+        where: eq(publishers.id, call.publisherId),
+        columns: { id: true, name: true, company: true }
+      });
+    }
 
     if (!call) {
       return res.status(404).json({ message: "Call not found" });
@@ -83,6 +99,8 @@ router.get("/api/calls/:callId/details", requireAuth, async (req, res) => {
 
     const callWithDetails = {
       ...call,
+      buyer,
+      publisher,
       events,
       routingDecisions: routingDecs,
       rtbAuctions
