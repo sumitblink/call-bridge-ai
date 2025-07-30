@@ -104,62 +104,6 @@ export const buyers = pgTable("buyers", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const targets = pgTable("targets", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  buyerId: integer("buyer_id").references(() => buyers.id).notNull(),
-  
-  // Basic Information
-  name: varchar("name", { length: 256 }).notNull(),
-  type: varchar("type", { length: 50 }).default("call").notNull(), // call, lead, conversion
-  destination: varchar("destination", { length: 50 }).notNull(), // phone number or endpoint
-  status: varchar("status", { length: 20 }).default("active").notNull(), // active, paused, inactive
-  
-  // Rates & Revenue
-  rate: decimal("rate", { precision: 10, scale: 2 }).default("0.00"), // payout rate
-  estimatedRevenue: decimal("estimated_revenue", { precision: 10, scale: 2 }).default("0.00"),
-  useEstimatedRevenue: boolean("use_estimated_revenue").default(false), // vs use campaign setting
-  
-  // Time & Date Filtering
-  timeZone: varchar("time_zone", { length: 50 }).default("UTC"),
-  operatingHours: json("operating_hours"), // {mode: "basic|advanced", basic: {start: "09:00", end: "17:00", breaks: []}, advanced: {days: {...}}}
-  operatingDays: json("operating_days"), // array of allowed days
-  operatingMonths: json("operating_months"), // array of allowed months
-  
-  // Call Settings
-  carrier: varchar("carrier", { length: 50 }).default("conversion"),
-  globalCarrier: boolean("global_carrier").default(false),
-  healthCalc: boolean("health_calc").default(false),
-  callCalc: boolean("call_calc").default(false),
-  hanifCalc: boolean("hanif_calc").default(false),
-  
-  // Concurrency Controls
-  maxConcurrency: integer("max_concurrency").default(5),
-  enableMaxConcurrency: boolean("enable_max_concurrency").default(false),
-  hourlyConcurrency: integer("hourly_concurrency").default(10),
-  enableHourlyConcurrency: boolean("enable_hourly_concurrency").default(false),
-  
-  // Duplicate & Quality Controls
-  restrictDuplicates: varchar("restrict_duplicates", { length: 50 }).default("do_not_restrict"),
-  restrictDuplicatesCallSetting: boolean("restrict_duplicates_call_setting").default(false),
-  
-  // Predictive Routing
-  priorityBump: integer("priority_bump").default(0), // -10 to +10
-  enablePredictiveRouting: boolean("enable_predictive_routing").default(false),
-  
-  // Shareable Tags
-  enableShareableTags: boolean("enable_shareable_tags").default(false),
-  overrideShareableTags: boolean("override_shareable_tags").default(false),
-  shareableTags: json("shareable_tags"), // array of tag objects
-  
-  // Tag Routing Filters
-  enableTagRoutingFilters: boolean("enable_tag_routing_filters").default(false),
-  tagRoutingFilters: json("tag_routing_filters"), // complex filtering rules
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 export const campaignBuyers = pgTable("campaign_buyers", {
   campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   buyerId: integer("buyer_id").references(() => buyers.id).notNull(),
@@ -879,45 +823,6 @@ export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 
 export type Buyer = typeof buyers.$inferSelect;
 export type InsertBuyer = z.infer<typeof insertBuyerSchema>;
-
-export const insertTargetSchema = createInsertSchema(targets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  userId: z.number().optional(),
-  buyerId: z.number().optional().nullable(), // Made optional and nullable as per user requirements
-  name: z.string().min(1, "Target name is required"),
-  subId: z.string().optional(),
-  type: z.enum(["number", "sip"]).default("number"),
-  destination: z.string().min(1, "Destination is required"),
-  connectionTimeout: z.number().min(0).max(300).default(30),
-  disableRecording: z.boolean().default(false),
-  timeZone: z.string().default("UTC"),
-  hoursOfOperation: z.enum(["basic", "advanced"]).default("basic"),
-  rate: z.number().min(0, "Rate must be positive").optional(),
-  estimatedRevenue: z.union([z.number(), z.enum(["use_campaign", "use_estimated"])]).optional(),
-  useEstimatedRevenue: z.boolean().default(false),
-  priorityBump: z.number().min(-10).max(10).default(0),
-  maxConcurrency: z.number().min(1).default(5),
-  hourlyConcurrency: z.number().min(1).default(10),
-  enableMaxConcurrency: z.boolean().default(false),
-  enableHourlyConcurrency: z.boolean().default(false),
-  carrier: z.string().default("conversion"),
-  globalCarrier: z.boolean().default(false),
-  healthCalc: z.boolean().default(false),
-  callCalc: z.boolean().default(false),
-  hanifCalc: z.boolean().default(false),
-  restrictDuplicates: z.enum(["do_not_restrict", "by_phone", "by_caller_id", "by_both"]).default("do_not_restrict"),
-  restrictDuplicatesCallSetting: z.boolean().default(false),
-  enablePredictiveRouting: z.boolean().default(false),
-  enableShareableTags: z.boolean().default(false),
-  overrideShareableTags: z.boolean().default(false),
-  enableTagRoutingFilters: z.boolean().default(false),
-});
-
-export type Target = typeof targets.$inferSelect;
-export type InsertTarget = z.infer<typeof insertTargetSchema>;
 
 export type CampaignBuyer = typeof campaignBuyers.$inferSelect;
 export type InsertCampaignBuyer = z.infer<typeof insertCampaignBuyerSchema>;
@@ -1681,27 +1586,6 @@ export const publishersRelations = relations(publishers, ({ one, many }) => ({
     references: [users.id],
   }),
   callTrackingTags: many(callTrackingTags),
-}));
-
-export const buyersRelations = relations(buyers, ({ one, many }) => ({
-  user: one(users, {
-    fields: [buyers.userId],
-    references: [users.id],
-  }),
-  campaignBuyers: many(campaignBuyers),
-  targets: many(targets),
-  calls: many(calls),
-}));
-
-export const targetsRelations = relations(targets, ({ one }) => ({
-  user: one(users, {
-    fields: [targets.userId],
-    references: [users.id],
-  }),
-  buyer: one(buyers, {
-    fields: [targets.buyerId],
-    references: [buyers.id],
-  }),
 }));
 
 // Feedback table for AI chatbot interactions

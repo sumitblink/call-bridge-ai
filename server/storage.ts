@@ -9,8 +9,6 @@ import {
   type InsertUser,
   type Buyer,
   type InsertBuyer,
-  type Target,
-  type InsertTarget,
   type CampaignBuyer,
   type InsertCampaignBuyer,
   type CallLog,
@@ -73,14 +71,6 @@ export interface IStorage {
   getBuyerCampaignAssignments(buyerId: number): Promise<Campaign[]>;
   addBuyerToCampaign(campaignId: string | number, buyerId: number, priority?: number): Promise<CampaignBuyer>;
   removeBuyerFromCampaign(campaignId: string | number, buyerId: number): Promise<boolean>;
-
-  // Targets
-  getTargets(userId?: number): Promise<Target[]>;
-  getTargetsByBuyer(buyerId: number): Promise<Target[]>;
-  getTarget(id: number): Promise<Target | undefined>;
-  createTarget(target: InsertTarget): Promise<Target>;
-  updateTarget(id: number, target: Partial<InsertTarget>): Promise<Target | undefined>;
-  deleteTarget(id: number): Promise<boolean>;
   
 
   
@@ -307,7 +297,6 @@ export class MemStorage implements IStorage {
   private users: Map<string, User> = new Map();
   private campaigns: Map<number, Campaign> = new Map();
   private buyers: Map<number, Buyer> = new Map();
-  private targets: Map<number, Target> = new Map();
   private campaignBuyers: Map<string, CampaignBuyer> = new Map();
   private agents: Map<number, Agent> = new Map();
   private calls: Map<number, Call> = new Map();
@@ -323,7 +312,6 @@ export class MemStorage implements IStorage {
   private currentUserId: number = 1;
   private currentCampaignId: number = 1;
   private currentBuyerId: number = 1;
-  private currentTargetId: number = 1;
   private currentPixelId: number = 1;
   private currentAgentId: number = 1;
   private currentCallId: number = 1;
@@ -826,86 +814,6 @@ export class MemStorage implements IStorage {
     
     // Delete the buyer
     return this.buyers.delete(id);
-  }
-
-  // Targets
-  async getTargets(userId?: number): Promise<Target[]> {
-    const targets: Target[] = [];
-    for (const target of this.targets.values()) {
-      if (!userId || target.userId === userId) {
-        targets.push(target);
-      }
-    }
-    return targets;
-  }
-
-  async getTargetsByBuyer(buyerId: number): Promise<Target[]> {
-    const targets: Target[] = [];
-    for (const target of this.targets.values()) {
-      if (target.buyerId === buyerId) {
-        targets.push(target);
-      }
-    }
-    return targets;
-  }
-
-  async getTarget(id: number): Promise<Target | undefined> {
-    return this.targets.get(id);
-  }
-
-  async createTarget(target: InsertTarget): Promise<Target> {
-    const id = this.currentTargetId++;
-    const newTarget: Target = {
-      id,
-      userId: target.userId,
-      buyerId: target.buyerId,
-      name: target.name,
-      description: target.description || null,
-      status: target.status || "active",
-      endpoint: target.endpoint,
-      httpMethod: target.httpMethod || "POST",
-      timeout: target.timeout || 5000,
-      priority: target.priority || 1,
-      weight: target.weight || 1,
-      dailyCap: target.dailyCap || null,
-      concurrencyLimit: target.concurrencyLimit || null,
-      scheduleStart: target.scheduleStart || null,
-      scheduleEnd: target.scheduleEnd || null,
-      allowedCarriers: target.allowedCarriers || null,
-      blockedCarriers: target.blockedCarriers || null,
-      allowedStates: target.allowedStates || null,
-      blockedStates: target.blockedStates || null,
-      minCallDuration: target.minCallDuration || null,
-      maxCallDuration: target.maxCallDuration || null,
-      requireCallRecording: target.requireCallRecording || false,
-      enablePredictiveRouting: target.enablePredictiveRouting || false,
-      priorityBumpThreshold: target.priorityBumpThreshold || null,
-      fallbackTargetId: target.fallbackTargetId || null,
-      customHeaders: target.customHeaders || null,
-      authUsername: target.authUsername || null,
-      authPassword: target.authPassword || null,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    this.targets.set(id, newTarget);
-    return newTarget;
-  }
-
-  async updateTarget(id: number, target: Partial<InsertTarget>): Promise<Target | undefined> {
-    const existing = this.targets.get(id);
-    if (!existing) return undefined;
-    
-    const updated: Target = {
-      ...existing,
-      ...target,
-      updatedAt: new Date()
-    };
-    this.targets.set(id, updated);
-    return updated;
-  }
-
-  async deleteTarget(id: number): Promise<boolean> {
-    return this.targets.delete(id);
   }
 
   // Campaign-Buyer Relations

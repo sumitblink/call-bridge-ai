@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./hybrid-storage";
-import { insertCampaignSchema, insertBuyerSchema, insertTargetSchema, insertAgentSchema, insertNumberPoolSchema } from "@shared/schema";
+import { insertCampaignSchema, insertBuyerSchema, insertAgentSchema, insertNumberPoolSchema } from "@shared/schema";
 import { twilioService } from "./twilio-service";
 import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
 import { CallRouter } from "./call-routing";
@@ -1411,84 +1411,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting buyer:", error);
       res.status(500).json({ error: "Failed to delete buyer" });
-    }
-  });
-
-  // Targets API
-  app.get('/api/targets', requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user?.id;
-      const targets = await storage.getTargets(userId);
-      res.json(targets);
-    } catch (error) {
-      console.error("Error fetching targets:", error);
-      res.status(500).json({ error: "Failed to fetch targets" });
-    }
-  });
-
-  app.get('/api/targets/:id', requireAuth, async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const target = await storage.getTarget(id);
-      if (!target) {
-        return res.status(404).json({ error: "Target not found" });
-      }
-      res.json(target);
-    } catch (error) {
-      console.error("Error fetching target:", error);
-      res.status(500).json({ error: "Failed to fetch target" });
-    }
-  });
-
-  app.get('/api/buyers/:buyerId/targets', requireAuth, async (req: any, res) => {
-    try {
-      const buyerId = parseInt(req.params.buyerId);
-      const targets = await storage.getTargetsByBuyer(buyerId);
-      res.json(targets);
-    } catch (error) {
-      console.error("Error fetching buyer targets:", error);
-      res.status(500).json({ error: "Failed to fetch buyer targets" });
-    }
-  });
-
-  app.post('/api/targets', requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user?.id;
-      const validatedData = insertTargetSchema.parse({ ...req.body, userId });
-      const target = await storage.createTarget(validatedData);
-      res.status(201).json(target);
-    } catch (error) {
-      console.error("Error creating target:", error);
-      res.status(500).json({ error: "Failed to create target" });
-    }
-  });
-
-  app.put('/api/targets/:id', requireAuth, async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertTargetSchema.partial().parse(req.body);
-      const target = await storage.updateTarget(id, validatedData);
-      if (!target) {
-        return res.status(404).json({ error: "Target not found" });
-      }
-      res.json(target);
-    } catch (error) {
-      console.error("Error updating target:", error);
-      res.status(500).json({ error: "Failed to update target" });
-    }
-  });
-
-  app.delete('/api/targets/:id', requireAuth, async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const deleted = await storage.deleteTarget(id);
-      if (!deleted) {
-        return res.status(404).json({ error: "Target not found" });
-      }
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting target:", error);
-      res.status(500).json({ error: "Failed to delete target" });
     }
   });
 

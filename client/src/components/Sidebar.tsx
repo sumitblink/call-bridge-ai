@@ -14,10 +14,9 @@ const navigation = [
 
   { name: "Phone Numbers", href: "/phone-numbers", icon: Phone, current: false },
   { name: "Buyers", href: "/buyers", icon: DollarSign, current: false },
-  { name: "Targets", href: "/targets", icon: Target, current: false },
   { name: "Publishers", href: "/publishers", icon: UserCheck, current: false },
   { name: "Agents", href: "/agents", icon: Users, current: false },
-  { name: "RTB Management", href: "/rtb-management", icon: Activity, current: false },
+  { name: "RTB Management", href: "/rtb-management", icon: Target, current: false },
   { name: "Call Flows", href: "/call-flows", icon: GitBranch, current: false },
   { name: "Integrations", href: "/integrations", icon: Zap, current: false },
   { name: "Help & Q&A", href: "/help", icon: MessageCircle, current: false },
