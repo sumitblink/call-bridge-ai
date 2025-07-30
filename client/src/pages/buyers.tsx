@@ -54,19 +54,43 @@ function BuyerRow({ buyer, onEdit, onDelete }: {
       </TableCell>
       <TableCell>
         <div className="flex flex-col gap-1">
-          <div className="text-xs text-gray-500">
-            {buyer?.restrictDuplicates ? 'Restrict Duplicates' : 'Do Not Restrict'}
+          <div className="flex gap-2">
+            {buyer?.allowPauseTargets && <Badge variant="outline" className="text-xs">Pause</Badge>}
+            {buyer?.allowSetTargetCaps && <Badge variant="outline" className="text-xs">Caps</Badge>}
+            {buyer?.allowDisputeConversions && <Badge variant="outline" className="text-xs">Dispute</Badge>}
+            {buyer?.enableRevenueRecovery && <Badge variant="outline" className="text-xs">Revenue</Badge>}
           </div>
+          {buyer?.restrictDuplicates && (
+            <span className="text-xs text-gray-500">Restrict Duplicates</span>
+          )}
         </div>
       </TableCell>
       <TableCell>
         <div className="flex flex-col gap-1">
           <Badge className={getStatusColor(buyer?.status)}>
-            {buyer?.status || 'active'}
+            {buyer?.status || 'Active'}
           </Badge>
           <Badge className={getBuyerTypeColor(buyer?.buyerType)}>
             {buyer?.buyerType === 'rtb_enabled' ? 'RTB' : buyer?.buyerType?.charAt(0).toUpperCase() + buyer?.buyerType?.slice(1) || 'Standard'}
           </Badge>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="text-center">
+          <div className="font-semibold">{buyer?.concurrencyLimit || 1}</div>
+          <div className="text-xs text-gray-500">concurrent</div>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="text-center">
+          <div className="font-semibold">{buyer?.dailyCallCap || 100}</div>
+          <div className="text-xs text-gray-500">daily</div>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="text-center">
+          <div className="font-semibold">{buyer?.acceptanceRate || '0.00'}%</div>
+          <div className="text-xs text-gray-500">acceptance</div>
         </div>
       </TableCell>
       <TableCell>
@@ -556,6 +580,9 @@ export default function Buyers() {
                     <TableHead>Company & Sub ID</TableHead>
                     <TableHead>Settings</TableHead>
                     <TableHead>Status & Type</TableHead>
+                    <TableHead className="text-center">Concurrency</TableHead>
+                    <TableHead className="text-center">Daily Cap</TableHead>
+                    <TableHead className="text-center">Performance</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
