@@ -47,7 +47,7 @@ class HybridStorage implements IStorage {
   }
 
   private async initializeDatabase() {
-    // Try to use PostgreSQL database, fall back to memory storage if it fails
+    // Force database usage since PostgreSQL is available
     try {
       const campaigns = await this.databaseStorage.getCampaigns();
       if (campaigns.length === 0) {
@@ -55,8 +55,9 @@ class HybridStorage implements IStorage {
         await this.populateDatabase();
       }
       this.useDatabase = true;
-      console.log('Using PostgreSQL database with sample data');
+      console.log('Using PostgreSQL database - phone numbers will persist');
     } catch (error) {
+      console.log('Database error:', error);
       console.log('Database not available, using memory storage with sample data');
       this.useDatabase = false;
     }
@@ -680,11 +681,16 @@ class HybridStorage implements IStorage {
   async getUnassignedPhoneNumbers(userId?: number): Promise<any[]> {
     console.log(`[HybridStorage] getUnassignedPhoneNumbers called with userId: ${userId}, useDatabase: ${this.useDatabase}`);
     
-    // Force memory storage for phone numbers since import was done to memory
-    console.log(`[HybridStorage] Forcing memory storage for getUnassignedPhoneNumbers due to import location`);
-    const result = await this.memStorage.getUnassignedPhoneNumbers(userId);
-    console.log(`[HybridStorage] Returning ${result.length} unassigned numbers`);
-    return result;
+    return this.executeOperation(
+      async () => {
+        console.log(`[HybridStorage] Using database for unassigned numbers`);
+        return this.databaseStorage.getUnassignedPhoneNumbers(userId);
+      },
+      async () => {
+        console.log(`[HybridStorage] Using memory storage for unassigned numbers`);
+        return this.memStorage.getUnassignedPhoneNumbers(userId);
+      }
+    );
   }
 
   async getPhoneNumberByNumber(phoneNumber: string): Promise<any | undefined> {

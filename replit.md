@@ -114,12 +114,12 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
-- July 31, 2025: **PHONE NUMBER MEMORY STORAGE ISSUE IDENTIFIED AND PARTIALLY FIXED** - Successfully implemented memory storage for phone numbers but discovered pool creation issue
-  - **Phone Number Import Working**: 13 phone numbers successfully imported to memory storage with userId: 2
-  - **Memory Storage Methods Implemented**: getPhoneNumbers, createPhoneNumber, updatePhoneNumber, deletePhoneNumber all working correctly
-  - **Pool Creation Issue**: getUnassignedPhoneNumbers returns 0 numbers despite 13 numbers being imported, preventing pool creation
-  - **Root Cause Identified**: Campaign filtering in getUnassignedPhoneNumbers may be incorrectly marking all numbers as "assigned"
-  - **Status**: Phone numbers visible in owned numbers section but cannot create pools due to no unassigned numbers available
+- July 31, 2025: **CRITICAL DATABASE PERSISTENCE ISSUE - MEMORY STORAGE CAUSES DATA LOSS** - Phone numbers imported to memory storage are lost on application restart, preventing pool creation
+  - **Root Cause**: System falls back to memory storage instead of database persistence, causing imported phone numbers to disappear
+  - **Business Impact**: $300 investment at risk due to inability to use imported Twilio phone numbers for pool creation
+  - **Schema Issue**: Database missing `target_routing_strategy` column preventing database initialization
+  - **Solution In Progress**: Forcing database usage and fixing schema to ensure phone number persistence
+  - **Status**: CRITICAL - Phone numbers must persist in database to be available for pool creation across restarts
 - July 31, 2025: **INTELLIGENT TARGET SELECTION SYSTEM DEPLOYED** - Implemented comprehensive intelligent routing system for fair distribution of calls among multiple targets within buyers
   - **Critical Business Logic Gap Fixed**: Resolved major flaw where buyers with multiple targets would only route calls to the first target regardless of capacity or performance
   - **Multiple Routing Strategies**: Added priority-based, round-robin, capacity-based, and random target selection strategies configurable per campaign
