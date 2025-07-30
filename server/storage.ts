@@ -347,6 +347,11 @@ export class MemStorage implements IStorage {
   private currentTagId: number = 1;
   private currentRedtrackConfigId: number = 1;
   private currentUrlParameterId: number = 1;
+  private phoneNumbers: Map<number, any> = new Map();
+  private numberPools: Map<number, any> = new Map();
+  private poolAssignments: Map<string, any> = new Map();
+  private currentPhoneNumberId: number = 1;
+  private currentPoolId: number = 1;
 
   constructor() {
     this.initializeSampleData();
@@ -1308,50 +1313,132 @@ export class MemStorage implements IStorage {
     return [];
   }
 
-  // Phone Numbers methods (placeholder for memory storage)
+  // Phone Numbers methods
   async getPhoneNumbers(userId?: number): Promise<any[]> {
-    return [];
+    const numbers = Array.from(this.phoneNumbers.values());
+    if (userId !== undefined) {
+      return numbers.filter(n => n.userId === userId);
+    }
+    return numbers;
   }
 
-  // Number Pools methods (placeholder for memory storage)
+  async createPhoneNumber(phoneNumber: any): Promise<any> {
+    const id = this.currentPhoneNumberId++;
+    const newPhoneNumber = {
+      id,
+      ...phoneNumber,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.phoneNumbers.set(id, newPhoneNumber);
+    return newPhoneNumber;
+  }
+
+  async getUnassignedPhoneNumbers(userId?: number): Promise<any[]> {
+    const numbers = await this.getPhoneNumbers(userId);
+    const unassigned = [];
+    
+    for (const number of numbers) {
+      // Check if number is assigned to any pool
+      const poolAssignments = await this.getNumberPoolAssignments(number.id);
+      // Check if number is assigned to any campaign directly
+      const campaigns = await this.getCampaigns();
+      const assignedToCampaign = campaigns.some(c => c.phoneNumber === number.phoneNumber);
+      
+      if (poolAssignments.length === 0 && !assignedToCampaign) {
+        unassigned.push(number);
+      }
+    }
+    
+    return unassigned;
+  }
+
+  // Number Pools methods
   async getNumberPools(userId?: number): Promise<any[]> {
-    return [];
+    const pools = Array.from(this.numberPools.values());
+    if (userId !== undefined) {
+      return pools.filter(p => p.userId === userId);
+    }
+    return pools;
   }
 
   async getNumberPool(id: number): Promise<any | undefined> {
-    return undefined;
+    return this.numberPools.get(id);
   }
 
   async createNumberPool(pool: any): Promise<any> {
-    return pool;
+    const id = this.currentPoolId++;
+    const newPool = {
+      id,
+      ...pool,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.numberPools.set(id, newPool);
+    return newPool;
   }
 
   async updateNumberPool(id: number, pool: any): Promise<any | undefined> {
-    return undefined;
+    const existing = this.numberPools.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...pool, updatedAt: new Date() };
+    this.numberPools.set(id, updated);
+    return updated;
   }
 
   async deleteNumberPool(id: number): Promise<boolean> {
-    return false;
+    return this.numberPools.delete(id);
   }
 
   async getPoolNumbers(poolId: number): Promise<any[]> {
-    return [];
+    const numbers = [];
+    for (const [key, assignment] of this.poolAssignments.entries()) {
+      if (assignment.poolId === poolId) {
+        const phoneNumber = this.phoneNumbers.get(assignment.phoneNumberId);
+        if (phoneNumber) {
+          numbers.push(phoneNumber);
+        }
+      }
+    }
+    return numbers;
   }
 
   async assignNumberToPool(poolId: number, phoneNumberId: number, priority?: number): Promise<any> {
-    return {};
+    const assignmentKey = `${poolId}_${phoneNumberId}`;
+    const assignment = {
+      poolId,
+      phoneNumberId,
+      priority: priority || 1,
+      createdAt: new Date()
+    };
+    this.poolAssignments.set(assignmentKey, assignment);
+    return assignment;
   }
 
   async removeNumberFromPool(poolId: number, phoneNumberId: number): Promise<boolean> {
-    return false;
+    const assignmentKey = `${poolId}_${phoneNumberId}`;
+    return this.poolAssignments.delete(assignmentKey);
   }
 
   async getNumberPoolAssignments(phoneNumberId: number): Promise<any[]> {
-    return [];
+    const assignments = [];
+    for (const assignment of this.poolAssignments.values()) {
+      if (assignment.phoneNumberId === phoneNumberId) {
+        assignments.push(assignment);
+      }
+    }
+    return assignments;
   }
 
   async getPoolAssignedCount(poolId: number): Promise<number> {
-    return 0;
+    let count = 0;
+    for (const assignment of this.poolAssignments.values()) {
+      if (assignment.poolId === poolId) {
+        count++;
+      }
+    }
+    return count;
   }
 
   async getCampaignPools(campaignId: number): Promise<any[]> {
