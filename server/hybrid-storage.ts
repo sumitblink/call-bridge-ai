@@ -682,7 +682,9 @@ class HybridStorage implements IStorage {
     
     // Force memory storage for phone numbers since import was done to memory
     console.log(`[HybridStorage] Forcing memory storage for getUnassignedPhoneNumbers due to import location`);
-    return this.memStorage.getUnassignedPhoneNumbers(userId);
+    const result = await this.memStorage.getUnassignedPhoneNumbers(userId);
+    console.log(`[HybridStorage] Returning ${result.length} unassigned numbers`);
+    return result;
   }
 
   async getPhoneNumberByNumber(phoneNumber: string): Promise<any | undefined> {

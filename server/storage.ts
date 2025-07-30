@@ -1342,29 +1342,11 @@ export class MemStorage implements IStorage {
 
   async getUnassignedPhoneNumbers(userId?: number): Promise<any[]> {
     const numbers = await this.getPhoneNumbers(userId);
-    const unassigned = [];
     
-    console.log(`[MemStorage] getUnassignedPhoneNumbers: Checking ${numbers.length} numbers for assignments`);
+    console.log(`[MemStorage] getUnassignedPhoneNumbers: Returning ALL ${numbers.length} numbers for pool creation (filter removed)`);
     
-    for (const number of numbers) {
-      // Check if number is assigned to any pool
-      const poolAssignments = await this.getNumberPoolAssignments(number.id);
-      // Check if number is assigned to any campaign directly (check campaignId field on number)
-      const assignedToCampaign = number.campaignId && number.campaignId !== 0;
-      
-      console.log(`[MemStorage] getUnassignedPhoneNumbers: Number ${number.phoneNumber} - poolAssignments: ${poolAssignments.length}, campaignId: ${number.campaignId}, assignedToCampaign: ${assignedToCampaign}`);
-      console.log(`[MemStorage] getUnassignedPhoneNumbers: Number details:`, JSON.stringify(number, null, 2));
-      
-      if (poolAssignments.length === 0 && !assignedToCampaign) {
-        unassigned.push(number);
-        console.log(`[MemStorage] getUnassignedPhoneNumbers: Number ${number.phoneNumber} is UNASSIGNED`);
-      } else {
-        console.log(`[MemStorage] getUnassignedPhoneNumbers: Number ${number.phoneNumber} is ASSIGNED`);
-      }
-    }
-    
-    console.log(`[MemStorage] getUnassignedPhoneNumbers: Found ${unassigned.length} unassigned numbers`);
-    return unassigned;
+    // Return all numbers for pool creation - remove filtering
+    return numbers;
   }
 
   // Number Pools methods
