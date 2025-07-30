@@ -4,6 +4,7 @@ import {
   calls, 
   users,
   buyers,
+  targets,
   campaignBuyers,
   callLogs,
   type Campaign, 
@@ -17,6 +18,8 @@ import {
   type UpsertUser,
   type Buyer,
   type InsertBuyer,
+  type Target,
+  type InsertTarget,
   type CampaignBuyer,
   type InsertCampaignBuyer,
   type CallLog,
@@ -232,6 +235,49 @@ class HybridStorage implements IStorage {
     return this.executeOperation(
       () => this.databaseStorage.deleteBuyer(id),
       () => this.memStorage.deleteBuyer(id)
+    );
+  }
+
+  // Targets (individual endpoints under buyers)
+  async getTargets(): Promise<Target[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getTargets(),
+      () => this.memStorage.getTargets()
+    );
+  }
+
+  async getTarget(id: number): Promise<Target | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getTarget(id),
+      () => this.memStorage.getTarget(id)
+    );
+  }
+
+  async getTargetsByBuyer(buyerId: number): Promise<Target[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getTargetsByBuyer(buyerId),
+      () => this.memStorage.getTargetsByBuyer(buyerId)
+    );
+  }
+
+  async createTarget(target: InsertTarget): Promise<Target> {
+    return this.executeOperation(
+      () => this.databaseStorage.createTarget(target),
+      () => this.memStorage.createTarget(target)
+    );
+  }
+
+  async updateTarget(id: number, target: Partial<InsertTarget>): Promise<Target | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.updateTarget(id, target),
+      () => this.memStorage.updateTarget(id, target)
+    );
+  }
+
+  async deleteTarget(id: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.deleteTarget(id),
+      () => this.memStorage.deleteTarget(id)
     );
   }
 

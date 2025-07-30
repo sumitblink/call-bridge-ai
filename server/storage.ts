@@ -315,6 +315,7 @@ export class MemStorage implements IStorage {
   private users: Map<string, User> = new Map();
   private campaigns: Map<number, Campaign> = new Map();
   private buyers: Map<number, Buyer> = new Map();
+  private targets: Map<number, Target> = new Map();
   private campaignBuyers: Map<string, CampaignBuyer> = new Map();
   private agents: Map<number, Agent> = new Map();
   private calls: Map<number, Call> = new Map();
@@ -330,6 +331,7 @@ export class MemStorage implements IStorage {
   private currentUserId: number = 1;
   private currentCampaignId: number = 1;
   private currentBuyerId: number = 1;
+  private currentTargetId: number = 1;
   private currentPixelId: number = 1;
   private currentAgentId: number = 1;
   private currentCallId: number = 1;
@@ -832,6 +834,55 @@ export class MemStorage implements IStorage {
     
     // Delete the buyer
     return this.buyers.delete(id);
+  }
+
+  // Targets (individual endpoints under buyers)
+  async getTargets(): Promise<Target[]> {
+    return Array.from(this.targets.values());
+  }
+
+  async getTarget(id: number): Promise<Target | undefined> {
+    return this.targets.get(id);
+  }
+
+  async getTargetsByBuyer(buyerId: number): Promise<Target[]> {
+    return Array.from(this.targets.values()).filter(target => target.buyerId === buyerId);
+  }
+
+  async createTarget(target: InsertTarget): Promise<Target> {
+    const id = this.currentTargetId++;
+    const newTarget: Target = {
+      ...target,
+      id,
+      userId: target.userId || 1,
+      priority: target.priority ?? 1,
+      dailyCap: target.dailyCap ?? 0,
+      concurrencyLimit: target.concurrencyLimit ?? 1,
+      acceptanceRate: target.acceptanceRate ?? "0.00",
+      avgResponseTime: target.avgResponseTime ?? 0,
+      status: "active",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.targets.set(id, newTarget);
+    return newTarget;
+  }
+
+  async updateTarget(id: number, target: Partial<InsertTarget>): Promise<Target | undefined> {
+    const existing = this.targets.get(id);
+    if (!existing) return undefined;
+    
+    const updated: Target = {
+      ...existing,
+      ...target,
+      updatedAt: new Date()
+    };
+    this.targets.set(id, updated);
+    return updated;
+  }
+
+  async deleteTarget(id: number): Promise<boolean> {
+    return this.targets.delete(id);
   }
 
   // Campaign-Buyer Relations
