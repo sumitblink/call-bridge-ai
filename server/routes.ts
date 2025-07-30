@@ -1322,6 +1322,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get buyer financial statistics
+  app.get('/api/buyers/stats', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      // Get buyer financial statistics from database
+      const stats = await db.execute(sql`
+        SELECT 
+          b.id,
+          b.company_name,
+          COUNT(c.id) as total_calls,
+          COALESCE(SUM(CASE WHEN c.revenue > 0 THEN c.revenue ELSE 0 END), 0) as total_revenue,
+          COALESCE(SUM(CASE WHEN c.created_at >= NOW() - INTERVAL '1 hour' THEN c.revenue ELSE 0 END), 0) as hour_revenue,
+          COALESCE(SUM(CASE WHEN c.created_at >= NOW() - INTERVAL '1 day' THEN c.revenue ELSE 0 END), 0) as day_revenue,
+          COALESCE(SUM(CASE WHEN c.created_at >= NOW() - INTERVAL '30 days' THEN c.revenue ELSE 0 END), 0) as month_revenue
+        FROM buyers b
+        LEFT JOIN calls c ON b.id = c.buyer_id
+        WHERE b.user_id = ${userId}
+        GROUP BY b.id, b.company_name
+      `);
+      
+      // Format the response
+      const buyerStats = stats.rows.map((row: any) => ({
+        id: row.id,
+        companyName: row.company_name,
+        totalCalls: parseInt(row.total_calls) || 0,
+        hourRevenue: parseFloat(row.hour_revenue) || 0,
+        dayRevenue: parseFloat(row.day_revenue) || 0,
+        monthRevenue: parseFloat(row.month_revenue) || 0,
+        totalRevenue: parseFloat(row.total_revenue) || 0
+      }));
+      
+      res.json(buyerStats);
+    } catch (error) {
+      console.error("Error fetching buyer stats:", error);
+      res.status(500).json({ error: "Failed to fetch buyer stats" });
+    }
+  });
+
   app.post('/api/buyers', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;

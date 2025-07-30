@@ -19,8 +19,19 @@ import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-function BuyerRow({ buyer, onEdit, onDelete }: { 
+interface BuyerStats {
+  id: number;
+  companyName: string;
+  totalCalls: number;
+  hourRevenue: number;
+  dayRevenue: number;
+  monthRevenue: number;
+  totalRevenue: number;
+}
+
+function BuyerRow({ buyer, buyerStats, onEdit, onDelete }: { 
   buyer: Buyer; 
+  buyerStats?: BuyerStats;
   onEdit: (buyer: Buyer) => void;
   onDelete: (id: number) => void;
 }) {
@@ -43,63 +54,100 @@ function BuyerRow({ buyer, onEdit, onDelete }: {
 
   return (
     <TableRow className="hover:bg-gray-50">
+      {/* Company Name Column - exactly like Ringba screenshot */}
       <TableCell>
         <div className="flex flex-col">
-          <span className="font-medium">{buyer?.companyName || buyer?.name}</span>
-          <span className="text-sm text-gray-500">ID: {buyer?.id}</span>
-          {buyer?.name && buyer?.companyName && (
-            <span className="text-xs text-gray-400">Sub ID: {buyer?.name}</span>
+          <span className="font-medium text-sm">{buyer?.companyName || 'Unnamed Company'}</span>
+          {buyer?.name && buyer?.name !== buyer?.companyName && (
+            <span className="text-xs text-gray-500">{buyer?.name}</span>
           )}
         </div>
       </TableCell>
-      <TableCell>
-        <div className="flex flex-col gap-1">
-          <div className="flex gap-2">
-            {buyer?.allowPauseTargets && <Badge variant="outline" className="text-xs">Pause</Badge>}
-            {buyer?.allowSetTargetCaps && <Badge variant="outline" className="text-xs">Caps</Badge>}
-            {buyer?.allowDisputeConversions && <Badge variant="outline" className="text-xs">Dispute</Badge>}
-            {buyer?.enableRevenueRecovery && <Badge variant="outline" className="text-xs">Revenue</Badge>}
-          </div>
-          {buyer?.restrictDuplicates && (
-            <span className="text-xs text-gray-500">Restrict Duplicates</span>
+      
+      {/* Can Pause Targets - checkbox style like Ringba */}
+      <TableCell className="text-center">
+        <div className="flex justify-center">
+          {buyer?.allowPauseTargets ? (
+            <span className="text-green-600 font-bold">✓</span>
+          ) : (
+            <span className="text-gray-400">✗</span>
           )}
         </div>
       </TableCell>
-      <TableCell>
-        <div className="flex flex-col gap-1">
-          <Badge className={getStatusColor(buyer?.status)}>
-            {buyer?.status || 'Active'}
-          </Badge>
-          <Badge className={getBuyerTypeColor(buyer?.buyerType)}>
-            {buyer?.buyerType === 'rtb_enabled' ? 'RTB' : buyer?.buyerType?.charAt(0).toUpperCase() + buyer?.buyerType?.slice(1) || 'Standard'}
-          </Badge>
+      
+      {/* Can Set Target Call and Concurrency Caps - checkbox style */}
+      <TableCell className="text-center">
+        <div className="flex justify-center">
+          {buyer?.allowSetTargetCaps ? (
+            <span className="text-green-600 font-bold">✓</span>
+          ) : (
+            <span className="text-gray-400">✗</span>
+          )}
         </div>
       </TableCell>
-      <TableCell>
-        <div className="text-center">
-          <div className="font-semibold">{buyer?.concurrencyLimit || 1}</div>
-          <div className="text-xs text-gray-500">concurrent</div>
+      
+      {/* Can Dispute Conversions - checkbox style */}
+      <TableCell className="text-center">
+        <div className="flex justify-center">
+          {buyer?.allowDisputeConversions ? (
+            <span className="text-green-600 font-bold">✓</span>
+          ) : (
+            <span className="text-gray-400">✗</span>
+          )}
         </div>
       </TableCell>
-      <TableCell>
-        <div className="text-center">
-          <div className="font-semibold">{buyer?.dailyCallCap || 100}</div>
-          <div className="text-xs text-gray-500">daily</div>
+      
+      {/* Restrict Duplicates - dropdown value style */}
+      <TableCell className="text-center">
+        <span className="text-sm text-gray-700">
+          {buyer?.restrictDuplicates ? 'Do Not Restrict' : 'Do Not Restrict'}
+        </span>
+      </TableCell>
+      
+      {/* Hour - financial data */}
+      <TableCell className="text-center">
+        <span className="text-sm font-medium">
+          ${buyerStats?.hourRevenue?.toFixed(2) || '0.00'}
+        </span>
+      </TableCell>
+      
+      {/* Day - financial data */}
+      <TableCell className="text-center">
+        <span className="text-sm font-medium">
+          ${buyerStats?.dayRevenue?.toFixed(2) || '0.00'}
+        </span>
+      </TableCell>
+      
+      {/* Month - financial data */}
+      <TableCell className="text-center">
+        <span className="text-sm font-medium">
+          ${buyerStats?.monthRevenue?.toFixed(2) || '0.00'}
+        </span>
+      </TableCell>
+      
+      {/* Total - financial data */}
+      <TableCell className="text-center">
+        <span className="text-sm font-medium">
+          ${buyerStats?.totalRevenue?.toFixed(2) || '0.00'}
+        </span>
+      </TableCell>
+      
+      {/* Status - green indicator like Ringba */}
+      <TableCell className="text-center">
+        <div className="flex items-center justify-center gap-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span className="text-sm">{buyer?.status === 'active' ? 'Active' : buyer?.status || 'Active'}</span>
         </div>
       </TableCell>
+      
+      {/* Actions - icons like Ringba */}
       <TableCell>
-        <div className="text-center">
-          <div className="font-semibold">{buyer?.acceptanceRate || '0.00'}%</div>
-          <div className="text-xs text-gray-500">acceptance</div>
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className="flex gap-1">
-          <Button variant="outline" size="sm" onClick={() => onEdit(buyer)}>
-            <Edit2 className="h-4 w-4" />
+        <div className="flex justify-center gap-1">
+          <Button variant="ghost" size="sm" onClick={() => onEdit(buyer)} className="h-6 w-6 p-0">
+            <Edit2 className="h-3 w-3" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => onDelete(buyer.id)}>
-            <Trash2 className="h-4 w-4" />
+          <Button variant="ghost" size="sm" onClick={() => onDelete(buyer.id)} className="h-6 w-6 p-0">
+            <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       </TableCell>
@@ -473,6 +521,17 @@ export default function Buyers() {
     },
   });
 
+  const { data: buyerStats } = useQuery({
+    queryKey: ["/api/buyers/stats"],
+    queryFn: async () => {
+      const response = await fetch("/api/buyers/stats");
+      if (!response.ok) {
+        throw new Error("Failed to fetch buyer stats");
+      }
+      return response.json();
+    },
+  });
+
   const deleteBuyerMutation = useMutation({
     mutationFn: async (id: number) => {
       const response = await fetch(`/api/buyers/${id}`, {
@@ -577,24 +636,32 @@ export default function Buyers() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Company & Sub ID</TableHead>
-                    <TableHead>Settings</TableHead>
-                    <TableHead>Status & Type</TableHead>
-                    <TableHead className="text-center">Concurrency</TableHead>
-                    <TableHead className="text-center">Daily Cap</TableHead>
-                    <TableHead className="text-center">Performance</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Company Name</TableHead>
+                    <TableHead className="text-center">Can Pause Targets</TableHead>
+                    <TableHead className="text-center">Can Set Target Call and Concurrency Caps</TableHead>
+                    <TableHead className="text-center">Can Dispute Conversions</TableHead>
+                    <TableHead className="text-center">Restrict Duplicates</TableHead>
+                    <TableHead className="text-center">Hour</TableHead>
+                    <TableHead className="text-center">Day</TableHead>
+                    <TableHead className="text-center">Month</TableHead>
+                    <TableHead className="text-center">Total</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(buyers as Buyer[]).map((buyer: Buyer) => (
-                    <BuyerRow
-                      key={buyer.id}
-                      buyer={buyer}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                    />
-                  ))}
+                  {(buyers as Buyer[]).map((buyer: Buyer) => {
+                    const stats = (buyerStats as BuyerStats[])?.find(s => s.id === buyer.id);
+                    return (
+                      <BuyerRow
+                        key={buyer.id}
+                        buyer={buyer}
+                        buyerStats={stats}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
