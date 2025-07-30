@@ -19,7 +19,12 @@ export class TargetService {
 
   async createTarget(data: InsertTarget): Promise<Target> {
     try {
-      const result = await db.insert(targets).values([data]).returning();
+      // Ensure userId is provided
+      if (!data.userId) {
+        throw new Error('User ID is required');
+      }
+      
+      const result = await db.insert(targets).values(data).returning();
       return result[0];
     } catch (error: any) {
       if (error.code === '23503' && error.constraint === 'targets_buyer_id_fkey') {

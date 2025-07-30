@@ -848,7 +848,7 @@ export const insertTargetSchema = createInsertSchema(targets).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  userId: z.number().optional(),
+  userId: z.number().min(1, "User ID is required"),
   buyerId: z.number().min(1, "Buyer ID is required"),
   name: z.string().min(1, "Target name is required"),
   phoneNumber: z.string().optional(),
