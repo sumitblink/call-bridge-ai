@@ -88,14 +88,63 @@ export const campaigns = pgTable("campaigns", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// New Buyers table - top-level companies/organizations (containers only)
+// Buyers table - Complete Ringba-style buyer form fields
 export const buyers = pgTable("buyers", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  name: varchar("name", { length: 100 }).notNull(), // Company/Organization name
-  email: varchar("email", { length: 255 }), // Contact email for the company
-  status: varchar("status", { length: 20 }).default("active").notNull(),
-  description: text("description"), // Company description
+  
+  // Basic Information (Required)
+  name: varchar("name", { length: 100 }).notNull(), // Buyer Name
+  companyName: varchar("company_name", { length: 255 }), // Company Name
+  email: varchar("email", { length: 255 }), // Contact Email
+  phoneNumber: varchar("phone_number", { length: 20 }), // Contact Phone
+  status: varchar("status", { length: 20 }).default("active").notNull(), // active, paused, inactive
+  description: text("description"), // Company Description
+  
+  // Account Settings
+  buyerType: varchar("buyer_type", { length: 50 }).default("standard"), // standard, rtb_enabled, premium
+  timeZone: varchar("time_zone", { length: 100 }).default("America/New_York"),
+  
+  // Permissions & Access Control
+  allowPauseTargets: boolean("allow_pause_targets").default(false),
+  allowSetTargetCaps: boolean("allow_set_target_caps").default(false),
+  allowDisputeConversions: boolean("allow_dispute_conversions").default(false),
+  
+  // Call Routing Settings
+  hoursOfOperation: json("hours_of_operation"), // {monday: {start: "09:00", end: "17:00"}, ...}
+  geographicRestrictions: text("geographic_restrictions").array(), // ["US", "CA", "UK"]
+  concurrencyLimit: integer("concurrency_limit").default(1),
+  dailyCallCap: integer("daily_call_cap").default(100),
+  monthlyCallCap: integer("monthly_call_cap").default(3000),
+  
+  // Revenue & Billing
+  enableRevenueRecovery: boolean("enable_revenue_recovery").default(false),
+  connectionThresholdToReroute: integer("connection_threshold_to_reroute").default(30), // seconds
+  rerouteAttempts: integer("reroute_attempts").default(3),
+  estimatedRevenuePerCall: decimal("estimated_revenue_per_call", { precision: 10, scale: 2 }).default("0.00"),
+  
+  // Duplicate Call Management
+  restrictDuplicates: boolean("restrict_duplicates").default(true),
+  duplicateTimeWindow: integer("duplicate_time_window").default(3600), // seconds (1 hour)
+  
+  // Advanced Features
+  enablePredictiveRouting: boolean("enable_predictive_routing").default(false),
+  enableRtbIntegration: boolean("enable_rtb_integration").default(false),
+  shareableTags: text("shareable_tags").array(), // Data sharing configuration
+  tcpaCompliant: boolean("tcpa_compliant").default(true),
+  
+  // API Integration
+  webhookUrl: varchar("webhook_url", { length: 512 }),
+  apiCredentials: json("api_credentials"), // {api_key: "", secret: ""}
+  rtbId: varchar("rtb_id", { length: 100 }),
+  sipSettings: json("sip_settings"), // VoIP configuration
+  
+  // Performance Metrics (calculated fields)
+  acceptanceRate: decimal("acceptance_rate", { precision: 5, scale: 2 }).default("0.00"), // percentage
+  avgResponseTime: integer("avg_response_time").default(0), // milliseconds
+  totalCallsReceived: integer("total_calls_received").default(0),
+  totalCallsCompleted: integer("total_calls_completed").default(0),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -743,11 +792,55 @@ export const insertBuyerSchema = createInsertSchema(buyers).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  totalCallsReceived: true,
+  totalCallsCompleted: true,
 }).extend({
   userId: z.number().optional(),
+  // Basic Information
   name: z.string().min(1, "Buyer name is required"),
-  email: z.string().email("Invalid email format").optional().or(z.literal("")),
+  companyName: z.string().optional(),
+  email: z.string().email("Valid email is required").optional().or(z.literal("")),
+  phoneNumber: z.string().optional(),
+  status: z.enum(["active", "paused", "inactive"]).optional(),
   description: z.string().optional(),
+  
+  // Account Settings
+  buyerType: z.enum(["standard", "rtb_enabled", "premium"]).optional(),
+  timeZone: z.string().optional(),
+  
+  // Permissions
+  allowPauseTargets: z.boolean().optional(),
+  allowSetTargetCaps: z.boolean().optional(),
+  allowDisputeConversions: z.boolean().optional(),
+  
+  // Call Routing Settings
+  hoursOfOperation: z.any().optional(), // JSON object
+  geographicRestrictions: z.array(z.string()).optional(),
+  concurrencyLimit: z.number().min(1).max(50).optional(),
+  dailyCallCap: z.number().min(1).max(10000).optional(),
+  monthlyCallCap: z.number().min(1).max(100000).optional(),
+  
+  // Revenue & Billing
+  enableRevenueRecovery: z.boolean().optional(),
+  connectionThresholdToReroute: z.number().min(5).max(300).optional(),
+  rerouteAttempts: z.number().min(1).max(10).optional(),
+  estimatedRevenuePerCall: z.number().min(0).optional(),
+  
+  // Duplicate Call Management
+  restrictDuplicates: z.boolean().optional(),
+  duplicateTimeWindow: z.number().min(60).max(86400).optional(), // 1 minute to 24 hours
+  
+  // Advanced Features
+  enablePredictiveRouting: z.boolean().optional(),
+  enableRtbIntegration: z.boolean().optional(),
+  shareableTags: z.array(z.string()).optional(),
+  tcpaCompliant: z.boolean().optional(),
+  
+  // API Integration
+  webhookUrl: z.string().url().optional().or(z.literal("")),
+  apiCredentials: z.any().optional(), // JSON object
+  rtbId: z.string().optional(),
+  sipSettings: z.any().optional(), // JSON object
 });
 
 export const insertTargetSchema = createInsertSchema(targets).omit({
