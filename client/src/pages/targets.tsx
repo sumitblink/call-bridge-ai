@@ -1,151 +1,31 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTargetSchema, type Target, type InsertTarget, type Buyer } from "@shared/schema";
-import { z } from "zod";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { Trash2, Edit2, Plus, Info, Phone, Globe, Clock, Settings, Target as TargetIcon, Pencil, Shield, Zap, Filter, User } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Plus, Edit, Trash2, Target as TargetIcon, User, Phone, DollarSign, Clock, AlertCircle, Settings, Zap, Shield, Filter, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import Layout from "@/components/Layout";
+import { z } from "zod";
 
 // Comprehensive timezone list
 const TIMEZONES = [
-  "(UTC-12:00) Baker Island, Howland Island",
-  "(UTC-11:00) American Samoa, Niue",
-  "(UTC-10:00) Hawaii, Cook Islands",
-  "(UTC-09:30) Marquesas Islands",
-  "(UTC-09:00) Alaska, Gambier Islands",
-  "(UTC-08:00) Pacific Time (US & Canada), Tijuana",
-  "(UTC-07:00) Arizona",
-  "(UTC-07:00) La Paz, Mazatlan",
-  "(UTC-07:00) Mountain Time (US & Canada)",
-  "(UTC-07:00) Yukon",
-  "(UTC-06:00) Central America",
-  "(UTC-06:00) Easter Island",
-  "(UTC-06:00) Guadalajara, Mexico City, Monterrey",
-  "(UTC-06:00) Saskatchewan",
-  "(UTC-05:00) Bogota, Lima, Quito, Rio Branco",
-  "(UTC-05:00) Chetumal",
-  "(UTC-05:00) Haiti",
-  "(UTC-05:00) Eastern Time (US & Canada)",
-  "(UTC-04:00) Atlantic Time (Canada)",
-  "(UTC-04:00) Caracas",
-  "(UTC-04:00) Asuncion",
-  "(UTC-04:00) Georgetown, La Paz, Manaus, San Juan",
-  "(UTC-03:30) Newfoundland",
-  "(UTC-03:00) Brasilia",
-  "(UTC-03:00) Cayenne, Fortaleza",
-  "(UTC-03:00) City of Buenos Aires",
-  "(UTC-03:00) Montevideo",
-  "(UTC-03:00) Punta Arenas",
-  "(UTC-03:00) Saint Pierre and Miquelon",
-  "(UTC-02:00) Coordinated Universal Time-02",
-  "(UTC-01:00) Azores",
-  "(UTC-01:00) Cabo Verde Is.",
-  "(UTC+00:00) Coordinated Universal Time",
-  "(UTC+00:00) Dublin, Edinburgh, Lisbon, London",
-  "(UTC+00:00) Monrovia, Reykjavik",
-  "(UTC+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna",
-  "(UTC+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague",
-  "(UTC+01:00) Brussels, Copenhagen, Madrid, Paris",
-  "(UTC+01:00) Casablanca",
-  "(UTC+01:00) Sarajevo, Skopje, Warsaw, Zagreb",
-  "(UTC+01:00) West Central Africa",
-  "(UTC+02:00) Amman",
-  "(UTC+02:00) Athens, Bucharest",
-  "(UTC+02:00) Beirut",
-  "(UTC+02:00) Cairo",
-  "(UTC+02:00) Chisinau",
-  "(UTC+02:00) Damascus",
-  "(UTC+02:00) Gaza, Hebron",
-  "(UTC+02:00) Harare, Pretoria",
-  "(UTC+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius",
-  "(UTC+02:00) Jerusalem",
-  "(UTC+02:00) Kaliningrad",
-  "(UTC+02:00) Tripoli",
-  "(UTC+03:00) Baghdad",
-  "(UTC+03:00) Istanbul",
-  "(UTC+03:00) Kuwait, Riyadh",
-  "(UTC+03:00) Minsk",
-  "(UTC+03:00) Moscow, St. Petersburg",
-  "(UTC+03:00) Nairobi",
-  "(UTC+03:30) Tehran",
-  "(UTC+04:00) Abu Dhabi, Muscat",
-  "(UTC+04:00) Astrakhan, Ulyanovsk",
-  "(UTC+04:00) Baku",
-  "(UTC+04:00) Izhevsk, Samara",
-  "(UTC+04:00) Port Louis",
-  "(UTC+04:00) Saratov",
-  "(UTC+04:00) Tbilisi",
-  "(UTC+04:00) Volgograd",
-  "(UTC+04:00) Yerevan",
-  "(UTC+04:30) Kabul",
-  "(UTC+05:00) Ashgabat, Tashkent",
-  "(UTC+05:00) Ekaterinburg",
-  "(UTC+05:00) Islamabad, Karachi",
-  "(UTC+05:00) Qyzylorda",
-  "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi",
-  "(UTC+05:30) Sri Jayawardenepura",
-  "(UTC+05:45) Kathmandu",
-  "(UTC+06:00) Astana",
-  "(UTC+06:00) Dhaka",
-  "(UTC+06:00) Omsk",
-  "(UTC+06:30) Yangon (Rangoon)",
-  "(UTC+07:00) Bangkok, Hanoi, Jakarta",
-  "(UTC+07:00) Barnaul, Gorno-Altaysk",
-  "(UTC+07:00) Hovd",
-  "(UTC+07:00) Krasnoyarsk",
-  "(UTC+07:00) Novosibirsk",
-  "(UTC+07:00) Tomsk",
-  "(UTC+08:00) Beijing, Chongqing, Hong Kong, Urumqi",
-  "(UTC+08:00) Irkutsk",
-  "(UTC+08:00) Kuala Lumpur, Singapore",
-  "(UTC+08:00) Perth",
-  "(UTC+08:00) Taipei",
-  "(UTC+08:00) Ulaanbaatar",
-  "(UTC+08:45) Eucla",
-  "(UTC+09:00) Chita",
-  "(UTC+09:00) Osaka, Sapporo, Tokyo",
-  "(UTC+09:00) Pyongyang",
-  "(UTC+09:00) Seoul",
-  "(UTC+09:00) Yakutsk",
-  "(UTC+09:30) Adelaide",
-  "(UTC+09:30) Darwin",
-  "(UTC+10:00) Brisbane",
-  "(UTC+10:00) Canberra, Melbourne, Sydney",
-  "(UTC+10:00) Guam, Port Moresby",
-  "(UTC+10:00) Hobart",
-  "(UTC+10:00) Vladivostok",
-  "(UTC+10:30) Lord Howe Island",
-  "(UTC+11:00) Bougainville Island",
-  "(UTC+11:00) Chokurdakh",
-  "(UTC+11:00) Magadan",
-  "(UTC+11:00) Norfolk Island",
-  "(UTC+11:00) Sakhalin",
-  "(UTC+11:00) Solomon Is., New Caledonia",
-  "(UTC+12:00) Anadyr, Petropavlovsk-Kamchatsky",
-  "(UTC+12:00) Auckland, Wellington",
-  "(UTC+12:00) Coordinated Universal Time+12",
-  "(UTC+12:00) Fiji",
-  "(UTC+12:45) Chatham Islands",
-  "(UTC+13:00) Nuku'alofa",
-  "(UTC+13:00) Samoa",
-  "(UTC+14:00) Kiritimati Island"
+  "UTC", "GMT", "EST", "CST", "MST", "PST", "EDT", "CDT", "MDT", "PDT",
+  "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+  "America/Phoenix", "America/Anchorage", "Pacific/Honolulu", "Europe/London",
+  "Europe/Paris", "Europe/Berlin", "Europe/Rome", "Europe/Madrid", "Europe/Amsterdam",
+  "Asia/Tokyo", "Asia/Shanghai", "Asia/Mumbai", "Asia/Dubai", "Australia/Sydney",
+  "America/Toronto", "America/Vancouver", "America/Mexico_City", "America/Sao_Paulo",
+  "Africa/Cairo", "Asia/Singapore", "Asia/Hong_Kong", "Europe/Stockholm"
 ];
 
 const targetFormSchema = insertTargetSchema.extend({
@@ -167,26 +47,8 @@ export default function TargetsPage() {
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
   const [selectedBuyerId, setSelectedBuyerId] = useState<number | null>(null);
   const [hoursMode, setHoursMode] = useState<"basic" | "advanced">("basic");
-  const [showAddBreak, setShowAddBreak] = useState<number | false>(false);
-  const [breakStartTime, setBreakStartTime] = useState("12:00");
-  const [breakDuration, setBreakDuration] = useState("45");
-  const [breaks, setBreaks] = useState<Array<{startTime: string, duration: string, day?: string}>>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Break handling functions
-  const handleSaveBreak = () => {
-    if (breakStartTime && breakDuration) {
-      setBreaks([...breaks, { startTime: breakStartTime, duration: breakDuration }]);
-      setBreakStartTime("12:00");
-      setBreakDuration("45");
-      setShowAddBreak(false);
-    }
-  };
-
-  const removeBreak = (index: number) => {
-    setBreaks(breaks.filter((_, i) => i !== index));
-  };
 
   // Fetch targets
   const { data: targets = [], isLoading: targetsLoading } = useQuery({
@@ -344,7 +206,7 @@ export default function TargetsPage() {
       ...data,
       buyerId: data.buyerId || null, // Handle optional buyer
     };
-
+    
     if (editingTarget) {
       updateTargetMutation.mutate({ id: editingTarget.id, data: formattedData });
     } else {
@@ -412,41 +274,8 @@ export default function TargetsPage() {
     return <Badge variant={variants[type as keyof typeof variants] || "default"}>{type}</Badge>;
   };
 
-  if (targetsLoading || buyersLoading) {
-    return (
-      <Layout>
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Target Management</h1>
-              <p className="text-muted-foreground">Manage your call targets and routing destinations</p>
-            </div>
-            <Button disabled>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Target
-            </Button>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Targets</CardTitle>
-              <CardDescription>Loading target data...</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-16 bg-gray-200 rounded-lg animate-pulse" />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </Layout>
-    );
-  }
-
   return (
-    <Layout>
-      <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
@@ -464,8 +293,7 @@ export default function TargetsPage() {
               Create Target
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
-            <div className="max-h-[90vh] overflow-y-auto p-6">
+          <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingTarget ? "Edit Target" : "Create New Target"}
@@ -475,8 +303,8 @@ export default function TargetsPage() {
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form id="target-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+                
                 {/* Row 1: Basic Info */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div>
@@ -621,87 +449,6 @@ export default function TargetsPage() {
                   />
                 </div>
 
-                {/* SIP-specific fields in separate row */}
-                {form.watch("type") === "sip" && (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <FormField
-                        control={form.control}
-                        name="sipUsername"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">SIP Username</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                placeholder="username"
-                                className="h-7 text-xs"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="sipPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">SIP Password</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                type="password"
-                                placeholder="password"
-                                className="h-7 text-xs"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* SIP Headers Section */}
-                    <div className="mt-2">
-                      <FormLabel className="text-xs">SIP Headers</FormLabel>
-                      <div className="mt-1 p-3 border rounded-lg bg-gray-50">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Input 
-                            placeholder="key"
-                            className="h-6 text-xs flex-1"
-                          />
-                          <span className="text-xs">:</span>
-                          <Input 
-                            placeholder="value"
-                            className="h-6 text-xs flex-1"
-                          />
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-6 text-xs px-2"
-                          >
-                            TOKEN
-                          </Button>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-6 text-xs px-2"
-                          >
-                            ADD
-                          </Button>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          No Headers
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-
                 {/* Row 3: Settings */}
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
                   <FormField
@@ -713,27 +460,10 @@ export default function TargetsPage() {
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger className="h-7 text-xs">
-                              <SelectValue placeholder="Search timezone..." />
+                              <SelectValue placeholder="UTC" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="max-h-40">
-                            <div className="sticky top-0 p-2 bg-background border-b">
-                              <Input
-                                placeholder="Search timezones..."
-                                className="h-6 text-xs"
-                                onChange={(e) => {
-                                  const searchTerm = e.target.value.toLowerCase();
-                                  const content = e.target.closest('[role="listbox"]');
-                                  if (content) {
-                                    const items = content.querySelectorAll('[role="option"]');
-                                    items.forEach((item: any) => {
-                                      const text = item.textContent?.toLowerCase() || '';
-                                      item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
-                                    });
-                                  }
-                                }}
-                              />
-                            </div>
                             {TIMEZONES.map((tz) => (
                               <SelectItem key={tz} value={tz} className="text-xs">
                                 {tz}
@@ -854,89 +584,10 @@ export default function TargetsPage() {
                       </div>
                     </div>
                     <div className="mt-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-6 text-xs"
-                        onClick={() => setShowAddBreak(showAddBreak === -1 ? false : -1)}
-                      >
+                      <Button type="button" variant="outline" size="sm" className="h-6 text-xs">
                         Add Break
                       </Button>
                     </div>
-
-                    {/* Add Break Form */}
-                    {showAddBreak === -1 && (
-                      <div className="mt-3 p-3 border rounded-lg bg-white">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-xs text-gray-600 block mb-1">Start Time</label>
-                            <div className="relative">
-                              <Input 
-                                className="h-8 text-xs pr-8" 
-                                type="time" 
-                                defaultValue="12:00"
-                                value={breakStartTime}
-                                onChange={(e) => setBreakStartTime(e.target.value)}
-                              />
-                              <Clock className="absolute right-2 top-2 h-4 w-4 text-gray-400" />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-600 block mb-1">Duration (Min)</label>
-                            <Input 
-                              className="h-8 text-xs" 
-                              type="number" 
-                              placeholder="45"
-                              value={breakDuration}
-                              onChange={(e) => setBreakDuration(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mt-3">
-                          <Button 
-                            type="button" 
-                            size="sm" 
-                            className="h-6 text-xs px-3"
-                            onClick={handleSaveBreak}
-                          >
-                            Save
-                          </Button>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-6 text-xs px-3"
-                            onClick={() => setShowAddBreak(false)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Display existing breaks */}
-                    {breaks.length > 0 && (
-                      <div className="mt-3">
-                        <h5 className="text-xs font-medium mb-2">Scheduled Breaks</h5>
-                        <div className="space-y-1">
-                          {breaks.map((break_, index) => (
-                            <div key={index} className="flex items-center justify-between bg-white p-2 rounded border text-xs">
-                              <span>{break_.startTime} - {break_.duration} minutes</span>
-                              <Button 
-                                type="button" 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-5 w-5 p-0 text-red-500"
-                                onClick={() => removeBreak(index)}
-                              >
-                                ×
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -946,117 +597,14 @@ export default function TargetsPage() {
                       <Settings className="h-3 w-3" />
                       Advanced Hours of Operation
                     </h4>
-                    <div className="space-y-3">
-                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, dayIndex) => (
-                        <div key={day} className="space-y-2">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2 min-w-[80px]">
-                              <Switch className="h-4 w-6" defaultChecked />
-                              <span className="text-xs w-12 flex-shrink-0">{day.slice(0, 3)}</span>
-                            </div>
-                            <Input className="h-6 text-xs flex-1" type="time" defaultValue="09:00" />
-                            <span className="text-xs">to</span>
-                            <Input className="h-6 text-xs flex-1" type="time" defaultValue="17:00" />
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-6 text-xs px-2"
-                              onClick={() => setShowAddBreak(showAddBreak === dayIndex ? false : dayIndex)}
-                            >
-                              Add Break
-                            </Button>
-                          </div>
-
-                          {/* Add Break Form for this day */}
-                          {showAddBreak === dayIndex && (
-                            <div className="ml-6 p-3 border rounded-lg bg-white">
-                              <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                  <label className="text-xs text-gray-600 block mb-1">Start Time</label>
-                                  <div className="relative">
-                                    <Input 
-                                      className="h-8 text-xs pr-8" 
-                                      type="time" 
-                                      value={breakStartTime}
-                                      onChange={(e) => setBreakStartTime(e.target.value)}
-                                    />
-                                    <Clock className="absolute right-2 top-2 h-4 w-4 text-gray-400" />
-                                  </div>
-                                </div>
-                                <div>
-                                  <label className="text-xs text-gray-600 block mb-1">Duration (Min)</label>
-                                  <Input 
-                                    className="h-8 text-xs" 
-                                    type="number" 
-                                    placeholder="45"
-                                    value={breakDuration}
-                                    onChange={(e) => setBreakDuration(e.target.value)}
-                                  />
-                                </div>
-                              </div>
-                              <div className="flex gap-2 mt-3">
-                                <Button 
-                                  type="button" 
-                                  size="sm" 
-                                  className="h-6 text-xs px-3"
-                                  onClick={() => {
-                                    if (breakStartTime && breakDuration) {
-                                      setBreaks([...breaks, { 
-                                        startTime: breakStartTime, 
-                                        duration: breakDuration,
-                                        day: day
-                                      }]);
-                                      setBreakStartTime("12:00");
-                                      setBreakDuration("45");
-                                      setShowAddBreak(false);
-                                    }
-                                  }}
-                                >
-                                  Save
-                                </Button>
-                                <Button 
-                                  type="button" 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="h-6 text-xs px-3"
-                                  onClick={() => setShowAddBreak(false)}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Display existing breaks for this day */}
-                          {breaks.filter(break_ => break_.day === day).length > 0 && (
-                            <div className="ml-6">
-                              <h5 className="text-xs font-medium mb-2">Scheduled Breaks</h5>
-                              <div className="space-y-1">
-                                {breaks.filter(break_ => break_.day === day).map((break_, index) => (
-                                  <div key={index} className="flex items-center justify-between bg-white p-2 rounded border text-xs">
-                                    <span>{break_.startTime} - {break_.duration} minutes</span>
-                                    <Button 
-                                      type="button" 
-                                      variant="ghost" 
-                                      size="sm" 
-                                      className="h-5 w-5 p-0 text-red-500"
-                                      onClick={() => {
-                                        const allBreakIndex = breaks.findIndex(b => 
-                                          b.day === day && b.startTime === break_.startTime && b.duration === break_.duration
-                                        );
-                                        if (allBreakIndex !== -1) {
-                                          setBreaks(breaks.filter((_, i) => i !== allBreakIndex));
-                                        }
-                                      }}
-                                    >
-                                      ×
-                                    </Button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                    <div className="space-y-2">
+                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                        <div key={day} className="flex items-center gap-2">
+                          <Switch className="h-4 w-6" defaultChecked />
+                          <span className="text-xs w-16">{day.slice(0, 3)}</span>
+                          <Input className="h-6 text-xs flex-1" type="time" defaultValue="09:00" />
+                          <span className="text-xs">to</span>
+                          <Input className="h-6 text-xs flex-1" type="time" defaultValue="17:00" />
                         </div>
                       ))}
                     </div>
@@ -1066,8 +614,8 @@ export default function TargetsPage() {
                 {/* Enhanced Settings Sections */}
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Cap Settings */}
-                  <div className="p-3 border rounded-lg bg-gray-50">
-                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
+                  <div className="p-3 border rounded-lg bg-blue-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-blue-700">
                       <Shield className="h-3 w-3" />
                       Cap Settings
                     </h4>
@@ -1086,8 +634,8 @@ export default function TargetsPage() {
                   </div>
 
                   {/* Concurrency Settings */}
-                  <div className="p-3 border rounded-lg bg-gray-50">
-                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
+                  <div className="p-3 border rounded-lg bg-green-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-green-700">
                       <Zap className="h-3 w-3" />
                       Concurrency Settings
                     </h4>
@@ -1106,8 +654,8 @@ export default function TargetsPage() {
                   </div>
 
                   {/* Duplicate Call Settings */}
-                  <div className="p-3 border rounded-lg bg-gray-50">
-                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
+                  <div className="p-3 border rounded-lg bg-yellow-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-yellow-700">
                       <Filter className="h-3 w-3" />
                       Restrict Duplicate Call Settings
                     </h4>
@@ -1131,89 +679,20 @@ export default function TargetsPage() {
                   </div>
 
                   {/* Predictive Routing Settings */}
-                  <div className="p-3 border rounded-lg bg-gray-50">
-                    <h4 className="text-xs font-medium mb-3 flex items-center gap-1">
+                  <div className="p-3 border rounded-lg bg-purple-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-purple-700">
                       <Pencil className="h-3 w-3" />
                       Predictive Routing Settings
                     </h4>
-                    <div className="space-y-3">
-                      {/* Estimated Revenue Toggle */}
-                      <div>
-                        <FormLabel className="text-xs mb-2 block">Estimated Revenue</FormLabel>
-                        <div className="flex border rounded p-0.5 bg-muted">
-                          <Button
-                            type="button"
-                            variant="default"
-                            size="sm"
-                            className="flex-1 h-6 text-xs px-2"
-                          >
-                            Use Campaign Setting
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="flex-1 h-6 text-xs px-2"
-                          >
-                            Use Estimated Revenue
-                          </Button>
-                        </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Switch className="h-4 w-6" />
+                        <span className="text-xs">Enable Predictive</span>
                       </div>
-
-                      {/* Predictive Routing Configuration */}
-                      <div>
-                        <FormLabel className="text-xs mb-2 block">
-                          Predictive Routing Configuration <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <div className="flex gap-2">
-                          <Select>
-                            <SelectTrigger className="h-7 text-xs flex-1">
-                              <SelectValue placeholder="Choose a configuration" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="default">Default Configuration</SelectItem>
-                              <SelectItem value="custom">Custom Configuration</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button type="button" size="sm" className="h-7 text-xs px-2">
-                            NEW
-                          </Button>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">Priority Bump</span>
+                        <Input className="h-6 text-xs w-16 ml-auto" type="number" placeholder="0" min="-10" max="10" />
                       </div>
-
-                      {/* Priority Bump Slider */}
-                      <FormField
-                        control={form.control}
-                        name="priorityBump"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Priority Bump</FormLabel>
-                            <div className="space-y-2">
-                              <div className="relative">
-                                <input
-                                  type="range"
-                                  min="-10"
-                                  max="10"
-                                  step="1"
-                                  value={field.value || 0}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value))}
-                                  className="w-full h-2 bg-gradient-to-r from-red-400 via-gray-300 to-green-400 rounded-lg appearance-none cursor-pointer"
-                                />
-                                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                  <span>-10</span>
-                                  <span>Default</span>
-                                  <span>+10</span>
-                                </div>
-                              </div>
-                              <div className="text-center text-xs text-gray-600">
-                                Current: {field.value || 0}
-                              </div>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Shareable Tags */}
                       <div className="flex items-center gap-2">
                         <Switch className="h-4 w-6" />
                         <span className="text-xs">Shareable Tags</span>
@@ -1222,19 +701,16 @@ export default function TargetsPage() {
                   </div>
                 </div>
 
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createTargetMutation.isPending || updateTargetMutation.isPending}>
+                    {createTargetMutation.isPending || updateTargetMutation.isPending ? "Saving..." : editingTarget ? "Update Target" : "Create Target"}
+                  </Button>
+                </DialogFooter>
               </form>
             </Form>
-            </div>
-            <div className="sticky bottom-0 bg-white border-t p-6">
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" form="target-form" disabled={createTargetMutation.isPending || updateTargetMutation.isPending}>
-                  {createTargetMutation.isPending || updateTargetMutation.isPending ? "Saving..." : editingTarget ? "Update Target" : "Create Target"}
-                </Button>
-              </div>
-            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -1306,7 +782,7 @@ export default function TargetsPage() {
                     <TableCell>{target.buyerName}</TableCell>
                     <TableCell>{getTypeBadge(target.type)}</TableCell>
                     <TableCell className="font-mono text-sm">{target.destination}</TableCell>
-                    <TableCell>${(target as any).defaultPayout || "0.00"}</TableCell>
+                    <TableCell>${target.defaultPayout || "0.00"}</TableCell>
                     <TableCell>{getStatusBadge("Active")}</TableCell>
                     <TableCell>{target.enableMaxConcurrency ? "2" : "Unlimited"}</TableCell>
                     <TableCell>
@@ -1318,14 +794,14 @@ export default function TargetsPage() {
                             setEditingTarget(target);
                             form.reset({
                               name: target.name,
-                              subId: (target as any).subId || "",
+                              subId: target.subId || "",
                               buyerId: target.buyerId,
-                              type: target.type as "number" | "sip",
+                              type: target.type,
                               destination: target.destination,
-                              connectionTimeout: (target as any).connectionTimeout || 30,
-                              disableRecording: (target as any).disableRecording || false,
+                              connectionTimeout: target.connectionTimeout || 30,
+                              disableRecording: target.disableRecording || false,
                               timeZone: target.timeZone || "UTC",
-                              hoursOfOperation: (target.operatingHours as "basic" | "advanced") || "basic",
+                              hoursOfOperation: target.operatingHours || "basic",
                               enableMaxConcurrency: target.enableMaxConcurrency || false,
                               enablePredictiveRouting: target.enablePredictiveRouting || false,
                               overrideShareableTags: target.overrideShareableTags || false
@@ -1353,6 +829,5 @@ export default function TargetsPage() {
         </CardContent>
       </Card>
     </div>
-  </Layout>
-);
+  );
 }

@@ -10,7 +10,6 @@ import Documentation from "@/pages/documentation";
 import Campaigns from "@/pages/campaigns";
 import CampaignDetail from "@/pages/campaign-detail";
 import Buyers from "@/pages/buyers";
-import BuyerCompanies from "@/pages/buyer-companies";
 import Publishers from "@/pages/publishers";
 import Agents from "@/pages/agents";
 import Targets from "@/pages/targets";
@@ -62,7 +61,6 @@ function Router() {
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/campaigns" component={Campaigns} />
           <Route path="/campaigns/:campaignId" component={CampaignDetail} />
-          <Route path="/buyer-companies" component={BuyerCompanies} />
           <Route path="/buyers" component={Buyers} />
           <Route path="/publishers" component={Publishers} />
           <Route path="/agents" component={Agents} />
