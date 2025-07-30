@@ -1349,12 +1349,10 @@ export class MemStorage implements IStorage {
     for (const number of numbers) {
       // Check if number is assigned to any pool
       const poolAssignments = await this.getNumberPoolAssignments(number.id);
-      // Check if number is assigned to any campaign directly
-      const campaigns = await this.getCampaigns(userId);
-      const assignedToCampaign = campaigns.some(c => c.phoneNumber === number.phoneNumber);
+      // Check if number is assigned to any campaign directly (check campaignId field on number)
+      const assignedToCampaign = number.campaignId && number.campaignId !== 0;
       
-      console.log(`[MemStorage] getUnassignedPhoneNumbers: Number ${number.phoneNumber} - poolAssignments: ${poolAssignments.length}, assignedToCampaign: ${assignedToCampaign}`);
-      console.log(`[MemStorage] getUnassignedPhoneNumbers: Total campaigns: ${campaigns.length}, campaign phone numbers:`, campaigns.map(c => c.phoneNumber));
+      console.log(`[MemStorage] getUnassignedPhoneNumbers: Number ${number.phoneNumber} - poolAssignments: ${poolAssignments.length}, campaignId: ${number.campaignId}, assignedToCampaign: ${assignedToCampaign}`);
       
       if (poolAssignments.length === 0 && !assignedToCampaign) {
         unassigned.push(number);
