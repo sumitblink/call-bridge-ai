@@ -1814,7 +1814,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
-      console.log(`[Pool Webhook] Final routing decision - Method: ${routingMethod}, Buyer: ${selectedBuyer.name} (${selectedBuyer.phoneNumber})`);
+      console.log(`[Pool Webhook] Final routing decision - Method: ${routingMethod}, Buyer: ${selectedBuyer.companyName || selectedBuyer.name}`);
+
+      // Get target phone number for the selected buyer
+      const { CallRouter } = await import('./call-routing');
+      const targetPhoneNumber = await CallRouter.getBuyerTargetPhoneNumber(selectedBuyer.id);
+      
+      if (!targetPhoneNumber) {
+        console.log(`[Pool Webhook] Selected buyer has no active targets with phone numbers: ${selectedBuyer.companyName || selectedBuyer.name}`);
+        return res.type('text/xml').send(`
+          <Response>
+            <Say>Configuration error. Please contact support.</Say>
+            <Hangup/>
+          </Response>
+        `);
+      }
 
       // Get phone number record for complete call tracking
       const phoneNumber = await storage.getPhoneNumberByNumber(toNumber);
@@ -1849,8 +1863,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         routingData: JSON.stringify({
           ...routingData,
           routingMethod,
-          externalDestination: routingMethod === 'rtb' ? selectedBuyer.phoneNumber : null,
-          rtbTargetName: routingMethod === 'rtb' ? selectedBuyer.name : null,
+          externalDestination: routingMethod === 'rtb' ? targetPhoneNumber : null,
+          rtbTargetName: routingMethod === 'rtb' ? selectedBuyer.companyName || selectedBuyer.name : null,
           timestamp: new Date().toISOString()
         })
       };
@@ -1933,14 +1947,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         <Response>
           <Say>${connectMessage}</Say>
           <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="/api/webhooks/pool/${poolId}/status" action="/api/webhooks/pool/${poolId}/status" method="POST">
-            <Number>${selectedBuyer.phoneNumber}</Number>
+            <Number>${targetPhoneNumber}</Number>
           </Dial>
           <Say>The call has ended. Thank you for calling.</Say>
           <Hangup/>
         </Response>
       `;
 
-      console.log(`[Pool Webhook] Generated TwiML for routing to ${selectedBuyer.phoneNumber} via ${routingMethod}`);
+      console.log(`[Pool Webhook] Generated TwiML for routing to ${targetPhoneNumber} via ${routingMethod}`);
       res.type('text/xml').send(twiml);
     } catch (error) {
       console.error('[Pool Webhook] Error processing call:', error);
@@ -2310,7 +2324,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createCall(callData);
       console.log('[Webhook RTB] Call record created with clickId:', callData.clickId);
       
-      // Generate TwiML to dial the selected buyer
+      // Get target phone number for the selected buyer
+      const { CallRouter } = await import('./call-routing');
+      const targetPhoneNumber = await CallRouter.getBuyerTargetPhoneNumber(selectedBuyer.id);
+      
+      if (!targetPhoneNumber) {
+        console.log(`[Webhook RTB] Selected buyer has no active targets with phone numbers: ${selectedBuyer.companyName || selectedBuyer.name}`);
+        return res.type('text/xml').send(`
+          <Response>
+            <Say>Configuration error. Please contact support.</Say>
+            <Hangup/>
+          </Response>
+        `);
+      }
+      
+      // Generate TwiML to dial the selected buyer's target
       const connectMessage = routingMethod === 'rtb' 
         ? 'Connecting to our premium partner, please hold.'
         : 'Connecting your call, please hold.';
@@ -2319,14 +2347,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         <Response>
           <Say>${connectMessage}</Say>
           <Dial timeout="30" callerId="${fromNumber}" action="https://${req.hostname}/api/webhooks/dial-status" method="POST">
-            <Number>${selectedBuyer.phoneNumber}</Number>
+            <Number>${targetPhoneNumber}</Number>
           </Dial>
           <Say>The call has ended. Thank you for calling.</Say>
           <Hangup/>
         </Response>
       `;
       
-      console.log(`[Webhook RTB] Generated TwiML for routing to ${selectedBuyer.phoneNumber} via ${routingMethod}`);
+      console.log(`[Webhook RTB] Generated TwiML for routing to ${targetPhoneNumber} via ${routingMethod}`);
       res.type('text/xml').send(twiml);
       
     } catch (error) {

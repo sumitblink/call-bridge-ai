@@ -44,29 +44,28 @@ export class CallRouter {
         const buyer = buyers[i];
         const metrics = buyerMetrics[i];
         
-        console.log(`[Router] Checking buyer ${buyer.name} (ID: ${buyer.id}):`, {
+        console.log(`[Router] Checking buyer ${buyer.companyName || buyer.name} (ID: ${buyer.id}):`, {
           status: buyer.status,
-          phoneNumber: buyer.phoneNumber,
-          priority: buyer.priority,
-          dailyCap: buyer.dailyCap,
-          concurrencyLimit: buyer.concurrencyLimit,
+          priority: (buyer as any).priority,
+          dailyCap: (buyer as any).dailyCap,
+          concurrencyLimit: (buyer as any).concurrencyLimit,
           callsToday: metrics.callsToday,
           activeCalls: metrics.activeCalls
         });
         
-        const availability = this.checkBuyerAvailability(buyer, metrics);
+        const availability = await this.checkBuyerAvailability(buyer, metrics);
         
         if (availability.available) {
           availableBuyers.push({
             buyer,
             metrics,
-            priority: buyer.priority || 1,
-            campaignPriority: buyer.priority || 1  // buyer.priority already contains campaign-specific priority from database join
+            priority: (buyer as any).priority || 1,
+            campaignPriority: (buyer as any).priority || 1  // buyer.priority already contains campaign-specific priority from database join
           });
-          console.log(`[Router] Buyer ${buyer.name} is AVAILABLE with campaign priority ${buyer.priority}`);
+          console.log(`[Router] Buyer ${buyer.companyName || buyer.name} is AVAILABLE with campaign priority ${(buyer as any).priority}`);
         } else {
           unavailableBuyers.push(buyer);
-          console.log(`[Router] Buyer ${buyer.name} is UNAVAILABLE: ${availability.reason}`);
+          console.log(`[Router] Buyer ${buyer.companyName || buyer.name} is UNAVAILABLE: ${availability.reason}`);
         }
       }
 
@@ -80,7 +79,7 @@ export class CallRouter {
 
       // Sort by priority (LOWEST NUMBER = HIGHEST PRIORITY), then by call count (lowest first)
       console.log(`[Router] Before sorting - Available buyers:`, availableBuyers.map(ab => ({
-        name: ab.buyer.name,
+        name: ab.buyer.companyName || ab.buyer.name,
         campaignPriority: ab.campaignPriority,
         priority: ab.priority,
         callsToday: ab.metrics.callsToday
@@ -89,7 +88,7 @@ export class CallRouter {
       availableBuyers.sort((a, b) => {
         // Primary sort: Campaign-specific priority (LOWEST NUMBER FIRST - Priority 1 beats Priority 3)
         if (a.campaignPriority !== b.campaignPriority) {
-          console.log(`[Router] Sorting by campaign priority: ${a.buyer.name}(${a.campaignPriority}) vs ${b.buyer.name}(${b.campaignPriority}) = ${a.campaignPriority - b.campaignPriority}`);
+          console.log(`[Router] Sorting by campaign priority: ${a.buyer.companyName || a.buyer.name}(${a.campaignPriority}) vs ${b.buyer.companyName || b.buyer.name}(${b.campaignPriority}) = ${a.campaignPriority - b.campaignPriority}`);
           return a.campaignPriority - b.campaignPriority;  // Fixed: 1-3=-2 (Priority 1 goes first)
         }
         
@@ -103,21 +102,21 @@ export class CallRouter {
       });
       
       console.log(`[Router] After sorting - Available buyers:`, availableBuyers.map(ab => ({
-        name: ab.buyer.name,
+        name: ab.buyer.companyName || ab.buyer.name,
         campaignPriority: ab.campaignPriority,
         priority: ab.priority,
         callsToday: ab.metrics.callsToday
       })));
 
       const selectedBuyer = availableBuyers[0].buyer;
-      console.log(`[Router] FINAL SELECTION: ${selectedBuyer.name} with priority ${selectedBuyer.priority}`);
+      console.log(`[Router] FINAL SELECTION: ${selectedBuyer.companyName || selectedBuyer.name} with priority ${(selectedBuyer as any).priority}`);
       const alternativeBuyers = availableBuyers.slice(1).map(ab => ab.buyer);
 
-      console.log(`[Router] Selected buyer: ${selectedBuyer.name} (Priority: ${selectedBuyer.priority}, Calls today: ${availableBuyers[0].metrics.callsToday})`);
+      console.log(`[Router] Selected buyer: ${selectedBuyer.companyName || selectedBuyer.name} (Priority: ${(selectedBuyer as any).priority}, Calls today: ${availableBuyers[0].metrics.callsToday})`);
 
       return {
         selectedBuyer,
-        reason: `Selected based on priority (${selectedBuyer.priority}) and availability`,
+        reason: `Selected based on priority (${(selectedBuyer as any).priority}) and availability`,
         alternativeBuyers
       };
 
@@ -180,27 +179,39 @@ export class CallRouter {
   /**
    * Check if a buyer is available to receive calls
    */
-  private static checkBuyerAvailability(buyer: Buyer, metrics: CallMetrics): { available: boolean; reason: string } {
+  private static async checkBuyerAvailability(buyer: Buyer, metrics: CallMetrics): Promise<{ available: boolean; reason: string }> {
     // Check if buyer is active
     if (buyer.status !== 'active') {
       return { available: false, reason: `Buyer status is ${buyer.status}` };
     }
 
     // Check daily cap
-    const dailyCap = buyer.dailyCap || 100;
+    const dailyCap = (buyer as any).dailyCap || 100;
     if (metrics.callsToday >= dailyCap) {
       return { available: false, reason: `Daily cap reached (${metrics.callsToday}/${dailyCap})` };
     }
 
     // Check concurrency limit
-    const concurrencyLimit = buyer.concurrencyLimit || 5;
+    const concurrencyLimit = (buyer as any).concurrencyLimit || 5;
     if (metrics.activeCalls >= concurrencyLimit) {
       return { available: false, reason: `Concurrency limit reached (${metrics.activeCalls}/${concurrencyLimit})` };
     }
 
-    // Check if buyer has phone number
-    if (!buyer.phoneNumber) {
-      return { available: false, reason: "No phone number configured" };
+    // Check if buyer has active targets with phone numbers
+    try {
+      const targets = await storage.getTargetsByBuyer(buyer.id);
+      const activeTargets = targets.filter(target => 
+        target.status === 'active' && 
+        target.phoneNumber && 
+        target.phoneNumber.trim() !== ''
+      );
+      
+      if (activeTargets.length === 0) {
+        return { available: false, reason: "No active targets with phone numbers" };
+      }
+    } catch (error) {
+      console.error(`[Router] Error checking buyer targets:`, error);
+      return { available: false, reason: "Error checking targets" };
     }
 
     return { available: true, reason: "Available" };
@@ -215,19 +226,19 @@ export class CallRouter {
 
     for (const buyer of buyers) {
       const metrics = await this.getBuyerMetrics(buyer.id);
-      const availability = this.checkBuyerAvailability(buyer, metrics);
+      const availability = await this.checkBuyerAvailability(buyer, metrics);
       
       buyerStats.push({
         id: buyer.id,
-        name: buyer.name,
-        priority: buyer.priority,
+        name: buyer.companyName || buyer.name,
+        priority: (buyer as any).priority,
         status: buyer.status,
         available: availability.available,
         reason: availability.reason,
         callsToday: metrics.callsToday,
         activeCalls: metrics.activeCalls,
-        dailyCap: buyer.dailyCap,
-        concurrencyLimit: buyer.concurrencyLimit,
+        dailyCap: (buyer as any).dailyCap,
+        concurrencyLimit: (buyer as any).concurrencyLimit,
         lastCallTime: metrics.lastCallTime
       });
     }
@@ -259,5 +270,29 @@ export class CallRouter {
     }
     
     return results;
+  }
+
+  /**
+   * Get the first available target phone number for a buyer
+   */
+  static async getBuyerTargetPhoneNumber(buyerId: number): Promise<string | null> {
+    try {
+      const targets = await storage.getTargetsByBuyer(buyerId);
+      const activeTargets = targets.filter(target => 
+        target.status === 'active' && 
+        target.phoneNumber && 
+        target.phoneNumber.trim() !== ''
+      );
+      
+      if (activeTargets.length === 0) {
+        return null;
+      }
+      
+      // Return the first active target's phone number
+      return activeTargets[0].phoneNumber;
+    } catch (error) {
+      console.error(`[Router] Error getting buyer target phone number:`, error);
+      return null;
+    }
   }
 }

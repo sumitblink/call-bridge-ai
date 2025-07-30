@@ -216,7 +216,7 @@ export async function handleIncomingCall(req: Request, res: Response) {
     }
 
     const selectedBuyer = routingResult.selectedBuyer;
-    console.log('[Webhook] Selected buyer:', selectedBuyer.name, 'Phone:', selectedBuyer.phoneNumber);
+    console.log('[Webhook] Selected buyer:', selectedBuyer.companyName || selectedBuyer.name, 'Getting target phone number...');
 
     // Create call record for traditional routing if not already created
     if (!callId) {
@@ -375,10 +375,11 @@ export async function handleIncomingCall(req: Request, res: Response) {
       response: `Routed to ${selectedBuyer.name} (Priority: ${selectedBuyer.priority})`,
     });
 
-    // Return TwiML to forward call to buyer
-    const buyerNumber = selectedBuyer.phoneNumber;
+    // Get target phone number for the selected buyer
+    const { CallRouter } = await import('./call-routing');
+    const buyerNumber = await CallRouter.getBuyerTargetPhoneNumber(selectedBuyer.id);
     if (!buyerNumber) {
-      console.error('[Webhook] Buyer has no phone number:', selectedBuyer.name);
+      console.error('[Webhook] Buyer has no active targets with phone numbers:', selectedBuyer.companyName || selectedBuyer.name);
       
       res.set('Content-Type', 'text/xml');
       res.send(`<?xml version="1.0" encoding="UTF-8"?>
