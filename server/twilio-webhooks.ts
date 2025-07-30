@@ -375,11 +375,11 @@ export async function handleIncomingCall(req: Request, res: Response) {
       response: `Routed to ${selectedBuyer.name} (Priority: ${selectedBuyer.priority})`,
     });
 
-    // Get target phone number for the selected buyer
+    // Get target phone number using intelligent routing
     const { CallRouter } = await import('./call-routing');
-    const buyerNumber = await CallRouter.getBuyerTargetPhoneNumber(selectedBuyer.id);
-    if (!buyerNumber) {
-      console.error('[Webhook] Buyer has no active targets with phone numbers:', selectedBuyer.companyName || selectedBuyer.name);
+    const targetSelection = await CallRouter.selectTargetForBuyer(selectedBuyer.id, campaign.id, callData.From);
+    if (!targetSelection) {
+      console.error('[Webhook] No available targets for buyer:', selectedBuyer.companyName || selectedBuyer.name);
       
       res.set('Content-Type', 'text/xml');
       res.send(`<?xml version="1.0" encoding="UTF-8"?>
@@ -389,6 +389,14 @@ export async function handleIncomingCall(req: Request, res: Response) {
         </Response>`);
       return;
     }
+
+    const selectedTarget = targetSelection.target;
+    const buyerNumber = selectedTarget.phoneNumber;
+    
+    // Update call record with selected target ID
+    await storage.updateCall(callRecord.id, { targetId: selectedTarget.id });
+    
+    console.log(`[Webhook] Selected target: ${selectedTarget.name} (${buyerNumber}) using ${targetSelection.strategy} strategy`);
 
     // Generate TwiML to forward the call
     console.log('[Webhook] Generating TwiML to forward call to:', buyerNumber);

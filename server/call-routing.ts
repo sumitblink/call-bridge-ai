@@ -273,10 +273,255 @@ export class CallRouter {
   }
 
   /**
-   * Get the first available target phone number for a buyer
+   * Get the best target phone number for a buyer using intelligent routing
    */
-  static async getBuyerTargetPhoneNumber(buyerId: number): Promise<string | null> {
+  static async getBuyerTargetPhoneNumber(buyerId: number, routingStrategy: 'priority' | 'round_robin' | 'least_busy' | 'capacity_based' = 'priority'): Promise<string | null> {
     try {
+      const targets = await storage.getTargetsByBuyer(buyerId);
+      const activeTargets = targets.filter(target => 
+        target.status === 'active' && 
+        target.phoneNumber && 
+        target.phoneNumber.trim() !== ''
+      );
+      
+      if (activeTargets.length === 0) {
+        console.log(`[Router] No active targets with phone numbers for buyer ${buyerId}`);
+        return null;
+      }
+
+      console.log(`[Router] Found ${activeTargets.length} active targets for buyer ${buyerId}, using ${routingStrategy} strategy`);
+      
+      const selectedTarget = await this.selectBestTarget(activeTargets, routingStrategy, buyerId);
+      
+      if (!selectedTarget) {
+        console.log(`[Router] No available targets after applying ${routingStrategy} strategy`);
+        return null;
+      }
+
+      console.log(`[Router] Selected target: ${selectedTarget.name} (${selectedTarget.phoneNumber}) using ${routingStrategy} strategy`);
+      return selectedTarget.phoneNumber;
+    } catch (error) {
+      console.error(`[Router] Error getting buyer target phone number:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Select the best target using specified routing strategy
+   */
+  private static async selectBestTarget(targets: any[], strategy: string, buyerId: number): Promise<any | null> {
+    if (targets.length === 0) return null;
+    if (targets.length === 1) return targets[0];
+
+    try {
+      switch (strategy) {
+        case 'priority':
+          return this.selectTargetByPriority(targets);
+        
+        case 'round_robin':
+          return await this.selectTargetByRoundRobin(targets, buyerId);
+        
+        case 'least_busy':
+          return await this.selectTargetByLeastBusy(targets);
+        
+        case 'capacity_based':
+          return await this.selectTargetByCapacity(targets);
+        
+        default:
+          console.log(`[Router] Unknown strategy ${strategy}, falling back to priority`);
+          return this.selectTargetByPriority(targets);
+      }
+    } catch (error) {
+      console.error(`[Router] Error in target selection strategy ${strategy}:`, error);
+      return this.selectTargetByPriority(targets); // Fallback to priority
+    }
+  }
+
+  /**
+   * Priority-based target selection (lowest priority number wins)
+   */
+  private static selectTargetByPriority(targets: any[]): any {
+    const sortedTargets = [...targets].sort((a, b) => {
+      const aPriority = a.priority || 999;
+      const bPriority = b.priority || 999;
+      return aPriority - bPriority; // Lower number = higher priority
+    });
+    
+    console.log(`[Router] Priority-based selection from targets:`, sortedTargets.map(t => ({
+      name: t.name,
+      priority: t.priority || 999,
+      phone: t.phoneNumber
+    })));
+    
+    return sortedTargets[0];
+  }
+
+  /**
+   * Round-robin target selection
+   */
+  private static async selectTargetByRoundRobin(targets: any[], buyerId: number): Promise<any> {
+    try {
+      // Get call history to determine last used target
+      const calls = await storage.getCalls();
+      const buyerCalls = calls
+        .filter(call => call.buyerId === buyerId && call.targetId)
+        .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+      
+      if (buyerCalls.length === 0) {
+        console.log(`[Router] No previous calls found, selecting first target for round-robin`);
+        return targets[0];
+      }
+
+      const lastUsedTargetId = buyerCalls[0].targetId;
+      const currentTargetIndex = targets.findIndex(t => t.id === lastUsedTargetId);
+      
+      // Select next target in round-robin order
+      const nextIndex = currentTargetIndex >= 0 ? (currentTargetIndex + 1) % targets.length : 0;
+      
+      console.log(`[Router] Round-robin: last target ID ${lastUsedTargetId}, selecting index ${nextIndex}`);
+      return targets[nextIndex];
+    } catch (error) {
+      console.error(`[Router] Error in round-robin selection:`, error);
+      return targets[0]; // Fallback to first target
+    }
+  }
+
+  /**
+   * Least busy target selection (fewest active calls)
+   */
+  private static async selectTargetByLeastBusy(targets: any[]): Promise<any> {
+    try {
+      const calls = await storage.getCalls();
+      const activeCalls = calls.filter(call => 
+        call.status === 'ringing' || call.status === 'in_progress'
+      );
+
+      const targetMetrics = targets.map(target => {
+        const activeCallsCount = activeCalls.filter(call => call.targetId === target.id).length;
+        return {
+          target,
+          activeCalls: activeCallsCount
+        };
+      });
+
+      // Sort by least active calls, then by priority as tiebreaker
+      targetMetrics.sort((a, b) => {
+        if (a.activeCalls !== b.activeCalls) {
+          return a.activeCalls - b.activeCalls;
+        }
+        return (a.target.priority || 999) - (b.target.priority || 999);
+      });
+
+      console.log(`[Router] Least busy selection:`, targetMetrics.map(tm => ({
+        name: tm.target.name,
+        activeCalls: tm.activeCalls,
+        priority: tm.target.priority || 999
+      })));
+
+      return targetMetrics[0].target;
+    } catch (error) {
+      console.error(`[Router] Error in least busy selection:`, error);
+      return targets[0]; // Fallback to first target
+    }
+  }
+
+  /**
+   * Capacity-based target selection (considers daily caps and concurrency limits)
+   */
+  private static async selectTargetByCapacity(targets: any[]): Promise<any> {
+    try {
+      const calls = await storage.getCalls();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+
+      const targetCapacityMetrics = targets.map(target => {
+        // Count today's calls for this target
+        const todaysCalls = calls.filter(call => 
+          call.targetId === target.id &&
+          call.createdAt &&
+          call.createdAt >= today &&
+          call.createdAt < tomorrow
+        ).length;
+
+        // Count active calls for this target
+        const activeCalls = calls.filter(call => 
+          call.targetId === target.id &&
+          (call.status === 'ringing' || call.status === 'in_progress')
+        ).length;
+
+        const dailyCap = target.dailyCap || 999999;
+        const concurrencyLimit = target.concurrencyLimit || 99;
+        
+        const isAvailable = 
+          todaysCalls < dailyCap && 
+          activeCalls < concurrencyLimit;
+
+        return {
+          target,
+          todaysCalls,
+          activeCalls,
+          dailyCap,
+          concurrencyLimit,
+          isAvailable,
+          capacityScore: (dailyCap - todaysCalls) + (concurrencyLimit - activeCalls) * 10 // Weight concurrency higher
+        };
+      });
+
+      // Filter available targets and sort by capacity score
+      const availableTargets = targetCapacityMetrics
+        .filter(tm => tm.isAvailable)
+        .sort((a, b) => {
+          if (a.capacityScore !== b.capacityScore) {
+            return b.capacityScore - a.capacityScore; // Higher score = more capacity
+          }
+          return (a.target.priority || 999) - (b.target.priority || 999); // Priority tiebreaker
+        });
+
+      console.log(`[Router] Capacity-based selection:`, targetCapacityMetrics.map(tm => ({
+        name: tm.target.name,
+        available: tm.isAvailable,
+        todaysCalls: tm.todaysCalls,
+        dailyCap: tm.dailyCap,
+        activeCalls: tm.activeCalls,
+        concurrencyLimit: tm.concurrencyLimit,
+        capacityScore: tm.capacityScore
+      })));
+
+      if (availableTargets.length === 0) {
+        console.log(`[Router] No targets have available capacity`);
+        return null;
+      }
+
+      return availableTargets[0].target;
+    } catch (error) {
+      console.error(`[Router] Error in capacity-based selection:`, error);
+      return targets[0]; // Fallback to first target
+    }
+  }
+
+  /**
+   * Get the best target with routing strategy based on campaign settings
+   */
+  static async selectTargetForBuyer(buyerId: number, campaignId?: string, callerNumber?: string): Promise<{ target: any; strategy: string } | null> {
+    try {
+      // Get campaign-specific target routing strategy
+      let strategy = 'priority'; // Default fallback
+      
+      if (campaignId) {
+        try {
+          const campaigns = await storage.getCampaigns();
+          const campaign = campaigns.find(c => c.id === campaignId);
+          if (campaign && (campaign as any).targetRoutingStrategy) {
+            strategy = (campaign as any).targetRoutingStrategy;
+            console.log(`[Router] Using campaign-specific target routing strategy: ${strategy}`);
+          }
+        } catch (error) {
+          console.log(`[Router] Could not get campaign target routing strategy, using default: ${error}`);
+        }
+      }
+      
       const targets = await storage.getTargetsByBuyer(buyerId);
       const activeTargets = targets.filter(target => 
         target.status === 'active' && 
@@ -287,11 +532,20 @@ export class CallRouter {
       if (activeTargets.length === 0) {
         return null;
       }
+
+      console.log(`[Router] Selecting target for buyer ${buyerId} using ${strategy} strategy from ${activeTargets.length} active targets`);
+      const selectedTarget = await this.selectBestTarget(activeTargets, strategy, buyerId);
       
-      // Return the first active target's phone number
-      return activeTargets[0].phoneNumber;
+      if (!selectedTarget) {
+        return null;
+      }
+
+      return {
+        target: selectedTarget,
+        strategy: strategy
+      };
     } catch (error) {
-      console.error(`[Router] Error getting buyer target phone number:`, error);
+      console.error(`[Router] Error selecting target for buyer:`, error);
       return null;
     }
   }

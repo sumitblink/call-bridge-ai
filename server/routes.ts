@@ -1848,12 +1848,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[Pool Webhook] Final routing decision - Method: ${routingMethod}, Buyer: ${selectedBuyer.companyName || selectedBuyer.name}`);
 
-      // Get target phone number for the selected buyer
+      // Get target phone number using intelligent routing
       const { CallRouter } = await import('./call-routing');
-      const targetPhoneNumber = await CallRouter.getBuyerTargetPhoneNumber(selectedBuyer.id);
+      const targetSelection = await CallRouter.selectTargetForBuyer(selectedBuyer.id, campaign.id, fromNumber);
       
-      if (!targetPhoneNumber) {
-        console.log(`[Pool Webhook] Selected buyer has no active targets with phone numbers: ${selectedBuyer.companyName || selectedBuyer.name}`);
+      if (!targetSelection) {
+        console.log(`[Pool Webhook] No available targets for buyer: ${selectedBuyer.companyName || selectedBuyer.name}`);
         return res.type('text/xml').send(`
           <Response>
             <Say>Configuration error. Please contact support.</Say>
@@ -1861,6 +1861,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </Response>
         `);
       }
+
+      const selectedTarget = targetSelection.target;
+      const targetPhoneNumber = selectedTarget.phoneNumber;
+      console.log(`[Pool Webhook] Selected target: ${selectedTarget.name} (${targetPhoneNumber}) using ${targetSelection.strategy} strategy`);
 
       // Get phone number record for complete call tracking
       const phoneNumber = await storage.getPhoneNumberByNumber(toNumber);
@@ -1877,23 +1881,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[Pool Webhook] Campaign financial config - Payout:', payout, 'Revenue:', revenue, 'Profit:', profit);
       
-      // Get the first target for the selected buyer
-      let targetId = null;
-      if (routingMethod !== 'rtb' && selectedBuyer.id) {
-        try {
-          const targets = await storage.getTargetsByBuyer(selectedBuyer.id);
-          console.log('[Pool Webhook] Found targets for buyer', selectedBuyer.id, ':', targets.map(t => ({ id: t.id, name: t.name, status: t.status, phoneNumber: t.phoneNumber })));
-          const activeTarget = targets.find(t => t.status === 'active' && t.phoneNumber);
-          if (activeTarget) {
-            targetId = activeTarget.id;
-            console.log('[Pool Webhook] Assigned target:', activeTarget.id, '(', activeTarget.name, ')');
-          } else {
-            console.log('[Pool Webhook] No active target found for buyer', selectedBuyer.id);
-          }
-        } catch (error) {
-          console.error('[Pool Webhook] Error getting buyer targets:', error);
-        }
-      }
+      // Use intelligent target selection result
+      const targetId = routingMethod !== 'rtb' ? selectedTarget.id : null;
 
       let callData: any = {
         campaignId: campaign.id,
@@ -2372,15 +2361,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('[Webhook RTB] Error enriching call with visitor session:', error);
       }
       
-      await storage.createCall(callData);
-      console.log('[Webhook RTB] Call record created with clickId:', callData.clickId);
-      
-      // Get target phone number for the selected buyer
+      // Get target phone number using intelligent routing
       const { CallRouter } = await import('./call-routing');
-      const targetPhoneNumber = await CallRouter.getBuyerTargetPhoneNumber(selectedBuyer.id);
+      const targetSelection = await CallRouter.selectTargetForBuyer(selectedBuyer.id, campaign.id, fromNumber);
       
-      if (!targetPhoneNumber) {
-        console.log(`[Webhook RTB] Selected buyer has no active targets with phone numbers: ${selectedBuyer.companyName || selectedBuyer.name}`);
+      if (!targetSelection) {
+        console.log(`[Webhook RTB] No available targets for buyer: ${selectedBuyer.companyName || selectedBuyer.name}`);
         return res.type('text/xml').send(`
           <Response>
             <Say>Configuration error. Please contact support.</Say>
@@ -2388,6 +2374,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </Response>
         `);
       }
+
+      const selectedTarget = targetSelection.target;
+      const targetPhoneNumber = selectedTarget.phoneNumber;
+      
+      // Add target ID to call data before creating
+      callData.targetId = selectedTarget.id;
+      
+      const call = await storage.createCall(callData);
+      console.log(`[Webhook RTB] Call record created with target: ${selectedTarget.name} (${targetPhoneNumber}) using ${targetSelection.strategy} strategy`);
       
       // Generate TwiML to dial the selected buyer's target
       const connectMessage = routingMethod === 'rtb' 

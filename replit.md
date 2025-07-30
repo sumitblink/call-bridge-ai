@@ -114,6 +114,14 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 31, 2025: **INTELLIGENT TARGET SELECTION SYSTEM DEPLOYED** - Implemented comprehensive intelligent routing system for fair distribution of calls among multiple targets within buyers
+  - **Critical Business Logic Gap Fixed**: Resolved major flaw where buyers with multiple targets would only route calls to the first target regardless of capacity or performance
+  - **Multiple Routing Strategies**: Added priority-based, round-robin, capacity-based, and random target selection strategies configurable per campaign
+  - **Campaign Schema Enhanced**: Added targetRoutingStrategy field to campaigns table with default "priority" setting
+  - **Webhook Handlers Updated**: All three webhook handlers (main, pool, RTB) now use intelligent target selection instead of getBuyerTargetPhoneNumber
+  - **Fair Call Distribution**: Calls are now distributed intelligently among all available targets within a buyer based on selected strategy
+  - **Enhanced Logging**: Detailed logging shows which target was selected and which strategy was used for transparency
+  - **Status**: Target routing now provides fair distribution and optimal performance instead of always routing to first target
 - July 31, 2025: **TARGET DELETION FOREIGN KEY CONSTRAINT FIXED** - Resolved critical target deletion error by implementing proper cascade deletion without transactions (Neon HTTP driver limitation)
   - **Foreign Key Issue Resolved**: Fixed "update or delete on table targets violates foreign key constraint calls_target_id_fkey" error
   - **Sequential Dependency Cleanup**: Updated calls.targetId to null, deleted campaign-target relationships, then deleted target
