@@ -514,19 +514,59 @@ export class SupabaseStorage implements IStorage {
       .limit(500); // Limit to prevent massive queries
   }
 
-  async getCallsByUser(userId: number): Promise<Call[]> {
+  async getCallsByUser(userId: number): Promise<any[]> {
     try {
-      // Use simple select to avoid field mapping issues
+      // Join with buyers table to get buyer information
       const result = await db
-        .select()
+        .select({
+          // Call fields
+          id: calls.id,
+          campaignId: calls.campaignId,
+          buyerId: calls.buyerId,
+          callSid: calls.callSid,
+          fromNumber: calls.fromNumber,
+          toNumber: calls.toNumber,
+          duration: calls.duration,
+          status: calls.status,
+          callQuality: calls.callQuality,
+          recordingUrl: calls.recordingUrl,
+          recordingSid: calls.recordingSid,
+          recordingStatus: calls.recordingStatus,
+          recordingDuration: calls.recordingDuration,
+          transcription: calls.transcription,
+          transcriptionStatus: calls.transcriptionStatus,
+          cost: calls.cost,
+          revenue: calls.revenue,
+          payout: calls.payout,
+          profit: calls.profit,
+          geoLocation: calls.geoLocation,
+          userAgent: calls.userAgent,
+          clickId: calls.clickId,
+          publisherName: calls.publisherName,
+          utmSource: calls.utmSource,
+          utmMedium: calls.utmMedium,
+          utmCampaign: calls.utmCampaign,
+          utmContent: calls.utmContent,
+          utmTerm: calls.utmTerm,
+          referrer: calls.referrer,
+          landingPage: calls.landingPage,
+          ipAddress: calls.ipAddress,
+          createdAt: calls.createdAt,
+          updatedAt: calls.updatedAt,
+          // Buyer fields
+          buyerName: buyers.companyName, // Use companyName as primary buyer name
+          buyerEmail: buyers.email,
+          // Campaign fields  
+          campaignName: campaigns.name,
+        })
         .from(calls)
         .innerJoin(campaigns, eq(calls.campaignId, campaigns.id))
+        .leftJoin(buyers, eq(calls.buyerId, buyers.id)) // Left join to include calls without buyers
         .where(eq(campaigns.userId, userId))
         .orderBy(desc(calls.createdAt))
         .limit(1000); // Limit to prevent massive queries
       
-      // Extract just the calls data from the joined result
-      return result.map(row => row.calls);
+      return result;
     } catch (error) {
       console.error('Error fetching calls by user:', error);
       return [];
