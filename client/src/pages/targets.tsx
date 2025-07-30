@@ -409,20 +409,20 @@ export default function Targets() {
                 Add Target
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl h-[90vh] overflow-y-auto p-4">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <TargetIcon className="h-5 w-5" />
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto p-3">
+              <DialogHeader className="pb-2">
+                <DialogTitle className="flex items-center gap-2 text-lg">
+                  <TargetIcon className="h-4 w-4" />
                   {editingTarget ? "Edit Target" : "Create Target"}
                 </DialogTitle>
-                <DialogDescription>
-                  Configure your target endpoint with comprehensive settings and controls - Updated
+                <DialogDescription className="text-xs">
+                  Configure your target endpoint with comprehensive settings and controls
                 </DialogDescription>
               </DialogHeader>
 
               <TooltipProvider>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 pb-4">
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 pb-2">
                     <Tabs defaultValue="basic" className="w-full">
                       <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="basic">Basic</TabsTrigger>
@@ -600,33 +600,33 @@ export default function Targets() {
                       </TabsContent>
 
                       {/* Cap Settings Tab */}
-                      <TabsContent value="caps" className="space-y-2 py-2">
-                        <div className="space-y-2">
-                          <div>
-                            <h3 className="text-sm font-medium">Cap Settings</h3>
+                      <TabsContent value="caps" className="space-y-1 py-1">
+                        <div className="space-y-1">
+                          <div className="mb-1">
+                            <h3 className="text-sm font-medium mb-0">Cap Settings</h3>
                             <p className="text-xs text-gray-600">Configure call capacity limits and daily caps</p>
                           </div>
                           
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-2 gap-1.5">
                             <div>
                               <label className="text-xs font-medium block mb-0.5">Daily Cap</label>
-                              <Input type="number" placeholder="Enter daily call limit" className="h-7 text-xs px-2" />
-                              <p className="text-xs text-gray-500 mt-0.5">Maximum calls per day (0 = unlimited)</p>
+                              <Input type="number" placeholder="Enter daily call limit" className="h-6 text-xs px-2 py-0" />
+                              <p className="text-xs text-gray-500 mt-0">Maximum calls per day (0 = unlimited)</p>
                             </div>
                             <div>
                               <label className="text-xs font-medium block mb-0.5">Weekly Cap</label>
-                              <Input type="number" placeholder="Enter weekly call limit" className="h-7 text-xs px-2" />
-                              <p className="text-xs text-gray-500 mt-0.5">Maximum calls per week (0 = unlimited)</p>
+                              <Input type="number" placeholder="Enter weekly call limit" className="h-6 text-xs px-2 py-0" />
+                              <p className="text-xs text-gray-500 mt-0">Maximum calls per week (0 = unlimited)</p>
                             </div>
                             <div>
                               <label className="text-xs font-medium block mb-0.5">Monthly Cap</label>
-                              <Input type="number" placeholder="Enter monthly call limit" className="h-7 text-xs px-2" />
-                              <p className="text-xs text-gray-500 mt-0.5">Maximum calls per month (0 = unlimited)</p>
+                              <Input type="number" placeholder="Enter monthly call limit" className="h-6 text-xs px-2 py-0" />
+                              <p className="text-xs text-gray-500 mt-0">Maximum calls per month (0 = unlimited)</p>
                             </div>
                             <div>
                               <label className="text-xs font-medium block mb-0.5">Cap Reset Time</label>
                               <Select defaultValue="12:00 PM">
-                                <SelectTrigger className="h-7 text-xs px-2">
+                                <SelectTrigger className="h-6 text-xs px-2">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -639,7 +639,7 @@ export default function Targets() {
                             </div>
                           </div>
                           
-                          <div className="pt-1">
+                          <div className="pt-0.5">
                             <div className="flex items-center space-x-2">
                               <Switch className="scale-75" />
                               <label className="text-xs">Pause target when cap is reached</label>
