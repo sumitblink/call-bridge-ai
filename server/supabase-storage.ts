@@ -379,22 +379,7 @@ export class SupabaseStorage implements IStorage {
 
   async getTarget(id: number): Promise<Target | undefined> {
     try {
-      const result = await db.select({
-        id: targets.id,
-        userId: targets.userId,
-        buyerId: targets.buyerId,
-        name: targets.name,
-        phoneNumber: targets.phoneNumber,
-        endpoint: targets.endpoint,
-        priority: targets.priority,
-        dailyCap: targets.dailyCap,
-        concurrencyLimit: targets.concurrencyLimit,
-        acceptanceRate: targets.acceptanceRate,
-        avgResponseTime: targets.avgResponseTime,
-        status: targets.status,
-        createdAt: targets.createdAt,
-        updatedAt: targets.updatedAt,
-      }).from(targets).where(eq(targets.id, id));
+      const result = await db.select().from(targets).where(eq(targets.id, id));
       return result[0];
     } catch (error) {
       console.error('Error fetching target:', error);
@@ -404,22 +389,7 @@ export class SupabaseStorage implements IStorage {
 
   async getTargetsByBuyer(buyerId: number): Promise<Target[]> {
     try {
-      const result = await db.select({
-        id: targets.id,
-        userId: targets.userId,
-        buyerId: targets.buyerId,
-        name: targets.name,
-        phoneNumber: targets.phoneNumber,
-        endpoint: targets.endpoint,
-        priority: targets.priority,
-        dailyCap: targets.dailyCap,
-        concurrencyLimit: targets.concurrencyLimit,
-        acceptanceRate: targets.acceptanceRate,
-        avgResponseTime: targets.avgResponseTime,
-        status: targets.status,
-        createdAt: targets.createdAt,
-        updatedAt: targets.updatedAt,
-      }).from(targets).where(eq(targets.buyerId, buyerId));
+      const result = await db.select().from(targets).where(eq(targets.buyerId, buyerId));
       return result;
     } catch (error) {
       console.error('Error fetching targets by buyer:', error);
