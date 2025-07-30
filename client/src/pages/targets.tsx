@@ -877,10 +877,49 @@ export default function Targets() {
                       <TabsContent value="concurrency" className="space-y-6">
                         <Card>
                           <CardHeader>
-                            <CardTitle>Concurrency Settings</CardTitle>
+                            <CardTitle>Cap Settings</CardTitle>
+                            <CardDescription>Configure daily, weekly, and monthly limits</CardDescription>
                           </CardHeader>
-                          <CardContent>
-                            <p>Concurrency settings coming soon...</p>
+                          <CardContent className="space-y-6">
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Daily Cap</label>
+                                <Input type="number" placeholder="50" min="0" />
+                                <p className="text-xs text-gray-600">Max calls per day</p>
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Weekly Cap</label>
+                                <Input type="number" placeholder="300" min="0" />
+                                <p className="text-xs text-gray-600">Max calls per week</p>
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Monthly Cap</label>
+                                <Input type="number" placeholder="1000" min="0" />
+                                <p className="text-xs text-gray-600">Max calls per month</p>
+                              </div>
+                            </div>
+                            
+                            <div className="border-t pt-4">
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <label className="text-sm font-medium">Concurrent Call Limit</label>
+                                  <div className="flex items-center gap-4">
+                                    <Input type="number" placeholder="5" min="1" max="50" className="w-24" />
+                                    <span className="text-sm text-gray-600">simultaneous active calls</span>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center space-x-2">
+                                  <Switch id="queue-calls" />
+                                  <label htmlFor="queue-calls" className="text-sm">Queue calls when at capacity</label>
+                                </div>
+                                
+                                <div className="flex items-center space-x-2">
+                                  <Switch id="cap-alerts" />
+                                  <label htmlFor="cap-alerts" className="text-sm">Send alerts when approaching limits</label>
+                                </div>
+                              </div>
+                            </div>
                           </CardContent>
                         </Card>
                       </TabsContent>
@@ -889,9 +928,76 @@ export default function Targets() {
                         <Card>
                           <CardHeader>
                             <CardTitle>Routing Settings</CardTitle>
+                            <CardDescription>Configure how calls are routed to this target</CardDescription>
                           </CardHeader>
-                          <CardContent>
-                            <p>Routing settings coming soon...</p>
+                          <CardContent className="space-y-6">
+                            <div className="grid grid-cols-2 gap-6">
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <label className="text-sm font-medium">Routing Priority</label>
+                                  <Select defaultValue="5">
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="1">1 - Highest Priority</SelectItem>
+                                      <SelectItem value="2">2 - High Priority</SelectItem>
+                                      <SelectItem value="3">3 - Medium Priority</SelectItem>
+                                      <SelectItem value="4">4 - Low Priority</SelectItem>
+                                      <SelectItem value="5">5 - Lowest Priority</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <label className="text-sm font-medium">Weight (%)</label>
+                                  <Input type="number" placeholder="100" min="0" max="100" />
+                                  <p className="text-xs text-gray-600">Percentage of calls to route here</p>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <label className="text-sm font-medium">Timeout (seconds)</label>
+                                  <Input type="number" placeholder="30" min="5" max="120" />
+                                  <p className="text-xs text-gray-600">How long to ring before timeout</p>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <label className="text-sm font-medium">Retry Attempts</label>
+                                  <Select defaultValue="2">
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="0">No retries</SelectItem>
+                                      <SelectItem value="1">1 retry</SelectItem>
+                                      <SelectItem value="2">2 retries</SelectItem>
+                                      <SelectItem value="3">3 retries</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="border-t pt-4">
+                              <div className="space-y-4">
+                                <div className="flex items-center space-x-2">
+                                  <Switch id="failover-enabled" />
+                                  <label htmlFor="failover-enabled" className="text-sm">Enable failover routing</label>
+                                </div>
+                                
+                                <div className="flex items-center space-x-2">
+                                  <Switch id="recording-enabled" defaultChecked />
+                                  <label htmlFor="recording-enabled" className="text-sm">Record calls to this target</label>
+                                </div>
+                                
+                                <div className="flex items-center space-x-2">
+                                  <Switch id="transcription-enabled" />
+                                  <label htmlFor="transcription-enabled" className="text-sm">Auto-transcribe recordings</label>
+                                </div>
+                              </div>
+                            </div>
                           </CardContent>
                         </Card>
                       </TabsContent>
@@ -899,10 +1005,66 @@ export default function Targets() {
                       <TabsContent value="tags" className="space-y-6">
                         <Card>
                           <CardHeader>
-                            <CardTitle>Tags Settings</CardTitle>
+                            <CardTitle>Tags & Filters</CardTitle>
+                            <CardDescription>Organize and filter calls with custom tags</CardDescription>
                           </CardHeader>
-                          <CardContent>
-                            <p>Tags settings coming soon...</p>
+                          <CardContent className="space-y-6">
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Default Tags</label>
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">Insurance</Badge>
+                                  <Badge variant="secondary" className="bg-green-100 text-green-800">Healthcare</Badge>
+                                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">Premium</Badge>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Input placeholder="Add new tag..." className="flex-1" />
+                                  <Button variant="outline" size="sm">Add Tag</Button>
+                                </div>
+                              </div>
+                              
+                              <div className="border-t pt-4">
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Call Quality Filters</label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div className="flex items-center space-x-2">
+                                        <Switch id="min-duration" />
+                                        <label htmlFor="min-duration" className="text-sm">Minimum duration filter</label>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Input type="number" placeholder="30" className="w-20" min="1" />
+                                        <span className="text-sm text-gray-600">seconds</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Geographic Filters</label>
+                                    <Select>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select allowed regions..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="all">All Regions</SelectItem>
+                                        <SelectItem value="us">United States Only</SelectItem>
+                                        <SelectItem value="ca">Canada Only</SelectItem>
+                                        <SelectItem value="us-ca">US & Canada</SelectItem>
+                                        <SelectItem value="custom">Custom Filter</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Time-based Filters</label>
+                                    <div className="flex items-center space-x-2">
+                                      <Switch id="business-hours-only" />
+                                      <label htmlFor="business-hours-only" className="text-sm">Business hours only</label>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </CardContent>
                         </Card>
                       </TabsContent>
