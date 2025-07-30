@@ -161,8 +161,26 @@ export default function TargetsPage() {
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
   const [selectedBuyerId, setSelectedBuyerId] = useState<number | null>(null);
   const [hoursMode, setHoursMode] = useState<"basic" | "advanced">("basic");
+  const [showAddBreak, setShowAddBreak] = useState(false);
+  const [breakStartTime, setBreakStartTime] = useState("12:00");
+  const [breakDuration, setBreakDuration] = useState("45");
+  const [breaks, setBreaks] = useState<Array<{startTime: string, duration: string}>>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Break handling functions
+  const handleSaveBreak = () => {
+    if (breakStartTime && breakDuration) {
+      setBreaks([...breaks, { startTime: breakStartTime, duration: breakDuration }]);
+      setBreakStartTime("12:00");
+      setBreakDuration("45");
+      setShowAddBreak(false);
+    }
+  };
+
+  const removeBreak = (index: number) => {
+    setBreaks(breaks.filter((_, i) => i !== index));
+  };
 
   // Fetch targets
   const { data: targets = [], isLoading: targetsLoading } = useQuery({
@@ -779,10 +797,89 @@ export default function TargetsPage() {
                       </div>
                     </div>
                     <div className="mt-2">
-                      <Button type="button" variant="outline" size="sm" className="h-6 text-xs">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-6 text-xs"
+                        onClick={() => setShowAddBreak(!showAddBreak)}
+                      >
                         Add Break
                       </Button>
                     </div>
+                    
+                    {/* Add Break Form */}
+                    {showAddBreak && (
+                      <div className="mt-3 p-3 border rounded-lg bg-white">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs text-gray-600 block mb-1">Start Time</label>
+                            <div className="relative">
+                              <Input 
+                                className="h-8 text-xs pr-8" 
+                                type="time" 
+                                defaultValue="12:00"
+                                value={breakStartTime}
+                                onChange={(e) => setBreakStartTime(e.target.value)}
+                              />
+                              <Clock className="absolute right-2 top-2 h-4 w-4 text-gray-400" />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-600 block mb-1">Duration (Min)</label>
+                            <Input 
+                              className="h-8 text-xs" 
+                              type="number" 
+                              placeholder="45"
+                              value={breakDuration}
+                              onChange={(e) => setBreakDuration(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                          <Button 
+                            type="button" 
+                            size="sm" 
+                            className="h-6 text-xs px-3"
+                            onClick={handleSaveBreak}
+                          >
+                            Save
+                          </Button>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-6 text-xs px-3"
+                            onClick={() => setShowAddBreak(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Display existing breaks */}
+                    {breaks.length > 0 && (
+                      <div className="mt-3">
+                        <h5 className="text-xs font-medium mb-2">Scheduled Breaks</h5>
+                        <div className="space-y-1">
+                          {breaks.map((break_, index) => (
+                            <div key={index} className="flex items-center justify-between bg-white p-2 rounded border text-xs">
+                              <span>{break_.startTime} - {break_.duration} minutes</span>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-5 w-5 p-0 text-red-500"
+                                onClick={() => removeBreak(index)}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
