@@ -174,7 +174,7 @@ export class SupabaseStorage implements IStorage {
     // Delete all related records first to avoid foreign key constraint violations
     
     // Delete call logs for calls related to this campaign
-    const campaignCalls = await db.select({ id: calls.id }).from(calls).where(eq(calls.campaignId, id));
+    const campaignCalls = await db.select().from(calls).where(eq(calls.campaignId, id));
     for (const call of campaignCalls) {
       await db.delete(callLogs).where(eq(callLogs.callId, call.id));
     }
@@ -385,50 +385,36 @@ export class SupabaseStorage implements IStorage {
 
   // Campaign-Buyer Relations
   async getCampaignBuyers(campaignId: string | number): Promise<Buyer[]> {
-    const result = await db
-      .select({
-        id: buyers.id,
-        name: buyers.name,
-        email: buyers.email,
-        phoneNumber: buyers.phoneNumber,
-        endpoint: buyers.endpoint,
-        status: buyers.status,
-        priority: campaignBuyers.priority, // Use campaign-specific priority instead of buyer's global priority
-        dailyCap: buyers.dailyCap,
-        concurrencyLimit: buyers.concurrencyLimit,
-        // acceptanceRate and avgResponseTime removed - calculated dynamically
-        createdAt: buyers.createdAt,
-        updatedAt: buyers.updatedAt,
-        userId: buyers.userId,
-      })
-      .from(buyers)
-      .innerJoin(campaignBuyers, eq(buyers.id, campaignBuyers.buyerId))
-      .where(eq(campaignBuyers.campaignId, campaignId));
-    
-    return result;
+    try {
+      const result = await db
+        .select()
+        .from(buyers)
+        .innerJoin(campaignBuyers, eq(buyers.id, campaignBuyers.buyerId))
+        .where(eq(campaignBuyers.campaignId, campaignId));
+      
+      return result.map(row => ({
+        ...row.buyers,
+        priority: row.campaign_buyers.priority || row.buyers.priority
+      }));
+    } catch (error) {
+      console.error('Error fetching campaign buyers:', error);
+      throw error;
+    }
   }
 
   async getBuyerCampaignAssignments(buyerId: number): Promise<Campaign[]> {
-    const result = await db
-      .select({
-        id: campaigns.id,
-        userId: campaigns.userId,
-        name: campaigns.name,
-        description: campaigns.description,
-        phoneNumber: campaigns.phoneNumber,
-        status: campaigns.status,
-        routingType: campaigns.routingType,
-        enableRtb: campaigns.enableRtb,
-        // rtbRouterId removed - using direct campaign-target assignments
-        rtbId: campaigns.rtbId,
-        createdAt: campaigns.createdAt,
-        updatedAt: campaigns.updatedAt,
-      })
-      .from(campaigns)
-      .innerJoin(campaignBuyers, eq(campaigns.id, campaignBuyers.campaignId))
-      .where(eq(campaignBuyers.buyerId, buyerId));
-    
-    return result;
+    try {
+      const result = await db
+        .select()
+        .from(campaigns)
+        .innerJoin(campaignBuyers, eq(campaigns.id, campaignBuyers.campaignId))
+        .where(eq(campaignBuyers.buyerId, buyerId));
+      
+      return result.map(row => row.campaigns);
+    } catch (error) {
+      console.error('Error fetching buyer campaign assignments:', error);
+      throw error;
+    }
   }
 
   async addBuyerToCampaign(campaignId: string | number, buyerId: number, priority = 1): Promise<CampaignBuyer> {
@@ -453,32 +439,26 @@ export class SupabaseStorage implements IStorage {
   // Call Routing & Ping/Post
   async pingBuyersForCall(campaignId: number, callData: any): Promise<Buyer[]> {
     const campaignIdStr = campaignId.toString();
-    const result = await db
-      .select({
-        id: buyers.id,
-        name: buyers.name,
-        email: buyers.email,
-        phoneNumber: buyers.phoneNumber,
-        endpoint: buyers.endpoint,
-        status: buyers.status,
-        priority: buyers.priority,
-        dailyCap: buyers.dailyCap,
-        concurrencyLimit: buyers.concurrencyLimit,
-        // acceptanceRate and avgResponseTime removed - calculated dynamically
-        createdAt: buyers.createdAt,
-        updatedAt: buyers.updatedAt,
-        userId: buyers.userId,
-      })
-      .from(buyers)
-      .innerJoin(campaignBuyers, eq(buyers.id, campaignBuyers.buyerId))
-      .where(and(
-        eq(campaignBuyers.campaignId, campaignIdStr),
-        eq(buyers.status, "active"),
-        eq(campaignBuyers.isActive, true)
-      ))
-      .orderBy(campaignBuyers.priority);
+    try {
+      const result = await db
+        .select()
+        .from(buyers)
+        .innerJoin(campaignBuyers, eq(buyers.id, campaignBuyers.buyerId))
+        .where(and(
+          eq(campaignBuyers.campaignId, campaignIdStr),
+          eq(buyers.status, "active"),
+          eq(campaignBuyers.isActive, true)
+        ))
+        .orderBy(campaignBuyers.priority);
 
-    return result;
+      return result.map(row => ({
+        ...row.buyers,
+        priority: row.campaign_buyers.priority || row.buyers.priority
+      }));
+    } catch (error) {
+      console.error('Error pinging buyers for call:', error);
+      throw error;
+    }
   }
 
   async postCallToBuyer(buyerId: number, callData: any): Promise<boolean> {
@@ -574,75 +554,14 @@ export class SupabaseStorage implements IStorage {
 
   // Enhanced Calls with detailed joins for reporting
   async getEnhancedCallsByUser(userId: number, filters?: any): Promise<any[]> {
-    let query = db
-      .select({
-        id: calls.id,
-        campaignId: calls.campaignId,
-        buyerId: calls.buyerId,
-        publisherId: calls.publisherId,
-        callSid: calls.callSid,
-        fromNumber: calls.fromNumber,
-        toNumber: calls.toNumber,
-        dialedNumber: calls.dialedNumber,
-        duration: calls.duration,
-        ringTime: calls.ringTime,
-        talkTime: calls.talkTime,
-        holdTime: calls.holdTime,
-        status: calls.status,
-        disposition: calls.disposition,
-        hangupCause: calls.hangupCause,
-        callQuality: calls.callQuality,
-        connectionTime: calls.connectionTime,
-        audioQuality: calls.audioQuality,
-        isDuplicate: calls.isDuplicate,
-        cost: calls.cost,
-        revenue: calls.revenue,
-        payout: calls.payout,
-        profit: calls.profit,
-        margin: calls.margin,
-        tags: calls.tags,
-        utmSource: calls.utmSource,
-        utmMedium: calls.utmMedium,
-        utmCampaign: calls.utmCampaign,
-        utmContent: calls.utmContent,
-        utmTerm: calls.utmTerm,
-        referrer: calls.referrer,
-        landingPage: calls.landingPage,
-        geoLocation: calls.geoLocation,
-        city: calls.city,
-        state: calls.state,
-        country: calls.country,
-        zipCode: calls.zipCode,
-        ipAddress: calls.ipAddress,
-        deviceType: calls.deviceType,
-        recordingUrl: calls.recordingUrl,
-        recordingSid: calls.recordingSid,
-        recordingStatus: calls.recordingStatus,
-        recordingDuration: calls.recordingDuration,
-        transcription: calls.transcription,
-        transcriptionStatus: calls.transcriptionStatus,
-        transcriptionConfidence: calls.transcriptionConfidence,
-        isConverted: calls.isConverted,
-        conversionType: calls.conversionType,
-        conversionValue: calls.conversionValue,
-        conversionTimestamp: calls.conversionTimestamp,
-        createdAt: calls.createdAt,
-        updatedAt: calls.updatedAt,
-        // Campaign details
-        campaignName: campaigns.name,
-        campaignStatus: campaigns.status,
-        // Buyer details
-        buyerName: buyers.name,
-        buyerEmail: buyers.email,
-        // Publisher details
-        publisherName: publishers.name,
-        publisherStatus: publishers.status,
-      })
-      .from(calls)
-      .leftJoin(campaigns, eq(calls.campaignId, campaigns.id))
-      .leftJoin(buyers, eq(calls.buyerId, buyers.id))
-      .leftJoin(publishers, eq(calls.publisherId, publishers.id))
-      .where(eq(campaigns.userId, userId));
+    try {
+      let query = db
+        .select()
+        .from(calls)
+        .leftJoin(campaigns, eq(calls.campaignId, campaigns.id))
+        .leftJoin(buyers, eq(calls.buyerId, buyers.id))
+        .leftJoin(publishers, eq(calls.publisherId, publishers.id))
+        .where(eq(campaigns.userId, userId));
 
     // Apply filters
     if (filters?.status && filters.status !== "all") {
@@ -660,7 +579,21 @@ export class SupabaseStorage implements IStorage {
       }
     }
 
-    return await query.orderBy(desc(calls.createdAt));
+      const result = await query.orderBy(desc(calls.createdAt));
+      
+      return result.map(row => ({
+        ...row.calls,
+        campaignName: row.campaigns?.name,
+        campaignStatus: row.campaigns?.status,
+        buyerName: row.buyers?.name,
+        buyerEmail: row.buyers?.email,
+        publisherName: row.publishers?.name,
+        publisherStatus: row.publishers?.status,
+      }));
+    } catch (error) {
+      console.error('Error getting enhanced calls:', error);
+      throw error;
+    }
   }
 
   async getEnhancedCallById(id: number): Promise<any | undefined> {
