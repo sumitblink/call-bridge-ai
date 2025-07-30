@@ -45,7 +45,7 @@ export default function Targets() {
       buyerId: 0,
       phoneNumber: "",
       endpoint: "",
-      timeZone: "EST",
+      timeZone: "(UTC-05:00) Eastern Time (US & Canada)",
       hoursOfOperation: "Always Open",
       status: "active",
     },
@@ -289,11 +289,16 @@ export default function Targets() {
                                         </SelectTrigger>
                                       </FormControl>
                                       <SelectContent>
-                                        <SelectItem value="EST">Eastern Time (EST)</SelectItem>
-                                        <SelectItem value="CST">Central Time (CST)</SelectItem>
-                                        <SelectItem value="MST">Mountain Time (MST)</SelectItem>
-                                        <SelectItem value="PST">Pacific Time (PST)</SelectItem>
-                                        <SelectItem value="UTC">UTC</SelectItem>
+                                        <SelectItem value="(UTC-08:00) Pacific Time (US & Canada)">(UTC-08:00) Pacific Time (US & Canada)</SelectItem>
+                                        <SelectItem value="(UTC-06:00) Central Time (US & Canada)">(UTC-06:00) Central Time (US & Canada)</SelectItem>
+                                        <SelectItem value="(UTC-05:00) Eastern Time (US & Canada)">(UTC-05:00) Eastern Time (US & Canada)</SelectItem>
+                                        <SelectItem value="(UTC-12:00) International Date Line West">(UTC-12:00) International Date Line West</SelectItem>
+                                        <SelectItem value="(UTC-11:00) Coordinated Universal Time-11">(UTC-11:00) Coordinated Universal Time-11</SelectItem>
+                                        <SelectItem value="(UTC-10:00) Aleutian Islands">(UTC-10:00) Aleutian Islands</SelectItem>
+                                        <SelectItem value="(UTC-10:00) Hawaii">(UTC-10:00) Hawaii</SelectItem>
+                                        <SelectItem value="(UTC-09:30) Marquesas Islands">(UTC-09:30) Marquesas Islands</SelectItem>
+                                        <SelectItem value="(UTC-09:00) Alaska">(UTC-09:00) Alaska</SelectItem>
+                                        <SelectItem value="(UTC-09:00) Coordinated Universal Time-09">(UTC-09:00) Coordinated Universal Time-09</SelectItem>
                                       </SelectContent>
                                     </Select>
                                     <FormMessage />
