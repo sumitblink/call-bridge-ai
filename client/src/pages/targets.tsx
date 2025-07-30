@@ -874,54 +874,52 @@ export default function Targets() {
                         </Card>
                       </TabsContent>
 
-                      <TabsContent value="concurrency" className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Cap Settings</CardTitle>
-                            <CardDescription>Configure daily, weekly, and monthly limits</CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-6">
-                            <div className="grid grid-cols-3 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Daily Cap</label>
-                                <Input type="number" placeholder="50" min="0" />
-                                <p className="text-xs text-gray-600">Max calls per day</p>
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Weekly Cap</label>
-                                <Input type="number" placeholder="300" min="0" />
-                                <p className="text-xs text-gray-600">Max calls per week</p>
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Monthly Cap</label>
-                                <Input type="number" placeholder="1000" min="0" />
-                                <p className="text-xs text-gray-600">Max calls per month</p>
-                              </div>
+                      <TabsContent value="concurrency" className="space-y-4">
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="text-lg font-semibold mb-1">Cap Settings</h3>
+                            <p className="text-sm text-gray-600">Configure call capacity limits and daily caps</p>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-sm font-medium">Daily Cap</label>
+                              <Input type="number" placeholder="Enter daily call limit" />
+                              <p className="text-xs text-gray-500">Maximum calls per day (0 = unlimited)</p>
                             </div>
-                            
-                            <div className="border-t pt-4">
-                              <div className="space-y-4">
-                                <div className="space-y-2">
-                                  <label className="text-sm font-medium">Concurrent Call Limit</label>
-                                  <div className="flex items-center gap-4">
-                                    <Input type="number" placeholder="5" min="1" max="50" className="w-24" />
-                                    <span className="text-sm text-gray-600">simultaneous active calls</span>
-                                  </div>
-                                </div>
-                                
-                                <div className="flex items-center space-x-2">
-                                  <Switch id="queue-calls" />
-                                  <label htmlFor="queue-calls" className="text-sm">Queue calls when at capacity</label>
-                                </div>
-                                
-                                <div className="flex items-center space-x-2">
-                                  <Switch id="cap-alerts" />
-                                  <label htmlFor="cap-alerts" className="text-sm">Send alerts when approaching limits</label>
-                                </div>
-                              </div>
+                            <div className="space-y-1">
+                              <label className="text-sm font-medium">Weekly Cap</label>
+                              <Input type="number" placeholder="Enter weekly call limit" />
+                              <p className="text-xs text-gray-500">Maximum calls per week (0 = unlimited)</p>
                             </div>
-                          </CardContent>
-                        </Card>
+                            <div className="space-y-1">
+                              <label className="text-sm font-medium">Monthly Cap</label>
+                              <Input type="number" placeholder="Enter monthly call limit" />
+                              <p className="text-xs text-gray-500">Maximum calls per month (0 = unlimited)</p>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-sm font-medium">Cap Reset Time</label>
+                              <Select defaultValue="12:00 PM">
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="12:00 AM">12:00 AM</SelectItem>
+                                  <SelectItem value="6:00 AM">6:00 AM</SelectItem>
+                                  <SelectItem value="12:00 PM">12:00 PM</SelectItem>
+                                  <SelectItem value="6:00 PM">6:00 PM</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          
+                          <div className="pt-2">
+                            <div className="flex items-center space-x-2">
+                              <Switch id="pause-target" />
+                              <label htmlFor="pause-target" className="text-sm">Pause target when cap is reached</label>
+                            </div>
+                          </div>
+                        </div>
                       </TabsContent>
 
                       <TabsContent value="routing" className="space-y-6">
