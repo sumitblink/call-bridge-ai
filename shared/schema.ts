@@ -797,8 +797,8 @@ export const insertBuyerSchema = createInsertSchema(buyers).omit({
 }).extend({
   userId: z.number().optional(),
   // Basic Information
-  name: z.string().min(1, "Buyer name is required"),
-  companyName: z.string().optional(),
+  name: z.string().optional(), // Sub ID field
+  companyName: z.string().min(1, "Company name is required"),
   email: z.string().email("Valid email is required").optional().or(z.literal("")),
   phoneNumber: z.string().optional(),
   status: z.enum(["active", "paused", "inactive"]).optional(),

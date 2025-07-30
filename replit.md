@@ -114,6 +114,15 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 30, 2025: **BUYERS FORM UPDATED TO MATCH EXACT RINGBA STRUCTURE** - Updated buyer form to match actual Ringba screenshot structure with proper field organization and validation
+  - **Field Structure Corrected**: Company Name as primary required field, Sub ID as secondary optional field (removed phone number field per actual Ringba form)
+  - **Permissions Section**: Exact 4-toggle layout matching Ringba (Allow Buyer To Pause Targets, Set Target Caps, Dispute Call Conversions, Limit Revenue)
+  - **Restrict Duplicates**: Dropdown selection (Do Not Restrict/Restrict) instead of boolean toggle matching Ringba interface
+  - **Predictive Routing**: Settings dropdown with Priority Queue slider (0-100) exactly like Ringba screenshot
+  - **Shareable Tags**: Two-level toggle system (main toggle + Override toggle) matching Ringba's exact implementation
+  - **Table Display**: Updated to show Company & Sub ID, Settings badges, and proper status/type information
+  - **Form Validation**: Updated schema to require Company Name and make Sub ID optional per Ringba standards
+  - **Status**: Buyer form now matches Ringba's exact field structure, layout, and functionality from actual platform screenshots
 - July 30, 2025: **BUYERS ARCHITECTURE FIXED TO MATCH RINGBA STANDARDS** - Corrected buyers table structure to follow proper hierarchy where buyers are organizational containers and targets contain actual endpoints
   - **Schema Simplified**: Removed phoneNumber, endpoint, priority, dailyCap, concurrencyLimit, acceptanceRate, avgResponseTime from buyers table
   - **Ringba Compliance**: Buyers now function as top-level companies/categories with targets underneath containing actual routing destinations
