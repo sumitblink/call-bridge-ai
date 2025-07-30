@@ -165,6 +165,11 @@ export const targets = pgTable("targets", {
   concurrencyLimit: integer("concurrency_limit").default(1),
   acceptanceRate: varchar("acceptance_rate", { length: 10 }), // Stored as percentage string like "75.50"
   avgResponseTime: integer("avg_response_time"), // in milliseconds
+  
+  // Timezone and Hours of Operation - Ringba form fields
+  timeZone: varchar("time_zone", { length: 100 }).default("EST"),
+  hoursOfOperation: varchar("hours_of_operation", { length: 50 }).default("Always Open"),
+  
   status: varchar("status", { length: 20 }).default("active").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -859,6 +864,8 @@ export const insertTargetSchema = createInsertSchema(targets).omit({
   priority: z.number().min(1).max(10).optional(),
   dailyCap: z.number().min(0).optional(),
   concurrencyLimit: z.number().min(1).optional(),
+  timeZone: z.string().min(1, "Time zone is required"),
+  hoursOfOperation: z.string().min(1, "Hours of operation is required"),
 });
 
 export const insertCampaignTargetSchema = createInsertSchema(campaignTargets).omit({
