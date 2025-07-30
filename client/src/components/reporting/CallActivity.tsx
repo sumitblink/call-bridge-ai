@@ -742,8 +742,6 @@ export default function CallActivity() {
         return <div className="font-mono text-xs">{call.callSid}</div>;
       case 'fromNumber':
         return <div className="font-mono text-xs">{call.fromNumber}</div>;
-      case 'toNumber':
-        return <div className="font-mono text-xs">{call.toNumber}</div>;
       case 'createdAt':
         return <div className="text-xs">{formatDistanceToNow(new Date(call.createdAt), { addSuffix: true })}</div>;
       case 'updatedAt':
