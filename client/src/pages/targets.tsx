@@ -475,7 +475,7 @@ export default function TargetsPage() {
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+              <form id="target-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
 
                 {/* Row 1: Basic Info */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -1222,18 +1222,18 @@ export default function TargetsPage() {
                   </div>
                 </div>
 
-                </div>
-                <div className="sticky bottom-0 bg-white border-t p-6">
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={createTargetMutation.isPending || updateTargetMutation.isPending}>
-                      {createTargetMutation.isPending || updateTargetMutation.isPending ? "Saving..." : editingTarget ? "Update Target" : "Create Target"}
-                    </Button>
-                  </div>
-                </div>
               </form>
+              </div>
+              <div className="sticky bottom-0 bg-white border-t p-6">
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" form="target-form" disabled={createTargetMutation.isPending || updateTargetMutation.isPending}>
+                    {createTargetMutation.isPending || updateTargetMutation.isPending ? "Saving..." : editingTarget ? "Update Target" : "Create Target"}
+                  </Button>
+                </div>
+              </div>
             </Form>
           </DialogContent>
         </Dialog>
