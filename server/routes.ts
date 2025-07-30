@@ -1982,8 +1982,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('[Pool Webhook] Error enriching call with visitor session:', error);
       }
       
+      console.log('[Pool Webhook] About to create call with data:', {
+        campaignId: callData.campaignId,
+        buyerId: callData.buyerId,
+        numberPoolId: callData.numberPoolId,
+        phoneNumberId: callData.phoneNumberId,
+        callSid: callData.callSid
+      });
+      
       const callRecord = await storage.createCall(callData);
-      console.log('[Pool Webhook] Call record created with clickId:', callData.clickId);
+      console.log('[Pool Webhook] Call record created:', {
+        id: callRecord.id,
+        numberPoolId: callRecord.numberPoolId,
+        phoneNumberId: callRecord.phoneNumberId,
+        clickId: callData.clickId
+      });
 
       // Fire tracking pixels for "incoming" event using event-based firing
       await fireTrackingPixelsForEvent(callRecord, 'ringing', '0');

@@ -617,6 +617,8 @@ export class SupabaseStorage implements IStorage {
       fromNumber: call.fromNumber,
       toNumber: call.toNumber,
       dialedNumber: call.dialedNumber,
+      numberPoolId: call.numberPoolId, // Add missing pool ID field
+      phoneNumberId: call.phoneNumberId, // Add missing phone number ID field
       duration: call.duration || 0,
       status: call.status || 'ringing',
       disposition: call.disposition,
