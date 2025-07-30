@@ -6,15 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Phone, Globe, Users, TrendingUp, Edit, Trash2, Clock, Settings } from "lucide-react";
+import { Plus, Phone, Globe, Users, TrendingUp, Edit, Trash2, Clock, Settings, Target as TargetIcon, Info, Zap, Shield, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import type { Target, Buyer } from "@shared/schema";
@@ -253,16 +256,40 @@ export default function Targets() {
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle className="flex items-center gap-2">
+                  <TargetIcon className="h-5 w-5" />
                   {editingTarget ? "Edit Target" : "Create Target"}
                 </DialogTitle>
+                <DialogDescription>
+                  Configure your target endpoint with comprehensive settings and controls
+                </DialogDescription>
               </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  
-                  {/* Basic Information Section */}
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+              <TooltipProvider>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <Tabs defaultValue="basic" className="w-full">
+                      <TabsList className="grid w-full grid-cols-5">
+                        <TabsTrigger value="basic">Basic</TabsTrigger>
+                        <TabsTrigger value="caps">Cap Settings</TabsTrigger>
+                        <TabsTrigger value="concurrency">Concurrency</TabsTrigger>
+                        <TabsTrigger value="routing">Routing</TabsTrigger>
+                        <TabsTrigger value="tags">Tags</TabsTrigger>
+                      </TabsList>
+
+                      {/* Basic Information Tab */}
+                      <TabsContent value="basic" className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <Info className="h-4 w-4" />
+                              Basic Information
+                            </CardTitle>
+                            <CardDescription>
+                              Configure the target name, buyer assignment, and destination endpoint
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="name"
