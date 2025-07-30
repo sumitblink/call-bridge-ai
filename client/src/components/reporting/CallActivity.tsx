@@ -188,6 +188,9 @@ function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps
                 <span className="text-gray-600">Buyer:</span> {buyer?.companyName || buyer?.name || 'No buyer assigned'}
               </div>
               <div>
+                <span className="text-gray-600">Target:</span> {(targets.find(t => t.id === call.targetId))?.name || 'No target assigned'}
+              </div>
+              <div>
                 <span className="text-gray-600">Revenue:</span> ${call.revenue}
               </div>
               <div>
@@ -477,6 +480,10 @@ export default function CallActivity() {
     queryKey: ["/api/buyers"]
   });
 
+  const { data: targets = [], isLoading: isLoadingTargets } = useQuery<any[]>({
+    queryKey: ["/api/targets"]
+  });
+
   // Debounced infinite scroll handler to prevent excessive calls
   const handleScroll = useCallback(() => {
     const container = tableContainerRef.current;
@@ -538,6 +545,9 @@ export default function CallActivity() {
       case 'buyer':
         const buyer = buyers.find(b => b.id === call.buyerId);
         return <div className="truncate text-xs">{buyer?.companyName || buyer?.name || 'No Buyer'}</div>;
+      case 'target':
+        const target = targets.find(t => t.id === call.targetId);
+        return <div className="truncate text-xs">{target?.name || 'No Target'}</div>;
       case 'fromNumber':
         return <div className="font-mono text-xs">{call.fromNumber}</div>;
       case 'toNumber':

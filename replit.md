@@ -114,6 +114,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 30, 2025: **BUYER AND TARGET NAME DISPLAY FIXED** - Successfully resolved target name display issues in call details table and expandable call information
+  - **Buyer Name Display Fixed**: Updated CallActivity component to use buyer.companyName instead of empty name field for proper buyer identification
+  - **Target Column Added**: Added target name column rendering using targets data fetched from /api/targets endpoint
+  - **Target Assignment Enhanced**: Updated call creation in routes.ts to automatically assign targetId when calls are created through pool webhooks
+  - **Expandable Details Updated**: Added target information to routing journey section in expandable call details
+  - **Database Integrity**: All existing calls updated with proper target assignments and new calls automatically get target assignments
+  - **Status**: Both buyer and target names now display correctly in call details table and expandable sections
 - July 30, 2025: **COMPREHENSIVE SYSTEM REPAIR COMPLETED** - Successfully resolved all 188 TypeScript errors achieving 100% type safety and system stability
   - **Database Schema Synchronized**: Added missing fields (priority to buyers, gclid/fbclid/clickId/location to visitor_sessions, sessionId to calls)
   - **Storage Interface Completed**: Implemented all missing methods (getAgentActiveCalls, addCallEvent, getAgentStats, updateAgentStatus, getUserByEmailAsync)

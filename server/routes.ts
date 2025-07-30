@@ -1838,9 +1838,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[Pool Webhook] Campaign financial config - Payout:', payout, 'Revenue:', revenue, 'Profit:', profit);
       
+      // Get the first target for the selected buyer
+      let targetId = null;
+      if (routingMethod !== 'rtb' && selectedBuyer.id) {
+        try {
+          const targets = await storage.getTargetsByBuyer(selectedBuyer.id);
+          console.log('[Pool Webhook] Found targets for buyer', selectedBuyer.id, ':', targets.map(t => ({ id: t.id, name: t.name, status: t.status, phoneNumber: t.phoneNumber })));
+          const activeTarget = targets.find(t => t.status === 'active' && t.phoneNumber);
+          if (activeTarget) {
+            targetId = activeTarget.id;
+            console.log('[Pool Webhook] Assigned target:', activeTarget.id, '(', activeTarget.name, ')');
+          } else {
+            console.log('[Pool Webhook] No active target found for buyer', selectedBuyer.id);
+          }
+        } catch (error) {
+          console.error('[Pool Webhook] Error getting buyer targets:', error);
+        }
+      }
+
       let callData: any = {
         campaignId: campaign.id,
         buyerId: routingMethod === 'rtb' ? null : selectedBuyer.id, // RTB calls use external routing
+        targetId: targetId, // Add target assignment
         callSid: CallSid,
         fromNumber,
         toNumber,
