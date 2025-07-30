@@ -281,7 +281,7 @@ export default function TargetsPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {buyers.map((buyer) => (
+                              {buyers.filter(buyer => buyer.id).map((buyer) => (
                                 <SelectItem key={buyer.id} value={buyer.id.toString()}>
                                   {buyer.companyName || buyer.name}
                                 </SelectItem>
@@ -291,7 +291,7 @@ export default function TargetsPage() {
                           <FormMessage />
                         </FormItem>
                       )}
-                    />
+                    /></old_str>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">

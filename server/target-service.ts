@@ -18,9 +18,16 @@ export class TargetService {
   }
 
   async createTarget(data: InsertTarget): Promise<Target> {
-    const result = await db.insert(targets).values([data]).returning();
-    return result[0];
-  }
+    try {
+      const result = await db.insert(targets).values([data]).returning();
+      return result[0];
+    } catch (error: any) {
+      if (error.code === '23503' && error.constraint === 'targets_buyer_id_fkey') {
+        throw new Error(`Buyer with ID ${data.buyerId} does not exist. Please select a valid buyer.`);
+      }
+      throw error;
+    }
+  }</old_str>
 
   async updateTarget(id: number, data: Partial<InsertTarget>): Promise<Target | undefined> {
     const result = await db.update(targets)

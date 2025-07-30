@@ -1446,9 +1446,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(target);
     } catch (error) {
       console.error('Failed to create target:', error);
-      res.status(500).json({ error: 'Failed to create target' });
+      if (error.message && error.message.includes('does not exist')) {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'Failed to create target' });
+      }
     }
-  });
+  });</old_str>
 
   app.put('/api/targets/:id', requireAuth, async (req: any, res) => {
     try {
