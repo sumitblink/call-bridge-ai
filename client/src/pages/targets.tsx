@@ -74,7 +74,7 @@ const HoursOfOperationComponent = ({ value, onChange }: HoursOfOperationProps) =
 
   if (!isEnabled) {
     return (
-      <div className="space-y-4 border border-blue-300 rounded p-4 bg-gray-50">
+      <div className="border border-blue-300 rounded p-3 bg-gray-50">
         <div className="flex items-center space-x-2">
           <Switch
             checked={isEnabled}
@@ -87,73 +87,72 @@ const HoursOfOperationComponent = ({ value, onChange }: HoursOfOperationProps) =
   }
 
   return (
-    <div className="space-y-4 border border-blue-300 rounded p-4">
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={isEnabled}
-          onCheckedChange={setIsEnabled}
-        />
-        <span className="text-sm font-medium">Hours of Operation</span>
-      </div>
-
-      <div className="flex space-x-2">
-        <Button
-          type="button"
-          variant={mode === "Basic" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setMode("Basic")}
-        >
-          Basic
-        </Button>
-        <Button
-          type="button"
-          variant={mode === "Advanced" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setMode("Advanced")}
-        >
-          Advanced
-        </Button>
+    <div className="border border-blue-300 rounded p-3">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={isEnabled}
+            onCheckedChange={setIsEnabled}
+          />
+          <span className="text-sm font-medium">Hours of Operation</span>
+        </div>
+        <div className="flex space-x-1">
+          <Button
+            type="button"
+            variant={mode === "Basic" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setMode("Basic")}
+            className="h-7 px-3 text-xs"
+          >
+            Basic
+          </Button>
+          <Button
+            type="button"
+            variant={mode === "Advanced" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setMode("Advanced")}
+            className="h-7 px-3 text-xs"
+          >
+            Advanced
+          </Button>
+        </div>
       </div>
 
       {mode === "Basic" && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-4 items-center">
-            <div>
-              <label className="text-sm font-medium text-gray-600">Open</label>
-              <Input
-                type="time"
-                value={basicHours.openTime.replace(/\s(AM|PM)/, '')}
-                onChange={(e) => setBasicHours(prev => ({ ...prev, openTime: e.target.value + ' AM' }))}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-600">Close</label>
-              <Input
-                type="time"
-                value={basicHours.closeTime.replace(/\s(AM|PM)/, '')}
-                onChange={(e) => setBasicHours(prev => ({ ...prev, closeTime: e.target.value + ' PM' }))}
-                className="mt-1"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => addBreak()}
-                className="w-full"
-              >
-                + ADD BREAK
-              </Button>
-            </div>
+        <div className="flex items-end gap-2">
+          <div className="flex-1">
+            <label className="text-xs text-gray-600 block mb-1">Open</label>
+            <Input
+              type="time"
+              value={basicHours.openTime.replace(/\s(AM|PM)/, '')}
+              onChange={(e) => setBasicHours(prev => ({ ...prev, openTime: e.target.value + ' AM' }))}
+              className="h-8 text-sm"
+            />
           </div>
+          <div className="flex-1">
+            <label className="text-xs text-gray-600 block mb-1">Close</label>
+            <Input
+              type="time"
+              value={basicHours.closeTime.replace(/\s(AM|PM)/, '')}
+              onChange={(e) => setBasicHours(prev => ({ ...prev, closeTime: e.target.value + ' PM' }))}
+              className="h-8 text-sm"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => addBreak()}
+            className="h-8 px-2 text-xs"
+          >
+            + ADD BREAK
+          </Button>
         </div>
       )}
 
       {mode === "Advanced" && (
-        <div className="space-y-3">
-          <div className="grid grid-cols-4 gap-2 text-sm font-medium text-gray-600 border-b pb-2">
+        <div className="space-y-2">
+          <div className="grid grid-cols-4 gap-2 text-xs font-medium text-gray-600 border-b pb-1">
             <span>Day</span>
             <span>Open</span>
             <span>Close</span>
@@ -161,7 +160,7 @@ const HoursOfOperationComponent = ({ value, onChange }: HoursOfOperationProps) =
           </div>
           {Object.entries(advancedHours).map(([day, hours]) => (
             <div key={day} className="grid grid-cols-4 gap-2 items-center">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1">
                 <Switch
                   checked={hours.enabled}
                   onCheckedChange={(checked) => 
@@ -171,7 +170,7 @@ const HoursOfOperationComponent = ({ value, onChange }: HoursOfOperationProps) =
                     }))
                   }
                 />
-                <span className="text-sm font-medium">{day.slice(0, 3)}</span>
+                <span className="text-xs font-medium">{day.slice(0, 3)}</span>
               </div>
               <Input
                 type="time"
@@ -183,7 +182,7 @@ const HoursOfOperationComponent = ({ value, onChange }: HoursOfOperationProps) =
                   }))
                 }
                 disabled={!hours.enabled}
-                className="text-sm"
+                className="h-7 text-xs"
               />
               <Input
                 type="time"
@@ -195,7 +194,7 @@ const HoursOfOperationComponent = ({ value, onChange }: HoursOfOperationProps) =
                   }))
                 }
                 disabled={!hours.enabled}
-                className="text-sm"
+                className="h-7 text-xs"
               />
               <Button
                 type="button"
@@ -203,7 +202,7 @@ const HoursOfOperationComponent = ({ value, onChange }: HoursOfOperationProps) =
                 size="sm"
                 onClick={() => addBreak(day)}
                 disabled={!hours.enabled}
-                className="text-xs"
+                className="h-7 px-2 text-xs"
               >
                 + ADD BREAK
               </Button>
@@ -469,7 +468,7 @@ export default function Targets() {
                             </div>
 
                             {/* Timezone and Hours of Operation */}
-                            <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="grid grid-cols-2 gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                               <FormField
                                 control={form.control}
                                 name="timeZone"
