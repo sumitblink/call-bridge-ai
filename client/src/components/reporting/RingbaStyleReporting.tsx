@@ -342,88 +342,39 @@ export default function RingbaStyleReporting() {
 
       {/* Single Unified Report Content */}
       <div className="p-4 space-y-6">
-      <Card className="border-none">
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle>
-                Call Details
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowColumnCustomizer(true)}>
-                  <Settings className="h-4 w-4 mr-1" />
-                  Columns
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-1" />
-                  Export
-                </Button>
-                <Button variant="outline" size="sm">
-                  <RefreshCw className="h-4 w-4 mr-1" />
-                  Refresh
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Clear Data
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Clear All Call Data</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action will permanently delete all call records, events, routing decisions, and related data from your database. This cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={() => clearCallDataMutation.mutate()}
-                        className="bg-red-600 hover:bg-red-700"
-                        disabled={clearCallDataMutation.isPending}
-                      >
-                        {clearCallDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Timeline Report */}
-              <EnhancedTimelineReport
-                filters={activeFilters}
-                dateRange={dateRange}
-                onTimeRangeSelect={handleTimeRangeSelect}
-              />
+        {/* Timeline Report */}
+        <EnhancedTimelineReport
+          filters={activeFilters}
+          dateRange={dateRange}
+          onTimeRangeSelect={handleTimeRangeSelect}
+        />
 
-              {/* Summary Report below Timeline */}
-              <SummaryReport
-                filters={activeFilters}
-                dateRange={dateRange}
-                onFilterClick={handleFilterClick}
-              />
+        {/* Summary Report below Timeline */}
+        <SummaryReport
+          filters={activeFilters}
+          dateRange={dateRange}
+          onFilterClick={handleFilterClick}
+        />
 
-              {/* Call Details below Summary */}
-              <CallActivity
-                filters={activeFilters}
-                dateRange={dateRange}
-                selectedRows={selectedRows}
-                onRowSelect={(rowId: number, isSelected: boolean) => {
-                  const newSelection = new Set(selectedRows);
-                  if (isSelected) {
-                    newSelection.add(rowId);
-                  } else {
-                    newSelection.delete(rowId);
-                  }
-                  setSelectedRows(newSelection);
+        {/* Call Details below Summary */}
+        <CallActivity
+          filters={activeFilters}
+          dateRange={dateRange}
+          selectedRows={selectedRows}
+          onRowSelect={(rowId: number, isSelected: boolean) => {
+            const newSelection = new Set(selectedRows);
+            if (isSelected) {
+              newSelection.add(rowId);
+            } else {
+              newSelection.delete(rowId);
+            }
+            setSelectedRows(newSelection);
 
-                  // Update selected calls for bulk actions
-                  const callsToUpdate = Array.from(newSelection);
-                  setSelectedCalls(callsToUpdate.map(id => ({ id, callId: id })));
-                }}
-              />
-            </CardContent>
-          </Card>
+            // Update selected calls for bulk actions
+            const callsToUpdate = Array.from(newSelection);
+            setSelectedCalls(callsToUpdate.map(id => ({ id, callId: id })));
+          }}
+        />
       </div>
 
       {/* Active Filters Display */}
