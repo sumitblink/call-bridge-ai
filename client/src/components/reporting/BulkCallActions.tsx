@@ -485,3 +485,5 @@ export function BulkCallActions({
     </>
   );
 }
+
+export default BulkCallActions;

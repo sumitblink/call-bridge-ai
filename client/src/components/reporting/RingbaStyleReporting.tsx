@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Phone, Calendar, DollarSign, TrendingUp, Filter, Download, Settings, Search, RefreshCw, ChevronDown, ChevronUp, Play, Pause, ExternalLink, Clock, MapPin, User, Tag, MoreHorizontal, Eye, Trash2 } from "lucide-react";
 import { ColumnCustomizer } from "./ColumnCustomizer";
-import { BulkCallActions } from "./BulkCallActions";
+import BulkCallActions from "./BulkCallActions";
 import { format } from "date-fns";
 import { 
   BarChart, 
@@ -120,9 +120,9 @@ export default function RingbaStyleReporting() {
     queryKey: ["/api/calls", activeFilters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      Object.entries(activeFilters).forEach(([key, value]) => {
-        if (value && value !== "all" && value !== "") {
-          params.append(key, value);
+      activeFilters.forEach(filter => {
+        if (filter.value && filter.value !== "all" && filter.value !== "") {
+          params.append(filter.field, filter.value);
         }
       });
 
@@ -357,24 +357,7 @@ export default function RingbaStyleReporting() {
         />
 
         {/* Call Details below Summary */}
-        <CallActivity
-          filters={activeFilters}
-          dateRange={dateRange}
-          selectedRows={selectedRows}
-          onRowSelect={(rowId: number, isSelected: boolean) => {
-            const newSelection = new Set(selectedRows);
-            if (isSelected) {
-              newSelection.add(rowId);
-            } else {
-              newSelection.delete(rowId);
-            }
-            setSelectedRows(newSelection);
-
-            // Update selected calls for bulk actions
-            const callsToUpdate = Array.from(newSelection);
-            setSelectedCalls(callsToUpdate.map(id => ({ id, callId: id })));
-          }}
-        />
+        <CallActivity />
       </div>
 
       {/* Active Filters Display */}

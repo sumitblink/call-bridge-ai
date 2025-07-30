@@ -873,6 +873,13 @@ export default function Targets() {
                           </CardContent>
                         </Card>
                       </TabsContent>
+
+                      <TabsContent value="concurrency" className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Concurrency Settings</CardTitle>
+                          </CardHeader>
+                          <CardContent>
                             <p>Concurrency settings coming soon...</p>
                           </CardContent>
                         </Card>
