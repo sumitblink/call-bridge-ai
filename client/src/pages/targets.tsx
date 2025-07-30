@@ -161,10 +161,10 @@ export default function TargetsPage() {
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
   const [selectedBuyerId, setSelectedBuyerId] = useState<number | null>(null);
   const [hoursMode, setHoursMode] = useState<"basic" | "advanced">("basic");
-  const [showAddBreak, setShowAddBreak] = useState(false);
+  const [showAddBreak, setShowAddBreak] = useState<number | false>(false);
   const [breakStartTime, setBreakStartTime] = useState("12:00");
   const [breakDuration, setBreakDuration] = useState("45");
-  const [breaks, setBreaks] = useState<Array<{startTime: string, duration: string}>>([]);
+  const [breaks, setBreaks] = useState<Array<{startTime: string, duration: string, day?: string}>>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -802,14 +802,14 @@ export default function TargetsPage() {
                         variant="outline" 
                         size="sm" 
                         className="h-6 text-xs"
-                        onClick={() => setShowAddBreak(!showAddBreak)}
+                        onClick={() => setShowAddBreak(showAddBreak === -1 ? false : -1)}
                       >
                         Add Break
                       </Button>
                     </div>
                     
                     {/* Add Break Form */}
-                    {showAddBreak && (
+                    {showAddBreak === -1 && (
                       <div className="mt-3 p-3 border rounded-lg bg-white">
                         <div className="grid grid-cols-2 gap-3">
                           <div>
@@ -889,14 +889,115 @@ export default function TargetsPage() {
                       <Settings className="h-3 w-3" />
                       Advanced Hours of Operation
                     </h4>
-                    <div className="space-y-2">
-                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
-                        <div key={day} className="flex items-center gap-2">
-                          <Switch className="h-4 w-6" defaultChecked />
-                          <span className="text-xs w-16">{day.slice(0, 3)}</span>
-                          <Input className="h-6 text-xs flex-1" type="time" defaultValue="09:00" />
-                          <span className="text-xs">to</span>
-                          <Input className="h-6 text-xs flex-1" type="time" defaultValue="17:00" />
+                    <div className="space-y-3">
+                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, dayIndex) => (
+                        <div key={day} className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Switch className="h-4 w-6" defaultChecked />
+                            <span className="text-xs w-16">{day.slice(0, 3)}</span>
+                            <Input className="h-6 text-xs flex-1" type="time" defaultValue="09:00" />
+                            <span className="text-xs">to</span>
+                            <Input className="h-6 text-xs flex-1" type="time" defaultValue="17:00" />
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-6 text-xs px-2"
+                              onClick={() => setShowAddBreak(showAddBreak === dayIndex ? false : dayIndex)}
+                            >
+                              Add Break
+                            </Button>
+                          </div>
+                          
+                          {/* Add Break Form for this day */}
+                          {showAddBreak === dayIndex && (
+                            <div className="ml-6 p-3 border rounded-lg bg-white">
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="text-xs text-gray-600 block mb-1">Start Time</label>
+                                  <div className="relative">
+                                    <Input 
+                                      className="h-8 text-xs pr-8" 
+                                      type="time" 
+                                      value={breakStartTime}
+                                      onChange={(e) => setBreakStartTime(e.target.value)}
+                                    />
+                                    <Clock className="absolute right-2 top-2 h-4 w-4 text-gray-400" />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-xs text-gray-600 block mb-1">Duration (Min)</label>
+                                  <Input 
+                                    className="h-8 text-xs" 
+                                    type="number" 
+                                    placeholder="45"
+                                    value={breakDuration}
+                                    onChange={(e) => setBreakDuration(e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex gap-2 mt-3">
+                                <Button 
+                                  type="button" 
+                                  size="sm" 
+                                  className="h-6 text-xs px-3"
+                                  onClick={() => {
+                                    if (breakStartTime && breakDuration) {
+                                      setBreaks([...breaks, { 
+                                        startTime: breakStartTime, 
+                                        duration: breakDuration,
+                                        day: day
+                                      }]);
+                                      setBreakStartTime("12:00");
+                                      setBreakDuration("45");
+                                      setShowAddBreak(false);
+                                    }
+                                  }}
+                                >
+                                  Save
+                                </Button>
+                                <Button 
+                                  type="button" 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-6 text-xs px-3"
+                                  onClick={() => setShowAddBreak(false)}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Display existing breaks for this day */}
+                          {breaks.filter(break_ => break_.day === day).length > 0 && (
+                            <div className="ml-6">
+                              <h5 className="text-xs font-medium mb-2">Scheduled Breaks</h5>
+                              <div className="space-y-1">
+                                {breaks.filter(break_ => break_.day === day).map((break_, index) => (
+                                  <div key={index} className="flex items-center justify-between bg-white p-2 rounded border text-xs">
+                                    <span>{break_.startTime} - {break_.duration} minutes</span>
+                                    <Button 
+                                      type="button" 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="h-5 w-5 p-0 text-red-500"
+                                      onClick={() => {
+                                        const allBreakIndex = breaks.findIndex(b => 
+                                          b.day === day && b.startTime === break_.startTime && b.duration === break_.duration
+                                        );
+                                        if (allBreakIndex !== -1) {
+                                          setBreaks(breaks.filter((_, i) => i !== allBreakIndex));
+                                        }
+                                      }}
+                                    >
+                                      ×
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
