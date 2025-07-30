@@ -600,52 +600,57 @@ export default function Targets() {
                       </TabsContent>
 
                       {/* Cap Settings Tab */}
-                      <TabsContent value="caps" className="space-y-1 py-1">
-                        <div className="space-y-1">
-                          <div className="mb-1">
-                            <h3 className="text-sm font-medium mb-0">Cap Settings</h3>
-                            <p className="text-xs text-gray-600">Configure call capacity limits and daily caps</p>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-1.5">
-                            <div>
-                              <label className="text-xs font-medium block mb-0.5">Daily Cap</label>
-                              <Input type="number" placeholder="Enter daily call limit" className="h-6 text-xs px-2 py-0" />
-                              <p className="text-xs text-gray-500 mt-0">Maximum calls per day (0 = unlimited)</p>
+                      <TabsContent value="caps" className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <Settings className="h-4 w-4" />
+                              Cap Settings
+                            </CardTitle>
+                            <CardDescription>
+                              Configure call capacity limits and daily caps
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Daily Cap</label>
+                                <Input type="number" placeholder="Enter daily call limit" />
+                                <p className="text-xs text-gray-500">Maximum calls per day (0 = unlimited)</p>
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Weekly Cap</label>
+                                <Input type="number" placeholder="Enter weekly call limit" />
+                                <p className="text-xs text-gray-500">Maximum calls per week (0 = unlimited)</p>
+                              </div>
                             </div>
-                            <div>
-                              <label className="text-xs font-medium block mb-0.5">Weekly Cap</label>
-                              <Input type="number" placeholder="Enter weekly call limit" className="h-6 text-xs px-2 py-0" />
-                              <p className="text-xs text-gray-500 mt-0">Maximum calls per week (0 = unlimited)</p>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Monthly Cap</label>
+                                <Input type="number" placeholder="Enter monthly call limit" />
+                                <p className="text-xs text-gray-500">Maximum calls per month (0 = unlimited)</p>
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Cap Reset Time</label>
+                                <Select defaultValue="12:00 PM">
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="12:00 AM">12:00 AM</SelectItem>
+                                    <SelectItem value="6:00 AM">6:00 AM</SelectItem>
+                                    <SelectItem value="12:00 PM">12:00 PM</SelectItem>
+                                    <SelectItem value="6:00 PM">6:00 PM</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
-                            <div>
-                              <label className="text-xs font-medium block mb-0.5">Monthly Cap</label>
-                              <Input type="number" placeholder="Enter monthly call limit" className="h-6 text-xs px-2 py-0" />
-                              <p className="text-xs text-gray-500 mt-0">Maximum calls per month (0 = unlimited)</p>
-                            </div>
-                            <div>
-                              <label className="text-xs font-medium block mb-0.5">Cap Reset Time</label>
-                              <Select defaultValue="12:00 PM">
-                                <SelectTrigger className="h-6 text-xs px-2">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="12:00 AM">12:00 AM</SelectItem>
-                                  <SelectItem value="6:00 AM">6:00 AM</SelectItem>
-                                  <SelectItem value="12:00 PM">12:00 PM</SelectItem>
-                                  <SelectItem value="6:00 PM">6:00 PM</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                          
-                          <div className="pt-0.5">
                             <div className="flex items-center space-x-2">
-                              <Switch className="scale-75" />
-                              <label className="text-xs">Pause target when cap is reached</label>
+                              <Switch />
+                              <label className="text-sm font-medium">Pause target when cap is reached</label>
                             </div>
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
                       </TabsContent>
 
                       <TabsContent value="concurrency" className="space-y-6">
@@ -860,52 +865,68 @@ export default function Targets() {
                         </Card>
                       </TabsContent>
 
-                      <TabsContent value="concurrency" className="space-y-2 py-2">
-                        <div className="space-y-2">
-                          <div>
-                            <h3 className="text-sm font-medium">Cap Settings</h3>
-                            <p className="text-xs text-gray-600">Configure call capacity limits and daily caps</p>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-xs font-medium block mb-0.5">Daily Cap</label>
-                              <Input type="number" placeholder="Enter daily call limit" className="h-7 text-xs px-2" />
-                              <p className="text-xs text-gray-500 mt-0.5">Maximum calls per day (0 = unlimited)</p>
+                      <TabsContent value="concurrency" className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <Phone className="h-4 w-4" />
+                              Concurrency Settings
+                            </CardTitle>
+                            <CardDescription>
+                              Configure concurrent call limits and distribution
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Concurrent Call Limit</label>
+                                <Input type="number" defaultValue="5" />
+                                <p className="text-xs text-gray-500">Maximum simultaneous calls (1-50)</p>
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Call Distribution</label>
+                                <Select defaultValue="weighted">
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="round_robin">Round Robin</SelectItem>
+                                    <SelectItem value="weighted">Weighted Distribution</SelectItem>
+                                    <SelectItem value="priority">Priority Based</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
-                            <div>
-                              <label className="text-xs font-medium block mb-0.5">Weekly Cap</label>
-                              <Input type="number" placeholder="Enter weekly call limit" className="h-7 text-xs px-2" />
-                              <p className="text-xs text-gray-500 mt-0.5">Maximum calls per week (0 = unlimited)</p>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Priority Level</label>
+                                <Select defaultValue="5">
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="1">1 (Highest)</SelectItem>
+                                    <SelectItem value="2">2 (High)</SelectItem>
+                                    <SelectItem value="3">3 (Medium High)</SelectItem>
+                                    <SelectItem value="4">4 (Medium)</SelectItem>
+                                    <SelectItem value="5">5 (Medium Low)</SelectItem>
+                                    <SelectItem value="6">6 (Low)</SelectItem>
+                                    <SelectItem value="7">7 (Lowest)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Weight Percentage</label>
+                                <Input type="number" defaultValue="100" min="1" max="100" />
+                                <p className="text-xs text-gray-500">Distribution weight (1-100%)</p>
+                              </div>
                             </div>
-                            <div>
-                              <label className="text-xs font-medium block mb-0.5">Monthly Cap</label>
-                              <Input type="number" placeholder="Enter monthly call limit" className="h-7 text-xs px-2" />
-                              <p className="text-xs text-gray-500 mt-0.5">Maximum calls per month (0 = unlimited)</p>
-                            </div>
-                            <div>
-                              <label className="text-xs font-medium block mb-0.5">Cap Reset Time</label>
-                              <Select defaultValue="12:00 PM">
-                                <SelectTrigger className="h-7 text-xs px-2">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="12:00 AM">12:00 AM</SelectItem>
-                                  <SelectItem value="6:00 AM">6:00 AM</SelectItem>
-                                  <SelectItem value="12:00 PM">12:00 PM</SelectItem>
-                                  <SelectItem value="6:00 PM">6:00 PM</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                          
-                          <div className="pt-1">
                             <div className="flex items-center space-x-2">
-                              <Switch id="pause-target" className="scale-75" />
-                              <label htmlFor="pause-target" className="text-xs">Pause target when cap is reached</label>
+                              <Switch />
+                              <label className="text-sm font-medium">Enable failover routing</label>
                             </div>
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
                       </TabsContent>
 
                       <TabsContent value="routing" className="space-y-6">
