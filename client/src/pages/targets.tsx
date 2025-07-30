@@ -875,19 +875,88 @@ export default function TargetsPage() {
 
                   {/* Predictive Routing Settings */}
                   <div className="p-3 border rounded-lg bg-gray-50">
-                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
+                    <h4 className="text-xs font-medium mb-3 flex items-center gap-1">
                       <Pencil className="h-3 w-3" />
                       Predictive Routing Settings
                     </h4>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Switch className="h-4 w-6" />
-                        <span className="text-xs">Enable Predictive</span>
+                    <div className="space-y-3">
+                      {/* Estimated Revenue Toggle */}
+                      <div>
+                        <FormLabel className="text-xs mb-2 block">Estimated Revenue</FormLabel>
+                        <div className="flex border rounded p-0.5 bg-muted">
+                          <Button
+                            type="button"
+                            variant="default"
+                            size="sm"
+                            className="flex-1 h-6 text-xs px-2"
+                          >
+                            Use Campaign Setting
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="flex-1 h-6 text-xs px-2"
+                          >
+                            Use Estimated Revenue
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs">Priority Bump</span>
-                        <Input className="h-6 text-xs w-16 ml-auto" type="number" placeholder="0" min="-10" max="10" />
+
+                      {/* Predictive Routing Configuration */}
+                      <div>
+                        <FormLabel className="text-xs mb-2 block">
+                          Predictive Routing Configuration <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <div className="flex gap-2">
+                          <Select>
+                            <SelectTrigger className="h-7 text-xs flex-1">
+                              <SelectValue placeholder="Choose a configuration" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="default">Default Configuration</SelectItem>
+                              <SelectItem value="custom">Custom Configuration</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button type="button" size="sm" className="h-7 text-xs px-2">
+                            NEW
+                          </Button>
+                        </div>
                       </div>
+
+                      {/* Priority Bump Slider */}
+                      <FormField
+                        control={form.control}
+                        name="priorityBump"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Priority Bump</FormLabel>
+                            <div className="space-y-2">
+                              <div className="relative">
+                                <input
+                                  type="range"
+                                  min="-10"
+                                  max="10"
+                                  step="1"
+                                  value={field.value || 0}
+                                  onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                  className="w-full h-2 bg-gradient-to-r from-red-400 via-gray-300 to-green-400 rounded-lg appearance-none cursor-pointer"
+                                />
+                                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                  <span>-10</span>
+                                  <span>Default</span>
+                                  <span>+10</span>
+                                </div>
+                              </div>
+                              <div className="text-center text-xs text-gray-600">
+                                Current: {field.value || 0}
+                              </div>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Shareable Tags */}
                       <div className="flex items-center gap-2">
                         <Switch className="h-4 w-6" />
                         <span className="text-xs">Shareable Tags</span>
