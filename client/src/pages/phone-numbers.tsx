@@ -349,14 +349,24 @@ export default function PhoneNumbersPage() {
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Phone Numbers</h1>
-          <Button 
-            onClick={() => importMutation.mutate()}
-            disabled={importMutation.isPending}
-            variant="outline"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            {importMutation.isPending ? 'Importing...' : 'Import from Twilio'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => importMutation.mutate()}
+              disabled={importMutation.isPending}
+              variant="outline"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {importMutation.isPending ? 'Importing...' : 'Import from Twilio'}
+            </Button>
+            <Button
+              onClick={() => cleanupMutation.mutate()}
+              disabled={cleanupMutation.isPending}
+              variant="destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {cleanupMutation.isPending ? "Cleaning..." : "Cleanup Webhooks"}
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
