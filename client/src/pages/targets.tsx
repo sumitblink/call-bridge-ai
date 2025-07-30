@@ -41,10 +41,10 @@ export default function Targets() {
     resolver: zodResolver(insertTargetSchema),
     defaultValues: {
       userId: 2,
-      name: "TEST NAME",
-      buyerId: 16,
-      phoneNumber: "TEST PHONE",
-      endpoint: "TEST ENDPOINT",
+      name: "",
+      buyerId: 0,
+      phoneNumber: "",
+      endpoint: "",
       timeZone: "EST",
       hoursOfOperation: "Always Open",
       status: "active",
@@ -157,7 +157,7 @@ export default function Targets() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <TargetIcon className="h-5 w-5" />
-                  {editingTarget ? "Edit Target" : "Create Target"} - TIMEZONE TEST VERSION
+                  {editingTarget ? "Edit Target" : "Create Target"}
                 </DialogTitle>
                 <DialogDescription>
                   Configure your target endpoint with comprehensive settings and controls - Updated
@@ -189,30 +189,130 @@ export default function Targets() {
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            
-                            {/* TIMEZONE TEST FIELD - HIGHLY VISIBLE */}
-                            <div className="p-6 bg-red-100 border-4 border-red-500 rounded-lg">
-                              <h2 className="text-2xl font-bold text-red-800 mb-4">TIMEZONE TEST FIELD</h2>
+                            {/* Target Name & Buyer */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Target Name <span className="text-red-500">*</span></FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="Enter target name" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="buyerId"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Buyer <span className="text-red-500">*</span></FormLabel>
+                                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select buyer" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        {buyers.map((buyer: any) => (
+                                          <SelectItem key={buyer.id} value={buyer.id.toString()}>
+                                            {buyer.companyName || buyer.name || `Buyer ${buyer.id}`}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            {/* Type & Destination */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Type</label>
+                                <Select defaultValue="Number">
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Number">Number</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <FormField
+                                control={form.control}
+                                name="phoneNumber"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Destination <span className="text-red-500">*</span></FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="Phone number or endpoint" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            {/* Connection Timeout & Disable Recording */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Connection Timeout (seconds)</label>
+                                <Input type="number" defaultValue="30" />
+                                <p className="text-xs text-gray-500">Maximum time to wait for connection (1-300 seconds)</p>
+                              </div>
+                              <div className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                <div className="space-y-0.5">
+                                  <label className="text-sm font-medium">Disable Recording</label>
+                                  <p className="text-xs text-gray-500">Turn off call recording for this target</p>
+                                </div>
+                                <Switch />
+                              </div>
+                            </div>
+
+                            {/* Timezone and Hours of Operation */}
+                            <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                               <FormField
                                 control={form.control}
                                 name="timeZone"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel className="text-xl font-bold text-red-800">Time Zone Test <span className="text-blue-500">*</span></FormLabel>
+                                    <FormLabel className="text-sm font-medium text-blue-800">Time Zone <span className="text-red-500">*</span></FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}>
                                       <FormControl>
-                                        <SelectTrigger className="border-4 border-red-500 h-12">
-                                          <SelectValue placeholder="Select Timezone - THIS SHOULD BE VISIBLE" />
+                                        <SelectTrigger className="border-blue-300">
+                                          <SelectValue placeholder="Select timezone" />
                                         </SelectTrigger>
                                       </FormControl>
                                       <SelectContent>
                                         <SelectItem value="EST">Eastern Time (EST)</SelectItem>
-                                        <SelectItem value="PST">Pacific Time (PST)</SelectItem>
                                         <SelectItem value="CST">Central Time (CST)</SelectItem>
                                         <SelectItem value="MST">Mountain Time (MST)</SelectItem>
+                                        <SelectItem value="PST">Pacific Time (PST)</SelectItem>
                                         <SelectItem value="UTC">UTC</SelectItem>
                                       </SelectContent>
                                     </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="hoursOfOperation"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-sm font-medium text-blue-800">Hours of Operation <span className="text-red-500">*</span></FormLabel>
+                                    <div className="flex items-center space-x-2 border border-blue-300 rounded p-2">
+                                      <Switch
+                                        checked={field.value === "Always Open"}
+                                        onCheckedChange={(checked) => field.onChange(checked ? "Always Open" : "Business Hours")}
+                                      />
+                                      <span className="text-sm font-medium">{field.value || "Always Open"}</span>
+                                    </div>
                                     <FormMessage />
                                   </FormItem>
                                 )}
