@@ -892,9 +892,11 @@ export default function TargetsPage() {
                     <div className="space-y-3">
                       {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, dayIndex) => (
                         <div key={day} className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Switch className="h-4 w-6" defaultChecked />
-                            <span className="text-xs w-16">{day.slice(0, 3)}</span>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 min-w-[80px]">
+                              <Switch className="h-4 w-6" defaultChecked />
+                              <span className="text-xs w-12 flex-shrink-0">{day.slice(0, 3)}</span>
+                            </div>
                             <Input className="h-6 text-xs flex-1" type="time" defaultValue="09:00" />
                             <span className="text-xs">to</span>
                             <Input className="h-6 text-xs flex-1" type="time" defaultValue="17:00" />
