@@ -40,11 +40,11 @@ export default function Targets() {
   const form = useForm<z.infer<typeof insertTargetSchema>>({
     resolver: zodResolver(insertTargetSchema),
     defaultValues: {
-      userId: 2, // Add userId to defaults
-      name: "",
-      buyerId: 0,
-      phoneNumber: "",
-      endpoint: "",
+      userId: 2,
+      name: "TEST NAME",
+      buyerId: 16,
+      phoneNumber: "TEST PHONE",
+      endpoint: "TEST ENDPOINT",
       timeZone: "EST",
       hoursOfOperation: "Always Open",
       status: "active",
@@ -157,7 +157,7 @@ export default function Targets() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <TargetIcon className="h-5 w-5" />
-                  {editingTarget ? "Edit Target" : "Create Target"}
+                  {editingTarget ? "Edit Target" : "Create Target"} - TIMEZONE TEST VERSION
                 </DialogTitle>
                 <DialogDescription>
                   Configure your target endpoint with comprehensive settings and controls - Updated
