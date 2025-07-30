@@ -1223,18 +1223,18 @@ export default function TargetsPage() {
                 </div>
 
               </form>
-              </div>
-              <div className="sticky bottom-0 bg-white border-t p-6">
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" form="target-form" disabled={createTargetMutation.isPending || updateTargetMutation.isPending}>
-                    {createTargetMutation.isPending || updateTargetMutation.isPending ? "Saving..." : editingTarget ? "Update Target" : "Create Target"}
-                  </Button>
-                </div>
-              </div>
             </Form>
+            </div>
+            <div className="sticky bottom-0 bg-white border-t p-6">
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" form="target-form" disabled={createTargetMutation.isPending || updateTargetMutation.isPending}>
+                  {createTargetMutation.isPending || updateTargetMutation.isPending ? "Saving..." : editingTarget ? "Update Target" : "Create Target"}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
