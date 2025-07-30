@@ -123,6 +123,9 @@ export const buyers = pgTable("buyers", {
   rerouteAttempts: integer("reroute_attempts").default(3),
   estimatedRevenuePerCall: decimal("estimated_revenue_per_call", { precision: 10, scale: 2 }).default("0.00"),
   
+  // Priority for call routing
+  priority: integer("priority").default(1).notNull(),
+  
   // Duplicate Call Management
   restrictDuplicates: boolean("restrict_duplicates").default(true),
   duplicateTimeWindow: integer("duplicate_time_window").default(3600), // seconds (1 hour)
@@ -1787,6 +1790,12 @@ export const visitorSessions = pgTable("visitor_sessions", {
   redtrackAffiliateId: varchar("redtrack_affiliate_id", { length: 100 }),
   redtrackSubId: varchar("redtrack_sub_id", { length: 100 }),
   redtrackVisitorId: varchar("redtrack_visitor_id", { length: 255 }),
+  
+  // Additional tracking fields
+  gclid: varchar("gclid", { length: 255 }), // Google Click ID
+  fbclid: varchar("fbclid", { length: 255 }), // Facebook Click ID
+  clickId: varchar("click_id", { length: 255 }), // Generic click ID
+  location: varchar("location", { length: 255 }), // Geographic location
   
   // Landing Page
   landingPage: text("landing_page"),

@@ -309,6 +309,13 @@ export interface IStorage {
   bulkAnnotateCalls(callIds: number[], data: any, userId: number): Promise<any>;
   bulkBlockCallerIds(callIds: number[], data: any, userId: number): Promise<any>;
   bulkRequestAdjustments(callIds: number[], data: any, userId: number): Promise<any>;
+
+  // Missing agent methods
+  getAgentActiveCalls(userId: number, agentId: number): Promise<any[]>;
+  addCallEvent(event: any): Promise<any>;
+  getAgentStats(userId: number, agentId: number): Promise<any>;
+  updateAgentStatus(userId: number, agentId: number, status: string): Promise<any>;
+  getUserByEmailAsync(email: string): Promise<User | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -2073,6 +2080,67 @@ export class MemStorage implements IStorage {
       }
     }
     return { results, total: callIds.length, processed: results.length };
+  }
+
+  // Missing agent methods implementation
+  async getAgentActiveCalls(userId: number, agentId: number): Promise<any[]> {
+    const activeCalls = [];
+    for (const call of this.calls.values()) {
+      if (call.status === 'in-progress') {
+        activeCalls.push(call);
+      }
+    }
+    return activeCalls;
+  }
+
+  async addCallEvent(event: any): Promise<any> {
+    const newEvent = {
+      id: this.callEvents.length + 1,
+      ...event,
+      timestamp: new Date()
+    };
+    this.callEvents.push(newEvent);
+    return newEvent;
+  }
+
+  async getAgentStats(userId: number, agentId: number): Promise<any> {
+    const agent = this.agents.get(agentId);
+    if (!agent) {
+      return { totalCalls: 0, activeCalls: 0, avgResponseTime: 0 };
+    }
+
+    let totalCalls = 0;
+    let activeCalls = 0;
+    for (const call of this.calls.values()) {
+      if (call.buyerId === agentId) {
+        totalCalls++;
+        if (call.status === 'in-progress') {
+          activeCalls++;
+        }
+      }
+    }
+
+    return {
+      totalCalls,
+      activeCalls,
+      avgResponseTime: agent.avgResponseTime || 0,
+      status: agent.status
+    };
+  }
+
+  async updateAgentStatus(userId: number, agentId: number, status: string): Promise<any> {
+    const agent = this.agents.get(agentId);
+    if (!agent) {
+      throw new Error('Agent not found');
+    }
+    
+    const updatedAgent = { ...agent, status: status as any, updatedAt: new Date() };
+    this.agents.set(agentId, updatedAgent);
+    return updatedAgent;
+  }
+
+  async getUserByEmailAsync(email: string): Promise<User | undefined> {
+    return this.getUserByEmail(email);
   }
 }
 

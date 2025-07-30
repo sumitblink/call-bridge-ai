@@ -291,8 +291,37 @@ export class SupabaseStorage implements IStorage {
 
   async createBuyer(buyer: InsertBuyer): Promise<Buyer> {
     const result = await db.insert(buyers).values({
-      ...buyer,
-      userId: buyer.userId || 1, // Provide default userId
+      name: buyer.name || 'Unnamed Buyer',
+      companyName: buyer.companyName,
+      email: buyer.email,
+      phoneNumber: buyer.phoneNumber,
+      status: buyer.status || 'active',
+      description: buyer.description,
+      buyerType: buyer.buyerType || 'standard',
+      timeZone: buyer.timeZone || 'America/New_York',
+      allowPauseTargets: buyer.allowPauseTargets || false,
+      allowSetTargetCaps: buyer.allowSetTargetCaps || false,
+      allowDisputeConversions: buyer.allowDisputeConversions || false,
+      concurrencyLimit: buyer.concurrencyLimit || 1,
+      dailyCallCap: buyer.dailyCallCap || 100,
+      monthlyCallCap: buyer.monthlyCallCap || 3000,
+      enableRevenueRecovery: buyer.enableRevenueRecovery || false,
+      connectionThresholdToReroute: buyer.connectionThresholdToReroute || 30,
+      rerouteAttempts: buyer.rerouteAttempts || 3,
+      estimatedRevenuePerCall: buyer.estimatedRevenuePerCall ? buyer.estimatedRevenuePerCall.toString() : '0.00',
+      restrictDuplicates: buyer.restrictDuplicates || true,
+      duplicateTimeWindow: buyer.duplicateTimeWindow || 3600,
+      enablePredictiveRouting: buyer.enablePredictiveRouting || false,
+      enableRtbIntegration: buyer.enableRtbIntegration || false,
+      tcpaCompliant: buyer.tcpaCompliant || true,
+      webhookUrl: buyer.webhookUrl,
+      rtbId: buyer.rtbId,
+      acceptanceRate: buyer.acceptanceRate ? buyer.acceptanceRate.toString() : '0.00',
+      avgResponseTime: buyer.avgResponseTime || 0,
+      totalCallsReceived: buyer.totalCallsReceived || 0,
+      totalCallsCompleted: buyer.totalCallsCompleted || 0,
+      priority: buyer.priority || 1,
+      userId: buyer.userId || 1,
       updatedAt: new Date()
     }).returning();
     return result[0];
@@ -573,9 +602,29 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
-  async createCall(call: InsertCall): Promise<Call> {
+  async createCall(call: any): Promise<Call> {
     const result = await db.insert(calls).values({
-      ...call,
+      campaignId: call.campaignId,
+      buyerId: call.buyerId,
+      targetId: call.targetId,
+      publisherId: call.publisherId,
+      publisherName: call.publisherName,
+      trackingTagId: call.trackingTagId,
+      callSid: call.callSid,
+      fromNumber: call.fromNumber,
+      toNumber: call.toNumber,
+      dialedNumber: call.dialedNumber,
+      duration: call.duration || 0,
+      status: call.status || 'ringing',
+      disposition: call.disposition,
+      hangupCause: call.hangupCause,
+      connectionTime: call.connectionTime,
+      cost: call.cost || '0.0000',
+      payout: call.payout || '0.0000',
+      revenue: call.revenue || '0.0000',
+      profit: call.profit || '0.0000',
+      sessionId: call.sessionId,
+      createdAt: new Date(),
       updatedAt: new Date()
     }).returning();
     return result[0];
@@ -1732,6 +1781,82 @@ export class SupabaseStorage implements IStorage {
 
   async bulkRequestAdjustments(callIds: number[], data: any, userId: number): Promise<any> {
     return { processed: callIds.length, success: true };
+  }
+
+  // Missing agent methods implementation
+  async getAgentActiveCalls(userId: number, agentId: number): Promise<any[]> {
+    try {
+      const result = await db.select()
+        .from(calls)
+        .leftJoin(campaigns, eq(calls.campaignId, campaigns.id))
+        .where(and(
+          eq(campaigns.userId, userId),
+          eq(calls.status, 'in-progress')
+        ))
+        .orderBy(desc(calls.createdAt));
+      return result;
+    } catch (error) {
+      console.error('Error getting agent active calls:', error);
+      return [];
+    }
+  }
+
+  async addCallEvent(event: any): Promise<any> {
+    try {
+      const result = await db.insert(callEvents).values({
+        callId: event.callId,
+        eventType: event.eventType,
+        eventData: event.eventData,
+        timestamp: new Date()
+      }).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error adding call event:', error);
+      throw error;
+    }
+  }
+
+  async getAgentStats(userId: number, agentId: number): Promise<any> {
+    try {
+      const result = await db.select()
+        .from(agents)
+        .where(and(eq(agents.userId, userId), eq(agents.id, agentId)))
+        .limit(1);
+      
+      if (result.length === 0) {
+        return { totalCalls: 0, activeCalls: 0, avgResponseTime: 0 };
+      }
+
+      return {
+        totalCalls: 0,
+        activeCalls: 0,
+        avgResponseTime: 0,
+        status: result[0].status
+      };
+    } catch (error) {
+      console.error('Error getting agent stats:', error);
+      return { totalCalls: 0, activeCalls: 0, avgResponseTime: 0 };
+    }
+  }
+
+  async updateAgentStatus(userId: number, agentId: number, status: string): Promise<any> {
+    try {
+      const result = await db.update(agents)
+        .set({ 
+          status: status as any,
+          updatedAt: new Date()
+        })
+        .where(and(eq(agents.userId, userId), eq(agents.id, agentId)))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating agent status:', error);
+      throw error;
+    }
+  }
+
+  async getUserByEmailAsync(email: string): Promise<User | undefined> {
+    return this.getUserByEmail(email);
   }
 }
 

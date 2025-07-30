@@ -83,7 +83,7 @@ export async function handleIncomingCall(req: Request, res: Response) {
       
       // Phase 2: Initialize call flow tracking
       try {
-        await CallFlowTracker.initializeCallTracking(callId, {
+        await CallFlowTracker.initializeCall(callId, {
           flowId: activeFlow.id,
           flowName: activeFlow.name,
           campaignId: campaign.id,
@@ -100,7 +100,7 @@ export async function handleIncomingCall(req: Request, res: Response) {
       // Start flow execution
       const flowResult = await FlowExecutionEngine.startFlowExecution(
         activeFlow.id,
-        callId.toString(),
+        callId,
         callData.From,
         campaign.id
       );
