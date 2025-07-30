@@ -673,10 +673,27 @@ export default function TargetsPage() {
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger className="h-7 text-xs">
-                              <SelectValue placeholder="UTC" />
+                              <SelectValue placeholder="Search timezone..." />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="max-h-40">
+                            <div className="sticky top-0 p-2 bg-background border-b">
+                              <Input
+                                placeholder="Search timezones..."
+                                className="h-6 text-xs"
+                                onChange={(e) => {
+                                  const searchTerm = e.target.value.toLowerCase();
+                                  const content = e.target.closest('[role="listbox"]');
+                                  if (content) {
+                                    const items = content.querySelectorAll('[role="option"]');
+                                    items.forEach((item: any) => {
+                                      const text = item.textContent?.toLowerCase() || '';
+                                      item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+                                    });
+                                  }
+                                }}
+                              />
+                            </div>
                             {TIMEZONES.map((tz) => (
                               <SelectItem key={tz} value={tz} className="text-xs">
                                 {tz}
