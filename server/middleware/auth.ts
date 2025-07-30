@@ -11,7 +11,7 @@ declare global {
   }
 }
 
-export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+export const requireAuth = (req: any, res: Response, next: NextFunction) => {
   const sessionUserId = req.session?.userId;
   const sessionUser = req.session?.user;
   
@@ -19,7 +19,8 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
     return res.status(401).json({ message: "Unauthorized" });
   }
   
-  // Set userId from either session.userId or session.user.id
+  // Set both user and userId for compatibility with existing code
+  req.user = sessionUser || { id: sessionUserId };
   req.session.userId = sessionUserId || sessionUser?.id;
   
   next();
