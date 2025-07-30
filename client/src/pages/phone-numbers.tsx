@@ -82,10 +82,7 @@ export default function PhoneNumbersPage() {
     enabled: isCreatePoolDialogOpen,
     staleTime: 0,
     refetchOnMount: true,
-    retry: 1,
-    onError: (error) => {
-      console.error('Error fetching unassigned numbers:', error);
-    },
+    retry: 1
   });
 
   // Fetch campaigns
@@ -326,7 +323,7 @@ export default function PhoneNumbersPage() {
 
   const getCampaignName = (campaignId?: number) => {
     if (!campaignId) return 'Unassigned';
-    const campaign = campaigns.find((c: Campaign) => c.id === campaignId);
+    const campaign = (campaigns as Campaign[]).find((c: Campaign) => c.id === campaignId);
     return campaign?.name || 'Unknown Campaign';
   };
 
@@ -358,14 +355,7 @@ export default function PhoneNumbersPage() {
               <Download className="h-4 w-4 mr-2" />
               {importMutation.isPending ? 'Importing...' : 'Import from Twilio'}
             </Button>
-            <Button
-              onClick={() => cleanupMutation.mutate()}
-              disabled={cleanupMutation.isPending}
-              variant="destructive"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              {cleanupMutation.isPending ? "Cleaning..." : "Cleanup Webhooks"}
-            </Button>
+
           </div>
         </div>
 
@@ -395,7 +385,7 @@ export default function PhoneNumbersPage() {
 
           {/* Owned Numbers Tab */}
           <TabsContent value="owned" className="space-y-4">
-            {phoneNumbers.length === 0 ? (
+            {(phoneNumbers as PhoneNumber[]).length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
                   <Phone className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -410,7 +400,7 @@ export default function PhoneNumbersPage() {
               </Card>
             ) : (
               <div className="grid gap-4">
-                {phoneNumbers.map((number: PhoneNumber) => (
+                {(phoneNumbers as PhoneNumber[]).map((number: PhoneNumber) => (
                   <Card key={number.id}>
                     <CardHeader>
                       <div className="flex justify-between items-start">
@@ -436,7 +426,7 @@ export default function PhoneNumbersPage() {
                           <Label className="text-sm font-medium">Campaign Assignment</Label>
                           <div className="mt-1">
                             <Select
-                              value={number.campaignId?.toString() || "unassigned"}
+                              value={number.campaignId?.toString() || "0"}
                               onValueChange={(campaignId) => {
                                 if (campaignId && campaignId !== "unassigned") {
                                   assignMutation.mutate({
@@ -451,7 +441,7 @@ export default function PhoneNumbersPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="unassigned">Unassigned</SelectItem>
-                                {campaigns.map((campaign: Campaign) => (
+                                {(campaigns as Campaign[]).map((campaign: Campaign) => (
                                   <SelectItem key={campaign.id} value={campaign.id.toString()}>
                                     {campaign.name}
                                   </SelectItem>
@@ -632,7 +622,7 @@ export default function PhoneNumbersPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">No campaign</SelectItem>
-                                  {campaigns.map((campaign: Campaign) => (
+                                  {(campaigns as Campaign[]).map((campaign: Campaign) => (
                                     <SelectItem key={campaign.id} value={campaign.id.toString()}>
                                       {campaign.name}
                                     </SelectItem>
@@ -698,7 +688,7 @@ export default function PhoneNumbersPage() {
                     <Button
                       onClick={async () => {
                         try {
-                          const response = await apiRequest('/api/webhooks/twilio/test');
+                          const response = await apiRequest('/api/webhooks/twilio/test', 'GET');
                           toast({
                             title: "Webhook Test Successful",
                             description: "All webhook endpoints are configured correctly",
@@ -724,11 +714,11 @@ export default function PhoneNumbersPage() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Phone numbers configured:</span>
-                        <Badge variant="outline">{phoneNumbers?.length || 0}</Badge>
+                        <Badge variant="outline">{(phoneNumbers as PhoneNumber[])?.length || 0}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Active campaigns:</span>
-                        <Badge variant="outline">{campaigns?.filter((c: Campaign) => c.status === 'active').length || 0}</Badge>
+                        <Badge variant="outline">{(campaigns as Campaign[])?.filter((c: Campaign) => c.status === 'active').length || 0}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Webhook status:</span>
