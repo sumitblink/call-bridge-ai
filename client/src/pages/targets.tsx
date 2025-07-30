@@ -464,7 +464,8 @@ export default function TargetsPage() {
               Create Target
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
+            <div className="max-h-[90vh] overflow-y-auto p-6">
             <DialogHeader>
               <DialogTitle>
                 {editingTarget ? "Edit Target" : "Create New Target"}
@@ -1221,14 +1222,17 @@ export default function TargetsPage() {
                   </div>
                 </div>
 
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={createTargetMutation.isPending || updateTargetMutation.isPending}>
-                    {createTargetMutation.isPending || updateTargetMutation.isPending ? "Saving..." : editingTarget ? "Update Target" : "Create Target"}
-                  </Button>
-                </DialogFooter>
+                </div>
+                <div className="sticky bottom-0 bg-white border-t p-6">
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={createTargetMutation.isPending || updateTargetMutation.isPending}>
+                      {createTargetMutation.isPending || updateTargetMutation.isPending ? "Saving..." : editingTarget ? "Update Target" : "Create Target"}
+                    </Button>
+                  </div>
+                </div>
               </form>
             </Form>
           </DialogContent>
