@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Phone, Globe, Users, TrendingUp } from "lucide-react";
+import { Plus, Phone, Globe, Users, TrendingUp, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Target, Buyer } from "@shared/schema";
 
@@ -47,10 +47,7 @@ export default function TargetsPage() {
 
   // Create target mutation
   const createTargetMutation = useMutation({
-    mutationFn: (data: TargetFormData) => apiRequest("/api/targets", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: TargetFormData) => apiRequest("/api/targets", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/targets"] });
       setIsCreateDialogOpen(false);
@@ -68,10 +65,7 @@ export default function TargetsPage() {
   // Update target mutation
   const updateTargetMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<TargetFormData> }) =>
-      apiRequest(`/api/targets/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }),
+      apiRequest(`/api/targets/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/targets"] });
       setEditingTarget(null);
@@ -88,9 +82,7 @@ export default function TargetsPage() {
 
   // Delete target mutation
   const deleteTargetMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/targets/${id}`, {
-      method: "DELETE",
-    }),
+    mutationFn: (id: number) => apiRequest(`/api/targets/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/targets"] });
       toast({ title: "Target deleted successfully" });
@@ -134,9 +126,9 @@ export default function TargetsPage() {
       buyerId: target.buyerId,
       phoneNumber: target.phoneNumber || "",
       endpoint: target.endpoint || "",
-      priority: target.priority,
-      dailyCap: target.dailyCap,
-      concurrencyLimit: target.concurrencyLimit,
+      priority: target.priority || undefined,
+      dailyCap: target.dailyCap || undefined,
+      concurrencyLimit: target.concurrencyLimit || undefined,
       status: target.status as "active" | "inactive" | "suspended",
     });
   };
@@ -368,87 +360,97 @@ export default function TargetsPage() {
         </Dialog>
       </div>
 
-      {/* Targets Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {targets.map((target) => (
-          <Card key={target.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{target.name}</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {getBuyerName(target.buyerId)}
-                  </p>
-                </div>
-                <Badge className={getStatusColor(target.status)}>
-                  {target.status}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {target.phoneNumber && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-gray-500" />
-                  <span>{target.phoneNumber}</span>
-                </div>
-              )}
-              
-              {target.endpoint && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Globe className="h-4 w-4 text-gray-500" />
-                  <span className="truncate">{target.endpoint}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">Priority:</span>
-                  <span className="ml-1 font-medium">{target.priority}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Daily Cap:</span>
-                  <span className="ml-1 font-medium">{target.dailyCap}</span>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(target)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => deleteTargetMutation.mutate(target.id)}
-                  disabled={deleteTargetMutation.isPending}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Targets List */}
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Target Name</TableHead>
+              <TableHead>Buyer</TableHead>
+              <TableHead>Phone Number</TableHead>
+              <TableHead>Endpoint</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Daily Cap</TableHead>
+              <TableHead>Concurrency</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {targets.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                  No targets found. Create your first target to get started.
+                </TableCell>
+              </TableRow>
+            ) : (
+              targets.map((target) => (
+                <TableRow key={target.id} className="hover:bg-gray-50">
+                  <TableCell className="font-medium">{target.name}</TableCell>
+                  <TableCell>{getBuyerName(target.buyerId)}</TableCell>
+                  <TableCell>
+                    {target.phoneNumber ? (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-500" />
+                        <span className="font-mono text-sm">{target.phoneNumber}</span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {target.endpoint ? (
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm truncate max-w-48" title={target.endpoint}>
+                          {target.endpoint}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-medium">{target.priority || 1}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-medium">{target.dailyCap || 0}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-medium">{target.concurrencyLimit || 1}</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(target.status)}>
+                      {target.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(target)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteTargetMutation.mutate(target.id)}
+                        disabled={deleteTargetMutation.isPending}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
-
-      {targets.length === 0 && (
-        <Card className="text-center py-12">
-          <CardContent>
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No targets yet</h3>
-            <p className="text-gray-600 mb-4">
-              Create your first target to start routing calls to specific endpoints
-            </p>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Target
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
