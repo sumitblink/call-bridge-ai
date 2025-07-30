@@ -185,7 +185,7 @@ function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps
                 <span className="text-gray-600">Campaign:</span> {campaign?.name || 'Unknown'}
               </div>
               <div>
-                <span className="text-gray-600">Buyer:</span> {buyer?.name || 'No buyer assigned'}
+                <span className="text-gray-600">Buyer:</span> {buyer?.companyName || buyer?.name || 'No buyer assigned'}
               </div>
               <div>
                 <span className="text-gray-600">Revenue:</span> ${call.revenue}
@@ -537,7 +537,7 @@ export default function CallActivity() {
         return <div className="truncate text-xs">{campaign?.name || 'Unknown'}</div>;
       case 'buyer':
         const buyer = buyers.find(b => b.id === call.buyerId);
-        return <div className="truncate text-xs">{buyer?.name || 'No Buyer'}</div>;
+        return <div className="truncate text-xs">{buyer?.companyName || buyer?.name || 'No Buyer'}</div>;
       case 'fromNumber':
         return <div className="font-mono text-xs">{call.fromNumber}</div>;
       case 'toNumber':
