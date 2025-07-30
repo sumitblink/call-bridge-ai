@@ -1316,9 +1316,13 @@ export class MemStorage implements IStorage {
   // Phone Numbers methods
   async getPhoneNumbers(userId?: number): Promise<any[]> {
     const numbers = Array.from(this.phoneNumbers.values());
+    console.log(`[MemStorage] getPhoneNumbers: Total numbers in memory: ${numbers.length}, userId filter: ${userId}`);
     if (userId !== undefined) {
-      return numbers.filter(n => n.userId === userId);
+      const filtered = numbers.filter(n => n.userId === userId);
+      console.log(`[MemStorage] getPhoneNumbers: Filtered numbers for userId ${userId}: ${filtered.length}`);
+      return filtered;
     }
+    console.log(`[MemStorage] getPhoneNumbers: Returning all numbers: ${numbers.length}`);
     return numbers;
   }
 
@@ -1331,6 +1335,8 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.phoneNumbers.set(id, newPhoneNumber);
+    console.log(`[MemStorage] createPhoneNumber: Created phone number ${newPhoneNumber.phoneNumber} with ID ${id}, userId: ${newPhoneNumber.userId}`);
+    console.log(`[MemStorage] createPhoneNumber: Total numbers in memory: ${this.phoneNumbers.size}`);
     return newPhoneNumber;
   }
 
@@ -1462,30 +1468,37 @@ export class MemStorage implements IStorage {
   }
 
   async getPhoneNumber(id: number): Promise<any | undefined> {
-    return undefined;
-  }
-
-  async createPhoneNumber(phoneNumber: any): Promise<any> {
-    return phoneNumber;
+    return this.phoneNumbers.get(id);
   }
 
   async updatePhoneNumber(id: number, phoneNumber: any): Promise<any | undefined> {
-    return undefined;
+    const existing = this.phoneNumbers.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...phoneNumber, updatedAt: new Date() };
+    this.phoneNumbers.set(id, updated);
+    return updated;
   }
 
   async updatePhoneNumberFriendlyName(id: number, friendlyName: string): Promise<any | undefined> {
-    const phoneNumber = this.phoneNumbers.find(p => p.id === id);
+    const phoneNumber = this.phoneNumbers.get(id);
     if (!phoneNumber) return undefined;
     
-    phoneNumber.friendlyName = friendlyName;
-    return phoneNumber;
+    const updated = { ...phoneNumber, friendlyName, updatedAt: new Date() };
+    this.phoneNumbers.set(id, updated);
+    return updated;
   }
 
   async deletePhoneNumber(id: number): Promise<boolean> {
-    return false;
+    return this.phoneNumbers.delete(id);
   }
 
   async getPhoneNumberByNumber(phoneNumber: string): Promise<any | undefined> {
+    for (const number of this.phoneNumbers.values()) {
+      if (number.phoneNumber === phoneNumber) {
+        return number;
+      }
+    }
     return undefined;
   }
 

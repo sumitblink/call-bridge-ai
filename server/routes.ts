@@ -3578,6 +3578,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/phone-numbers', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
+      console.log(`[Routes] GET /api/phone-numbers - userId: ${userId}, user:`, req.user);
       const numbers = await storage.getPhoneNumbers(userId);
       
       // Import necessary database objects
@@ -3656,6 +3657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/phone-numbers/import', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
+      console.log(`[Routes] POST /api/phone-numbers/import - userId: ${userId}, user:`, req.user);
       const accountSid = process.env.TWILIO_ACCOUNT_SID;
       const authToken = process.env.TWILIO_AUTH_TOKEN;
       
