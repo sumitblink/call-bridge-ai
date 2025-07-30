@@ -411,6 +411,47 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                   />
                 )}
 
+                {/* Target Routing Strategy - applies to all routing types */}
+                <FormField
+                  control={form.control}
+                  name="targetRoutingStrategy"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-2">
+                        <FormLabel>Target Routing Strategy</FormLabel>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>How calls are distributed among multiple targets within each buyer<br/>
+                                • Priority: Routes to highest priority target first<br/>
+                                • Round Robin: Rotates through all targets equally<br/>
+                                • Least Busy: Routes to target with fewest active calls<br/>
+                                • Capacity Based: Routes to target with most available capacity</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <Select onValueChange={field.onChange} defaultValue={field.value || "priority"}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select target routing strategy" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="priority">Priority Based</SelectItem>
+                          <SelectItem value="round_robin">Round Robin</SelectItem>
+                          <SelectItem value="least_busy">Least Busy</SelectItem>
+                          <SelectItem value="capacity_based">Capacity Based</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="callCap"
