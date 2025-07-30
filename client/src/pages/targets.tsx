@@ -453,7 +453,67 @@ export default function Targets() {
                         )}
                       />
                     </div>
-                  </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="timeZone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Time Zone <span className="text-red-500">*</span></FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Search Timezone" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="EST">Eastern Time (EST)</SelectItem>
+                                <SelectItem value="PST">Pacific Time (PST)</SelectItem>
+                                <SelectItem value="CST">Central Time (CST)</SelectItem>
+                                <SelectItem value="MST">Mountain Time (MST)</SelectItem>
+                                <SelectItem value="UTC">UTC</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="hoursOfOperation"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Hours of Operation <span className="text-red-500">*</span></FormLabel>
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                checked={field.value === "Always Open"}
+                                onCheckedChange={(checked) => field.onChange(checked ? "Always Open" : "Business Hours")}
+                              />
+                              <span className="text-sm">{field.value}</span>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                        </Card>
+                      </TabsContent>
+
+                      {/* Cap Settings Tab */}
+                      <TabsContent value="caps" className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <Settings className="h-4 w-4" />
+                              Cap Settings
+                            </CardTitle>
+                            <CardDescription>
+                              Configure call capacity limits and concurrency controls
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
 
                   {/* Cap Settings Section */}
                   <div className="space-y-4">
