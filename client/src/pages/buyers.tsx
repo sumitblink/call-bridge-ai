@@ -44,54 +44,39 @@ function BuyerRow({ buyer, onEdit, onDelete }: {
   return (
     <TableRow className="hover:bg-gray-50">
       <TableCell>
-        <div className="flex flex-col">
-          <span className="font-medium">{buyer?.companyName || buyer?.name}</span>
-          <span className="text-sm text-gray-500">ID: {buyer?.id}</span>
-          {buyer?.name && buyer?.companyName && (
-            <span className="text-xs text-gray-400">Sub ID: {buyer?.name}</span>
-          )}
-        </div>
+        <div className="font-medium text-sm">{buyer?.companyName || buyer?.name || '-'}</div>
       </TableCell>
       <TableCell>
-        <div className="flex flex-col gap-1">
-          <div className="flex gap-2">
-            {buyer?.allowPauseTargets && <Badge variant="outline" className="text-xs">Pause</Badge>}
-            {buyer?.allowSetTargetCaps && <Badge variant="outline" className="text-xs">Caps</Badge>}
-            {buyer?.allowDisputeConversions && <Badge variant="outline" className="text-xs">Dispute</Badge>}
-            {buyer?.enableRevenueRecovery && <Badge variant="outline" className="text-xs">Revenue</Badge>}
-          </div>
-          {buyer?.restrictDuplicates && (
-            <span className="text-xs text-gray-500">Restrict Duplicates</span>
-          )}
-        </div>
+        <div className="text-sm">{buyer?.name || '-'}</div>
       </TableCell>
-      <TableCell>
-        <div className="flex flex-col gap-1">
-          <Badge className={getStatusColor(buyer?.status)}>
-            {buyer?.status || 'Active'}
-          </Badge>
-          <Badge className={getBuyerTypeColor(buyer?.buyerType)}>
-            {buyer?.buyerType === 'rtb_enabled' ? 'RTB' : buyer?.buyerType?.charAt(0).toUpperCase() + buyer?.buyerType?.slice(1) || 'Standard'}
-          </Badge>
-        </div>
+      <TableCell className="text-center">
+        <div className="text-xs">{buyer?.allowPauseTargets ? 'Yes' : 'No'}</div>
       </TableCell>
-      <TableCell>
-        <div className="text-center">
-          <div className="font-semibold">{buyer?.concurrencyLimit || 1}</div>
-          <div className="text-xs text-gray-500">concurrent</div>
-        </div>
+      <TableCell className="text-center">
+        <div className="text-xs">{buyer?.allowSetTargetCaps ? 'Yes' : 'No'}</div>
       </TableCell>
-      <TableCell>
-        <div className="text-center">
-          <div className="font-semibold">{buyer?.dailyCallCap || 100}</div>
-          <div className="text-xs text-gray-500">daily</div>
-        </div>
+      <TableCell className="text-center">
+        <div className="text-xs">{buyer?.allowDisputeConversions ? 'Yes' : 'No'}</div>
       </TableCell>
-      <TableCell>
-        <div className="text-center">
-          <div className="font-semibold">{buyer?.acceptanceRate || '0.00'}%</div>
-          <div className="text-xs text-gray-500">acceptance</div>
-        </div>
+      <TableCell className="text-center">
+        <div className="text-xs">{buyer?.restrictDuplicates ? 'Restrict' : 'Do Not Restrict'}</div>
+      </TableCell>
+      <TableCell className="text-center">
+        <div className="text-xs">0</div>
+      </TableCell>
+      <TableCell className="text-center">
+        <div className="text-xs">0</div>
+      </TableCell>
+      <TableCell className="text-center">
+        <div className="text-xs">0</div>
+      </TableCell>
+      <TableCell className="text-center">
+        <div className="text-xs">0</div>
+      </TableCell>
+      <TableCell className="text-center">
+        <Badge className={getStatusColor(buyer?.status)}>
+          {buyer?.status || 'active'}
+        </Badge>
       </TableCell>
       <TableCell>
         <div className="flex gap-1">
@@ -577,12 +562,17 @@ export default function Buyers() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Company & Sub ID</TableHead>
-                    <TableHead>Settings</TableHead>
-                    <TableHead>Status & Type</TableHead>
-                    <TableHead className="text-center">Concurrency</TableHead>
-                    <TableHead className="text-center">Daily Cap</TableHead>
-                    <TableHead className="text-center">Performance</TableHead>
+                    <TableHead>Company Name</TableHead>
+                    <TableHead>Sub ID</TableHead>
+                    <TableHead className="text-center">Can Pause Targets</TableHead>
+                    <TableHead className="text-center">Can Set Target Call and Concurrency Cap</TableHead>
+                    <TableHead className="text-center">Can Dispute Conversions</TableHead>
+                    <TableHead className="text-center">Restrict Duplicates</TableHead>
+                    <TableHead className="text-center">Hour</TableHead>
+                    <TableHead className="text-center">Day</TableHead>
+                    <TableHead className="text-center">Month</TableHead>
+                    <TableHead className="text-center">Total</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
