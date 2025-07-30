@@ -6,6 +6,7 @@ import {
   calls, 
   users,
   buyers,
+  targets,
   campaignBuyers,
   callLogs,
   urlParameters,
@@ -36,6 +37,8 @@ import {
   type InsertUser,
   type Buyer,
   type InsertBuyer,
+  type Target,
+  type InsertTarget,
   type CampaignBuyer,
   type InsertCampaignBuyer,
   type CallLog,
@@ -360,6 +363,38 @@ export class SupabaseStorage implements IStorage {
     
     // Delete the buyer
     const result = await db.delete(buyers).where(eq(buyers.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Targets (individual endpoints under buyers)
+  async getTargets(): Promise<Target[]> {
+    return await db.select().from(targets);
+  }
+
+  async getTarget(id: number): Promise<Target | undefined> {
+    const result = await db.select().from(targets).where(eq(targets.id, id));
+    return result[0];
+  }
+
+  async getTargetsByBuyer(buyerId: number): Promise<Target[]> {
+    return await db.select().from(targets).where(eq(targets.buyerId, buyerId));
+  }
+
+  async createTarget(target: InsertTarget): Promise<Target> {
+    const result = await db.insert(targets).values(target).returning();
+    return result[0];
+  }
+
+  async updateTarget(id: number, target: Partial<InsertTarget>): Promise<Target | undefined> {
+    const result = await db.update(targets)
+      .set({ ...target, updatedAt: new Date() })
+      .where(eq(targets.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteTarget(id: number): Promise<boolean> {
+    const result = await db.delete(targets).where(eq(targets.id, id));
     return result.rowCount > 0;
   }
 
