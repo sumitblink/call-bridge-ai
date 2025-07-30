@@ -282,7 +282,7 @@ function BuyerForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{buyer ? "Edit Buyer" : "Create New Buyer"}</DialogTitle>
           <DialogDescription>
@@ -291,504 +291,241 @@ function BuyerForm({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-2">
-                      <FormLabel>Buyer Name <span className="text-red-500">*</span></FormLabel>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Name of the buyer or lead partner<br/>
-                              This appears in call routing decisions</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter buyer name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "active"}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="paused">Paused</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+            {/* Row 1: Basic Info */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div>
+                <label className="text-xs font-medium">Buyer Name *</label>
+                <Input 
+                  {...form.register("name")}
+                  placeholder="Enter buyer name" 
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium">Status</label>
+                <Select value={form.watch("status") || "active"} onValueChange={(value) => form.setValue("status", value)}>
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="paused">Paused</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs font-medium">Phone Number *</label>
+                <Input 
+                  {...form.register("phoneNumber")}
+                  placeholder="+1234567890" 
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium">Email</label>
+                <Input 
+                  {...form.register("email")}
+                  type="email"
+                  placeholder="buyer@example.com" 
+                  className="h-7 text-xs"
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="email" 
-                        placeholder="buyer@example.com"
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-2">
-                      <FormLabel>Phone Number <span className="text-red-500">*</span></FormLabel>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Phone number where calls will be routed<br/>
-                              Include country code for international numbers</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <FormControl>
-                      <Input 
-                        placeholder="+1234567890"
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Row 2: Company & Details */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div>
+                <label className="text-xs font-medium">Company</label>
+                <Input 
+                  {...form.register("company")}
+                  placeholder="Company name" 
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium">Sub ID</label>
+                <Input 
+                  {...form.register("subId")}
+                  placeholder="Sub ID" 
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium">Priority (1-10)</label>
+                <Input 
+                  {...form.register("priority", { valueAsNumber: true })}
+                  type="number"
+                  min="1"
+                  max="10"
+                  placeholder="1" 
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium">Daily Cap</label>
+                <Input 
+                  {...form.register("dailyCap", { valueAsNumber: true })}
+                  type="number"
+                  min="1"
+                  placeholder="50" 
+                  className="h-7 text-xs"
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="company"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Company name"
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="subId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sub Id</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Sub ID"
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="endpoint"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Webhook Endpoint (Optional)</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value || ""} placeholder="https://api.buyer.com/webhook" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-2">
-                      <FormLabel>Priority (1-10)</FormLabel>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Call routing priority (1=lowest, 10=highest)<br/>
-                              Higher priority buyers receive calls first</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <FormControl>
-                      <Input 
-                        {...field} 
-                        type="number" 
-                        min="1" 
-                        max="10"
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? undefined : parseInt(value) || 1);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="dailyCap"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-2">
-                      <FormLabel>Daily Cap</FormLabel>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Maximum calls per day for this buyer<br/>
-                              Prevents over-delivery and manages volume</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <FormControl>
-                      <Input 
-                        {...field} 
-                        type="number" 
-                        min="1"
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? undefined : parseInt(value) || 50);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="concurrencyLimit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Concurrency Limit</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="1"
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? undefined : parseInt(value) || 3);
-                        }}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="avgResponseTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Avg Response Time (ms)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="0"
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? undefined : parseInt(value) || 0);
-                        }}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Row 3: Limits & Endpoint */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div>
+                <label className="text-xs font-medium">Concurrency Limit</label>
+                <Input 
+                  {...form.register("concurrencyLimit", { valueAsNumber: true })}
+                  type="number"
+                  min="1"
+                  placeholder="3" 
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium">Avg Response Time (ms)</label>
+                <Input 
+                  {...form.register("avgResponseTime", { valueAsNumber: true })}
+                  type="number"
+                  min="0"
+                  placeholder="200" 
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium">Webhook Endpoint</label>
+                <Input 
+                  {...form.register("endpoint")}
+                  placeholder="https://api.buyer.com/webhook" 
+                  className="h-7 text-xs"
+                />
+              </div>
             </div>
 
             {/* Buyer Permissions Section */}
-            <div className="border-t pt-4 space-y-4">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Buyer Permissions</h3>
-              
-              <div className="grid grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="allowPauseTargets"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between space-y-0">
-                      <div className="space-y-1">
-                        <FormLabel className="text-sm">Allow Buyer To Pause Targets</FormLabel>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="allowSetTargetCaps"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between space-y-0">
-                      <div className="space-y-1">
-                        <FormLabel className="text-sm">Allow Buyer To Set Target Caps</FormLabel>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="allowDisputeConversions"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between space-y-0">
-                      <div className="space-y-1">
-                        <FormLabel className="text-sm">Allow Buyer To Dispute Call Conversions</FormLabel>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="limitRevenue"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between space-y-0">
-                      <div className="space-y-1">
-                        <FormLabel className="text-sm">Limit Revenue</FormLabel>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <h3 className="text-xs font-medium text-gray-700 mb-2">Buyer Permissions</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-gray-600">Allow Pause Targets</label>
+                  <Switch
+                    checked={form.watch("allowPauseTargets") || false}
+                    onCheckedChange={(value) => form.setValue("allowPauseTargets", value)}
+                    className="scale-75"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-gray-600">Allow Set Target Caps</label>
+                  <Switch
+                    checked={form.watch("allowSetTargetCaps") || false}
+                    onCheckedChange={(value) => form.setValue("allowSetTargetCaps", value)}
+                    className="scale-75"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-gray-600">Allow Dispute Conversions</label>
+                  <Switch
+                    checked={form.watch("allowDisputeConversions") || false}
+                    onCheckedChange={(value) => form.setValue("allowDisputeConversions", value)}
+                    className="scale-75"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-gray-600">Limit Revenue</label>
+                  <Switch
+                    checked={form.watch("limitRevenue") || false}
+                    onCheckedChange={(value) => form.setValue("limitRevenue", value)}
+                    className="scale-75"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Predictive Routing Settings */}
-            <div className="border-t pt-4 space-y-4">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Predictive Routing Settings</h3>
-              
-              <FormField
-                control={form.control}
-                name="restrictDuplicates"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Restrict Duplicates</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "Do Not Restrict"}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Do Not Restrict" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Do Not Restrict">Do Not Restrict</SelectItem>
-                        <SelectItem value="By Phone Number">By Phone Number</SelectItem>
-                        <SelectItem value="By Email">By Email</SelectItem>
-                        <SelectItem value="By IP Address">By IP Address</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="estimatedRevenue"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estimated Revenue</FormLabel>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant={field.value === "Use Campaign Setting" ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => field.onChange("Use Campaign Setting")}
-                        >
-                          Use Campaign Setting
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={field.value === "Use Estimated Revenue" ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => field.onChange("Use Estimated Revenue")}
-                        >
-                          Use Estimated Revenue
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="priorityBump"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Priority Bump ({field.value || 0})</FormLabel>
-                      <FormControl>
-                        <Slider
-                          value={[field.value || 0]}
-                          onValueChange={(value) => field.onChange(value[0])}
-                          min={-10}
-                          max={10}
-                          step={1}
-                          className="w-full"
-                        />
-                      </FormControl>
-                      <div className="flex justify-between text-xs text-gray-500">
-                        <span>-10</span>
-                        <span>Default</span>
-                        <span>+10</span>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <h3 className="text-xs font-medium text-gray-700 mb-2">Predictive Routing Settings</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Restrict Duplicates</label>
+                  <Select 
+                    value={form.watch("restrictDuplicates") || "Do Not Restrict"} 
+                    onValueChange={(value) => form.setValue("restrictDuplicates", value)}
+                  >
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Do Not Restrict">Do Not Restrict</SelectItem>
+                      <SelectItem value="By Phone Number">By Phone Number</SelectItem>
+                      <SelectItem value="By Email">By Email</SelectItem>
+                      <SelectItem value="By IP Address">By IP Address</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Estimated Revenue</label>
+                  <Select 
+                    value={form.watch("estimatedRevenue") || "Use Campaign Setting"} 
+                    onValueChange={(value) => form.setValue("estimatedRevenue", value)}
+                  >
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Use Campaign Setting">Use Campaign Setting</SelectItem>
+                      <SelectItem value="Use Estimated Revenue">Use Estimated Revenue</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Priority Bump ({form.watch("priorityBump") || 0})</label>
+                  <div className="pt-1">
+                    <Slider
+                      value={[form.watch("priorityBump") || 0]}
+                      onValueChange={(value) => form.setValue("priorityBump", value[0])}
+                      min={-10}
+                      max={10}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>-10</span>
+                      <span>0</span>
+                      <span>+10</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-3">
+                <label className="text-xs text-gray-600">Override Shareable Tags</label>
+                <Switch
+                  checked={form.watch("overrideShareableTags") || false}
+                  onCheckedChange={(value) => form.setValue("overrideShareableTags", value)}
+                  className="scale-75"
                 />
               </div>
             </div>
 
-            {/* Shareable Tags */}
-            <div className="border-t pt-4 space-y-4">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Shareable Tags</h3>
-              
-              <FormField
-                control={form.control}
-                name="overrideShareableTags"
-                render={({ field }) => (
-                  <FormItem className="flex items-center justify-between space-y-0">
-                    <div className="space-y-1">
-                      <FormLabel className="text-sm">Override Shareable Tags</FormLabel>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex justify-end gap-2 pt-3">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
+                className="h-8 px-4 text-xs"
               >
                 Cancel
               </Button>
               <Button 
                 type="submit" 
                 disabled={createBuyerMutation.isPending || updateBuyerMutation.isPending}
-
+                className="h-8 px-4 text-xs"
               >
-                {buyer ? "Update Buyer" : "Create Buyer"}
+                {createBuyerMutation.isPending || updateBuyerMutation.isPending ? "Saving..." : buyer ? "Update Buyer" : "Create Buyer"}
               </Button>
             </div>
           </form>
