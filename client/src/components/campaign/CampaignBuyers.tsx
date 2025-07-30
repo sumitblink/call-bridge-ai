@@ -245,7 +245,6 @@ export default function CampaignBuyers({ campaignId }: CampaignBuyersProps) {
                 <TableRow>
                   <TableHead>Priority</TableHead>
                   <TableHead>Buyer</TableHead>
-                  <TableHead>Contact</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Daily Cap</TableHead>
                   <TableHead>Actions</TableHead>
@@ -268,12 +267,6 @@ export default function CampaignBuyers({ campaignId }: CampaignBuyersProps) {
                             <div className="text-sm text-gray-500">Sub ID: {buyer.name}</div>
                           )}
                           <div className="text-sm text-gray-500">ID: {buyer.id}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>{buyer.email}</div>
-                          <div className="text-gray-500">{buyer.phoneNumber}</div>
                         </div>
                       </TableCell>
                       <TableCell>
