@@ -160,7 +160,7 @@ export default function Targets() {
                   {editingTarget ? "Edit Target" : "Create Target"}
                 </DialogTitle>
                 <DialogDescription>
-                  Configure your target endpoint with comprehensive settings and controls
+                  Configure your target endpoint with comprehensive settings and controls - Updated
                 </DialogDescription>
               </DialogHeader>
 
