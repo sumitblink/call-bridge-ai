@@ -76,10 +76,7 @@ export default function Targets() {
 
   // Create target mutation
   const createTargetMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/targets', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: any) => apiRequest('/api/targets', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/targets'] });
       setIsCreateDialogOpen(false);
@@ -100,10 +97,7 @@ export default function Targets() {
 
   // Update target mutation
   const updateTargetMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest(`/api/targets/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest(`/api/targets/${id}`, 'PUT', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/targets'] });
       setEditingTarget(null);
@@ -124,9 +118,7 @@ export default function Targets() {
 
   // Delete target mutation
   const deleteTargetMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/targets/${id}`, {
-      method: 'DELETE',
-    }),
+    mutationFn: (id: number) => apiRequest(`/api/targets/${id}`, 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/targets'] });
       toast({
@@ -181,6 +173,7 @@ export default function Targets() {
       dailyCap: data.dailyCap ? 100 : undefined, // Set default when enabled
       concurrencyLimit: data.maxConcurrency ? 1 : undefined, // Set default when enabled
       status: data.status,
+      userId: 2, // Add userId for database constraint
     };
 
     if (editingTarget) {

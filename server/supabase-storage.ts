@@ -268,57 +268,20 @@ export class SupabaseStorage implements IStorage {
 
   // Buyers
   async getBuyers(): Promise<Buyer[]> {
-    // Get buyers with calculated metrics from call data
-    const result = await db
-      .select({
-        id: buyers.id,
-        userId: buyers.userId,
-        name: buyers.name,
-        email: buyers.email,
-        phoneNumber: buyers.phoneNumber,
-        endpoint: buyers.endpoint,
-        status: buyers.status,
-        priority: buyers.priority,
-        dailyCap: buyers.dailyCap,
-        concurrencyLimit: buyers.concurrencyLimit,
-        createdAt: buyers.createdAt,
-        updatedAt: buyers.updatedAt,
-        // Calculate acceptance rate from call data
-        totalCalls: sql<number>`COALESCE(COUNT(${calls.id}), 0)`,
-        completedCalls: sql<number>`COALESCE(COUNT(CASE WHEN ${calls.status} = 'completed' THEN 1 END), 0)`,
-        // Calculate average response time from call data (in milliseconds)
-        avgResponseTimeSeconds: sql<number>`COALESCE(AVG(CASE WHEN ${calls.duration} > 0 THEN ${calls.duration} END), 0)`,
-      })
-      .from(buyers)
-      .leftJoin(calls, eq(calls.buyerId, buyers.id))
-      .groupBy(
-        buyers.id,
-        buyers.userId,
-        buyers.name,
-        buyers.email,
-        buyers.phoneNumber,
-        buyers.endpoint,
-        buyers.status,
-        buyers.priority,
-        buyers.dailyCap,
-        buyers.concurrencyLimit,
-        buyers.createdAt,
-        buyers.updatedAt
-      )
-      .orderBy(desc(buyers.createdAt));
-
-    // Transform the results to include calculated metrics
-    return result.map(buyer => ({
-      ...buyer,
-      // Calculate acceptance rate as percentage
-      acceptanceRate: buyer.totalCalls > 0 
-        ? `${Math.round((buyer.completedCalls / buyer.totalCalls) * 100)}` 
-        : "0",
-      // Convert seconds to milliseconds for response time (mock realistic response time if no data)
-      avgResponseTime: buyer.totalCalls > 0 
-        ? Math.round(buyer.avgResponseTimeSeconds * 1000) // Convert to ms
-        : null, // Show null instead of mock data when no calls exist
-    }));
+    try {
+      const result = await db.select().from(buyers).orderBy(desc(buyers.createdAt));
+      
+      // Transform the results to include calculated metrics
+      return result.map(buyer => ({
+        ...buyer,
+        // Use existing acceptanceRate and avgResponseTime fields from database
+        acceptanceRate: buyer.acceptanceRate || "0",
+        avgResponseTime: buyer.avgResponseTime || 0,
+      }));
+    } catch (error) {
+      console.error('Error fetching buyers:', error);
+      throw error;
+    }
   }
 
   async getBuyer(id: number): Promise<Buyer | undefined> {
