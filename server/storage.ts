@@ -57,10 +57,10 @@ export interface IStorage {
 
   // Campaigns
   getCampaigns(userId?: number): Promise<Campaign[]>;
-  getCampaign(id: string | number): Promise<Campaign | undefined>;
+  getCampaign(id: string): Promise<Campaign | undefined>;
   getCampaignByPhoneNumber(phoneNumber: string): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
-  updateCampaign(id: string | number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined>;
+  updateCampaign(id: string, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined>;
   deleteCampaign(id: string): Promise<boolean>;
 
   // Buyers (top-level companies)
@@ -320,7 +320,7 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   private users: Map<string, User> = new Map();
-  private campaigns: Map<number, Campaign> = new Map();
+  private campaigns: Map<string, Campaign> = new Map();
   private buyers: Map<number, Buyer> = new Map();
   private targets: Map<number, Target> = new Map();
   private campaignBuyers: Map<string, CampaignBuyer> = new Map();
@@ -353,9 +353,9 @@ export class MemStorage implements IStorage {
   }
 
   private initializeSampleData() {
-    // Sample campaigns
-    this.campaigns.set(1, {
-      id: 1,
+    // Sample campaigns with string UUIDs
+    this.campaigns.set("cam_sample_1", {
+      id: "cam_sample_1",
       userId: 1,
       name: "Home Insurance Lead Gen",
       description: "Insurance leads for homeowners",
@@ -370,8 +370,8 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     });
 
-    this.campaigns.set(2, {
-      id: 2,
+    this.campaigns.set("cam_sample_2", {
+      id: "cam_sample_2",
       userId: 1,
       name: "Auto Insurance Campaign",
       description: "Auto insurance quote generation",
@@ -538,7 +538,8 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async getCampaign(id: number): Promise<Campaign | undefined> {
+  async getCampaign(id: string): Promise<Campaign | undefined> {
+    // For memory storage, campaigns are stored with string keys
     return this.campaigns.get(id);
   }
 
@@ -552,7 +553,8 @@ export class MemStorage implements IStorage {
   }
 
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
-    const id = this.currentCampaignId++;
+    // Generate UUID-like string for campaign ID
+    const id = 'cam_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
     const newCampaign: Campaign = {
       id,
       userId: campaign.userId,
@@ -572,9 +574,8 @@ export class MemStorage implements IStorage {
     return newCampaign;
   }
 
-  async updateCampaign(id: string | number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
-    const campaignId = typeof id === 'string' ? parseInt(id) : id;
-    const existing = this.campaigns.get(campaignId);
+  async updateCampaign(id: string, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
+    const existing = this.campaigns.get(id);
     if (!existing) return undefined;
     
     const updated: Campaign = {
@@ -582,18 +583,17 @@ export class MemStorage implements IStorage {
       ...campaign,
       updatedAt: new Date()
     };
-    this.campaigns.set(campaignId, updated);
+    this.campaigns.set(id, updated);
     return updated;
   }
 
   async deleteCampaign(id: string): Promise<boolean> {
-    const campaignId = parseInt(id.toString());
     // Delete all related records first to avoid foreign key constraint violations
     
     // Delete call logs for calls related to this campaign
     const callsToRemove: number[] = [];
     for (const [callId, call] of this.calls.entries()) {
-      if (call.campaignId === campaignId.toString()) {
+      if (call.campaignId === id) {
         callsToRemove.push(callId);
       }
     }
@@ -615,7 +615,7 @@ export class MemStorage implements IStorage {
     // Remove campaign-buyer relationships
     const campaignBuyersToRemove: string[] = [];
     for (const [key, cb] of this.campaignBuyers.entries()) {
-      if (cb.campaignId === campaignId.toString()) {
+      if (cb.campaignId === id) {
         campaignBuyersToRemove.push(key);
       }
     }
@@ -624,14 +624,14 @@ export class MemStorage implements IStorage {
     // Remove publisher-campaign relationships
     const publisherCampaignsToRemove: string[] = [];
     for (const [key, pc] of this.publisherCampaigns.entries()) {
-      if (pc.campaignId === campaignId.toString()) {
+      if (pc.campaignId === id) {
         publisherCampaignsToRemove.push(key);
       }
     }
     publisherCampaignsToRemove.forEach(key => this.publisherCampaigns.delete(key));
     
     // Finally delete the campaign
-    return this.campaigns.delete(campaignId);
+    return this.campaigns.delete(id);
   }
 
   // Agents

@@ -167,7 +167,7 @@ class HybridStorage implements IStorage {
     );
   }
 
-  async getCampaign(id: number): Promise<Campaign | undefined> {
+  async getCampaign(id: string): Promise<Campaign | undefined> {
     return this.executeOperation(
       () => this.databaseStorage.getCampaign(id),
       () => this.memStorage.getCampaign(id)
@@ -188,14 +188,14 @@ class HybridStorage implements IStorage {
     );
   }
 
-  async updateCampaign(id: number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
+  async updateCampaign(id: string, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined> {
     return this.executeOperation(
       () => this.databaseStorage.updateCampaign(id, campaign),
       () => this.memStorage.updateCampaign(id, campaign)
     );
   }
 
-  async deleteCampaign(id: number): Promise<boolean> {
+  async deleteCampaign(id: string): Promise<boolean> {
     return this.executeOperation(
       () => this.databaseStorage.deleteCampaign(id),
       () => this.memStorage.deleteCampaign(id)
