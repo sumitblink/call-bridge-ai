@@ -614,8 +614,8 @@ export default function TargetsPage() {
                 {/* Enhanced Settings Sections */}
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Cap Settings */}
-                  <div className="p-3 border rounded-lg bg-blue-50">
-                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-blue-700">
+                  <div className="p-3 border rounded-lg bg-gray-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
                       <Shield className="h-3 w-3" />
                       Cap Settings
                     </h4>
@@ -634,8 +634,8 @@ export default function TargetsPage() {
                   </div>
 
                   {/* Concurrency Settings */}
-                  <div className="p-3 border rounded-lg bg-green-50">
-                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-green-700">
+                  <div className="p-3 border rounded-lg bg-gray-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
                       <Zap className="h-3 w-3" />
                       Concurrency Settings
                     </h4>
@@ -654,8 +654,8 @@ export default function TargetsPage() {
                   </div>
 
                   {/* Duplicate Call Settings */}
-                  <div className="p-3 border rounded-lg bg-yellow-50">
-                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-yellow-700">
+                  <div className="p-3 border rounded-lg bg-gray-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
                       <Filter className="h-3 w-3" />
                       Restrict Duplicate Call Settings
                     </h4>
@@ -679,8 +679,8 @@ export default function TargetsPage() {
                   </div>
 
                   {/* Predictive Routing Settings */}
-                  <div className="p-3 border rounded-lg bg-purple-50">
-                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1 text-purple-700">
+                  <div className="p-3 border rounded-lg bg-gray-50">
+                    <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
                       <Pencil className="h-3 w-3" />
                       Predictive Routing Settings
                     </h4>
