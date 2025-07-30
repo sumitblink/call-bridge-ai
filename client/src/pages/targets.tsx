@@ -136,34 +136,64 @@ const HoursOfOperationComponent = ({ value, onChange }: HoursOfOperationProps) =
         </div>
 
         {mode === "Basic" && (
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <label className="text-xs text-gray-600 block mb-1">Open</label>
-              <Input
-                type="time"
-                value={basicHours.openTime.replace(/\s(AM|PM)/, '')}
-                onChange={(e) => setBasicHours(prev => ({ ...prev, openTime: e.target.value + ' AM' }))}
-                className="h-8 text-sm"
-              />
+          <div className="space-y-3">
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <label className="text-xs text-gray-600 block mb-1">Open</label>
+                <Input
+                  type="time"
+                  value={basicHours.openTime.replace(/\s(AM|PM)/, '')}
+                  onChange={(e) => setBasicHours(prev => ({ ...prev, openTime: e.target.value + ' AM' }))}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-gray-600 block mb-1">Close</label>
+                <Input
+                  type="time"
+                  value={basicHours.closeTime.replace(/\s(AM|PM)/, '')}
+                  onChange={(e) => setBasicHours(prev => ({ ...prev, closeTime: e.target.value + ' PM' }))}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => openBreakModal()}
+                className="h-8 px-2 text-xs"
+              >
+                + ADD BREAK
+              </Button>
             </div>
-            <div className="flex-1">
-              <label className="text-xs text-gray-600 block mb-1">Close</label>
-              <Input
-                type="time"
-                value={basicHours.closeTime.replace(/\s(AM|PM)/, '')}
-                onChange={(e) => setBasicHours(prev => ({ ...prev, closeTime: e.target.value + ' PM' }))}
-                className="h-8 text-sm"
-              />
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => openBreakModal()}
-              className="h-8 px-2 text-xs"
-            >
-              + ADD BREAK
-            </Button>
+            
+            {/* Breaks Display */}
+            {basicHours.breaks.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-gray-600">Breaks</div>
+                {basicHours.breaks.map((breakItem, index) => (
+                  <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                    <span className="text-xs text-gray-700">
+                      {breakItem.start} for {breakItem.duration} minutes
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setBasicHours(prev => ({
+                          ...prev,
+                          breaks: prev.breaks.filter((_, i) => i !== index)
+                        }));
+                      }}
+                      className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -176,53 +206,86 @@ const HoursOfOperationComponent = ({ value, onChange }: HoursOfOperationProps) =
               <span></span>
             </div>
             {Object.entries(advancedHours).map(([day, hours]) => (
-              <div key={day} className="grid grid-cols-4 gap-2 items-center">
-                <div className="flex items-center space-x-1">
-                  <Switch
-                    checked={hours.enabled}
-                    onCheckedChange={(checked) => 
+              <div key={day} className="space-y-2">
+                <div className="grid grid-cols-4 gap-2 items-center">
+                  <div className="flex items-center space-x-1">
+                    <Switch
+                      checked={hours.enabled}
+                      onCheckedChange={(checked) => 
+                        setAdvancedHours(prev => ({
+                          ...prev,
+                          [day]: { ...prev[day as keyof typeof prev], enabled: checked }
+                        }))
+                      }
+                    />
+                    <span className="text-xs font-medium">{day.slice(0, 3)}</span>
+                  </div>
+                  <Input
+                    type="time"
+                    value={hours.openTime.replace(/\s(AM|PM)/, '')}
+                    onChange={(e) => 
                       setAdvancedHours(prev => ({
                         ...prev,
-                        [day]: { ...prev[day as keyof typeof prev], enabled: checked }
+                        [day]: { ...prev[day as keyof typeof prev], openTime: e.target.value + ' AM' }
                       }))
                     }
+                    disabled={!hours.enabled}
+                    className="h-7 text-xs"
                   />
-                  <span className="text-xs font-medium">{day.slice(0, 3)}</span>
+                  <Input
+                    type="time"
+                    value={hours.closeTime.replace(/\s(AM|PM)/, '')}
+                    onChange={(e) => 
+                      setAdvancedHours(prev => ({
+                        ...prev,
+                        [day]: { ...prev[day as keyof typeof prev], closeTime: e.target.value + ' PM' }
+                      }))
+                    }
+                    disabled={!hours.enabled}
+                    className="h-7 text-xs"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openBreakModal(day)}
+                    disabled={!hours.enabled}
+                    className="h-7 px-2 text-xs"
+                  >
+                    + ADD BREAK
+                  </Button>
                 </div>
-                <Input
-                  type="time"
-                  value={hours.openTime.replace(/\s(AM|PM)/, '')}
-                  onChange={(e) => 
-                    setAdvancedHours(prev => ({
-                      ...prev,
-                      [day]: { ...prev[day as keyof typeof prev], openTime: e.target.value + ' AM' }
-                    }))
-                  }
-                  disabled={!hours.enabled}
-                  className="h-7 text-xs"
-                />
-                <Input
-                  type="time"
-                  value={hours.closeTime.replace(/\s(AM|PM)/, '')}
-                  onChange={(e) => 
-                    setAdvancedHours(prev => ({
-                      ...prev,
-                      [day]: { ...prev[day as keyof typeof prev], closeTime: e.target.value + ' PM' }
-                    }))
-                  }
-                  disabled={!hours.enabled}
-                  className="h-7 text-xs"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openBreakModal(day)}
-                  disabled={!hours.enabled}
-                  className="h-7 px-2 text-xs"
-                >
-                  + ADD BREAK
-                </Button>
+                
+                {/* Breaks Display for this day */}
+                {hours.breaks.length > 0 && (
+                  <div className="ml-8 space-y-1">
+                    <div className="text-xs font-medium text-gray-600">Breaks</div>
+                    {hours.breaks.map((breakItem, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-1.5 rounded text-xs">
+                        <span className="text-gray-700">
+                          {breakItem.start} for {breakItem.duration} minutes
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setAdvancedHours(prev => ({
+                              ...prev,
+                              [day]: {
+                                ...prev[day as keyof typeof prev],
+                                breaks: prev[day as keyof typeof prev].breaks.filter((_, i) => i !== index)
+                              }
+                            }));
+                          }}
+                          className="h-5 w-5 p-0 text-gray-400 hover:text-red-500"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
