@@ -1344,18 +1344,27 @@ export class MemStorage implements IStorage {
     const numbers = await this.getPhoneNumbers(userId);
     const unassigned = [];
     
+    console.log(`[MemStorage] getUnassignedPhoneNumbers: Checking ${numbers.length} numbers for assignments`);
+    
     for (const number of numbers) {
       // Check if number is assigned to any pool
       const poolAssignments = await this.getNumberPoolAssignments(number.id);
       // Check if number is assigned to any campaign directly
-      const campaigns = await this.getCampaigns();
+      const campaigns = await this.getCampaigns(userId);
       const assignedToCampaign = campaigns.some(c => c.phoneNumber === number.phoneNumber);
+      
+      console.log(`[MemStorage] getUnassignedPhoneNumbers: Number ${number.phoneNumber} - poolAssignments: ${poolAssignments.length}, assignedToCampaign: ${assignedToCampaign}`);
+      console.log(`[MemStorage] getUnassignedPhoneNumbers: Total campaigns: ${campaigns.length}, campaign phone numbers:`, campaigns.map(c => c.phoneNumber));
       
       if (poolAssignments.length === 0 && !assignedToCampaign) {
         unassigned.push(number);
+        console.log(`[MemStorage] getUnassignedPhoneNumbers: Number ${number.phoneNumber} is UNASSIGNED`);
+      } else {
+        console.log(`[MemStorage] getUnassignedPhoneNumbers: Number ${number.phoneNumber} is ASSIGNED`);
       }
     }
     
+    console.log(`[MemStorage] getUnassignedPhoneNumbers: Found ${unassigned.length} unassigned numbers`);
     return unassigned;
   }
 
