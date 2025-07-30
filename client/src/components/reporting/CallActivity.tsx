@@ -581,8 +581,6 @@ export default function CallActivity() {
         return <div className="font-mono text-xs">{call.fromNumber}</div>;
       case 'connectedCallLength':
         return <div className="text-xs">{call.duration}s</div>;
-      case 'duplicate':
-        return <div className="text-xs">No</div>;
       case 'previouslyConnected':
         return <div className="text-xs">No</div>;
       case 'numberPool':
@@ -606,6 +604,151 @@ export default function CallActivity() {
         return <div className="text-xs">{(call as any).ringTime || 0}s</div>;
       case 'timeToConnect':
         return <div className="text-xs">{(call as any).connectionTime || 0}s</div>;
+      
+      // Additional missing column mappings from database
+      case 'targetNumber':
+        const callTarget = targets.find((t: any) => t.id === (call as any).targetId);
+        return <div className="font-mono text-xs">{callTarget?.phoneNumber || '-'}</div>;
+      case 'targetId':
+        return <div className="text-xs">{(call as any).targetId || '-'}</div>;
+      case 'publisherId':
+        return <div className="text-xs">{(call as any).publisherId || '-'}</div>;
+      case 'publisherSubId':
+        return <div className="text-xs">{(call as any).publisherSubId || '-'}</div>;
+      case 'targetSubId':
+        return <div className="text-xs">{(call as any).targetSubId || '-'}</div>;
+      case 'buyerSubId':
+        return <div className="text-xs">{(call as any).buyerSubId || '-'}</div>;
+      case 'targetGroupId':
+        return <div className="text-xs">{(call as any).targetGroupId || '-'}</div>;
+      case 'ringTime':
+        return <div className="text-xs">{(call as any).ringTime || 0}s</div>;
+      case 'talkTime':
+        return <div className="text-xs">{(call as any).talkTime || 0}s</div>;
+      case 'holdTime':
+        return <div className="text-xs">{(call as any).holdTime || 0}s</div>;
+      case 'disposition':
+        return <div className="text-xs">{(call as any).disposition || '-'}</div>;
+      case 'hangupCause':
+        return <div className="text-xs">{(call as any).hangupCause || '-'}</div>;
+      case 'audioQuality':
+        return <div className="text-xs">{(call as any).audioQuality || '-'}</div>;
+      case 'duplicate':
+        return <div className="text-xs">{(call as any).isDuplicate ? 'Yes' : 'No'}</div>;
+      case 'isDuplicate':
+        return <div className="text-xs">{(call as any).isDuplicate ? 'Yes' : 'No'}</div>;
+      case 'duplicateOfCallId':
+        return <div className="text-xs">{(call as any).duplicateOfCallId || '-'}</div>;
+      case 'margin':
+        return <div className="text-xs">{(call as any).margin || '0.00'}%</div>;
+      case 'tags':
+        const callTags = (call as any).tags || [];
+        return <div className="text-xs">{Array.isArray(callTags) ? callTags.join(', ') : callTags}</div>;
+      case 'utmSource':
+        return <div className="text-xs">{(call as any).utmSource || '-'}</div>;
+      case 'utmMedium':
+        return <div className="text-xs">{(call as any).utmMedium || '-'}</div>;
+      case 'utmCampaign':
+        return <div className="text-xs">{(call as any).utmCampaign || '-'}</div>;
+      case 'utmContent':
+        return <div className="text-xs">{(call as any).utmContent || '-'}</div>;
+      case 'utmTerm':
+        return <div className="text-xs">{(call as any).utmTerm || '-'}</div>;
+      case 'referrer':
+        return <div className="text-xs">{(call as any).referrer || '-'}</div>;
+      case 'landingPage':
+        return <div className="text-xs">{(call as any).landingPage || '-'}</div>;
+      case 'city':
+        return <div className="text-xs">{(call as any).city || '-'}</div>;
+      case 'state':
+        return <div className="text-xs">{(call as any).state || '-'}</div>;
+      case 'country':
+        return <div className="text-xs">{(call as any).country || '-'}</div>;
+      case 'zipCode':
+        return <div className="text-xs">{(call as any).zipCode || '-'}</div>;
+      case 'ipAddress':
+        return <div className="font-mono text-xs">{(call as any).ipAddress || '-'}</div>;
+      case 'deviceType':
+        return <div className="text-xs">{(call as any).deviceType || '-'}</div>;
+      case 'isConverted':
+        return <div className="text-xs">{(call as any).isConverted ? 'Yes' : 'No'}</div>;
+      case 'conversionType':
+        return <div className="text-xs">{(call as any).conversionType || '-'}</div>;
+      case 'conversionValue':
+        return <div className="text-xs">${(call as any).conversionValue || '0.00'}</div>;
+      case 'conversionTimestamp':
+        return <div className="text-xs">{(call as any).conversionTimestamp ? formatDistanceToNow(new Date((call as any).conversionTimestamp), { addSuffix: true }) : '-'}</div>;
+      case 'sub1':
+        return <div className="text-xs">{(call as any).sub1 || '-'}</div>;
+      case 'sub2':
+        return <div className="text-xs">{(call as any).sub2 || '-'}</div>;
+      case 'sub3':
+        return <div className="text-xs">{(call as any).sub3 || '-'}</div>;
+      case 'sub4':
+        return <div className="text-xs">{(call as any).sub4 || '-'}</div>;
+      case 'sub5':
+        return <div className="text-xs">{(call as any).sub5 || '-'}</div>;
+      case 'sessionId':
+        return <div className="font-mono text-xs">{(call as any).sessionId || '-'}</div>;
+      case 'adAccountId':
+        return <div className="text-xs">{(call as any).adAccountId || '-'}</div>;
+      case 'keyword':
+        return <div className="text-xs">{(call as any).keyword || '-'}</div>;
+      case 'placement':
+        return <div className="text-xs">{(call as any).placement || '-'}</div>;
+      case 'adGroup':
+        return <div className="text-xs">{(call as any).adGroup || '-'}</div>;
+      case 'creativeId':
+        return <div className="text-xs">{(call as any).creativeId || '-'}</div>;
+      case 'flowExecutionId':
+        return <div className="text-xs">{(call as any).flowExecutionId || '-'}</div>;
+      case 'ringTreeId':
+        return <div className="text-xs">{(call as any).ringTreeId || '-'}</div>;
+      case 'currentNodeId':
+        return <div className="text-xs">{(call as any).currentNodeId || '-'}</div>;
+      case 'flowPath':
+        return <div className="text-xs">{(call as any).flowPath || '-'}</div>;
+      case 'routingAttempts':
+        return <div className="text-xs">{(call as any).routingAttempts || 0}</div>;
+      case 'trackingTagId':
+        return <div className="text-xs">{(call as any).trackingTagId || '-'}</div>;
+      case 'phoneNumberId':
+        return <div className="text-xs">{(call as any).phoneNumberId || '-'}</div>;
+      case 'recordingUrl':
+        return <div className="text-xs">{call.recordingUrl ? 'Available' : 'None'}</div>;
+      case 'recordingSid':
+        return <div className="font-mono text-xs">{call.recordingSid || '-'}</div>;
+      case 'recordingStatus':
+        return <div className="text-xs">{call.recordingStatus || '-'}</div>;
+      case 'recordingDuration':
+        return <div className="text-xs">{call.recordingDuration ? `${call.recordingDuration}s` : '-'}</div>;
+      case 'transcription':
+        return <div className="text-xs truncate max-w-xs">{call.transcription || '-'}</div>;
+      case 'transcriptionStatus':
+        return <div className="text-xs">{call.transcriptionStatus || '-'}</div>;
+      case 'transcriptionConfidence':
+        return <div className="text-xs">{(call as any).transcriptionConfidence || '-'}</div>;
+      case 'callQuality':
+        return <div className="text-xs">{call.callQuality || '-'}</div>;
+      case 'userAgent':
+        return <div className="text-xs truncate max-w-xs">{call.userAgent || '-'}</div>;
+      case 'userAgentParsed':
+        return <div className="text-xs">{(call as any).userAgentParsed || '-'}</div>;
+      case 'cost':
+        return <div className="text-xs text-red-600">${call.cost}</div>;
+      case 'geoLocation':
+        return <div className="text-xs">{call.geoLocation || '-'}</div>;
+      case 'callSid':
+        return <div className="font-mono text-xs">{call.callSid}</div>;
+      case 'fromNumber':
+        return <div className="font-mono text-xs">{call.fromNumber}</div>;
+      case 'toNumber':
+        return <div className="font-mono text-xs">{call.toNumber}</div>;
+      case 'createdAt':
+        return <div className="text-xs">{formatDistanceToNow(new Date(call.createdAt), { addSuffix: true })}</div>;
+      case 'updatedAt':
+        return <div className="text-xs">{formatDistanceToNow(new Date(call.updatedAt), { addSuffix: true })}</div>;
+      
       case 'actions':
         return (
           <div className="flex items-center space-x-1">

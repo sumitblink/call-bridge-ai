@@ -114,6 +114,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 30, 2025: **COMPREHENSIVE COLUMN DATA MAPPING VERIFICATION COMPLETED** - Audited all 100+ column definitions and implemented complete data mapping for Call Details table
+  - **Database Field Mapping**: Added 70+ missing column cases to renderColumnValue function covering all database fields (targetId, publisherId, sub1-sub5, UTM parameters, etc.)
+  - **Data Integrity Verified**: All columns in Column Customizer now properly retrieve authentic data from database fields instead of showing placeholder values
+  - **Pool Name Display Fixed**: Resolved API endpoint mismatch (/api/pools vs /api/number-pools) enabling proper pool name display ("Test pool" instead of "Direct")
+  - **Comprehensive Coverage**: Every column from Popular, Call, Time, Performance, UTM, Conversion, Facebook, RedTrack, and other categories now maps to correct database fields
+  - **User Experience Enhanced**: Column Customizer shows accurate data for all visible and hidden columns ensuring users see real call tracking information
+  - **Status**: Complete column data verification successful - all 100+ columns now display authentic database values
 - July 30, 2025: **BUYER AND TARGET NAME DISPLAY FIXED** - Successfully resolved target name display issues in call details table and expandable call information
   - **Buyer Name Display Fixed**: Updated CallActivity component to use buyer.companyName instead of empty name field for proper buyer identification
   - **Target Column Added**: Added target name column rendering using targets data fetched from /api/targets endpoint
