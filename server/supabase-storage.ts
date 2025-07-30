@@ -1295,6 +1295,10 @@ export class SupabaseStorage implements IStorage {
 
   // Number Pools - missing methods
   async getNumberPools(userId?: number): Promise<NumberPool[]> {
+    if (userId) {
+      const result = await db.select().from(numberPools).where(eq(numberPools.userId, userId));
+      return result;
+    }
     const result = await db.select().from(numberPools);
     return result;
   }

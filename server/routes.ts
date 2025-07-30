@@ -3948,6 +3948,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pools API endpoints (alias for number-pools for frontend compatibility)
+  app.get('/api/pools', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const pools = await storage.getNumberPools(userId);
+      res.json(pools);
+    } catch (error) {
+      console.error('Error fetching pools:', error);
+      res.status(500).json({ error: 'Failed to fetch pools' });
+    }
+  });
+
   // Number Pool API endpoints
   app.get('/api/number-pools', requireAuth, async (req, res) => {
     try {
