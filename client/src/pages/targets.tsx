@@ -40,6 +40,7 @@ export default function Targets() {
   const form = useForm<z.infer<typeof insertTargetSchema>>({
     resolver: zodResolver(insertTargetSchema),
     defaultValues: {
+      userId: 2, // Add userId to defaults
       name: "",
       buyerId: 0,
       phoneNumber: "",
@@ -273,18 +274,18 @@ export default function Targets() {
                               </div>
                             </div>
 
-                            {/* TIMEZONE AND HOURS OF OPERATION FIELDS */}
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* TIMEZONE AND HOURS OF OPERATION FIELDS - HIGHLY VISIBLE */}
+                            <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
                               <FormField
                                 control={form.control}
                                 name="timeZone"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Time Zone <span className="text-red-500">*</span></FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormLabel className="text-lg font-semibold text-blue-800">Time Zone <span className="text-red-500">*</span></FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
                                       <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Search Timezone" />
+                                        <SelectTrigger className="border-2 border-blue-300">
+                                          <SelectValue placeholder="Select Timezone" />
                                         </SelectTrigger>
                                       </FormControl>
                                       <SelectContent>
@@ -304,13 +305,13 @@ export default function Targets() {
                                 name="hoursOfOperation"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Hours of Operation <span className="text-red-500">*</span></FormLabel>
-                                    <div className="flex items-center space-x-2">
+                                    <FormLabel className="text-lg font-semibold text-blue-800">Hours of Operation <span className="text-red-500">*</span></FormLabel>
+                                    <div className="flex items-center space-x-2 border-2 border-blue-300 rounded p-2">
                                       <Switch
                                         checked={field.value === "Always Open"}
                                         onCheckedChange={(checked) => field.onChange(checked ? "Always Open" : "Business Hours")}
                                       />
-                                      <span className="text-sm">{field.value}</span>
+                                      <span className="text-sm font-medium">{field.value || "Always Open"}</span>
                                     </div>
                                     <FormMessage />
                                   </FormItem>
