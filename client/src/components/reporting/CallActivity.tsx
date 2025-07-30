@@ -185,10 +185,10 @@ function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps
                 <span className="text-gray-600">Campaign:</span> {campaign?.name || 'Unknown'}
               </div>
               <div>
-                <span className="text-gray-600">Buyer:</span> {buyer?.companyName || buyer?.name || 'No buyer assigned'}
+                <span className="text-gray-600">Buyer:</span> {(buyer as any)?.companyName || buyer?.name || 'No buyer assigned'}
               </div>
               <div>
-                <span className="text-gray-600">Target:</span> {(targets.find(t => t.id === call.targetId))?.name || 'No target assigned'}
+                <span className="text-gray-600">Target:</span> {(targets.find((t: any) => t.id === (call as any).targetId))?.name || 'No target assigned'}
               </div>
               <div>
                 <span className="text-gray-600">Revenue:</span> ${call.revenue}
@@ -484,6 +484,10 @@ export default function CallActivity() {
     queryKey: ["/api/targets"]
   });
 
+  const { data: pools = [], isLoading: isLoadingPools } = useQuery<any[]>({
+    queryKey: ["/api/pools"]
+  });
+
   // Debounced infinite scroll handler to prevent excessive calls
   const handleScroll = useCallback(() => {
     const container = tableContainerRef.current;
@@ -544,9 +548,9 @@ export default function CallActivity() {
         return <div className="truncate text-xs">{campaign?.name || 'Unknown'}</div>;
       case 'buyer':
         const buyer = buyers.find(b => b.id === call.buyerId);
-        return <div className="truncate text-xs">{buyer?.companyName || buyer?.name || 'No Buyer'}</div>;
+        return <div className="truncate text-xs">{(buyer as any)?.companyName || buyer?.name || 'No Buyer'}</div>;
       case 'target':
-        const target = targets.find(t => t.id === call.targetId);
+        const target = targets.find((t: any) => t.id === (call as any).targetId);
         return <div className="truncate text-xs">{target?.name || 'No Target'}</div>;
       case 'fromNumber':
         return <div className="font-mono text-xs">{call.fromNumber}</div>;
@@ -580,7 +584,8 @@ export default function CallActivity() {
       case 'previouslyConnected':
         return <div className="text-xs">No</div>;
       case 'numberPool':
-        return <div className="truncate text-xs">{call.numberPoolId ? 'FirstCampaignPool' : 'Direct'}</div>;
+        const pool = pools.find(p => p.id === call.numberPoolId);
+        return <div className="truncate text-xs">{pool?.name || (call.numberPoolId ? 'Pool ' + call.numberPoolId : 'Direct')}</div>;
       case 'numberPoolId':
         return <div className="text-xs">{call.numberPoolId || '-'}</div>;
       case 'numberPoolUsed':
