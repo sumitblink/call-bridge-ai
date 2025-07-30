@@ -153,7 +153,7 @@ export default function Targets() {
                 Add Target
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <TargetIcon className="h-5 w-5" />
@@ -166,7 +166,7 @@ export default function Targets() {
 
               <TooltipProvider>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-8">
                     <Tabs defaultValue="basic" className="w-full">
                       <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="basic">Basic</TabsTrigger>
