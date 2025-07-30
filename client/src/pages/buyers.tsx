@@ -482,7 +482,8 @@ export default function Buyers() {
         const error = await response.json();
         throw new Error(error.message || "Failed to delete buyer");
       }
-      return response.json();
+      // DELETE requests with 204 status have no content to parse
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/buyers"] });
