@@ -231,12 +231,23 @@ export default function Targets() {
 
                             {/* Type & Destination */}
                             <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Type</label>
+                                <Select defaultValue="Number">
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Number">Number</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
                               <FormField
                                 control={form.control}
                                 name="phoneNumber"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Phone Number</FormLabel>
+                                    <FormLabel>Destination <span className="text-red-500">*</span></FormLabel>
                                     <FormControl>
                                       <Input placeholder="Phone number or endpoint" {...field} />
                                     </FormControl>
@@ -244,22 +255,25 @@ export default function Targets() {
                                   </FormItem>
                                 )}
                               />
-                              <FormField
-                                control={form.control}
-                                name="endpoint"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Endpoint</FormLabel>
-                                    <FormControl>
-                                      <Input placeholder="SIP/HTTP endpoint" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
                             </div>
 
-                            {/* TIMEZONE AND HOURS OF OPERATION - NOW VISIBLE IN BASIC TAB */}
+                            {/* Connection Timeout & Disable Recording */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Connection Timeout (seconds)</label>
+                                <Input type="number" defaultValue="30" />
+                                <p className="text-xs text-gray-500">Maximum time to wait for connection (1-300 seconds)</p>
+                              </div>
+                              <div className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                <div className="space-y-0.5">
+                                  <label className="text-sm font-medium">Disable Recording</label>
+                                  <p className="text-xs text-gray-500">Turn off call recording for this target</p>
+                                </div>
+                                <Switch />
+                              </div>
+                            </div>
+
+                            {/* TIMEZONE AND HOURS OF OPERATION FIELDS */}
                             <div className="grid grid-cols-2 gap-4">
                               <FormField
                                 control={form.control}
@@ -304,31 +318,7 @@ export default function Targets() {
                               />
                             </div>
 
-                            {/* Status */}
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                control={form.control}
-                                name="status"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Status</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                      <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="active">Active</SelectItem>
-                                        <SelectItem value="inactive">Inactive</SelectItem>
-                                        <SelectItem value="suspended">Suspended</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
+
                           </CardContent>
                         </Card>
                       </TabsContent>
