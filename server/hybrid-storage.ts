@@ -107,18 +107,18 @@ class HybridStorage implements IStorage {
     if (this.useDatabase) {
       try {
         const result = await supabaseOp();
-        // console.log('Database operation successful, result:', result); // Commented out - too verbose
+        console.log('[HybridStorage] Database operation successful, returning database result');
         return result;
       } catch (error) {
         console.warn('Database operation failed, trying memory storage:', error);
         // Don't disable database permanently, just fallback for this operation
         const fallbackResult = await memoryOp();
-        // console.log('Memory storage fallback result:', fallbackResult); // Too verbose
+        console.log('[HybridStorage] Memory storage fallback result returned');
         return fallbackResult;
       }
     } else {
+      console.log('[HybridStorage] Using memory storage directly');
       const memResult = await memoryOp();
-      // console.log('Using memory storage directly, result:', memResult); // Too verbose
       return memResult;
     }
   }
@@ -678,10 +678,11 @@ class HybridStorage implements IStorage {
   }
 
   async getUnassignedPhoneNumbers(userId?: number): Promise<any[]> {
-    return this.executeOperation(
-      () => this.databaseStorage.getUnassignedPhoneNumbers(userId),
-      () => this.memStorage.getUnassignedPhoneNumbers(userId)
-    );
+    console.log(`[HybridStorage] getUnassignedPhoneNumbers called with userId: ${userId}, useDatabase: ${this.useDatabase}`);
+    
+    // Force memory storage for phone numbers since import was done to memory
+    console.log(`[HybridStorage] Forcing memory storage for getUnassignedPhoneNumbers due to import location`);
+    return this.memStorage.getUnassignedPhoneNumbers(userId);
   }
 
   async getPhoneNumberByNumber(phoneNumber: string): Promise<any | undefined> {
