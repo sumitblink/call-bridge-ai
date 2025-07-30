@@ -229,10 +229,10 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     id: 'numberPool',
-    label: 'Number Pool',
+    label: 'Pool',
     category: 'Call',
     dataType: 'string',
-    defaultVisible: false,
+    defaultVisible: true,
     width: 120,
     filterable: true
   },

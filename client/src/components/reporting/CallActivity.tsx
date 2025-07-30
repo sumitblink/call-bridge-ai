@@ -587,7 +587,7 @@ export default function CallActivity() {
         return <div className="text-xs">No</div>;
       case 'numberPool':
         const pool = pools.find(p => p.id === call.numberPoolId);
-        return <div className="truncate text-xs">{pool?.name || (call.numberPoolId ? 'Pool ' + call.numberPoolId : 'Direct')}</div>;
+        return <div className="truncate text-xs">{pool?.name || 'Direct'}</div>;
       case 'numberPoolId':
         return <div className="text-xs">{call.numberPoolId || '-'}</div>;
       case 'numberPoolUsed':
