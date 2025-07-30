@@ -44,22 +44,21 @@ export class TargetService {
 
   async deleteTarget(id: number): Promise<boolean> {
     try {
-      // First, delete or update dependent records
-      await db.transaction(async (tx) => {
-        // Update calls to remove target reference (set targetId to null)
-        await tx.update(calls)
-          .set({ targetId: null })
-          .where(eq(calls.targetId, id));
-        
-        // Delete campaign-target relationships
-        await tx.delete(campaignTargets)
-          .where(eq(campaignTargets.targetId, id));
-        
-        // Finally, delete the target
-        await tx.delete(targets).where(eq(targets.id, id));
-      });
+      // Since Neon HTTP driver doesn't support transactions, handle dependencies sequentially
       
-      return true;
+      // First, update calls to remove target reference (set targetId to null)
+      await db.update(calls)
+        .set({ targetId: null })
+        .where(eq(calls.targetId, id));
+      
+      // Delete campaign-target relationships
+      await db.delete(campaignTargets)
+        .where(eq(campaignTargets.targetId, id));
+      
+      // Finally, delete the target
+      const result = await db.delete(targets).where(eq(targets.id, id));
+      
+      return (result as any).rowCount > 0;
     } catch (error: any) {
       console.error('Failed to delete target:', error);
       throw new Error('Failed to delete target: ' + error.message);

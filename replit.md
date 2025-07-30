@@ -114,6 +114,13 @@ CallCenter Pro is a comprehensive call center management platform built with Rea
 - **Connection**: Neon serverless PostgreSQL client
 
 ## Recent Changes
+- July 31, 2025: **TARGET DELETION FOREIGN KEY CONSTRAINT FIXED** - Resolved critical target deletion error by implementing proper cascade deletion without transactions (Neon HTTP driver limitation)
+  - **Foreign Key Issue Resolved**: Fixed "update or delete on table targets violates foreign key constraint calls_target_id_fkey" error
+  - **Sequential Dependency Cleanup**: Updated calls.targetId to null, deleted campaign-target relationships, then deleted target
+  - **Neon Driver Compatibility**: Removed transaction wrapper since Neon HTTP driver doesn't support transactions
+  - **Hours of Operation Enhanced**: Added breaks display functionality showing breaks below time inputs with delete capability
+  - **Form Consistency**: Standardized font sizes (text-sm font-medium) and spacing (space-y-6, gap-4) across all target form tabs
+  - **Status**: Target deletion now works properly with full dependency cleanup
 - July 30, 2025: **TARGET TIMEZONE AND HOURS OF OPERATION FIELDS SUCCESSFULLY IMPLEMENTED** - Fixed critical routing issue and added Ringba-style timezone/hours fields to target creation form
   - **Critical Fix Applied**: Resolved App.tsx import routing from targets-enhanced to targets.tsx enabling proper code loading
   - **Timezone Integration Complete**: Added Time Zone dropdown with EST, CST, MST, PST, UTC timezone options matching Ringba interface
