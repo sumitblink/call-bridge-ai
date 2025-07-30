@@ -210,11 +210,11 @@ function BuyerForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Building2 className="h-4 w-4" />
             {buyer ? "Edit Buyer" : "Create New Buyer"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             Configure comprehensive buyer settings matching Ringba's platform standards.
           </DialogDescription>
         </DialogHeader>
@@ -230,9 +230,9 @@ function BuyerForm({
                 name="companyName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Company Name <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel className="text-sm">Company Name <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value || ""} placeholder="Enter company name" />
+                      <Input {...field} value={field.value || ""} placeholder="Enter company name" className="text-sm" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -245,9 +245,9 @@ function BuyerForm({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sub ID</FormLabel>
+                    <FormLabel className="text-sm">Sub ID</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter Sub ID" />
+                      <Input {...field} placeholder="Enter Sub ID" className="text-sm" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -261,7 +261,7 @@ function BuyerForm({
                   name="allowPauseTargets"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between">
-                      <FormLabel className="text-base">Allow Buyer To Pause Targets</FormLabel>
+                      <FormLabel className="text-sm">Allow Buyer To Pause Targets</FormLabel>
                       <FormControl>
                         <Switch checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -274,7 +274,7 @@ function BuyerForm({
                   name="allowSetTargetCaps"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between">
-                      <FormLabel className="text-base">Allow Buyer To Set Target Caps</FormLabel>
+                      <FormLabel className="text-sm">Allow Buyer To Set Target Caps</FormLabel>
                       <FormControl>
                         <Switch checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -287,7 +287,7 @@ function BuyerForm({
                   name="allowDisputeConversions"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between">
-                      <FormLabel className="text-base">Allow Buyer To Dispute Call Conversions</FormLabel>
+                      <FormLabel className="text-sm">Allow Buyer To Dispute Call Conversions</FormLabel>
                       <FormControl>
                         <Switch checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -300,7 +300,7 @@ function BuyerForm({
                   name="enableRevenueRecovery"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between">
-                      <FormLabel className="text-base">Limit Revenue</FormLabel>
+                      <FormLabel className="text-sm">Limit Revenue</FormLabel>
                       <FormControl>
                         <Switch checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -316,15 +316,15 @@ function BuyerForm({
                   name="restrictDuplicates"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between">
-                      <FormLabel className="text-base">Restrict Duplicates</FormLabel>
+                      <FormLabel className="text-sm">Restrict Duplicates</FormLabel>
                       <FormControl>
                         <Select onValueChange={(value) => field.onChange(value === "restrict")} value={field.value ? "restrict" : "doNotRestrict"}>
-                          <SelectTrigger className="w-48">
+                          <SelectTrigger className="w-48 text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="doNotRestrict">Do Not Restrict</SelectItem>
-                            <SelectItem value="restrict">Restrict</SelectItem>
+                            <SelectItem value="doNotRestrict" className="text-sm">Do Not Restrict</SelectItem>
+                            <SelectItem value="restrict" className="text-sm">Restrict</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -340,15 +340,15 @@ function BuyerForm({
                   name="enablePredictiveRouting"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between">
-                      <FormLabel className="text-base">Predictive Routing Settings</FormLabel>
+                      <FormLabel className="text-sm">Predictive Routing Settings</FormLabel>
                       <FormControl>
                         <Select onValueChange={(value) => field.onChange(value === "enabled")} value={field.value ? "enabled" : "disabled"}>
-                          <SelectTrigger className="w-64">
+                          <SelectTrigger className="w-64 text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="disabled">Use Campaign Setting</SelectItem>
-                            <SelectItem value="enabled">Use Estimated Revenue</SelectItem>
+                            <SelectItem value="disabled" className="text-sm">Use Campaign Setting</SelectItem>
+                            <SelectItem value="enabled" className="text-sm">Use Estimated Revenue</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -363,8 +363,8 @@ function BuyerForm({
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center justify-between">
-                        <FormLabel className="text-base">Priority Queue</FormLabel>
-                        <span className="text-sm text-gray-500">100</span>
+                        <FormLabel className="text-sm">Priority Queue</FormLabel>
+                        <span className="text-xs text-gray-500">100</span>
                       </div>
                       <FormControl>
                         <div className="px-3">
@@ -398,7 +398,7 @@ function BuyerForm({
                   name="shareableTags"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between">
-                      <FormLabel className="text-base">Shareable Tags</FormLabel>
+                      <FormLabel className="text-sm">Shareable Tags</FormLabel>
                       <FormControl>
                         <Switch 
                           checked={(field.value && field.value.length > 0) || false} 
@@ -414,7 +414,7 @@ function BuyerForm({
                   name="shareableTags"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between">
-                      <FormLabel className="text-base pl-6">Override Shareable Tags</FormLabel>
+                      <FormLabel className="text-sm pl-6">Override Shareable Tags</FormLabel>
                       <FormControl>
                         <Switch 
                           checked={(field.value && field.value.includes("override")) || false}
@@ -435,12 +435,13 @@ function BuyerForm({
             </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="text-sm">
                 Cancel
               </Button>
               <Button 
                 type="submit" 
                 disabled={createBuyerMutation.isPending || updateBuyerMutation.isPending}
+                className="text-sm"
               >
                 {createBuyerMutation.isPending || updateBuyerMutation.isPending ? "Saving..." : buyer ? "Update Buyer" : "Create Buyer"}
               </Button>
