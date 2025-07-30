@@ -27,12 +27,12 @@ export default function Targets() {
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
 
   // Fetch targets
-  const { data: targets = [], isLoading: targetsLoading } = useQuery({
+  const { data: targets = [], isLoading: targetsLoading } = useQuery<Target[]>({
     queryKey: ['/api/targets'],
   });
 
   // Fetch buyers for dropdown
-  const { data: buyers = [], isLoading: buyersLoading } = useQuery({
+  const { data: buyers = [], isLoading: buyersLoading } = useQuery<Buyer[]>({
     queryKey: ['/api/buyers'],
   });
 
@@ -52,7 +52,7 @@ export default function Targets() {
 
   // Mutations
   const createTargetMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/targets', { method: 'POST', data }),
+    mutationFn: (data: any) => apiRequest('/api/targets', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/targets'] });
       form.reset();
@@ -65,7 +65,7 @@ export default function Targets() {
   });
 
   const updateTargetMutation = useMutation({
-    mutationFn: ({ id, ...data }: any) => apiRequest(`/api/targets/${id}`, { method: 'PUT', data }),
+    mutationFn: ({ id, ...data }: any) => apiRequest(`/api/targets/${id}`, 'PUT', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/targets'] });
       form.reset();
@@ -78,7 +78,7 @@ export default function Targets() {
   });
 
   const deleteTargetMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/targets/${id}`, { method: 'DELETE' }),
+    mutationFn: (id: number) => apiRequest(`/api/targets/${id}`, 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/targets'] });
       toast({ title: "Target deleted successfully" });
@@ -152,7 +152,7 @@ export default function Targets() {
                 Add Target
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <TargetIcon className="h-5 w-5" />
