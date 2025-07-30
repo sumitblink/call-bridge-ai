@@ -368,16 +368,78 @@ export class SupabaseStorage implements IStorage {
 
   // Targets (individual endpoints under buyers)
   async getTargets(): Promise<Target[]> {
-    return await db.select().from(targets);
+    try {
+      const result = await db.select({
+        id: targets.id,
+        userId: targets.userId,
+        buyerId: targets.buyerId,
+        name: targets.name,
+        phoneNumber: targets.phoneNumber,
+        endpoint: targets.endpoint,
+        priority: targets.priority,
+        dailyCap: targets.dailyCap,
+        concurrencyLimit: targets.concurrencyLimit,
+        acceptanceRate: targets.acceptanceRate,
+        avgResponseTime: targets.avgResponseTime,
+        status: targets.status,
+        createdAt: targets.createdAt,
+        updatedAt: targets.updatedAt,
+      }).from(targets);
+      return result;
+    } catch (error) {
+      console.error('Error fetching targets:', error);
+      return [];
+    }
   }
 
   async getTarget(id: number): Promise<Target | undefined> {
-    const result = await db.select().from(targets).where(eq(targets.id, id));
-    return result[0];
+    try {
+      const result = await db.select({
+        id: targets.id,
+        userId: targets.userId,
+        buyerId: targets.buyerId,
+        name: targets.name,
+        phoneNumber: targets.phoneNumber,
+        endpoint: targets.endpoint,
+        priority: targets.priority,
+        dailyCap: targets.dailyCap,
+        concurrencyLimit: targets.concurrencyLimit,
+        acceptanceRate: targets.acceptanceRate,
+        avgResponseTime: targets.avgResponseTime,
+        status: targets.status,
+        createdAt: targets.createdAt,
+        updatedAt: targets.updatedAt,
+      }).from(targets).where(eq(targets.id, id));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching target:', error);
+      return undefined;
+    }
   }
 
   async getTargetsByBuyer(buyerId: number): Promise<Target[]> {
-    return await db.select().from(targets).where(eq(targets.buyerId, buyerId));
+    try {
+      const result = await db.select({
+        id: targets.id,
+        userId: targets.userId,
+        buyerId: targets.buyerId,
+        name: targets.name,
+        phoneNumber: targets.phoneNumber,
+        endpoint: targets.endpoint,
+        priority: targets.priority,
+        dailyCap: targets.dailyCap,
+        concurrencyLimit: targets.concurrencyLimit,
+        acceptanceRate: targets.acceptanceRate,
+        avgResponseTime: targets.avgResponseTime,
+        status: targets.status,
+        createdAt: targets.createdAt,
+        updatedAt: targets.updatedAt,
+      }).from(targets).where(eq(targets.buyerId, buyerId));
+      return result;
+    } catch (error) {
+      console.error('Error fetching targets by buyer:', error);
+      return [];
+    }
   }
 
   async createTarget(target: InsertTarget): Promise<Target> {
