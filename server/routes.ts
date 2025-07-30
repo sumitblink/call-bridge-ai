@@ -2,7 +2,15 @@ import type { Express, Request, Response, NextFunction } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./hybrid-storage";
-import { insertCampaignSchema, insertBuyerSchema, insertTargetSchema, insertAgentSchema, insertNumberPoolSchema } from "@shared/schema";
+import { 
+  insertCampaignSchema, 
+  insertBuyerSchema, 
+  insertBuyerCompanySchema,
+  insertBuyerTargetSchema,
+  insertTargetSchema, 
+  insertAgentSchema, 
+  insertNumberPoolSchema 
+} from "@shared/schema";
 import { twilioService } from "./twilio-service";
 import { PixelService, type PixelMacroData, type PixelFireRequest } from "./pixel-service";
 import { CallRouter } from "./call-routing";
@@ -24,6 +32,8 @@ import {
   publishers,
   visitorSessions,
   campaigns,
+  buyerCompanies,
+  buyerTargets,
   insertCallTrackingTagSchema,
   CallTrackingTag,
   InsertCallTrackingTag 
@@ -1316,7 +1326,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Buyers
+  // Buyer Companies
+  app.get('/api/buyer-companies', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const companies = await db.select().from(buyerCompanies);
+      res.json(companies);
+    } catch (error) {
+      console.error("Error fetching buyer companies:", error);
+      res.status(500).json({ error: "Failed to fetch buyer companies" });
+    }
+  });
+
+  app.post('/api/buyer-companies', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const validatedData = insertBuyerCompanySchema.parse({...req.body, userId});
+      
+      const result = await db.insert(buyerCompanies).values(validatedData).returning();
+      res.status(201).json(result[0]);
+    } catch (error) {
+      console.error("Error creating buyer company:", error);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ error: "Validation error", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Failed to create buyer company", message: error.message });
+      }
+    }
+  });
+
+  app.patch('/api/buyer-companies/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user?.id;
+      const validatedData = insertBuyerCompanySchema.partial().parse(req.body);
+      
+      const result = await db.update(buyerCompanies)
+        .set({ ...validatedData, updatedAt: new Date() })
+        .where(eq(buyerCompanies.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ error: "Buyer company not found" });
+      }
+      
+      res.json(result[0]);
+    } catch (error) {
+      console.error("Error updating buyer company:", error);
+      res.status(500).json({ error: "Failed to update buyer company" });
+    }
+  });
+
+  app.delete('/api/buyer-companies/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      await db.delete(buyerCompanies).where(eq(buyerCompanies.id, id));
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting buyer company:", error);
+      res.status(500).json({ error: "Failed to delete buyer company" });
+    }
+  });
+
+  // Buyer Targets
+  app.get('/api/buyer-targets', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const targets = await db.select().from(buyerTargets);
+      res.json(targets);
+    } catch (error) {
+      console.error("Error fetching buyer targets:", error);
+      res.status(500).json({ error: "Failed to fetch buyer targets" });
+    }
+  });
+
+  app.post('/api/buyer-targets', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const validatedData = insertBuyerTargetSchema.parse({...req.body, userId});
+      
+      const result = await db.insert(buyerTargets).values(validatedData).returning();
+      res.status(201).json(result[0]);
+    } catch (error) {
+      console.error("Error creating buyer target:", error);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ error: "Validation error", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Failed to create buyer target", message: error.message });
+      }
+    }
+  });
+
+  app.patch('/api/buyer-targets/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user?.id;
+      const validatedData = insertBuyerTargetSchema.partial().parse(req.body);
+      
+      const result = await db.update(buyerTargets)
+        .set({ ...validatedData, updatedAt: new Date() })
+        .where(eq(buyerTargets.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ error: "Buyer target not found" });
+      }
+      
+      res.json(result[0]);
+    } catch (error) {
+      console.error("Error updating buyer target:", error);
+      res.status(500).json({ error: "Failed to update buyer target" });
+    }
+  });
+
+  app.delete('/api/buyer-targets/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      await db.delete(buyerTargets).where(eq(buyerTargets.id, id));
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting buyer target:", error);
+      res.status(500).json({ error: "Failed to delete buyer target" });
+    }
+  });
+
+  // Legacy Buyers (backward compatibility)
   app.get('/api/buyers', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;

@@ -88,21 +88,35 @@ export const campaigns = pgTable("campaigns", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const buyers = pgTable("buyers", {
+// Buyer Companies (Company-level entities)
+export const buyerCompanies = pgTable("buyer_companies", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
-  name: varchar("name", { length: 100 }).notNull(),
+  name: varchar("name", { length: 100 }).notNull(), // "MHA", "RTB Health Partners"
   email: varchar("email", { length: 255 }),
   phoneNumber: varchar("phone_number", { length: 20 }),
+  company: varchar("company", { length: 255 }), // Company legal name
   status: varchar("status", { length: 20 }).default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Targets (formerly buyers - endpoint-specific configurations)
+export const buyerTargets = pgTable("buyer_targets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  buyerCompanyId: integer("buyer_company_id").references(() => buyerCompanies.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 100 }).notNull(), // "MHA Direct Endpoint", "MHA High Priority"
+  endpoint: text("endpoint"),
+  subId: varchar("sub_id", { length: 100 }),
+  
+  // Target-specific configuration
   priority: integer("priority").default(1),
   dailyCap: integer("daily_cap").default(50),
   concurrencyLimit: integer("concurrency_limit").default(3),
-  acceptanceRate: numeric("acceptance_rate", { precision: 5, scale: 2 }).default("0"),
   avgResponseTime: integer("avg_response_time"),
-  endpoint: text("endpoint"),
-  company: varchar("company", { length: 255 }),
-  subId: varchar("sub_id", { length: 100 }),
+  
+  // Target permissions and settings
   allowPauseTargets: boolean("allow_pause_targets").default(false),
   allowSetTargetCaps: boolean("allow_set_target_caps").default(false),
   allowDisputeConversions: boolean("allow_dispute_conversions").default(false),
@@ -111,14 +125,19 @@ export const buyers = pgTable("buyers", {
   estimatedRevenue: varchar("estimated_revenue", { length: 50 }).default("Use Campaign Setting"),
   priorityBump: integer("priority_bump").default(0),
   overrideShareableTags: boolean("override_shareable_tags").default(false),
+  
+  status: varchar("status", { length: 20 }).default("active"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Keep old buyers table name as alias for backward compatibility during migration
+export const buyers = buyerTargets;
+
 export const targets = pgTable("targets", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  buyerId: integer("buyer_id").references(() => buyers.id).notNull(),
+  buyerId: integer("buyer_id").references(() => buyerTargets.id).notNull(),
 
   // Basic Information
   name: varchar("name", { length: 256 }).notNull(),
@@ -783,19 +802,35 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
   updatedAt: true,
 });
 
-export const insertBuyerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+// Buyer Company schemas
+export const insertBuyerCompanySchema = createInsertSchema(buyerCompanies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  userId: z.number().optional(),
+  name: z.string().min(1, "Company name is required"),
   email: z.string().email().optional().or(z.literal("")),
   phoneNumber: z.string().optional(),
+  company: z.string().optional(),
   status: z.enum(["active", "paused", "inactive"]).optional(),
+});
+
+// Buyer Target schemas (formerly buyer schemas)
+export const insertBuyerTargetSchema = createInsertSchema(buyerTargets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  userId: z.number().optional(),
+  buyerCompanyId: z.number().optional(),
+  name: z.string().min(1, "Target name is required"),
+  endpoint: z.string().url().optional().or(z.literal("")),
+  subId: z.string().optional(),
   priority: z.number().min(1).max(10).optional(),
   dailyCap: z.number().min(1).optional(),
   concurrencyLimit: z.number().min(1).optional(),
-  acceptanceRate: z.number().min(0).max(100).optional(),
   avgResponseTime: z.number().min(0).optional(),
-  endpoint: z.string().url().optional().or(z.literal("")),
-  company: z.string().optional(),
-  subId: z.string().optional(),
   allowPauseTargets: z.boolean().optional(),
   allowSetTargetCaps: z.boolean().optional(),
   allowDisputeConversions: z.boolean().optional(),
@@ -804,7 +839,11 @@ export const insertBuyerSchema = z.object({
   estimatedRevenue: z.string().optional(),
   priorityBump: z.number().min(-10).max(10).optional(),
   overrideShareableTags: z.boolean().optional(),
+  status: z.enum(["active", "paused", "inactive"]).optional(),
 });
+
+// Keep old buyer schema for backward compatibility
+export const insertBuyerSchema = insertBuyerTargetSchema;
 
 export const insertCampaignBuyerSchema = createInsertSchema(campaignBuyers).omit({
   createdAt: true,
@@ -899,6 +938,15 @@ export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type Campaign = typeof campaigns.$inferSelect;
 export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 
+// Buyer Company types
+export type BuyerCompany = typeof buyerCompanies.$inferSelect;
+export type InsertBuyerCompany = z.infer<typeof insertBuyerCompanySchema>;
+
+// Buyer Target types (formerly buyer types)
+export type BuyerTarget = typeof buyerTargets.$inferSelect;
+export type InsertBuyerTarget = z.infer<typeof insertBuyerTargetSchema>;
+
+// Keep old buyer types for backward compatibility
 export type Buyer = typeof buyers.$inferSelect;
 export type InsertBuyer = z.infer<typeof insertBuyerSchema>;
 

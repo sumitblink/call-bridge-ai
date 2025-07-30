@@ -9,6 +9,10 @@ import {
   type InsertUser,
   type Buyer,
   type InsertBuyer,
+  type BuyerCompany,
+  type InsertBuyerCompany,
+  type BuyerTarget,
+  type InsertBuyerTarget,
   type Target,
   type InsertTarget,
   type CampaignBuyer,
@@ -61,7 +65,22 @@ export interface IStorage {
   updateCampaign(id: string | number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined>;
   deleteCampaign(id: string): Promise<boolean>;
 
-  // Buyers
+  // Buyer Companies
+  getBuyerCompanies(userId?: number): Promise<BuyerCompany[]>;
+  getBuyerCompany(id: number): Promise<BuyerCompany | undefined>;
+  createBuyerCompany(company: InsertBuyerCompany): Promise<BuyerCompany>;
+  updateBuyerCompany(id: number, company: Partial<InsertBuyerCompany>): Promise<BuyerCompany | undefined>;
+  deleteBuyerCompany(id: number): Promise<boolean>;
+
+  // Buyer Targets (formerly buyers)
+  getBuyerTargets(userId?: number): Promise<BuyerTarget[]>;
+  getBuyerTarget(id: number): Promise<BuyerTarget | undefined>;
+  getBuyerTargetsByCompany(companyId: number): Promise<BuyerTarget[]>;
+  createBuyerTarget(target: InsertBuyerTarget): Promise<BuyerTarget>;
+  updateBuyerTarget(id: number, target: Partial<InsertBuyerTarget>): Promise<BuyerTarget | undefined>;
+  deleteBuyerTarget(id: number): Promise<boolean>;
+
+  // Legacy buyer methods (backward compatibility)
   getBuyers(): Promise<Buyer[]>;
   getBuyer(id: number): Promise<Buyer | undefined>;
   createBuyer(buyer: InsertBuyer): Promise<Buyer>;
