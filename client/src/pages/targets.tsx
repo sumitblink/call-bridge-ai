@@ -6,15 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTargetSchema, type Target, type InsertTarget, type Buyer } from "@shared/schema";
+import { z } from "zod";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Trash2, Edit2, Plus, Info, Phone, Globe, Clock, Settings } from "lucide-react";
+import { Trash2, Edit2, Plus, Info, Phone, Globe, Clock, Settings, Target as TargetIcon, Pencil, Shield, Zap, Filter, User } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -1301,7 +1302,7 @@ export default function TargetsPage() {
                     <TableCell>{target.buyerName}</TableCell>
                     <TableCell>{getTypeBadge(target.type)}</TableCell>
                     <TableCell className="font-mono text-sm">{target.destination}</TableCell>
-                    <TableCell>${target.defaultPayout || "0.00"}</TableCell>
+                    <TableCell>${(target as any).defaultPayout || "0.00"}</TableCell>
                     <TableCell>{getStatusBadge("Active")}</TableCell>
                     <TableCell>{target.enableMaxConcurrency ? "2" : "Unlimited"}</TableCell>
                     <TableCell>
@@ -1313,14 +1314,14 @@ export default function TargetsPage() {
                             setEditingTarget(target);
                             form.reset({
                               name: target.name,
-                              subId: target.subId || "",
+                              subId: (target as any).subId || "",
                               buyerId: target.buyerId,
-                              type: target.type,
+                              type: target.type as "number" | "sip",
                               destination: target.destination,
-                              connectionTimeout: target.connectionTimeout || 30,
-                              disableRecording: target.disableRecording || false,
+                              connectionTimeout: (target as any).connectionTimeout || 30,
+                              disableRecording: (target as any).disableRecording || false,
                               timeZone: target.timeZone || "UTC",
-                              hoursOfOperation: target.operatingHours || "basic",
+                              hoursOfOperation: (target.operatingHours as "basic" | "advanced") || "basic",
                               enableMaxConcurrency: target.enableMaxConcurrency || false,
                               enablePredictiveRouting: target.enablePredictiveRouting || false,
                               overrideShareableTags: target.overrideShareableTags || false
@@ -1347,3 +1348,7 @@ export default function TargetsPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  </Layout>
+);
+}
