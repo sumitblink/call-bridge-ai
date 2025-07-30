@@ -425,6 +425,85 @@ export default function TargetsPage() {
                     )}
                   />
 
+                  {/* SIP-specific fields */}
+                  {form.watch("type") === "sip" && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="sipUsername"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-1">
+                            <FormLabel className="text-xs">SIP Username</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="username"
+                                className="h-7 text-xs"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="sipPassword"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-1">
+                            <FormLabel className="text-xs">SIP Password</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                type="password"
+                                placeholder="password"
+                                className="h-7 text-xs"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* SIP Headers Section */}
+                      <div className="md:col-span-4 mt-2">
+                        <FormLabel className="text-xs">SIP Headers</FormLabel>
+                        <div className="mt-1 p-3 border rounded-lg bg-gray-50">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Input 
+                              placeholder="key"
+                              className="h-6 text-xs flex-1"
+                            />
+                            <span className="text-xs">:</span>
+                            <Input 
+                              placeholder="value"
+                              className="h-6 text-xs flex-1"
+                            />
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-6 text-xs px-2"
+                            >
+                              TOKEN
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-6 text-xs px-2"
+                            >
+                              ADD
+                            </Button>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            No Headers
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
                   <FormField
                     control={form.control}
                     name="connectionTimeout"

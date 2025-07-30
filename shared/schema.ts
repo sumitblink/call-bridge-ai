@@ -111,9 +111,14 @@ export const targets = pgTable("targets", {
   
   // Basic Information
   name: varchar("name", { length: 256 }).notNull(),
-  type: varchar("type", { length: 50 }).default("call").notNull(), // call, lead, conversion
-  destination: varchar("destination", { length: 50 }).notNull(), // phone number or endpoint
+  type: varchar("type", { length: 50 }).default("number").notNull(), // number, sip
+  destination: varchar("destination", { length: 255 }).notNull(), // phone number or SIP endpoint
   status: varchar("status", { length: 20 }).default("active").notNull(), // active, paused, inactive
+  
+  // SIP Configuration
+  sipUsername: varchar("sip_username", { length: 255 }),
+  sipPassword: varchar("sip_password", { length: 255 }),
+  sipHeaders: json("sip_headers").$type<Record<string, string>>(),
   
   // Rates & Revenue
   rate: decimal("rate", { precision: 10, scale: 2 }).default("0.00"), // payout rate
@@ -909,6 +914,9 @@ export const insertTargetSchema = createInsertSchema(targets).omit({
   callCalc: z.boolean().default(false),
   hanifCalc: z.boolean().default(false),
   restrictDuplicates: z.enum(["do_not_restrict", "by_phone", "by_caller_id", "by_both"]).default("do_not_restrict"),
+  sipUsername: z.string().optional(),
+  sipPassword: z.string().optional(),
+  sipHeaders: z.record(z.string()).optional(),
   restrictDuplicatesCallSetting: z.boolean().default(false),
   enablePredictiveRouting: z.boolean().default(false),
   enableShareableTags: z.boolean().default(false),
