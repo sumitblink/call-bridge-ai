@@ -310,23 +310,28 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deleteBuyer(id: number): Promise<boolean> {
-    // First check if there are any calls referencing this buyer
-    const callsWithBuyer = await db.select().from(calls).where(eq(calls.buyerId, id)).limit(1);
-    
-    if (callsWithBuyer.length > 0) {
-      // If there are calls referencing this buyer, we need to handle them
-      // Option 1: Set buyer_id to null for existing calls (soft delete)
+    try {
+      // Delete all targets associated with this buyer first
+      await db.delete(targets).where(eq(targets.buyerId, id));
+      
+      // Delete call logs that reference this buyer
+      await db.delete(callLogs).where(eq(callLogs.buyerId, id));
+      
+      // Update calls to remove buyer reference (soft delete to preserve call history)
       await db.update(calls)
         .set({ buyerId: null })
         .where(eq(calls.buyerId, id));
+      
+      // Delete campaign-buyer relationships
+      await db.delete(campaignBuyers).where(eq(campaignBuyers.buyerId, id));
+      
+      // Finally delete the buyer
+      const result = await db.delete(buyers).where(eq(buyers.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting buyer:', error);
+      throw error;
     }
-    
-    // Delete campaign-buyer relationships
-    await db.delete(campaignBuyers).where(eq(campaignBuyers.buyerId, id));
-    
-    // Delete the buyer
-    const result = await db.delete(buyers).where(eq(buyers.id, id));
-    return result.rowCount > 0;
   }
 
   // Targets (individual endpoints under buyers)
