@@ -9,7 +9,7 @@ import Auth from "@/pages/auth";
 import Documentation from "@/pages/documentation";
 import Campaigns from "@/pages/campaigns";
 import CampaignDetail from "@/pages/campaign-detail";
-import Buyers from "@/pages/buyers-enhanced";
+import Buyers from "@/pages/buyers";
 import Targets from "@/pages/targets-enhanced";
 import Publishers from "@/pages/publishers";
 import Agents from "@/pages/agents";
