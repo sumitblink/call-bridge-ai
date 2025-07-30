@@ -13,6 +13,7 @@ import { NumberProvisioningService } from "./number-provisioning";
 import { CallTrackingService } from "./call-tracking-service";
 import { FlowExecutionEngine } from "./flow-execution-engine";
 import { TwiMLGenerator } from "./twiml-generator";
+import { targetService } from "./target-service";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { 
@@ -1411,6 +1412,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting buyer:", error);
       res.status(500).json({ error: "Failed to delete buyer" });
+    }
+  });
+
+  // Targets endpoints 
+  app.get('/api/targets', requireAuth, async (req: any, res) => {
+    try {
+      const targets = await targetService.getTargets();
+      res.json(targets);
+    } catch (error) {
+      console.error('Failed to fetch targets:', error);
+      res.status(500).json({ error: 'Failed to fetch targets' });
+    }
+  });
+
+  app.get('/api/targets/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const target = await targetService.getTarget(id);
+      if (!target) {
+        return res.status(404).json({ error: 'Target not found' });
+      }
+      res.json(target);
+    } catch (error) {
+      console.error('Failed to fetch target:', error);
+      res.status(500).json({ error: 'Failed to fetch target' });
+    }
+  });
+
+  app.post('/api/targets', requireAuth, async (req: any, res) => {
+    try {
+      const target = await targetService.createTarget({ ...req.body, userId: req.user.id });
+      res.json(target);
+    } catch (error) {
+      console.error('Failed to create target:', error);
+      res.status(500).json({ error: 'Failed to create target' });
+    }
+  });
+
+  app.put('/api/targets/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const target = await targetService.updateTarget(id, req.body);
+      if (!target) {
+        return res.status(404).json({ error: 'Target not found' });
+      }
+      res.json(target);
+    } catch (error) {
+      console.error('Failed to update target:', error);
+      res.status(500).json({ error: 'Failed to update target' });
+    }
+  });
+
+  app.delete('/api/targets/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await targetService.deleteTarget(id);
+      if (!success) {
+        return res.status(404).json({ error: 'Target not found' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Failed to delete target:', error);
+      res.status(500).json({ error: 'Failed to delete target' });
     }
   });
 

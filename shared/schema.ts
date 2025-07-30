@@ -88,22 +88,50 @@ export const campaigns = pgTable("campaigns", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// New Buyers table - top-level companies/organizations
 export const buyers = pgTable("buyers", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  name: varchar("name").notNull(),
-  email: varchar("email"),
-  phoneNumber: varchar("phone_number"),
-  endpoint: varchar("endpoint"), // webhook endpoint for ping/post
-  status: varchar("status").default("active"),
-  priority: integer("priority").default(1),
-  dailyCap: integer("daily_cap").default(100),
-  concurrencyLimit: integer("concurrency_limit").default(5),
-
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  name: varchar("name", { length: 100 }).notNull(),
+  company: varchar("company", { length: 100 }),
+  email: varchar("email", { length: 255 }),
+  phoneNumber: varchar("phone_number", { length: 20 }),
+  status: varchar("status", { length: 20 }).default("active").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Targets table - individual endpoints/destinations under buyers
+export const targets = pgTable("targets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  buyerId: integer("buyer_id").references(() => buyers.id).notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  phoneNumber: varchar("phone_number", { length: 20 }),
+  endpoint: varchar("endpoint", { length: 500 }), // Webhook URL for ping/post
+  priority: integer("priority").default(1),
+  dailyCap: integer("daily_cap").default(0), // 0 = unlimited
+  concurrencyLimit: integer("concurrency_limit").default(1),
+  acceptanceRate: varchar("acceptance_rate", { length: 10 }), // Stored as percentage string like "75.50"
+  avgResponseTime: integer("avg_response_time"), // in milliseconds
+  status: varchar("status", { length: 20 }).default("active").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Campaign-Target relationships (renamed from campaign_buyers)
+export const campaignTargets = pgTable("campaign_targets", {
+  campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
+  targetId: integer("target_id").references(() => targets.id).notNull(),
+  priority: integer("priority").default(1),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.campaignId, table.targetId] })
+}));
+
+// Keep legacy campaign_buyers for backwards compatibility temporarily
 export const campaignBuyers = pgTable("campaign_buyers", {
   campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
   buyerId: integer("buyer_id").references(() => buyers.id).notNull(),
@@ -117,7 +145,8 @@ export const campaignBuyers = pgTable("campaign_buyers", {
 export const calls = pgTable("calls", {
   id: serial("id").primaryKey(),
   campaignId: uuid("campaign_id").references(() => campaigns.id),
-  buyerId: integer("buyer_id").references(() => buyers.id),
+  buyerId: integer("buyer_id").references(() => buyers.id), // Top-level buyer
+  targetId: integer("target_id").references(() => targets.id), // Specific target/destination
   publisherId: integer("publisher_id").references(() => publishers.id), // Publisher/affiliate who generated the call
   publisherName: varchar("publisher_name", { length: 255 }), // Publisher name from DNI tracking
   trackingTagId: integer("tracking_tag_id").references(() => callTrackingTags.id), // Tracking tag that generated this call
@@ -717,15 +746,33 @@ export const insertBuyerSchema = createInsertSchema(buyers).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  userId: z.number().optional(), // Made optional for client-side validation
+  userId: z.number().optional(),
   name: z.string().min(1, "Buyer name is required"),
-  phoneNumber: z.string().min(1, "Phone number is required"),
-  status: z.string().optional(),
-  priority: z.number().optional(),
-  dailyCap: z.number().optional(),
-  concurrencyLimit: z.number().optional(),
   email: z.string().email("Invalid email format").optional().or(z.literal("")),
+  phoneNumber: z.string().optional(),
+  company: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export const insertTargetSchema = createInsertSchema(targets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  userId: z.number().optional(),
+  buyerId: z.number().min(1, "Buyer ID is required"),
+  name: z.string().min(1, "Target name is required"),
+  phoneNumber: z.string().optional(),
   endpoint: z.string().url("Invalid endpoint URL").optional().or(z.literal("")),
+  priority: z.number().min(1).max(10).optional(),
+  dailyCap: z.number().min(0).optional(),
+  concurrencyLimit: z.number().min(1).optional(),
+});
+
+export const insertCampaignTargetSchema = createInsertSchema(campaignTargets).omit({
+  createdAt: true,
+}).extend({
+  isActive: z.boolean().optional(),
 });
 
 export const insertCampaignBuyerSchema = createInsertSchema(campaignBuyers).omit({
@@ -824,8 +871,14 @@ export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 export type Buyer = typeof buyers.$inferSelect;
 export type InsertBuyer = z.infer<typeof insertBuyerSchema>;
 
+export type Target = typeof targets.$inferSelect;
+export type InsertTarget = z.infer<typeof insertTargetSchema>;
+
 export type CampaignBuyer = typeof campaignBuyers.$inferSelect;
 export type InsertCampaignBuyer = z.infer<typeof insertCampaignBuyerSchema>;
+
+export type CampaignTarget = typeof campaignTargets.$inferSelect;
+export type InsertCampaignTarget = z.infer<typeof insertCampaignTargetSchema>;
 
 export type Call = typeof calls.$inferSelect;
 export type InsertCall = z.infer<typeof insertCallSchema>;

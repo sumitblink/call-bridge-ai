@@ -9,8 +9,12 @@ import {
   type InsertUser,
   type Buyer,
   type InsertBuyer,
+  type Target,
+  type InsertTarget,
   type CampaignBuyer,
   type InsertCampaignBuyer,
+  type CampaignTarget,
+  type InsertCampaignTarget,
   type CallLog,
   type InsertCallLog,
   type NumberPool,
@@ -59,18 +63,32 @@ export interface IStorage {
   updateCampaign(id: string | number, campaign: Partial<InsertCampaign>): Promise<Campaign | undefined>;
   deleteCampaign(id: string): Promise<boolean>;
 
-  // Buyers
+  // Buyers (top-level companies)
   getBuyers(): Promise<Buyer[]>;
   getBuyer(id: number): Promise<Buyer | undefined>;
   createBuyer(buyer: InsertBuyer): Promise<Buyer>;
   updateBuyer(id: number, buyer: Partial<InsertBuyer>): Promise<Buyer | undefined>;
   deleteBuyer(id: number): Promise<boolean>;
   
-  // Campaign-Buyer Relations
+  // Targets (individual endpoints under buyers)
+  getTargets(): Promise<Target[]>;
+  getTarget(id: number): Promise<Target | undefined>;
+  getTargetsByBuyer(buyerId: number): Promise<Target[]>;
+  createTarget(target: InsertTarget): Promise<Target>;
+  updateTarget(id: number, target: Partial<InsertTarget>): Promise<Target | undefined>;
+  deleteTarget(id: number): Promise<boolean>;
+  
+  // Campaign-Buyer Relations (legacy, transitioning)
   getCampaignBuyers(campaignId: string | number): Promise<Buyer[]>;
   getBuyerCampaignAssignments(buyerId: number): Promise<Campaign[]>;
   addBuyerToCampaign(campaignId: string | number, buyerId: number, priority?: number): Promise<CampaignBuyer>;
   removeBuyerFromCampaign(campaignId: string | number, buyerId: number): Promise<boolean>;
+  
+  // Campaign-Target Relations (new architecture)
+  getCampaignTargets(campaignId: string | number): Promise<Target[]>;
+  getTargetCampaignAssignments(targetId: number): Promise<Campaign[]>;
+  addTargetToCampaign(campaignId: string | number, targetId: number, priority?: number): Promise<CampaignTarget>;
+  removeTargetFromCampaign(campaignId: string | number, targetId: number): Promise<boolean>;
   
 
   

@@ -14,6 +14,7 @@ const navigation = [
 
   { name: "Phone Numbers", href: "/phone-numbers", icon: Phone, current: false },
   { name: "Buyers", href: "/buyers", icon: DollarSign, current: false },
+  { name: "Targets", href: "/targets", icon: Target, current: false },
   { name: "Publishers", href: "/publishers", icon: UserCheck, current: false },
   { name: "Agents", href: "/agents", icon: Users, current: false },
   { name: "RTB Management", href: "/rtb-management", icon: Target, current: false },

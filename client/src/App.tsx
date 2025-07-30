@@ -10,6 +10,7 @@ import Documentation from "@/pages/documentation";
 import Campaigns from "@/pages/campaigns";
 import CampaignDetail from "@/pages/campaign-detail";
 import Buyers from "@/pages/buyers";
+import Targets from "@/pages/targets";
 import Publishers from "@/pages/publishers";
 import Agents from "@/pages/agents";
 import CallControl from "@/pages/call-control";
@@ -61,6 +62,7 @@ function Router() {
           <Route path="/campaigns" component={Campaigns} />
           <Route path="/campaigns/:campaignId" component={CampaignDetail} />
           <Route path="/buyers" component={Buyers} />
+          <Route path="/targets" component={Targets} />
           <Route path="/publishers" component={Publishers} />
           <Route path="/agents" component={Agents} />
 
