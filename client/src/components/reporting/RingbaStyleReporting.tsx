@@ -75,6 +75,7 @@ export default function RingbaStyleReporting() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [selectedCalls, setSelectedCalls] = useState<any[]>([]);
+  const [showColumnCustomizer, setShowColumnCustomizer] = useState(false);
   const [currentReportConfig, setCurrentReportConfig] = useState({
     filters: [],
     dateRange: "today",

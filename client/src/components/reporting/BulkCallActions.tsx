@@ -66,7 +66,7 @@ const bulkActions: BulkAction[] = [
   }
 ];
 
-export default function BulkCallActions({ 
+export function BulkCallActions({ 
   selectedCalls, 
   onClearSelection, 
   onActionComplete 
