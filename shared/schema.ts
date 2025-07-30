@@ -1381,6 +1381,10 @@ export const rtbTargets = pgTable("rtb_targets", {
   currencyPath: varchar("currency_path", { length: 255 }),
   durationPath: varchar("duration_path", { length: 255 }),
   
+  // JavaScript Response Parser
+  responseParserType: varchar("response_parser_type", { length: 50 }).default("json_path"), // json_path, javascript
+  javascriptParser: text("javascript_parser"), // Custom JavaScript code for response parsing
+  
   // Performance Tracking
   totalPings: integer("total_pings").default(0).notNull(),
   successfulBids: integer("successful_bids").default(0).notNull(),
@@ -1551,6 +1555,10 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
   maxCostPerAcquisition: z.number().min(0).optional(),
   bidAdjustmentFrequency: z.number().min(300).max(86400).optional(),
   enableAutoBidding: z.boolean().optional(),
+  
+  // JavaScript Response Parser validation
+  responseParserType: z.enum(["json_path", "javascript"]).optional(),
+  javascriptParser: z.string().optional(),
   
   // Phase 2: Geographic Targeting validation
   allowedStates: z.array(z.string().length(2)).optional(),

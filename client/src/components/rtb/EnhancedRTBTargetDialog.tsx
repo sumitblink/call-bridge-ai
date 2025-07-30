@@ -80,10 +80,9 @@ const enhancedRTBTargetSchema = z.object({
   currencyPath: z.string().optional(),
   durationPath: z.string().optional(),
   
-  // Legacy Acceptance Parsing (for backward compatibility)
-  acceptanceParsing: z.enum(["Choose Property", "price", "accepted", "duration"]),
-  acceptanceOperator: z.enum(["Equals", "Greater Than", "Less Than", "Not Equals"]),
-  acceptanceValue: z.string().optional(),
+  // JavaScript Response Parser
+  responseParserType: z.enum(["json_path", "javascript"]).optional(),
+  javascriptParser: z.string().optional(),
 }).refine((data) => data.maxBidAmount >= data.minBidAmount, {
   message: "Maximum bid amount must be greater than or equal to minimum bid amount",
   path: ["maxBidAmount"],
@@ -137,9 +136,13 @@ export function EnhancedRTBTargetDialog({
       requestBody: editingTarget?.requestBody || "",
       authentication: editingTarget?.authentication || "Choose Authentication",
       authToken: editingTarget?.authToken || "",
-      acceptanceParsing: editingTarget?.acceptanceParsing || "Choose Property",
-      acceptanceOperator: editingTarget?.acceptanceOperator || "Equals",
-      acceptanceValue: editingTarget?.acceptanceValue || "",
+      bidAmountPath: editingTarget?.bidAmountPath || "",
+      destinationNumberPath: editingTarget?.destinationNumberPath || "",
+      acceptancePath: editingTarget?.acceptancePath || "",
+      currencyPath: editingTarget?.currencyPath || "",
+      durationPath: editingTarget?.durationPath || "",
+      responseParserType: editingTarget?.responseParserType || "json_path",
+      javascriptParser: editingTarget?.javascriptParser || "",
     },
   });
 
@@ -1254,77 +1257,73 @@ Please add tags with numerical values only."
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      Legacy Acceptance Parsing
+                      <TestTube className="h-4 w-4" />
+                      Advanced Response Parsing
                     </CardTitle>
                     <CardDescription>
-                      Fallback parsing for backward compatibility
+                      Choose parsing method and configure custom acceptance logic
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="acceptanceParsing"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Choose Property</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="Choose Property">Choose Property</SelectItem>
-                                <SelectItem value="price">price</SelectItem>
-                                <SelectItem value="accepted">accepted</SelectItem>
-                                <SelectItem value="duration">duration</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="acceptanceOperator"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Operator</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="Equals">Equals</SelectItem>
-                                <SelectItem value="Greater Than">Greater Than</SelectItem>
-                                <SelectItem value="Less Than">Less Than</SelectItem>
-                                <SelectItem value="Not Equals">Not Equals</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="acceptanceValue"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Value</FormLabel>
+                    <FormField
+                      control={form.control}
+                      name="responseParserType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Response Parser Type</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || "json_path"}>
                             <FormControl>
-                              <Input placeholder="Required" {...field} />
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
                             </FormControl>
+                            <SelectContent>
+                              <SelectItem value="json_path">JSONPath (Simple)</SelectItem>
+                              <SelectItem value="javascript">JavaScript (Advanced)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Use JSONPath for simple field extraction or JavaScript for complex logic
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("responseParserType") === "javascript" && (
+                      <FormField
+                        control={form.control}
+                        name="javascriptParser"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              JavaScript Acceptance Logic
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-sm">
+                                  <p>Write JavaScript code to determine if the buyer accepts the call. 
+                                  Use 'input' variable for the response data. Must return true/false.</p>
+                                  <p className="mt-1 text-xs">Example: input = JSON.parse(input); return input.status == 'accepted';</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="input = JSON.parse(input);&#10;return input.status == 'accepted';"
+                                className="font-mono text-sm min-h-[100px]"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              JavaScript code to evaluate buyer acceptance. Use 'input' for response data.
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
