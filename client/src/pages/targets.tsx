@@ -1,21 +1,26 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTargetSchema, type Target, type InsertTarget, type Buyer } from "@shared/schema";
-import { Plus, Edit, Trash2, Target as TargetIcon, User, Phone, DollarSign, Clock, AlertCircle, Settings, Zap, Shield, Filter, Pencil } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Trash2, Edit2, Plus, Info, Phone, Globe, Clock, Settings } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import Layout from "@/components/Layout";
 
 // Comprehensive timezone list
 const TIMEZONES = [
@@ -338,7 +343,7 @@ export default function TargetsPage() {
       ...data,
       buyerId: data.buyerId || null, // Handle optional buyer
     };
-    
+
     if (editingTarget) {
       updateTargetMutation.mutate({ id: editingTarget.id, data: formattedData });
     } else {
@@ -406,8 +411,41 @@ export default function TargetsPage() {
     return <Badge variant={variants[type as keyof typeof variants] || "default"}>{type}</Badge>;
   };
 
+  if (targetsLoading || buyersLoading) {
+    return (
+      <Layout>
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Target Management</h1>
+              <p className="text-muted-foreground">Manage your call targets and routing destinations</p>
+            </div>
+            <Button disabled>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Target
+            </Button>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Targets</CardTitle>
+              <CardDescription>Loading target data...</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-16 bg-gray-200 rounded-lg animate-pulse" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <Layout>
+      <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
@@ -436,7 +474,7 @@ export default function TargetsPage() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-                
+
                 {/* Row 1: Basic Info */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div>
@@ -824,7 +862,7 @@ export default function TargetsPage() {
                         Add Break
                       </Button>
                     </div>
-                    
+
                     {/* Add Break Form */}
                     {showAddBreak === -1 && (
                       <div className="mt-3 p-3 border rounded-lg bg-white">
@@ -874,7 +912,7 @@ export default function TargetsPage() {
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Display existing breaks */}
                     {breaks.length > 0 && (
                       <div className="mt-3">
@@ -927,7 +965,7 @@ export default function TargetsPage() {
                               Add Break
                             </Button>
                           </div>
-                          
+
                           {/* Add Break Form for this day */}
                           {showAddBreak === dayIndex && (
                             <div className="ml-6 p-3 border rounded-lg bg-white">
@@ -987,7 +1025,7 @@ export default function TargetsPage() {
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Display existing breaks for this day */}
                           {breaks.filter(break_ => break_.day === day).length > 0 && (
                             <div className="ml-6">
@@ -1309,6 +1347,3 @@ export default function TargetsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
-  );
-}
