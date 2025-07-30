@@ -105,6 +105,17 @@ export default function PhoneNumbersPage() {
       setSelectedNumbers(new Set()); // Clear selected numbers
       setIsCreatePoolDialogOpen(false);
       
+      // Clear form inputs to prevent accidental re-submission
+      const poolNameInput = document.getElementById('poolName') as HTMLInputElement;
+      const idleLimitInput = document.getElementById('idleLimit') as HTMLInputElement;
+      const closedBrowserDelayInput = document.getElementById('closedBrowserDelay') as HTMLInputElement;
+      const prefixInput = document.getElementById('prefix') as HTMLInputElement;
+      
+      if (poolNameInput) poolNameInput.value = '';
+      if (idleLimitInput) idleLimitInput.value = '300';
+      if (closedBrowserDelayInput) closedBrowserDelayInput.value = '60';
+      if (prefixInput) prefixInput.value = '';
+      
       // Show success message with webhook status
       const webhookResult = data.webhookResult;
       let description = "Number pool created successfully.";
@@ -954,7 +965,7 @@ export default function PhoneNumbersPage() {
                     <div className="flex gap-2">
                       <Button 
                         className="flex-1" 
-                        disabled={selectedNumbers.size === 0}
+                        disabled={selectedNumbers.size === 0 || createPoolMutation.isPending}
                         onClick={() => {
                           const poolName = (document.getElementById('poolName') as HTMLInputElement)?.value;
                           const idleLimit = parseInt((document.getElementById('idleLimit') as HTMLInputElement)?.value || '300');
@@ -999,10 +1010,11 @@ export default function PhoneNumbersPage() {
                           }
                         }}
                       >
-                        Create Pool ({selectedNumbers.size} numbers)
+                        {createPoolMutation.isPending ? "Creating Pool..." : `Create Pool (${selectedNumbers.size} numbers)`}
                       </Button>
                       <Button 
                         variant="outline" 
+                        disabled={createPoolMutation.isPending}
                         onClick={() => setIsCreatePoolDialogOpen(false)}
                       >
                         Cancel
