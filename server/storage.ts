@@ -1353,6 +1353,7 @@ export class MemStorage implements IStorage {
       const assignedToCampaign = number.campaignId && number.campaignId !== 0;
       
       console.log(`[MemStorage] getUnassignedPhoneNumbers: Number ${number.phoneNumber} - poolAssignments: ${poolAssignments.length}, campaignId: ${number.campaignId}, assignedToCampaign: ${assignedToCampaign}`);
+      console.log(`[MemStorage] getUnassignedPhoneNumbers: Number details:`, JSON.stringify(number, null, 2));
       
       if (poolAssignments.length === 0 && !assignedToCampaign) {
         unassigned.push(number);
