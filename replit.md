@@ -157,6 +157,12 @@ Based on comprehensive review of Ringba's complete documentation structure cover
 - Integration framework supports 19+ platforms with comprehensive webhook, pixel, and postback systems
 
 ## Recent Changes  
+- July 31, 2025: **RTB TARGET COMPANY DROPDOWN IMPLEMENTED** - Enhanced RTB target creation form to use buyer dropdown instead of text input for company selection
+  - **Company Selection Dropdown**: Replaced text input with dropdown populated from existing buyers list
+  - **Buyer Integration**: RTB target form now displays all available buyers (company names) in dropdown format
+  - **Loading States**: Added proper loading indicator and "no buyers available" messaging for empty states
+  - **User Experience**: Prevents manual entry errors and ensures RTB targets are linked to existing buyer companies
+  - **Status**: RTB target creation now properly integrates with buyers management system via dropdown selection
 - July 31, 2025: **STICKY SESSION DNI FUNCTIONALITY IMPLEMENTED** - Fixed call tracking tag rotation strategy to properly implement sticky session-based number assignment
   - **Sticky Session Logic**: Implemented proper session-based phone number persistence using session ID hash for consistent assignment
   - **Database Schema Enhanced**: Added `assigned_phone_number_id` column to visitor_sessions table for tracking phone assignments

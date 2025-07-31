@@ -115,6 +115,14 @@ export function EnhancedRTBTargetDialog({
     staleTime: 0
   });
 
+  // Fetch buyers for Company dropdown
+  const { data: buyers = [], isLoading: loadingBuyers } = useQuery<any[]>({
+    queryKey: ['/api/buyers'],
+    enabled: open,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000 // 5 minutes cache
+  });
+
   // Refetch configurations when dialog opens
   useEffect(() => {
     if (open) {
@@ -393,12 +401,29 @@ export function EnhancedRTBTargetDialog({
                                   <Info className="h-4 w-4 text-muted-foreground" />
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>The business or organization name that will receive RTB requests.</p>
+                                  <p>Select the buyer company that will receive RTB requests.</p>
                                 </TooltipContent>
                               </Tooltip>
                             </FormLabel>
                             <FormControl>
-                              <Input placeholder="Company or organization name" {...field} />
+                              <Select onValueChange={field.onChange} value={field.value || ""}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder={loadingBuyers ? "Loading buyers..." : "Select a buyer company"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {buyers.length === 0 && !loadingBuyers ? (
+                                    <SelectItem value="no-buyers" disabled>
+                                      No buyers available - create buyers first
+                                    </SelectItem>
+                                  ) : (
+                                    buyers.map((buyer) => (
+                                      <SelectItem key={buyer.id} value={buyer.companyName || buyer.name || `Buyer ${buyer.id}`}>
+                                        {buyer.companyName || buyer.name || `Buyer ${buyer.id}`}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
