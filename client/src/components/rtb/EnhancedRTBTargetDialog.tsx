@@ -1587,6 +1587,145 @@ Please add tags with numerical values only."
                             </FormItem>
                           )}
                         />
+
+                        {/* Call Length Configuration - Show only when "Call Length" is selected */}
+                        {form.watch("convertOn") === "Call Length" && (
+                          <div className="space-y-6 pl-4 border-l-2 border-blue-200">
+                            {/* Start Call Length On */}
+                            <FormField
+                              control={form.control}
+                              name="startCallLengthOn"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="flex items-center gap-2">
+                                    Start Call Length On
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Choose when to start counting the call length for conversion calculation.</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </FormLabel>
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      type="button" 
+                                      variant={field.value === "Incoming" ? "default" : "outline"}
+                                      size="sm" 
+                                      className={field.value === "Incoming" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                      onClick={() => field.onChange("Incoming")}
+                                    >
+                                      Incoming
+                                    </Button>
+                                    <Button 
+                                      type="button" 
+                                      variant={field.value === "Dial" ? "default" : "outline"}
+                                      size="sm"
+                                      className={field.value === "Dial" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                      onClick={() => field.onChange("Dial")}
+                                    >
+                                      Dial
+                                    </Button>
+                                    <Button 
+                                      type="button" 
+                                      variant={field.value === "Connect" ? "default" : "outline"}
+                                      size="sm"
+                                      className={field.value === "Connect" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                      onClick={() => field.onChange("Connect")}
+                                    >
+                                      Connect
+                                    </Button>
+                                  </div>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            {/* Conversion call length value */}
+                            <FormField
+                              control={form.control}
+                              name="callLengthValueType"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="flex items-center gap-2">
+                                    Conversion call length value
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Choose between dynamic call length calculation or static fixed duration.</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </FormLabel>
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      type="button" 
+                                      variant={field.value === "Dynamic" ? "default" : "outline"}
+                                      size="sm" 
+                                      className={field.value === "Dynamic" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                      onClick={() => field.onChange("Dynamic")}
+                                    >
+                                      Dynamic
+                                    </Button>
+                                    <Button 
+                                      type="button" 
+                                      variant={field.value === "Static" ? "default" : "outline"}
+                                      size="sm"
+                                      className={field.value === "Static" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                      onClick={() => field.onChange("Static")}
+                                    >
+                                      Static
+                                    </Button>
+                                  </div>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            {/* Static Duration Input - Show only when Static is selected */}
+                            {form.watch("callLengthValueType") === "Static" && (
+                              <FormField
+                                control={form.control}
+                                name="maxDynamicDuration"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                      Call Length (seconds)
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-4 w-4 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Minimum call duration in seconds required for conversion.</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </FormLabel>
+                                    <FormControl>
+                                      <div className="flex items-center gap-2">
+                                        <Input 
+                                          type="number" 
+                                          step="1"
+                                          min="0"
+                                          placeholder="30"
+                                          value={field.value?.toString() || ""}
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                                          }}
+                                          className="w-24"
+                                        />
+                                        <span className="text-sm text-muted-foreground">seconds</span>
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 
