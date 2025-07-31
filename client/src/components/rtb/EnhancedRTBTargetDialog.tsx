@@ -10,11 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
+import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Settings, Globe, Clock, Shield, DollarSign, Target, TestTube, Phone, AlertTriangle, Info, Plus, ExternalLink } from "lucide-react";
+import { Settings, Globe, Clock, Shield, DollarSign, Target, TestTube, Phone, AlertTriangle, Info, Plus, ExternalLink, AlertCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 
@@ -110,6 +111,12 @@ const enhancedRTBTargetSchema = z.object({
   callLengthValueType: z.enum(["Dynamic", "Static"]).optional(),
   maxDynamicDuration: z.number().min(0).nullable().optional(),
   staticCallLength: z.number().min(1).optional(),
+  
+  // Error Settings
+  errorSettings: z.enum(["inherit_from_ring_tree", "override"]).optional(),
+  dialTimeout: z.number().min(1).max(300).optional(),
+  pingTimeout: z.number().min(100).max(30000).optional(),
+  callOnFailure: z.boolean().optional(),
 }).refine(
   (data) => {
     // When conversion settings is override, revenue type must be selected
@@ -197,6 +204,12 @@ export function EnhancedRTBTargetDialog({
       maxDynamicDuration: editingTarget?.maxDynamicDuration || null,
       staticCallLength: editingTarget?.staticCallLength || 30,
       minimumRevenueAmount: editingTarget?.minimumRevenueAmount ?? 20,
+      
+      // Error Settings
+      errorSettings: editingTarget?.errorSettings || "inherit_from_ring_tree",
+      dialTimeout: editingTarget?.dialTimeout || 12,
+      pingTimeout: editingTarget?.pingTimeout || 5000,
+      callOnFailure: editingTarget?.callOnFailure || false,
       capOn: editingTarget?.capOn || "Conversion",
       globalCallCap: editingTarget?.globalCallCap || 0,
       monthlyCap: editingTarget?.monthlyCap || 0,
@@ -1884,6 +1897,173 @@ Please add tags with numerical values only."
                                   </FormItem>
                                 )}
                               />
+                            )}
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Error Settings Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      Error Settings
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Configure timeout and failure handling settings for RTB requests.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <FormField
+                      control={form.control}
+                      name="errorSettings"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="space-y-4">
+                            <div className="flex gap-2">
+                              <Button 
+                                type="button" 
+                                variant={field.value === "inherit_from_ring_tree" ? "default" : "outline"}
+                                size="sm" 
+                                className={field.value === "inherit_from_ring_tree" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                onClick={() => field.onChange("inherit_from_ring_tree")}
+                              >
+                                Inherit From Ring Tree
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant={field.value === "override" ? "default" : "outline"}
+                                size="sm"
+                                className={field.value === "override" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                onClick={() => field.onChange("override")}
+                              >
+                                Override
+                              </Button>
+                            </div>
+
+                            {/* Override Error Settings */}
+                            {field.value === "override" && (
+                              <div className="space-y-4 mt-4">
+                                {/* Dial Timeout */}
+                                <FormField
+                                  control={form.control}
+                                  name="dialTimeout"
+                                  render={({ field: dialField }) => (
+                                    <FormItem>
+                                      <div className="flex items-center justify-between">
+                                        <FormLabel className="flex items-center gap-2">
+                                          Dial Timeout
+                                          <Tooltip>
+                                            <TooltipTrigger>
+                                              <Info className="h-4 w-4 text-muted-foreground" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Maximum time to wait for call to be answered (seconds).</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </FormLabel>
+                                        <div className="flex items-center gap-2">
+                                          <FormControl>
+                                            <Input 
+                                              type="number" 
+                                              step="1"
+                                              min="1"
+                                              max="300"
+                                              value={dialField.value?.toString() || ""}
+                                              onChange={(e) => {
+                                                const value = e.target.value;
+                                                dialField.onChange(value === "" ? 12 : parseInt(value) || 12);
+                                              }}
+                                              className="w-20"
+                                            />
+                                          </FormControl>
+                                          <span className="text-sm text-muted-foreground">seconds</span>
+                                        </div>
+                                      </div>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                {/* Ping Timeout */}
+                                <FormField
+                                  control={form.control}
+                                  name="pingTimeout"
+                                  render={({ field: pingField }) => (
+                                    <FormItem>
+                                      <div className="flex items-center justify-between">
+                                        <FormLabel className="flex items-center gap-2">
+                                          Ping Timeout
+                                          <Tooltip>
+                                            <TooltipTrigger>
+                                              <Info className="h-4 w-4 text-muted-foreground" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Maximum time to wait for RTB response (milliseconds).</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </FormLabel>
+                                        <div className="flex items-center gap-2">
+                                          <FormControl>
+                                            <Input 
+                                              type="number" 
+                                              step="100"
+                                              min="100"
+                                              max="30000"
+                                              value={pingField.value?.toString() || ""}
+                                              onChange={(e) => {
+                                                const value = e.target.value;
+                                                pingField.onChange(value === "" ? 5000 : parseInt(value) || 5000);
+                                              }}
+                                              className="w-20"
+                                            />
+                                          </FormControl>
+                                          <span className="text-sm text-muted-foreground">milliseconds</span>
+                                        </div>
+                                      </div>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                {/* Call On Failure */}
+                                <FormField
+                                  control={form.control}
+                                  name="callOnFailure"
+                                  render={({ field: failureField }) => (
+                                    <FormItem>
+                                      <div className="flex items-center justify-between">
+                                        <FormLabel className="flex items-center gap-2">
+                                          Call On Failure
+                                          <Tooltip>
+                                            <TooltipTrigger>
+                                              <Info className="h-4 w-4 text-muted-foreground" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Continue call attempt even if RTB target fails to respond.</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </FormLabel>
+                                        <FormControl>
+                                          <Switch
+                                            checked={failureField.value}
+                                            onCheckedChange={failureField.onChange}
+                                          />
+                                        </FormControl>
+                                      </div>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
                             )}
                           </div>
                         </FormItem>

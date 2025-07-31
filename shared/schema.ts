@@ -1438,6 +1438,12 @@ export const rtbTargets = pgTable("rtb_targets", {
   staticCallLength: integer("static_call_length").default(30), // seconds for static call length
   minimumRevenueAmount: decimal("minimum_revenue_amount", { precision: 10, scale: 2 }).default("20.00"),
   
+  // Error Settings
+  errorSettings: varchar("error_settings", { length: 50 }).default("inherit_from_ring_tree"), // inherit_from_ring_tree, override
+  dialTimeout: integer("dial_timeout").default(12), // seconds
+  pingTimeout: integer("ping_timeout").default(5000), // milliseconds
+  callOnFailure: boolean("call_on_failure").default(false),
+  
   // Performance Tracking
   totalPings: integer("total_pings").default(0).notNull(),
   successfulBids: integer("successful_bids").default(0).notNull(),
@@ -1619,6 +1625,12 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
   callLengthValueType: z.enum(["Dynamic", "Static"]).optional(),
   maxDynamicDuration: z.number().min(0).nullable().optional(),
   staticCallLength: z.number().min(1).optional(),
+  
+  // Error Settings validation
+  errorSettings: z.enum(["inherit_from_ring_tree", "override"]).optional(),
+  dialTimeout: z.number().min(1).max(300).optional(), // 1-300 seconds
+  pingTimeout: z.number().min(100).max(30000).optional(), // 100-30000 milliseconds
+  callOnFailure: z.boolean().optional(),
   
   // Phase 2: Geographic Targeting validation
   allowedStates: z.array(z.string().length(2)).optional(),
