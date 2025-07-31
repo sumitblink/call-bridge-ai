@@ -182,6 +182,14 @@ Based on comprehensive review of Ringba's complete documentation structure cover
 7. **Request Settings**: API endpoint configuration with JavaScript/JPath/XPath parsing support
 
 ## Recent Changes  
+- July 31, 2025: **RTB TARGET DUPLICATION FUNCTIONALITY IMPLEMENTED** - Added duplicate option to RTB target actions menu enabling users to clone existing targets with "(Copy)" suffix
+  - **Copy Button Added**: Added Copy icon and duplicate button to RTB target actions alongside Edit and Delete buttons
+  - **Duplicate Mutation**: Implemented duplicateMutation with proper target cloning logic excluding id, timestamps, and performance metrics
+  - **Smart Naming**: Duplicated targets automatically append "(Copy)" to name and reset performance counters (totalPings, successfulBids, wonCalls)
+  - **Error Handling**: Added proper loading states, success/error toasts, and console logging for duplication operations
+  - **Cache Invalidation**: Proper query cache refresh ensures duplicated targets appear immediately in table
+  - **User Experience**: Single-click duplication with loading spinner and confirmation toast for smooth workflow
+  - **Status**: RTB target duplication now fully operational with all configurations preserved except performance metrics
 - July 31, 2025: **REVENUE SETTINGS VALIDATION AND DEFAULTS FIXED** - Resolved critical RTB target Revenue Settings validation issue and updated default values per user specifications
   - **Database Schema Enhanced**: Added missing Revenue Settings columns (conversion_settings, revenue_type, static_revenue_amount, failure_revenue_amount, etc.) to rtb_targets table
   - **Form Validation Fixed**: Resolved "compulsory static selection" error when choosing Dynamic revenue type by adding proper default values to form initialization

@@ -14,7 +14,7 @@ import { Phase2GeographicTargetingDialog } from "@/components/rtb/Phase2Geograph
 import Phase3AdvancedFilteringDialog from "@/components/rtb/Phase3AdvancedFilteringDialog";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone, Globe, Info } from "lucide-react";
+import { Plus, Edit, Trash2, Copy, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone, Globe, Info } from "lucide-react";
 
 // RTB Target type
 type RtbTarget = {
@@ -65,6 +65,7 @@ export default function SimplifiedRTBManagementPage() {
   const [isTargetDialogOpen, setIsTargetDialogOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState<RtbTarget | null>(null);
   const [deletingTarget, setDeleteingTarget] = useState<RtbTarget | null>(null);
+  const [duplicatingTarget, setDuplicatingTarget] = useState<RtbTarget | null>(null);
   const [phase1DialogOpen, setPhase1DialogOpen] = useState(false);
   const [phase1Target, setPhase1Target] = useState<RtbTarget | null>(null);
   const [phase2DialogOpen, setPhase2DialogOpen] = useState(false);
@@ -118,6 +119,53 @@ export default function SimplifiedRTBManagementPage() {
       console.error(`[RTB Frontend] Delete mutation error:`, error);
       toast({ 
         title: "Deletion Failed", 
+        description: `Error: ${error.message}. Check browser console for details.`,
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Duplicate target mutation
+  const duplicateMutation = useMutation({
+    mutationFn: async (target: RtbTarget) => {
+      console.log(`[RTB Frontend] Starting duplication of target ${target.id} (${target.name})`);
+      try {
+        // Create a copy of the target without id, createdAt, updatedAt
+        const duplicateData = {
+          ...target,
+          name: `${target.name} (Copy)`,
+          // Remove fields that should not be duplicated
+          id: undefined,
+          createdAt: undefined,
+          updatedAt: undefined,
+          totalPings: 0,
+          successfulBids: 0,
+          wonCalls: 0,
+        };
+        delete duplicateData.id;
+        delete duplicateData.createdAt;
+        delete duplicateData.updatedAt;
+        
+        const response = await apiRequest('/api/rtb/targets', 'POST', duplicateData);
+        console.log(`[RTB Frontend] Duplicate response status:`, response.status);
+        const result = await response.json();
+        console.log(`[RTB Frontend] Duplicate response data:`, result);
+        return result;
+      } catch (error) {
+        console.error(`[RTB Frontend] Duplicate error:`, error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      console.log(`[RTB Frontend] Duplicate success:`, data);
+      queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
+      toast({ title: "Success", description: "RTB target duplicated successfully" });
+      setDuplicatingTarget(null);
+    },
+    onError: (error: any) => {
+      console.error(`[RTB Frontend] Duplicate mutation error:`, error);
+      toast({ 
+        title: "Duplication Failed", 
         description: `Error: ${error.message}. Check browser console for details.`,
         variant: "destructive" 
       });
@@ -388,6 +436,22 @@ export default function SimplifiedRTBManagementPage() {
                               onClick={() => openEditDialog(target)}
                             >
                               <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                console.log(`[RTB Frontend] Duplicate button clicked for target:`, target);
+                                setDuplicatingTarget(target);
+                                duplicateMutation.mutate(target);
+                              }}
+                              disabled={duplicateMutation.isPending}
+                            >
+                              {duplicateMutation.isPending ? (
+                                <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
                             </Button>
                             <Button
                               size="sm"
