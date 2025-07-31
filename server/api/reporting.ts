@@ -44,9 +44,9 @@ router.get('/summary', requireAuth, async (req, res) => {
     }
 
     // Get campaign data with summary statistics - OPTIMIZED
-    const campaigns = await storage.getCampaigns(userId);
-    const calls = await storage.getCallsByUser(userId);
-    const buyers = await storage.getBuyers(userId);
+    const campaigns = await storage.getCampaigns((req.session as any).userId!);
+    const calls = await storage.getCallsByUser((req.session as any).userId!);
+    const buyers = await storage.getBuyers((req.session as any).userId!);
     
     // Group data based on the groupBy parameter
     let summaryData: any[] = [];
@@ -142,6 +142,58 @@ router.get('/summary', requireAuth, async (req, res) => {
       summaryData = Array.from(dateGroups.entries()).map(([date, dateCalls]) => {
         return createSummaryRecord(dateCalls, 'date', date);
       });
+    } else if (groupBy === 'duplicate') {
+      // Group by duplicate status
+      const duplicateGroups = new Map<string, any[]>();
+      calls.forEach(call => {
+        const isDuplicate = call.isDuplicate ? 'Yes' : 'No';
+        if (!duplicateGroups.has(isDuplicate)) {
+          duplicateGroups.set(isDuplicate, []);
+        }
+        duplicateGroups.get(isDuplicate)!.push(call);
+      });
+      
+      summaryData = Array.from(duplicateGroups.entries()).map(([duplicateStatus, duplicateCalls]) => {
+        return createSummaryRecord(duplicateCalls, 'duplicate', duplicateStatus);
+      });
+    } else if (groupBy === 'tag') {
+      // Group by reporting tags - this matches Ringba's tag functionality
+      const tagGroups = new Map<string, any[]>();
+      const selectedTag = req.query.tag as string;
+      
+      calls.forEach(call => {
+        // Extract tags from call - could be from UTM parameters, custom fields, etc.
+        let tagValue = 'No Tag';
+        
+        // Check various tag sources in call data
+        if (selectedTag) {
+          // Look for specific tag in call data
+          if (call.tags && call.tags.includes(selectedTag)) {
+            tagValue = selectedTag;
+          } else if (call.utm_source && selectedTag === 'utm_source') {
+            tagValue = call.utm_source;
+          } else if (call.utm_campaign && selectedTag === 'utm_campaign') {
+            tagValue = call.utm_campaign;
+          } else if (call.utm_medium && selectedTag === 'utm_medium') {
+            tagValue = call.utm_medium;
+          } else if (call.publisher && selectedTag === 'publisher') {
+            tagValue = call.publisher;
+          } else if (call.sub1 && selectedTag === 'sub1') {
+            tagValue = call.sub1;
+          } else if (call.sub2 && selectedTag === 'sub2') {
+            tagValue = call.sub2;
+          }
+        }
+        
+        if (!tagGroups.has(tagValue)) {
+          tagGroups.set(tagValue, []);
+        }
+        tagGroups.get(tagValue)!.push(call);
+      });
+      
+      summaryData = Array.from(tagGroups.entries()).map(([tagValue, tagCalls]) => {
+        return createSummaryRecord(tagCalls, 'tag', tagValue);
+      });
     } else {
       // Default to campaign grouping
       summaryData = campaigns.map(campaign => {
@@ -149,6 +201,9 @@ router.get('/summary', requireAuth, async (req, res) => {
         return createSummaryRecord(campaignCalls, 'campaign', campaign.name, campaign);
       });
     }
+
+    // Sort by incoming calls by default (matching Ringba behavior)
+    summaryData.sort((a, b) => b.incoming - a.incoming);
 
     // Helper function to create summary record
     function createSummaryRecord(callsGroup: any[], groupType: string, groupValue: string, campaign?: any) {
@@ -190,7 +245,7 @@ router.get('/summary', requireAuth, async (req, res) => {
         converted: convertedCalls,
         noConnection: callsGroup.filter(call => call.status === 'failed').length,
         blocked: 0,
-        duplicate: 0,
+        duplicateCount: 0,
         ivrHangup: callsGroup.filter(call => call.status === 'busy').length,
         rpc: totalCalls > 0 ? totalRevenue / totalCalls : 0,
         revenue: totalRevenue,

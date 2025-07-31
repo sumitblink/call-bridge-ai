@@ -103,6 +103,29 @@ export default function SummaryReport({ filters, dateRange, onFilterClick }: Sum
     onFilterClick(field, value);
   };
 
+  // Render group value with Ringba-style orange dashes for spaces
+  const renderGroupValue = (value: string, groupType: string) => {
+    if (!value) return '-no value-';
+    
+    // For tag grouping, show orange dashes for spaces to differentiate from "-no value-"
+    if (groupType === 'tag' && value.includes(' ')) {
+      return (
+        <span>
+          {value.split(' ').map((part, index) => (
+            <span key={index}>
+              {part}
+              {index < value.split(' ').length - 1 && (
+                <span className="text-orange-500 font-bold">-</span>
+              )}
+            </span>
+          ))}
+        </span>
+      );
+    }
+    
+    return value;
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -132,23 +155,24 @@ export default function SummaryReport({ filters, dateRange, onFilterClick }: Sum
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex items-center justify-between mb-4">
-            <TabsList className="grid w-full grid-cols-8">
+            <TabsList className="grid w-full grid-cols-9">
               <TabsTrigger value="campaign">Campaign</TabsTrigger>
               <TabsTrigger value="publisher">Publisher</TabsTrigger>
-              <TabsTrigger value="target">Target</TabsTrigger>
-              <TabsTrigger value="buyer">Buyer</TabsTrigger>
-              <TabsTrigger value="dialedNumber">Dialed #</TabsTrigger>
               <TabsTrigger value="pool">Pool</TabsTrigger>
-              <TabsTrigger value="date">Date</TabsTrigger>
+              <TabsTrigger value="dialedNumber">Dialed #</TabsTrigger>
               <TabsTrigger value="duplicate">Duplicate</TabsTrigger>
+              <TabsTrigger value="target">Target Name</TabsTrigger>
+              <TabsTrigger value="date">Date</TabsTrigger>
+              <TabsTrigger value="tag">Tag</TabsTrigger>
             </TabsList>
             
             {activeTab === 'tag' && (
               <Select value={selectedTag} onValueChange={setSelectedTag}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select a tag" />
+                  <SelectValue placeholder="Select a reporting tag" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">All Tags</SelectItem>
                   {availableTags.map((tag: any) => (
                     <SelectItem key={tag.name} value={tag.name}>
                       {tag.displayName || tag.name}
@@ -196,7 +220,7 @@ export default function SummaryReport({ filters, dateRange, onFilterClick }: Sum
                         onClick={() => handleCellClick(activeTab, row.groupValue)}
                       >
                         <div className="flex items-center gap-2">
-                          {row.groupValue || '-no value-'}
+                          {renderGroupValue(row.groupValue, activeTab)}
                           {row.duplicate > 0 && <Badge variant="secondary" className="text-xs">Dup</Badge>}
                         </div>
                       </TableCell>
