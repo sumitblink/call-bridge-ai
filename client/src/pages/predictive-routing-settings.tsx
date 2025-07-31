@@ -400,9 +400,12 @@ export default function PredictiveRoutingSettings() {
                       <div className="space-y-2">
                         <Label>Track Connections by</Label>
                         <select className="w-full border rounded px-3 py-2 bg-background">
+                          <option>Buyer</option>
+                          <option>Target</option>
+                          <option>Campaign and Buyer</option>
                           <option>Campaign and Target</option>
-                          <option>Campaign Only</option>
-                          <option>Target Only</option>
+                          <option>Publisher, Campaign and Buyer</option>
+                          <option>Publisher, Campaign and Target</option>
                         </select>
                       </div>
                     </div>
