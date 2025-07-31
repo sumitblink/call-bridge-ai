@@ -254,12 +254,12 @@ export default function PredictiveRoutingSettings() {
           setEditingConfig(null);
           resetForm();
         }}>
-          <DialogContent className="max-w-2xl bg-gray-800 border-gray-700">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-white">
+              <DialogTitle>
                 {editingConfig ? "Edit Configuration" : "Predictive Routing"}
               </DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogDescription>
                 Configure predictive routing settings for intelligent call distribution
               </DialogDescription>
             </DialogHeader>
@@ -273,14 +273,13 @@ export default function PredictiveRoutingSettings() {
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="Configuration name"
-                  className="bg-gray-700 border-gray-600 text-white"
                 />
               </div>
 
               {/* Toggle Switches - Use Revenue and Advanced */}  
               <div className="flex items-center justify-end gap-6">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="use-revenue" className="text-white">Use Revenue</Label>
+                  <Label htmlFor="use-revenue">Use Revenue</Label>
                   <Switch
                     id="use-revenue"
                     checked={formData.type === "use_revenue"}
@@ -294,7 +293,7 @@ export default function PredictiveRoutingSettings() {
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="advanced" className="text-white">Advanced</Label>
+                  <Label htmlFor="advanced">Advanced</Label>
                   <Switch
                     id="advanced"
                     checked={formData.type === "advanced"}
@@ -314,9 +313,9 @@ export default function PredictiveRoutingSettings() {
                 <div className="space-y-6">
                   {/* New Target Priority Slider */}
                   <div className="space-y-3">
-                    <Label className="text-white">New Target Priority</Label>
+                    <Label>New Target Priority</Label>
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs text-gray-400">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>Low</span>
                         <span>Default</span>
                         <span>High</span>
@@ -329,7 +328,7 @@ export default function PredictiveRoutingSettings() {
                         onChange={(e) => setFormData(prev => ({ ...prev, newTargetPriority: parseInt(e.target.value) }))}
                         className="w-full h-2 bg-gradient-to-r from-blue-500 via-teal-500 to-green-500 rounded-lg appearance-none cursor-pointer"
                       />
-                      <div className="text-center text-sm text-gray-400">
+                      <div className="text-center text-sm text-muted-foreground">
                         Default ({formData.newTargetPriority > 0 ? '+' : ''}{formData.newTargetPriority})
                       </div>
                     </div>
@@ -337,9 +336,9 @@ export default function PredictiveRoutingSettings() {
 
                   {/* Underperforming Target Priority Slider */}
                   <div className="space-y-3">
-                    <Label className="text-white">Underperforming Target Priority</Label>
+                    <Label>Underperforming Target Priority</Label>
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs text-gray-400">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>Low</span>
                         <span>Default</span>
                         <span>High</span>
@@ -352,7 +351,7 @@ export default function PredictiveRoutingSettings() {
                         onChange={(e) => setFormData(prev => ({ ...prev, underperformingTargetPriority: parseInt(e.target.value) }))}
                         className="w-full h-2 bg-gradient-to-r from-blue-500 via-teal-500 to-green-500 rounded-lg appearance-none cursor-pointer"
                       />
-                      <div className="text-center text-sm text-gray-400">
+                      <div className="text-center text-sm text-muted-foreground">
                         Default ({formData.underperformingTargetPriority > 0 ? '+' : ''}{formData.underperformingTargetPriority})
                       </div>
                     </div>
@@ -360,9 +359,9 @@ export default function PredictiveRoutingSettings() {
 
                   {/* Training Requirement Slider */}
                   <div className="space-y-3">
-                    <Label className="text-white">Training Requirement</Label>
+                    <Label>Training Requirement</Label>
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs text-gray-400">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>Less Calls</span>
                         <span>Default</span>
                         <span>More Calls</span>
@@ -375,7 +374,7 @@ export default function PredictiveRoutingSettings() {
                         onChange={(e) => setFormData(prev => ({ ...prev, trainingRequirement: parseInt(e.target.value) }))}
                         className="w-full h-2 bg-gradient-to-r from-blue-500 via-teal-500 to-green-500 rounded-lg appearance-none cursor-pointer"
                       />
-                      <div className="text-center text-sm text-gray-400">
+                      <div className="text-center text-sm text-muted-foreground">
                         Default ({formData.trainingRequirement > 0 ? '+' : ''}{formData.trainingRequirement})
                       </div>
                     </div>
@@ -388,19 +387,19 @@ export default function PredictiveRoutingSettings() {
                 <div className="space-y-6">
                   {/* Tracking Settings */}
                   <div className="space-y-4">
-                    <h3 className="text-white font-medium">Tracking Settings</h3>
+                    <h3 className="font-medium">Tracking Settings</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-gray-300">Count Attempts</Label>
-                        <select className="w-full bg-gray-700 border-gray-600 text-white rounded px-3 py-2">
+                        <Label>Count Attempts</Label>
+                        <select className="w-full border rounded px-3 py-2 bg-background">
                           <option>On Dial</option>
                           <option>On Answer</option>
                           <option>On Conversion</option>
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-gray-300">Track Connections by</Label>
-                        <select className="w-full bg-gray-700 border-gray-600 text-white rounded px-3 py-2">
+                        <Label>Track Connections by</Label>
+                        <select className="w-full border rounded px-3 py-2 bg-background">
                           <option>Campaign and Target</option>
                           <option>Campaign Only</option>
                           <option>Target Only</option>
@@ -411,44 +410,39 @@ export default function PredictiveRoutingSettings() {
 
                   {/* Call Filter Settings */}
                   <div className="space-y-4">
-                    <h3 className="text-white font-medium">Call Filter Settings</h3>
+                    <h3 className="font-medium">Call Filter Settings</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-gray-300">Minimum Number of Calls</Label>
+                        <Label>Minimum Number of Calls</Label>
                         <Input
                           type="number"
                           defaultValue="15"
-                          className="bg-gray-700 border-gray-600 text-white"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-gray-300">Desired Number of Calls</Label>
+                        <Label>Desired Number of Calls</Label>
                         <Input
                           type="number"
                           defaultValue="75"
-                          className="bg-gray-700 border-gray-600 text-white"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-gray-300">Minimum Number of Hours</Label>
+                        <Label>Minimum Number of Hours</Label>
                         <Input
                           type="number"
-                          className="bg-gray-700 border-gray-600 text-white"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-gray-300">Desired Number of Hours</Label>
+                        <Label>Desired Number of Hours</Label>
                         <Input
                           type="number"
                           defaultValue="720"
-                          className="bg-gray-700 border-gray-600 text-white"
                         />
                       </div>
                       <div className="space-y-2 col-span-2">
-                        <Label className="text-gray-300">Skip Latest Hours</Label>
+                        <Label>Skip Latest Hours</Label>
                         <Input
                           type="number"
-                          className="bg-gray-700 border-gray-600 text-white"
                         />
                       </div>
                     </div>
@@ -456,22 +450,20 @@ export default function PredictiveRoutingSettings() {
 
                   {/* Priority Settings */}
                   <div className="space-y-4">
-                    <h3 className="text-white font-medium">Priority Settings</h3>
+                    <h3 className="font-medium">Priority Settings</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-gray-300">New Targets</Label>
+                        <Label>New Targets</Label>
                         <Input
                           type="number"
                           defaultValue="47"
-                          className="bg-gray-700 border-gray-600 text-white"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-gray-300">Underperforming Targets</Label>
+                        <Label>Underperforming Targets</Label>
                         <Input
                           type="number"
                           defaultValue="10"
-                          className="bg-gray-700 border-gray-600 text-white"
                         />
                       </div>
                     </div>
@@ -480,10 +472,10 @@ export default function PredictiveRoutingSettings() {
               )}
 
               {/* Active Status */}
-              <div className="flex items-center justify-between rounded-lg border border-gray-600 p-4 bg-gray-700">
+              <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
-                  <div className="text-sm font-medium text-white">Active Configuration</div>
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm font-medium">Active Configuration</div>
+                  <div className="text-sm text-muted-foreground">
                     Enable this configuration for use in campaigns
                   </div>
                 </div>
@@ -502,14 +494,12 @@ export default function PredictiveRoutingSettings() {
                   setEditingConfig(null);
                   resetForm();
                 }}
-                className="bg-gray-600 border-gray-500 text-white hover:bg-gray-700"
               >
                 CANCEL
               </Button>
               <Button
                 onClick={handleSubmit}
                 disabled={createConfigMutation.isPending || updateConfigMutation.isPending || !formData.name.trim()}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {createConfigMutation.isPending || updateConfigMutation.isPending ? "Saving..." : "CREATE"}
               </Button>
