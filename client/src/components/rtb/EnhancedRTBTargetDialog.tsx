@@ -105,7 +105,19 @@ const enhancedRTBTargetSchema = z.object({
   // JavaScript Response Parser
   responseParserType: z.enum(["json_path", "javascript"]).optional(),
   javascriptParser: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    // When conversion settings is override, revenue type must be selected
+    if (data.conversionSettings === "override" && !data.revenueType) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Revenue type is required when using override conversion settings",
+    path: ["revenueType"], // This will show the error on the revenueType field
+  }
+);
 
 interface EnhancedRTBTargetDialogProps {
   open: boolean;
@@ -270,6 +282,8 @@ export function EnhancedRTBTargetDialog({
         currencyPath: editingTarget.currencyPath || "",
         durationPath: editingTarget.durationPath || "",
         acceptanceParsing: "Choose Property",
+        responseParserType: editingTarget.responseParserType || "json_path",
+        javascriptParser: editingTarget.javascriptParser || "",
       });
     } else {
       form.reset({
@@ -281,11 +295,32 @@ export function EnhancedRTBTargetDialog({
         contactPhone: "",
         enableDynamicNumber: false,
         rtbShareableTags: false,
+        shareInboundCallId: false,
+        exposeCallerId: false,
+        rtbId: "",
+        dynamicNumberType: "Number",
+        dynamicNumber: "",
+        sipEndpoint: "",
+        sipUsername: "",
+        sipPassword: "",
 
         connectionTimeout: 5000,
         dialIvrOptions: "",
         disableRecordings: false,
         timezone: "UTC",
+        
+        // Revenue Settings - Missing fields that need defaults
+        conversionSettings: "use_ring_tree",
+        minimumRevenueSettings: "use_ring_tree",
+        revenueType: "dynamic",
+        staticRevenueAmount: 0,
+        failureRevenueAmount: 0,
+        convertOn: "Call Successfully Connected",
+        startCallLengthOn: "Incoming",
+        callLengthValueType: "Dynamic",
+        maxDynamicDuration: 0,
+        minimumRevenueAmount: 20,
+        
         capOn: "Conversion",
         globalCallCap: 0,
         monthlyCap: 0,
@@ -308,6 +343,8 @@ export function EnhancedRTBTargetDialog({
         acceptanceParsing: "",
         currencyPath: "",
         durationPath: "",
+        responseParserType: "json_path",
+        javascriptParser: "",
       });
     }
   }, [editingTarget, form]);
