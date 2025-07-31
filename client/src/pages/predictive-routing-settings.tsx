@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -254,122 +254,154 @@ export default function PredictiveRoutingSettings() {
           setEditingConfig(null);
           resetForm();
         }}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl bg-gray-800 border-gray-700">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-white">
                 {editingConfig ? "Edit Configuration" : "Predictive Routing"}
               </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Configure predictive routing settings for intelligent call distribution
+              </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-6">
-              {/* Configuration Name and Type */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Configuration name"
+              {/* Configuration Name */}
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Configuration name"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+
+              {/* Toggle Switches - Use Revenue and Advanced */}  
+              <div className="flex items-center justify-end gap-6">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="use-revenue" className="text-white">Use Revenue</Label>
+                  <Switch
+                    id="use-revenue"
+                    checked={formData.type === "use_revenue"}
+                    onCheckedChange={(checked) => 
+                      setFormData(prev => ({ ...prev, type: checked ? "use_revenue" : "advanced" }))
+                    }
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Type</Label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={formData.type === "use_revenue" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFormData(prev => ({ ...prev, type: "use_revenue" }))}
-                    >
-                      Use Revenue
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={formData.type === "advanced" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFormData(prev => ({ ...prev, type: "advanced" }))}
-                    >
-                      Advanced
-                    </Button>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="advanced" className="text-white">Advanced</Label>
+                  <Switch
+                    id="advanced"
+                    checked={formData.type === "advanced"}
+                    onCheckedChange={(checked) => 
+                      setFormData(prev => ({ ...prev, type: checked ? "advanced" : "use_revenue" }))
+                    }
+                  />
                 </div>
               </div>
 
-              {/* New Target Priority Slider */}
-              <div className="space-y-3">
-                <Label>New Target Priority</Label>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Low</span>
-                    <span>Default</span>
-                    <span>High</span>
+              {/* Advanced Settings - Only show when Advanced is ON */}
+              {formData.type === "advanced" && (
+                <div className="space-y-6">
+                  {/* Tracking Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-white font-medium">Tracking Settings</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-gray-300">Count Attempts</Label>
+                        <select className="w-full bg-gray-700 border-gray-600 text-white rounded px-3 py-2">
+                          <option>On Dial</option>
+                          <option>On Answer</option>
+                          <option>On Conversion</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-gray-300">Track Connections by</Label>
+                        <select className="w-full bg-gray-700 border-gray-600 text-white rounded px-3 py-2">
+                          <option>Campaign and Target</option>
+                          <option>Campaign Only</option>
+                          <option>Target Only</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="-10"
-                    max="10"
-                    value={formData.newTargetPriority}
-                    onChange={(e) => setFormData(prev => ({ ...prev, newTargetPriority: parseInt(e.target.value) }))}
-                    className={`w-full h-2 bg-gradient-to-r ${getSliderColor(formData.newTargetPriority)} rounded-lg appearance-none cursor-pointer`}
-                  />
-                  <div className="text-center text-sm text-gray-600">
-                    {getSliderValue(formData.newTargetPriority)} ({formData.newTargetPriority > 0 ? '+' : ''}{formData.newTargetPriority})
-                  </div>
-                </div>
-              </div>
 
-              {/* Underperforming Target Priority Slider */}
-              <div className="space-y-3">
-                <Label>Underperforming Target Priority</Label>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Low</span>
-                    <span>Default</span>
-                    <span>High</span>
+                  {/* Call Filter Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-white font-medium">Call Filter Settings</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-gray-300">Minimum Number of Calls</Label>
+                        <Input
+                          type="number"
+                          defaultValue="15"
+                          className="bg-gray-700 border-gray-600 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-gray-300">Desired Number of Calls</Label>
+                        <Input
+                          type="number"
+                          defaultValue="75"
+                          className="bg-gray-700 border-gray-600 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-gray-300">Minimum Number of Hours</Label>
+                        <Input
+                          type="number"
+                          className="bg-gray-700 border-gray-600 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-gray-300">Desired Number of Hours</Label>
+                        <Input
+                          type="number"
+                          defaultValue="720"
+                          className="bg-gray-700 border-gray-600 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <Label className="text-gray-300">Skip Latest Hours</Label>
+                        <Input
+                          type="number"
+                          className="bg-gray-700 border-gray-600 text-white"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="-10"
-                    max="10"
-                    value={formData.underperformingTargetPriority}
-                    onChange={(e) => setFormData(prev => ({ ...prev, underperformingTargetPriority: parseInt(e.target.value) }))}
-                    className={`w-full h-2 bg-gradient-to-r ${getSliderColor(formData.underperformingTargetPriority)} rounded-lg appearance-none cursor-pointer`}
-                  />
-                  <div className="text-center text-sm text-gray-600">
-                    {getSliderValue(formData.underperformingTargetPriority)} ({formData.underperformingTargetPriority > 0 ? '+' : ''}{formData.underperformingTargetPriority})
-                  </div>
-                </div>
-              </div>
 
-              {/* Training Requirement Slider */}
-              <div className="space-y-3">
-                <Label>Training Requirement</Label>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Less Calls</span>
-                    <span>Default</span>
-                    <span>More Calls</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="-10"
-                    max="10"
-                    value={formData.trainingRequirement}
-                    onChange={(e) => setFormData(prev => ({ ...prev, trainingRequirement: parseInt(e.target.value) }))}
-                    className={`w-full h-2 bg-gradient-to-r ${getSliderColor(formData.trainingRequirement)} rounded-lg appearance-none cursor-pointer`}
-                  />
-                  <div className="text-center text-sm text-gray-600">
-                    {getSliderValue(formData.trainingRequirement)} ({formData.trainingRequirement > 0 ? '+' : ''}{formData.trainingRequirement})
+                  {/* Priority Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-white font-medium">Priority Settings</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-gray-300">New Targets</Label>
+                        <Input
+                          type="number"
+                          defaultValue="47"
+                          className="bg-gray-700 border-gray-600 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-gray-300">Underperforming Targets</Label>
+                        <Input
+                          type="number"
+                          defaultValue="10"
+                          className="bg-gray-700 border-gray-600 text-white"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Active Status */}
-              <div className="flex items-center justify-between rounded-lg border p-4">
+              <div className="flex items-center justify-between rounded-lg border border-gray-600 p-4 bg-gray-700">
                 <div className="space-y-0.5">
-                  <div className="text-sm font-medium">Active Configuration</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm font-medium text-white">Active Configuration</div>
+                  <div className="text-sm text-gray-400">
                     Enable this configuration for use in campaigns
                   </div>
                 </div>
@@ -388,13 +420,14 @@ export default function PredictiveRoutingSettings() {
                   setEditingConfig(null);
                   resetForm();
                 }}
+                className="bg-gray-600 border-gray-500 text-white hover:bg-gray-700"
               >
                 CANCEL
               </Button>
               <Button
                 onClick={handleSubmit}
                 disabled={createConfigMutation.isPending || updateConfigMutation.isPending || !formData.name.trim()}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {createConfigMutation.isPending || updateConfigMutation.isPending ? "Saving..." : "CREATE"}
               </Button>
