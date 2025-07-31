@@ -184,13 +184,13 @@ export function EnhancedRTBTargetDialog({
       conversionSettings: editingTarget?.conversionSettings || "use_ring_tree",
       minimumRevenueSettings: editingTarget?.minimumRevenueSettings || "use_ring_tree",
       revenueType: editingTarget?.revenueType || "dynamic",
-      staticRevenueAmount: editingTarget?.staticRevenueAmount || 0,
-      failureRevenueAmount: editingTarget?.failureRevenueAmount || 0,
+      staticRevenueAmount: editingTarget?.staticRevenueAmount ?? 0,
+      failureRevenueAmount: editingTarget?.failureRevenueAmount ?? 0,
       convertOn: editingTarget?.convertOn || "Call Successfully Connected",
       startCallLengthOn: editingTarget?.startCallLengthOn || "Incoming",
       callLengthValueType: editingTarget?.callLengthValueType || "Dynamic",
       maxDynamicDuration: editingTarget?.maxDynamicDuration || 0,
-      minimumRevenueAmount: editingTarget?.minimumRevenueAmount || 20,
+      minimumRevenueAmount: editingTarget?.minimumRevenueAmount ?? 20,
       capOn: editingTarget?.capOn || "Conversion",
       globalCallCap: editingTarget?.globalCallCap || 0,
       monthlyCap: editingTarget?.monthlyCap || 0,
@@ -309,9 +309,9 @@ export function EnhancedRTBTargetDialog({
         disableRecordings: false,
         timezone: "UTC",
         
-        // Revenue Settings - Missing fields that need defaults
+        // Revenue Settings - Default values
         conversionSettings: "use_ring_tree",
-        minimumRevenueSettings: "use_ring_tree",
+        minimumRevenueSettings: "use_ring_tree", 
         revenueType: "dynamic",
         staticRevenueAmount: 0,
         failureRevenueAmount: 0,

@@ -182,6 +182,14 @@ Based on comprehensive review of Ringba's complete documentation structure cover
 7. **Request Settings**: API endpoint configuration with JavaScript/JPath/XPath parsing support
 
 ## Recent Changes  
+- July 31, 2025: **REVENUE SETTINGS VALIDATION AND DEFAULTS FIXED** - Resolved critical RTB target Revenue Settings validation issue and updated default values per user specifications
+  - **Database Schema Enhanced**: Added missing Revenue Settings columns (conversion_settings, revenue_type, static_revenue_amount, failure_revenue_amount, etc.) to rtb_targets table
+  - **Form Validation Fixed**: Resolved "compulsory static selection" error when choosing Dynamic revenue type by adding proper default values to form initialization
+  - **Default Values Updated**: Set Static Revenue Amount = 0, Failure Revenue Amount = 0, Minimum Revenue Amount = 20 as requested
+  - **Conditional Validation**: Added proper validation logic to ensure Revenue Type is required when Override is selected
+  - **Form Reset Logic**: Fixed form reset for both new and editing targets to include all Revenue Settings fields
+  - **Persistence Working**: Revenue Settings now properly save to database and persist across form edits
+  - **Status**: RTB target Revenue Settings validation and persistence completely operational with correct default values
 - July 31, 2025: **RINGBA GEOGRAPHIC TOKEN SYSTEM COMPLETELY IMPLEMENTED** - Successfully deployed comprehensive Ringba-compliant geographic token system with IP-based geolocation and RTB token replacement
   - **Geographic Service Created**: Implemented GeoService using geoip-lite package for IP-based geographic data lookup matching Ringba's exact functionality
   - **Database Schema Enhanced**: Added comprehensive geographic fields to visitor_sessions table (geo_country, geo_country_code, geo_region, geo_region_name, geo_city, geo_zip_code, geo_latitude, geo_longitude, geo_timezone)
