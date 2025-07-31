@@ -297,7 +297,7 @@ export default function Sidebar() {
         />
       </div>
       {/* User Profile */}
-      <div className="px-4 py-4 border-t border-gray-200">
+      <div className="px-4 py-4">
         <div className={`flex items-center ${isCollapsed ? 'flex-col space-y-2' : 'justify-between'}`}>
           {!isCollapsed ? (
             <>
