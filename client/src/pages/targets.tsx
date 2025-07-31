@@ -717,64 +717,30 @@ export default function Targets() {
                       </TabsContent>
 
                       <TabsContent value="concurrency" className="space-y-6">
-                        <Card>
+                        <Card className="bg-slate-50 dark:bg-slate-900">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                               <Phone className="h-4 w-4" />
                               Concurrency Settings
                             </CardTitle>
-                            <CardDescription>
-                              Configure concurrent call limits and distribution
-                            </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Concurrent Call Limit</label>
-                                <Input type="number" defaultValue="5" />
-                                <p className="text-xs text-gray-500">Maximum simultaneous calls (1-50)</p>
+                            {/* Max Concurrency Toggle */}
+                            <div className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <div className="text-sm font-medium">Max Concurrency</div>
+                                <div className="text-sm text-muted-foreground">None</div>
                               </div>
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Call Distribution</label>
-                                <Select defaultValue="weighted">
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="round_robin">Round Robin</SelectItem>
-                                    <SelectItem value="weighted">Weighted Distribution</SelectItem>
-                                    <SelectItem value="priority">Priority Based</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Priority Level</label>
-                                <Select defaultValue="5">
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="1">1 (Highest)</SelectItem>
-                                    <SelectItem value="2">2 (High)</SelectItem>
-                                    <SelectItem value="3">3 (Medium High)</SelectItem>
-                                    <SelectItem value="4">4 (Medium)</SelectItem>
-                                    <SelectItem value="5">5 (Medium Low)</SelectItem>
-                                    <SelectItem value="6">6 (Low)</SelectItem>
-                                    <SelectItem value="7">7 (Lowest)</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Weight Percentage</label>
-                                <Input type="number" defaultValue="100" min="1" max="100" />
-                                <p className="text-xs text-gray-500">Distribution weight (1-100%)</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
                               <Switch />
-                              <label className="text-sm font-medium">Enable failover routing</label>
+                            </div>
+
+                            {/* Hourly Concurrency Toggle */}
+                            <div className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <div className="text-sm font-medium">Hourly Concurrency</div>
+                                <div className="text-sm text-muted-foreground">None</div>
+                              </div>
+                              <Switch />
                             </div>
                           </CardContent>
                         </Card>
@@ -923,70 +889,6 @@ export default function Targets() {
                                 className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 placeholder="Additional notes or special instructions for this target..."
                               />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-
-                      <TabsContent value="concurrency" className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              <Phone className="h-4 w-4" />
-                              Concurrency Settings
-                            </CardTitle>
-                            <CardDescription>
-                              Configure concurrent call limits and distribution
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Concurrent Call Limit</label>
-                                <Input type="number" defaultValue="5" />
-                                <p className="text-xs text-gray-500">Maximum simultaneous calls (1-50)</p>
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Call Distribution</label>
-                                <Select defaultValue="weighted">
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="round_robin">Round Robin</SelectItem>
-                                    <SelectItem value="weighted">Weighted Distribution</SelectItem>
-                                    <SelectItem value="priority">Priority Based</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Priority Level</label>
-                                <Select defaultValue="5">
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="1">1 (Highest)</SelectItem>
-                                    <SelectItem value="2">2 (High)</SelectItem>
-                                    <SelectItem value="3">3 (Medium High)</SelectItem>
-                                    <SelectItem value="4">4 (Medium)</SelectItem>
-                                    <SelectItem value="5">5 (Medium Low)</SelectItem>
-                                    <SelectItem value="6">6 (Low)</SelectItem>
-                                    <SelectItem value="7">7 (Lowest)</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Weight Percentage</label>
-                                <Input type="number" defaultValue="100" min="1" max="100" />
-                                <p className="text-xs text-gray-500">Distribution weight (1-100%)</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Switch />
-                              <label className="text-sm font-medium">Enable failover routing</label>
                             </div>
                           </CardContent>
                         </Card>
