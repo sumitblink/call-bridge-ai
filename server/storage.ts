@@ -52,6 +52,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByEmailAsync(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   upsertUser(user: any): Promise<User>;
 
@@ -101,6 +102,12 @@ export interface IStorage {
   getAgent(id: number): Promise<Agent | undefined>;
   createAgent(agent: InsertAgent): Promise<Agent>;
   updateAgent(id: number, agent: Partial<InsertAgent>): Promise<Agent | undefined>;
+  
+  // Agent Statistics
+  getAgentActiveCalls(agentId: number): Promise<any[]>;
+  getAgentStats(agentId: number): Promise<any>;
+  updateAgentStatus(agentId: number, status: string): Promise<any>;
+  assignAgentToCampaign(agentId: number, campaignId: string): Promise<any>;
 
   // Calls
   getCalls(): Promise<Call[]>;
@@ -141,6 +148,7 @@ export interface IStorage {
   // Campaign-specific Tracking Pixels
   getCampaignTrackingPixels(campaignId: string): Promise<any[]>;
   createCampaignTrackingPixel(data: any): Promise<any>;
+  updateCampaignTrackingPixel(campaignId: string, pixelId: number, data: any): Promise<any>;
   deleteCampaignTrackingPixel(campaignId: string, pixelId: number): Promise<boolean>;
   
   getWebhookConfigs(): Promise<any[]>;
@@ -265,6 +273,12 @@ export interface IStorage {
   getPhoneNumberTagsByUser(userId: number): Promise<any[]>;
   getPhoneNumberTagById(tagId: number): Promise<any | undefined>;
   createPhoneNumberTag(tag: any): Promise<any>;
+  
+  // RedTrack Configuration Methods
+  createRedtrackConfig(config: InsertRedtrackConfig): Promise<RedtrackConfig>;
+  getRedtrackConfigs(userId: number): Promise<RedtrackConfig[]>;
+  updateRedtrackConfig(id: number, config: Partial<InsertRedtrackConfig>): Promise<RedtrackConfig | undefined>;
+  deleteRedtrackConfig(id: number): Promise<boolean>;
   updatePhoneNumberTag(tagId: number, tag: any): Promise<any>;
   deletePhoneNumberTag(tagId: number): Promise<boolean>;
   
