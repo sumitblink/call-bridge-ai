@@ -14,116 +14,17 @@ class UserBasedStorage {
   private nextAgentId = 1;
   private nextCallLogId = 1;
 
-  // Initialize data for a new user
+  // Initialize clean data structure for a new user
   private initializeUserData(userId: string) {
     if (!this.userCampaigns.has(userId)) {
-      // Create sample campaigns for new user
-      const sampleCampaigns: Campaign[] = [
-        {
-          id: this.nextCampaignId++,
-          userId,
-          name: "Welcome Campaign",
-          description: "Your first campaign to get started",
-          status: "active",
-          phoneNumber: "+1-555-" + Math.floor(Math.random() * 10000).toString().padStart(4, '0'),
-          routingType: "round_robin",
-          maxConcurrentCalls: 5,
-          callCap: 100,
-          geoTargeting: ["US", "CA"],
-          timeZoneRestriction: "EST",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      ];
-      this.userCampaigns.set(userId, sampleCampaigns);
-
-      // Create sample buyers for new user
-      const sampleBuyers: Buyer[] = [
-        {
-          id: this.nextBuyerId++,
-          userId,
-          name: "Premium Lead Buyer",
-          email: "buyer@example.com",
-          phoneNumber: "+1-555-" + Math.floor(Math.random() * 10000).toString().padStart(4, '0'),
-          endpoint: "https://webhook.example.com/leads",
-          status: "active",
-          priority: 1,
-          dailyCap: 50,
-          concurrencyLimit: 3,
-          acceptanceRate: "85.50",
-          avgResponseTime: 250,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      ];
-      this.userBuyers.set(userId, sampleBuyers);
-
-      // Create sample calls for new user
-      const sampleCalls: Call[] = [
-        {
-          id: this.nextCallId++,
-          campaignId: sampleCampaigns[0].id,
-          buyerId: sampleBuyers[0].id,
-          callSid: "CA" + Math.random().toString(36).substr(2, 32),
-          fromNumber: "+1-555-" + Math.floor(Math.random() * 10000).toString().padStart(4, '0'),
-          toNumber: "+1-555-" + Math.floor(Math.random() * 10000).toString().padStart(4, '0'),
-          duration: 180,
-          status: "completed",
-          callQuality: "good",
-          recordingUrl: null,
-          recordingSid: null,
-          recordingStatus: null,
-          recordingDuration: null,
-          transcription: null,
-          transcriptionStatus: null,
-          cost: "0.0150",
-          revenue: "5.00",
-          geoLocation: "New York, NY",
-          userAgent: "TwilioProxy/1.1",
-          createdAt: new Date(Date.now() - Math.random() * 86400000),
-          updatedAt: new Date(),
-        },
-        {
-          id: this.nextCallId++,
-          campaignId: sampleCampaigns[0].id,
-          buyerId: sampleBuyers[0].id,
-          callSid: "CA" + Math.random().toString(36).substr(2, 32),
-          fromNumber: "+1-555-" + Math.floor(Math.random() * 10000).toString().padStart(4, '0'),
-          toNumber: "+1-555-" + Math.floor(Math.random() * 10000).toString().padStart(4, '0'),
-          duration: 95,
-          status: "completed",
-          callQuality: "excellent",
-          recordingUrl: null,
-          recordingSid: null,
-          recordingStatus: null,
-          recordingDuration: null,
-          transcription: null,
-          transcriptionStatus: null,
-          cost: "0.0100",
-          revenue: "3.50",
-          geoLocation: "Los Angeles, CA",
-          userAgent: "TwilioProxy/1.1",
-          createdAt: new Date(Date.now() - Math.random() * 86400000),
-          updatedAt: new Date(),
-        }
-      ];
-      this.userCalls.set(userId, sampleCalls);
-
-      // Create sample agents for new user
-      const sampleAgents: Agent[] = [
-        {
-          id: this.nextAgentId++,
-          name: "Customer Service Agent",
-          email: "agent@yourcompany.com",
-          status: "active",
-          callsHandled: 25,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-      ];
-      this.userAgents.set(userId, sampleAgents);
-
+      // Initialize empty arrays - no sample data for clean onboarding
+      this.userCampaigns.set(userId, []);
+      this.userBuyers.set(userId, []);
+      this.userCalls.set(userId, []);
+      this.userAgents.set(userId, []);
       this.userCallLogs.set(userId, []);
+      
+      console.log(`UserBasedStorage: Initialized clean data structure for user ${userId} - no sample data`);
     }
   }
 

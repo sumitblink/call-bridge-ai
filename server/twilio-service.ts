@@ -66,18 +66,29 @@ export class TwilioService {
   }
 
   async transcribeRecording(recordingSid: string): Promise<{ transcription: string }> {
-    // Simulate transcription service
-    const sampleTranscriptions = [
-      "Hello, I'm interested in getting a quote for auto insurance. I drive a 2020 Honda Civic and live in California.",
-      "Hi, I saw your ad about home insurance. Can you give me information about coverage options for my house?",
-      "I'm looking for life insurance quotes. I'm 35 years old and in good health. What are my options?",
-      "Hello, I need health insurance for my family. We're a family of four living in Texas."
-    ];
-    
-    const transcription = sampleTranscriptions[Math.floor(Math.random() * sampleTranscriptions.length)];
-    
-    console.log(`[Twilio] Transcribed recording ${recordingSid}`);
-    return { transcription };
+    try {
+      // TODO: Integrate with real transcription service (AWS Transcribe, Google Speech-to-Text, etc.)
+      // For now, return consistent placeholder based on recording ID for deterministic results
+      const hashCode = recordingSid.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      
+      const transcriptionTemplates = [
+        "Hello, I'm interested in getting a quote for auto insurance. I drive a 2020 Honda Civic and live in California.",
+        "Hi, I saw your ad about home insurance. Can you give me information about coverage options for my house?",
+        "I'm looking for life insurance quotes. I'm 35 years old and in good health. What are my options?",
+        "Hello, I need health insurance for my family. We're a family of four living in Texas."
+      ];
+      
+      const transcription = transcriptionTemplates[Math.abs(hashCode) % transcriptionTemplates.length];
+      
+      console.log(`[Twilio] Transcribed recording ${recordingSid}`);
+      return { transcription };
+    } catch (error) {
+      console.error(`[Twilio] Error transcribing recording ${recordingSid}:`, error);
+      return { transcription: "Transcription unavailable" };
+    }
   }
 
   // Real-time Call Control Methods
@@ -217,7 +228,9 @@ export class TwilioService {
     greeting: string;
     options: Array<{ digit: string; action: string; destination?: string }>;
   }): Promise<{ flowSid: string }> {
-    const flowSid = `FW${Math.random().toString(36).substr(2, 32)}`;
+    // Generate deterministic flow SID based on timestamp for consistency
+    const timestamp = Date.now().toString(36);
+    const flowSid = `FW${timestamp.padStart(32, '0').substr(0, 32)}`;
     
     console.log(`[Twilio] Created IVR flow ${flowSid} for campaign ${campaignId}:`, flowConfig);
     return { flowSid };

@@ -377,127 +377,31 @@ export class MemStorage implements IStorage {
   private currentPoolId: number = 1;
 
   constructor() {
-    this.initializeSampleData();
+    // Initialize empty storage for production use
+    // Sample data only in development mode if needed
+    this.initializeEmptyState();
   }
 
-  private initializeSampleData() {
-    // Sample campaigns with string UUIDs
-    this.campaigns.set("cam_sample_1", {
-      id: "cam_sample_1",
-      userId: 1,
-      name: "Home Insurance Lead Gen",
-      description: "Insurance leads for homeowners",
-      status: "active",
-      phoneNumber: "+17177347577",
-      routingType: "round_robin",
-      maxConcurrentCalls: 5,
-      callCap: 100,
-      geoTargeting: ["US"],
-      timeZoneRestriction: "EST",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-
-    this.campaigns.set("cam_sample_2", {
-      id: "cam_sample_2",
-      userId: 1,
-      name: "Auto Insurance Campaign",
-      description: "Auto insurance quote generation",
-      status: "active",
-      phoneNumber: null,
-      routingType: "weighted",
-      maxConcurrentCalls: 3,
-      callCap: 50,
-      geoTargeting: ["CA", "TX"],
-      timeZoneRestriction: "PST",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-
-    // Sample buyers - using correct schema fields
-    this.buyers.set(1, {
-      id: 1,
-      userId: 1,
-      name: "LeadGen Pro",
-      email: "contact@leadgenpro.com",
-      phoneNumber: "+12125551234",
-      status: "active",
-      endpoint: "https://api.leadgenpro.com/webhook",
-      priority: 1,
-      dailyCap: 50,
-      concurrencyLimit: 3,
-      acceptanceRate: "75.50",
-      avgResponseTime: 150,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-
-    this.buyers.set(2, {
-      id: 2,
-      userId: 1,
-      name: "Insurance Direct",
-      email: "leads@insurancedirect.com",
-      phoneNumber: "+13235556789",
-      status: "active",
-      endpoint: "https://webhook.insurancedirect.com/leads",
-      priority: 2,
-      dailyCap: 100,
-      concurrencyLimit: 5,
-      acceptanceRate: "82.30",
-      avgResponseTime: 200,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-
-    // Sample agents - using correct schema fields
-    this.agents.set(1, {
-      id: 1,
-      userId: 1,
-      name: "Sarah Johnson",
-      email: "sarah@company.com",
-      phoneNumber: "+12125551111",
-      status: "active",
-      priority: 1,
-      maxConcurrentCalls: 3,
-      skillLevel: "senior",
-      department: "sales",
-      averageCallDuration: 300,
-      successRate: 85,
-      totalCallsHandled: 45,
-      totalRevenue: 12500,
-      lastActivity: new Date(),
-      isOnline: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-
-    this.agents.set(2, {
-      id: 2,
-      userId: 1,
-      name: "Mike Chen",
-      email: "mike@company.com",
-      phoneNumber: "+12125552222",
-      status: "active",
-      priority: 2,
-      maxConcurrentCalls: 2,
-      skillLevel: "intermediate",
-      department: "support",
-      averageCallDuration: 250,
-      successRate: 78,
-      totalCallsHandled: 32,
-      totalRevenue: 8900,
-      lastActivity: new Date(),
-      isOnline: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-
-    this.currentCampaignId = 3;
-    this.currentBuyerId = 3;
-    this.currentAgentId = 3;
+  private initializeEmptyState() {
+    // Initialize clean empty state for production use
+    // All data will come from database or user-created content
+    console.log('MemStorage initialized with empty state - no sample data');
     
-    // Clear any sample campaign tracking pixels to prevent interference
-    this.campaignTrackingPixels.clear();
+    // Start IDs from 1 for clean sequential numbering
+    this.currentCampaignId = 1;
+    this.currentBuyerId = 1;
+    this.currentAgentId = 1;
+    this.currentCallId = 1;
+    this.currentCallLogId = 1;
+    this.currentPublisherId = 1;
+    this.currentTagId = 1;
+    this.currentRedtrackConfigId = 1;
+    this.currentUrlParameterId = 1;
+    this.currentPhoneNumberId = 1;
+    this.currentPoolId = 1;
+    this.currentPixelId = 1;
+    this.currentTargetId = 1;
+    this.currentUserId = 1;
   }
 
   // Users
