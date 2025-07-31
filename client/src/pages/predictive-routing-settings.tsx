@@ -16,7 +16,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 interface PredictiveConfig {
   id: number;
   name: string;
-  type: "use_revenue" | "advanced";
+  type: "basic" | "use_revenue" | "advanced";
   newTargetPriority: number; // -10 to 10 scale
   underperformingTargetPriority: number; // -10 to 10 scale  
   trainingRequirement: number; // -10 to 10 scale
@@ -30,7 +30,7 @@ export default function PredictiveRoutingSettings() {
   const [editingConfig, setEditingConfig] = useState<PredictiveConfig | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    type: "use_revenue" as "use_revenue" | "advanced",
+    type: "basic" as "basic" | "use_revenue" | "advanced",
     newTargetPriority: 0,
     underperformingTargetPriority: 0,
     trainingRequirement: 0,
@@ -110,7 +110,7 @@ export default function PredictiveRoutingSettings() {
   const resetForm = () => {
     setFormData({
       name: "",
-      type: "use_revenue",
+      type: "basic",
       newTargetPriority: 0,
       underperformingTargetPriority: 0,
       trainingRequirement: 0,
@@ -284,9 +284,13 @@ export default function PredictiveRoutingSettings() {
                   <Switch
                     id="use-revenue"
                     checked={formData.type === "use_revenue"}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({ ...prev, type: checked ? "use_revenue" : "advanced" }))
-                    }
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setFormData(prev => ({ ...prev, type: "use_revenue" }));
+                      } else {
+                        setFormData(prev => ({ ...prev, type: "basic" }));
+                      }
+                    }}
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -294,12 +298,90 @@ export default function PredictiveRoutingSettings() {
                   <Switch
                     id="advanced"
                     checked={formData.type === "advanced"}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({ ...prev, type: checked ? "advanced" : "use_revenue" }))
-                    }
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setFormData(prev => ({ ...prev, type: "advanced" }));
+                      } else {
+                        setFormData(prev => ({ ...prev, type: "basic" }));
+                      }
+                    }}
                   />
                 </div>
               </div>
+
+              {/* Basic Mode - Show sliders when neither Use Revenue nor Advanced is ON */}
+              {formData.type === "basic" && (
+                <div className="space-y-6">
+                  {/* New Target Priority Slider */}
+                  <div className="space-y-3">
+                    <Label className="text-white">New Target Priority</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-gray-400">
+                        <span>Low</span>
+                        <span>Default</span>
+                        <span>High</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-10"
+                        max="10"
+                        value={formData.newTargetPriority}
+                        onChange={(e) => setFormData(prev => ({ ...prev, newTargetPriority: parseInt(e.target.value) }))}
+                        className="w-full h-2 bg-gradient-to-r from-blue-500 via-teal-500 to-green-500 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="text-center text-sm text-gray-400">
+                        Default ({formData.newTargetPriority > 0 ? '+' : ''}{formData.newTargetPriority})
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Underperforming Target Priority Slider */}
+                  <div className="space-y-3">
+                    <Label className="text-white">Underperforming Target Priority</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-gray-400">
+                        <span>Low</span>
+                        <span>Default</span>
+                        <span>High</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-10"
+                        max="10"
+                        value={formData.underperformingTargetPriority}
+                        onChange={(e) => setFormData(prev => ({ ...prev, underperformingTargetPriority: parseInt(e.target.value) }))}
+                        className="w-full h-2 bg-gradient-to-r from-blue-500 via-teal-500 to-green-500 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="text-center text-sm text-gray-400">
+                        Default ({formData.underperformingTargetPriority > 0 ? '+' : ''}{formData.underperformingTargetPriority})
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Training Requirement Slider */}
+                  <div className="space-y-3">
+                    <Label className="text-white">Training Requirement</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-gray-400">
+                        <span>Less Calls</span>
+                        <span>Default</span>
+                        <span>More Calls</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-10"
+                        max="10"
+                        value={formData.trainingRequirement}
+                        onChange={(e) => setFormData(prev => ({ ...prev, trainingRequirement: parseInt(e.target.value) }))}
+                        className="w-full h-2 bg-gradient-to-r from-blue-500 via-teal-500 to-green-500 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="text-center text-sm text-gray-400">
+                        Default ({formData.trainingRequirement > 0 ? '+' : ''}{formData.trainingRequirement})
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Advanced Settings - Only show when Advanced is ON */}
               {formData.type === "advanced" && (
