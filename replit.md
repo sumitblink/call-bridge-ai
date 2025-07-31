@@ -157,6 +157,13 @@ Based on comprehensive review of Ringba's complete documentation structure cover
 - Integration framework supports 19+ platforms with comprehensive webhook, pixel, and postback systems
 
 ## Recent Changes  
+- July 31, 2025: **STICKY SESSION DNI FUNCTIONALITY IMPLEMENTED** - Fixed call tracking tag rotation strategy to properly implement sticky session-based number assignment
+  - **Sticky Session Logic**: Implemented proper session-based phone number persistence using session ID hash for consistent assignment
+  - **Database Schema Enhanced**: Added `assigned_phone_number_id` column to visitor_sessions table for tracking phone assignments
+  - **Session Duration Respect**: System now respects configured sticky duration (300 seconds) and session timeout settings
+  - **Hash-Based Assignment**: Uses session ID hash for consistent phone number selection from pool across page refreshes
+  - **Background Processing**: Phone assignment updates happen in background to maintain fast DNI response times
+  - **Status**: Sticky (session-based) rotation strategy now works correctly - same visitor gets same phone number for configured duration
 - July 31, 2025: **RINGBA SUMMARY REPORT FUNCTIONALITY COMPLETED** - Enhanced Summary Report to match Ringba's exact functionality with all 8 grouping tabs, orange dashes for tag spaces, proper sorting by incoming calls, and comprehensive tag grouping system
   - **Complete Tab Structure**: Added all 8 Ringba grouping tabs - Campaign, Publisher, Pool, Dialed #, Duplicate, Target Name, Date, and Tag
   - **Tag Functionality**: Implemented Tag tab with dropdown for selecting specific reporting tags, matching Ringba's exact behavior

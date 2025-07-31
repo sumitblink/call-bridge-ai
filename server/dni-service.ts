@@ -162,11 +162,23 @@ export class DNIService {
       const { campaign, poolNumbers } = cachedData;
       let selectedPhone: PhoneNumber;
 
-      // Fast phone selection without additional database queries
+      // Fast phone selection with sticky session support
       if (campaign.routingType === 'pool' && poolNumbers && poolNumbers.length > 0) {
-        // Random selection from cached pool numbers
-        const rotationIndex = Math.floor(Math.random() * poolNumbers.length);
-        selectedPhone = poolNumbers[rotationIndex];
+        // Check for existing session assignment first (sticky functionality)
+        if (request.sessionId) {
+          const existingSession = await this.getSessionPhoneNumber(request.sessionId, campaign.id);
+          if (existingSession && poolNumbers.find(p => p.id === existingSession.phoneNumberId)) {
+            selectedPhone = poolNumbers.find(p => p.id === existingSession.phoneNumberId)!;
+            console.log('DNI: Using sticky session phone:', selectedPhone.phoneNumber, 'for session:', request.sessionId);
+          } else {
+            // No existing session or expired - assign new number based on rotation strategy
+            selectedPhone = this.selectPhoneByStrategy(poolNumbers, request);
+            console.log('DNI: Assigned new phone for session:', selectedPhone.phoneNumber, 'for session:', request.sessionId);
+          }
+        } else {
+          // No session ID - use rotation strategy
+          selectedPhone = this.selectPhoneByStrategy(poolNumbers, request);
+        }
       } else if (campaign.routingType === 'direct' && campaign.phoneNumber) {
         // Direct number - no database lookup needed
         selectedPhone = {
@@ -197,6 +209,14 @@ export class DNIService {
           .catch(error => console.error('Background tracking session error:', error));
       });
 
+      // Store sticky session assignment if using session-based strategy
+      if (request.sessionId && campaign.routingType === 'pool') {
+        setImmediate(() => {
+          this.updateSessionPhoneAssignment(request.sessionId!, campaign.id, selectedPhone.id)
+            .catch(error => console.error('Background session assignment error:', error));
+        });
+      }
+
       return {
         phoneNumber: selectedPhone.phoneNumber,
         formattedNumber: this.formatPhoneNumber(selectedPhone.phoneNumber),
@@ -221,12 +241,126 @@ export class DNIService {
   }
 
   /**
+   * Get existing phone number assignment for a session (sticky functionality)
+   */
+  private static async getSessionPhoneNumber(sessionId: string, campaignId: string): Promise<{ phoneNumberId: number; assignedAt: Date } | null> {
+    try {
+      // Use raw SQL query since we need to check visitor_sessions table
+      const client = (await import('@neondatabase/serverless')).neon;
+      const sql_client = client(process.env.DATABASE_URL!);
+      
+      const result = await sql_client`
+        SELECT assigned_phone_number_id, last_activity 
+        FROM visitor_sessions 
+        WHERE session_id = ${sessionId} 
+        AND campaign = ${campaignId} 
+        AND assigned_phone_number_id IS NOT NULL
+        LIMIT 1
+      `;
+
+      if (result.length > 0) {
+        const session = result[0];
+        const assignedAt = new Date(session.last_activity);
+        
+        // Check if session is still valid (within sticky duration - we'll use 300 seconds as configured)
+        const stickyDurationMs = 300 * 1000; // 300 seconds = 5 minutes
+        const now = new Date();
+        
+        if (now.getTime() - assignedAt.getTime() < stickyDurationMs) {
+          return { phoneNumberId: session.assigned_phone_number_id as number, assignedAt };
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting session phone number:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Select phone number based on rotation strategy
+   */
+  private static selectPhoneByStrategy(poolNumbers: PhoneNumber[], request: DNIRequest): PhoneNumber {
+    const strategy = 'sticky'; // Default to sticky since user configured it
+    
+    switch (strategy) {
+      case 'round_robin':
+        // Simple round robin based on timestamp
+        const rrIndex = Math.floor(Date.now() / 1000) % poolNumbers.length;
+        return poolNumbers[rrIndex];
+        
+      case 'random':
+        const randomIndex = Math.floor(Math.random() * poolNumbers.length);
+        return poolNumbers[randomIndex];
+        
+      case 'priority':
+        // Return first number (highest priority)
+        return poolNumbers[0];
+        
+      case 'sticky':
+      default:
+        // For sticky, use session-based selection with fallback to hash-based assignment
+        if (request.sessionId) {
+          // Create consistent assignment based on session ID hash
+          const sessionHash = this.hashString(request.sessionId);
+          const stickyIndex = sessionHash % poolNumbers.length;
+          return poolNumbers[stickyIndex];
+        } else {
+          // Fallback to random if no session
+          const fallbackIndex = Math.floor(Math.random() * poolNumbers.length);
+          return poolNumbers[fallbackIndex];
+        }
+    }
+  }
+
+  /**
+   * Simple hash function for consistent session-based selection
+   */
+  private static hashString(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
+  }
+
+  /**
    * Generate unique tracking ID for attribution
    */
   private static generateTrackingId(campaignId: string, request: DNIRequest): string {
     const timestamp = Date.now();
     const unique = timestamp.toString(36);
     return `dni_${campaignId}_${timestamp}_${unique}`;
+  }
+
+  /**
+   * Update visitor session with phone number assignment for sticky functionality
+   */
+  private static async updateSessionPhoneAssignment(
+    sessionId: string,
+    campaignId: string,
+    phoneNumberId: number
+  ): Promise<void> {
+    try {
+      // Update visitor_sessions table with phone number assignment
+      const client = (await import('@neondatabase/serverless')).neon;
+      const sql_client = client(process.env.DATABASE_URL!);
+      
+      await sql_client`
+        UPDATE visitor_sessions 
+        SET assigned_phone_number_id = ${phoneNumberId}, 
+            last_activity = NOW()
+        WHERE session_id = ${sessionId} 
+        AND campaign = ${campaignId}
+      `;
+      
+      console.log('DNI: Updated session', sessionId, 'with phone assignment:', phoneNumberId);
+    } catch (error) {
+      console.error('Error updating session phone assignment:', error);
+    }
   }
 
   /**
