@@ -142,72 +142,6 @@ export default function Sidebar() {
           );
         })}
 
-        {/* Reporting Section */}
-        <div className="pt-6 border-t border-gray-100">
-          {!isCollapsed && (
-            <button
-              onClick={() => setIsReportingExpanded(!isReportingExpanded)}
-              className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              <span>Reporting</span>
-              {isReportingExpanded ? 
-                <ChevronDown className="h-4 w-4" /> : 
-                <ChevronRight className="h-4 w-4" />
-              }
-            </button>
-          )}
-          
-          {/* Collapsed sidebar - show reporting items without grouping */}
-          {isCollapsed && reportingNavigation.map((item) => {
-            const isActive = location === item.href;
-            const Icon = item.icon;
-            
-            return (
-              <Link 
-                key={item.name} 
-                href={item.href}
-                className={`
-                  flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer relative group
-                  ${isActive
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }
-                  justify-center
-                `}
-                title={item.name}
-              >
-                <Icon className="w-6 h-6" />
-                <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                  {item.name}
-                </div>
-              </Link>
-            );
-          })}
-
-          {/* Expanded sidebar - show collapsible reporting items */}
-          {!isCollapsed && isReportingExpanded && reportingNavigation.map((item) => {
-            const isActive = location === item.href;
-            const Icon = item.icon;
-            
-            return (
-              <Link 
-                key={item.name} 
-                href={item.href}
-                className={`
-                  flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer relative group ml-3
-                  ${isActive
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }
-                `}
-              >
-                <Icon className="w-5 h-5 mr-3" />
-                {item.name}
-              </Link>
-            );
-          })}
-        </div>
-
         {/* Settings Section */}
         <div className="pt-6 border-t border-gray-100">
           {!isCollapsed && (
@@ -252,6 +186,72 @@ export default function Sidebar() {
 
           {/* Expanded sidebar - show collapsible settings items */}
           {!isCollapsed && isSettingsExpanded && settingsNavigation.map((item) => {
+            const isActive = location === item.href;
+            const Icon = item.icon;
+            
+            return (
+              <Link 
+                key={item.name} 
+                href={item.href}
+                className={`
+                  flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer relative group ml-3
+                  ${isActive
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }
+                `}
+              >
+                <Icon className="w-5 h-5 mr-3" />
+                {item.name}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Reporting Section */}
+        <div className="pt-6 border-t border-gray-100">
+          {!isCollapsed && (
+            <button
+              onClick={() => setIsReportingExpanded(!isReportingExpanded)}
+              className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <span>Reporting</span>
+              {isReportingExpanded ? 
+                <ChevronDown className="h-4 w-4" /> : 
+                <ChevronRight className="h-4 w-4" />
+              }
+            </button>
+          )}
+          
+          {/* Collapsed sidebar - show reporting items without grouping */}
+          {isCollapsed && reportingNavigation.map((item) => {
+            const isActive = location === item.href;
+            const Icon = item.icon;
+            
+            return (
+              <Link 
+                key={item.name} 
+                href={item.href}
+                className={`
+                  flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer relative group
+                  ${isActive
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }
+                  justify-center
+                `}
+                title={item.name}
+              >
+                <Icon className="w-6 h-6" />
+                <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  {item.name}
+                </div>
+              </Link>
+            );
+          })}
+
+          {/* Expanded sidebar - show collapsible reporting items */}
+          {!isCollapsed && isReportingExpanded && reportingNavigation.map((item) => {
             const isActive = location === item.href;
             const Icon = item.icon;
             
