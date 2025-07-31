@@ -2136,6 +2136,39 @@ Please add tags with numerical values only."
                       <div className="space-y-4">
                         <FormField
                           control={form.control}
+                          name="dynamicBidParser"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                Dynamic Bid Parsing (Required)
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-sm">
+                                    <p>JavaScript function to extract bid amount from RTB response. 
+                                    Use 'input' variable for the response data. Must return numeric bid amount.</p>
+                                    <p className="mt-1 text-xs">Example: function(input) &#123;return JSON.parse(input).bidAmount;&#125;</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="function(input) {return JSON.parse(input).bidAmount;}"
+                                  className="font-mono text-sm min-h-[80px]"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                JavaScript function to extract bid amount from response.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
                           name="javascriptParser"
                           render={({ field }) => (
                             <FormItem>

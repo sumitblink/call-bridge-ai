@@ -1421,6 +1421,7 @@ export const rtbTargets = pgTable("rtb_targets", {
   
   // JavaScript Response Parser
   responseParserType: varchar("response_parser_type", { length: 50 }).default("json_path"), // json_path, javascript
+  dynamicBidParser: text("dynamic_bid_parser"), // JavaScript code for dynamic bid amount parsing
   javascriptParser: text("javascript_parser"), // Custom JavaScript code for response parsing
   dynamicNumberParser: text("dynamic_number_parser"), // JavaScript code for dynamic number/SIP parsing
   
@@ -1609,7 +1610,9 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
   
   // JavaScript Response Parser validation
   responseParserType: z.enum(["json_path", "javascript"]).optional(),
+  dynamicBidParser: z.string().optional(),
   javascriptParser: z.string().optional(),
+  dynamicNumberParser: z.string().optional(),
   
   // Phase 2: Geographic Targeting validation
   allowedStates: z.array(z.string().length(2)).optional(),
