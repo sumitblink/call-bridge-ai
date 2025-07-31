@@ -580,8 +580,8 @@ export function EnhancedRTBTargetDialog({
                       />
                     </div>
 
-                    {/* Conditional Dynamic Number/SIP fields - only show when enabled */}
-                    {enableDynamicNumber && (
+                    {/* Conditional Dynamic Number/SIP fields - only show when disabled */}
+                    {!enableDynamicNumber && (
                       <div className="space-y-4 mt-4 pt-4 border-t border-border">
                         <div className="grid grid-cols-1 gap-4">
                           <FormField
