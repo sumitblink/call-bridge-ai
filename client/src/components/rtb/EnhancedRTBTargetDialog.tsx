@@ -31,6 +31,10 @@ const enhancedRTBTargetSchema = z.object({
   enableDynamicNumber: z.boolean(),
   rtbShareableTags: z.boolean(),
   
+  // Dynamic Number/SIP conditional fields
+  dynamicNumberType: z.enum(["Number", "SIP"]).optional(),
+  dynamicNumber: z.string().optional(),
+  
   // Bid Amount Settings (moved to Basic tab)
   minBidAmount: z.number().min(0, "Minimum bid amount must be positive"),
   maxBidAmount: z.number().min(0, "Maximum bid amount must be positive"),
@@ -140,6 +144,8 @@ export function EnhancedRTBTargetDialog({
       contactPhone: "",
       enableDynamicNumber: false,
       rtbShareableTags: false,
+      dynamicNumberType: "Number",
+      dynamicNumber: "",
       minBidAmount: 0,
       maxBidAmount: 100,
       currency: "USD",
@@ -178,6 +184,7 @@ export function EnhancedRTBTargetDialog({
   const priorityBumpValue = form.watch("priorityBump");
   const capOn = form.watch("capOn");
   const estimatedRevenue = form.watch("estimatedRevenue");
+  const enableDynamicNumber = form.watch("enableDynamicNumber");
 
   // Reset form when editingTarget changes
   useEffect(() => {
@@ -191,6 +198,8 @@ export function EnhancedRTBTargetDialog({
         contactPhone: editingTarget.contactPhone || "",
         enableDynamicNumber: editingTarget.enableDynamicNumber || false,
         rtbShareableTags: editingTarget.rtbShareableTags || false,
+        dynamicNumberType: editingTarget.dynamicNumberType || "Number",
+        dynamicNumber: editingTarget.dynamicNumber || "",
         minBidAmount: typeof editingTarget.minBidAmount === 'number' ? editingTarget.minBidAmount : (editingTarget.minBidAmount ? parseFloat(editingTarget.minBidAmount) : 0),
         maxBidAmount: typeof editingTarget.maxBidAmount === 'number' ? editingTarget.maxBidAmount : (editingTarget.maxBidAmount ? parseFloat(editingTarget.maxBidAmount) : 100),
         currency: editingTarget.currency || "USD",
@@ -560,6 +569,90 @@ export function EnhancedRTBTargetDialog({
                         )}
                       />
                     </div>
+
+                    {/* Conditional Dynamic Number/SIP fields - only show when enabled */}
+                    {enableDynamicNumber && (
+                      <div className="space-y-4 mt-4 pt-4 border-t border-border">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="dynamicNumberType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  Type
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="h-4 w-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Choose between Number (phone number) or SIP (Session Initiation Protocol) routing.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </FormLabel>
+                                <FormControl>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      type="button"
+                                      variant={field.value === "Number" ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => field.onChange("Number")}
+                                      className="flex-1"
+                                    >
+                                      Number
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant={field.value === "SIP" ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => field.onChange("SIP")}
+                                      className="flex-1"
+                                    >
+                                      SIP
+                                    </Button>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="dynamicNumber"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  Number
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="h-4 w-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>The phone number or SIP endpoint that will be dynamically assigned for this target.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <span className="text-xs text-muted-foreground ml-auto">Required</span>
+                                </FormLabel>
+                                <FormControl>
+                                  <div className="flex gap-2">
+                                    <Input 
+                                      placeholder={form.watch("dynamicNumberType") === "SIP" ? "sip:user@domain.com" : "+1-555-123-4567"}
+                                      {...field} 
+                                      className="flex-1"
+                                    />
+                                    <Button type="button" variant="outline" size="sm">
+                                      <Plus className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    )}
 
                     <FormField
                       control={form.control}
