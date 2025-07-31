@@ -108,10 +108,19 @@ export function EnhancedRTBTargetDialog({
   const [showPredictiveRoutingSettings, setShowPredictiveRoutingSettings] = useState(false);
 
   // Fetch predictive routing configurations
-  const { data: predictiveRoutingConfigs = [], refetch: refetchPredictiveConfigs } = useQuery({
+  const { data: predictiveRoutingConfigs = [], refetch: refetchPredictiveConfigs, isLoading: loadingConfigs } = useQuery<any[]>({
     queryKey: ['/api/settings/predictive-routing'],
-    enabled: open
+    enabled: open,
+    refetchOnWindowFocus: false,
+    staleTime: 0
   });
+
+  // Refetch configurations when dialog opens
+  useEffect(() => {
+    if (open) {
+      refetchPredictiveConfigs();
+    }
+  }, [open, refetchPredictiveConfigs]);
   const form = useForm<z.infer<typeof enhancedRTBTargetSchema>>({
     resolver: zodResolver(enhancedRTBTargetSchema),
     defaultValues: {
@@ -976,11 +985,17 @@ Please add tags with numerical values only."
                                 </FormControl>
                                 <SelectContent>
                                   <SelectItem value="">No Configuration</SelectItem>
-                                  {predictiveRoutingConfigs.map((config: any) => (
-                                    <SelectItem key={config.id} value={config.id.toString()}>
-                                      {config.name} ({config.type})
-                                    </SelectItem>
-                                  ))}
+                                  {loadingConfigs ? (
+                                    <SelectItem value="" disabled>Loading configurations...</SelectItem>
+                                  ) : Array.isArray(predictiveRoutingConfigs) && predictiveRoutingConfigs.length > 0 ? (
+                                    predictiveRoutingConfigs.map((config: any) => (
+                                      <SelectItem key={config.id} value={config.id.toString()}>
+                                        {config.name} ({config.type})
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="" disabled>No configurations found</SelectItem>
+                                  )}
                                 </SelectContent>
                               </Select>
                               <Button
@@ -999,6 +1014,11 @@ Please add tags with numerical values only."
                             </div>
                             <FormDescription>
                               Choose a predictive routing configuration or create a new one. This determines how calls are intelligently routed based on target performance.
+                              {!loadingConfigs && Array.isArray(predictiveRoutingConfigs) && (
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  ({predictiveRoutingConfigs.length} configurations available)
+                                </span>
+                              )}
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
