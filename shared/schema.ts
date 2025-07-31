@@ -1423,6 +1423,18 @@ export const rtbTargets = pgTable("rtb_targets", {
   responseParserType: varchar("response_parser_type", { length: 50 }).default("json_path"), // json_path, javascript
   javascriptParser: text("javascript_parser"), // Custom JavaScript code for response parsing
   
+  // Revenue Settings - Ringba Compliance
+  conversionSettings: varchar("conversion_settings", { length: 50 }).default("use_ring_tree"), // use_ring_tree, override
+  minimumRevenueSettings: varchar("minimum_revenue_settings", { length: 50 }).default("use_ring_tree"), // use_ring_tree, override
+  revenueType: varchar("revenue_type", { length: 50 }).default("dynamic"), // dynamic, static
+  staticRevenueAmount: decimal("static_revenue_amount", { precision: 10, scale: 2 }).default("0.00"),
+  failureRevenueAmount: decimal("failure_revenue_amount", { precision: 10, scale: 2 }).default("0.00"),
+  convertOn: varchar("convert_on", { length: 100 }).default("Call Successfully Connected"), // Call Successfully Connected, Call Length, Postback/Webhook, Dialed
+  startCallLengthOn: varchar("start_call_length_on", { length: 50 }).default("Incoming"), // Incoming, Dial, Connect
+  callLengthValueType: varchar("call_length_value_type", { length: 50 }).default("Dynamic"), // Dynamic, Static
+  maxDynamicDuration: integer("max_dynamic_duration").default(0), // seconds for static call length
+  minimumRevenueAmount: decimal("minimum_revenue_amount", { precision: 10, scale: 2 }).default("20.00"),
+  
   // Performance Tracking
   totalPings: integer("total_pings").default(0).notNull(),
   successfulBids: integer("successful_bids").default(0).notNull(),
