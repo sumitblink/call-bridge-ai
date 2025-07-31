@@ -98,16 +98,31 @@ export default function SimplifiedRTBManagementPage() {
   // Target operations
   const deleteMutation = useMutation({
     mutationFn: async (target: RtbTarget) => {
-      const response = await apiRequest(`/api/rtb/targets/${target.id}`, 'DELETE');
-      return response.json();
+      console.log(`[RTB Frontend] Starting deletion of target ${target.id} (${target.name})`);
+      try {
+        const response = await apiRequest(`/api/rtb/targets/${target.id}`, 'DELETE');
+        console.log(`[RTB Frontend] Delete response status:`, response.status);
+        const result = await response.json();
+        console.log(`[RTB Frontend] Delete response data:`, result);
+        return result;
+      } catch (error) {
+        console.error(`[RTB Frontend] Delete error:`, error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log(`[RTB Frontend] Delete success:`, data);
       queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
       toast({ title: "Success", description: "RTB target deleted successfully" });
       setDeleteingTarget(null);
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      console.error(`[RTB Frontend] Delete mutation error:`, error);
+      toast({ 
+        title: "Deletion Failed", 
+        description: `Error: ${error.message}. Check browser console for details.`,
+        variant: "destructive" 
+      });
     },
   });
 
@@ -381,9 +396,17 @@ export default function SimplifiedRTBManagementPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setDeleteingTarget(target)}
+                              onClick={() => {
+                                console.log(`[RTB Frontend] Delete button clicked for target:`, target);
+                                setDeleteingTarget(target);
+                              }}
+                              disabled={deleteMutation.isPending}
                             >
-                              <Trash2 className="w-3 h-3" />
+                              {deleteMutation.isPending ? (
+                                <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
                             </Button>
                           </div>
                         </TableCell>
