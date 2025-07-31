@@ -13,6 +13,7 @@ import { Phase1AdvancedBiddingDialog } from "@/components/rtb/Phase1AdvancedBidd
 import { Phase2GeographicTargetingDialog } from "@/components/rtb/Phase2GeographicTargetingDialog";
 import Phase3AdvancedFilteringDialog from "@/components/rtb/Phase3AdvancedFilteringDialog";
 import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Edit, Trash2, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone, Globe, Info } from "lucide-react";
 
 // RTB Target type
@@ -889,6 +890,42 @@ export default function SimplifiedRTBManagementPage() {
             setPhase3DialogOpen(false);
           }}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deletingTarget} onOpenChange={() => setDeleteingTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete RTB Target</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{deletingTarget?.name}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDeleteingTarget(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  console.log(`[RTB Frontend] Confirming deletion of target:`, deletingTarget);
+                  if (deletingTarget) {
+                    deleteMutation.mutate(deletingTarget);
+                  }
+                }}
+                disabled={deleteMutation.isPending}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
