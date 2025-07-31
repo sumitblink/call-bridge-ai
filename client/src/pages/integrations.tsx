@@ -749,7 +749,7 @@ export default function IntegrationsPage() {
                       Add Pixel
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-2xl overflow-x-visible">
                     <DialogHeader>
                       <DialogTitle>
                         {editingItem ? 'Edit Tracking Pixel' : 'Create Tracking Pixel'}

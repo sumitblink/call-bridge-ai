@@ -157,6 +157,15 @@ Based on comprehensive review of Ringba's complete documentation structure cover
 - Integration framework supports 19+ platforms with comprehensive webhook, pixel, and postback systems
 
 ## Recent Changes
+- July 31, 2025: **TOOLTIP CLIPPING ISSUE IN POPUP FORMS FIXED** - Resolved tooltip cutoff problems in dialog components by implementing portal rendering and proper overflow handling
+  - **Portal Rendering**: Updated tooltip component to use `TooltipPrimitive.Portal` for rendering outside dialog containers
+  - **Higher Z-Index**: Increased tooltip z-index from `z-50` to `z-[100]` to ensure visibility above dialog overlays
+  - **Dialog Overflow Fixed**: Added `overflow-x-visible` to key dialog components (RTB Target Dialog, RTB Target Assignment, Integration Tracking Pixels)
+  - **TypeScript Errors Resolved**: Fixed schema compilation errors in RTB Target Dialog component
+  - **User Experience**: Tooltips in popup forms now display fully without being cut off by dialog boundaries
+  - **Status**: Tooltip display issue completely resolved - all information tooltips now render properly in popup forms
+
+## Previous Changes
 - July 31, 2025: **COMPREHENSIVE RINGBA FEATURE ANALYSIS COMPLETED** - Analyzed all 6 documentation categories covering 100+ articles to ensure platform feature parity
   - **Documentation Structure Analyzed**: Campaigns (23+ articles), Call Flows (16+ articles), Numbers Management, Number Pools, Ring Trees, Real-Time Bidding (11+ articles), Partners, Reporting (13+ articles)
   - **Integration Framework Documented**: 19+ delivered integrations, URL Parameters, Pixels, Webhooks, IP whitelisting, Landing Page Tools

@@ -77,6 +77,7 @@ const enhancedRTBTargetSchema = z.object({
   bidAmountPath: z.string().optional(),
   destinationNumberPath: z.string().optional(),
   acceptancePath: z.string().optional(),
+  acceptanceParsing: z.string().optional(),
   currencyPath: z.string().optional(),
   durationPath: z.string().optional(),
   
@@ -139,6 +140,7 @@ export function EnhancedRTBTargetDialog({
       bidAmountPath: editingTarget?.bidAmountPath || "",
       destinationNumberPath: editingTarget?.destinationNumberPath || "",
       acceptancePath: editingTarget?.acceptancePath || "",
+      acceptanceParsing: editingTarget?.acceptanceParsing || "",
       currencyPath: editingTarget?.currencyPath || "",
       durationPath: editingTarget?.durationPath || "",
       responseParserType: editingTarget?.responseParserType || "json_path",
@@ -191,8 +193,6 @@ export function EnhancedRTBTargetDialog({
         currencyPath: editingTarget.currencyPath || "",
         durationPath: editingTarget.durationPath || "",
         acceptanceParsing: "Choose Property",
-        acceptanceOperator: "Equals",
-        acceptanceValue: "",
       });
     } else {
       form.reset({
@@ -230,11 +230,9 @@ export function EnhancedRTBTargetDialog({
         bidAmountPath: "",
         destinationNumberPath: "",
         acceptancePath: "",
+        acceptanceParsing: "",
         currencyPath: "",
         durationPath: "",
-        acceptanceParsing: "Choose Property",
-        acceptanceOperator: "Equals",
-        acceptanceValue: "",
       });
     }
   }, [editingTarget, form]);
@@ -279,7 +277,7 @@ export function EnhancedRTBTargetDialog({
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-visible">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />

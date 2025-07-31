@@ -228,7 +228,7 @@ export function RTBTargetAssignment({ campaignId, campaignName, isRtbEnabled }: 
 
       {/* Assignment Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto overflow-x-visible">
           <DialogHeader>
             <DialogTitle>Assign RTB Targets to {campaignName}</DialogTitle>
             <DialogDescription>
