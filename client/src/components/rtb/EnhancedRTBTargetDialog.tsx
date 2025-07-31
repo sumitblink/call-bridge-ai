@@ -591,6 +591,8 @@ export function EnhancedRTBTargetDialog({
         dialIvrOptions: editingTarget.dialIvrOptions || "",
         disableRecordings: editingTarget.disableRecordings || false,
         timezone: editingTarget.timezone || "UTC+00:00",
+        timeZone: editingTarget.timeZone || "(UTC-05:00) Eastern Time (US & Canada)",
+        hoursOfOperation: editingTarget.hoursOfOperation || "Always Open",
         conversionSettings: editingTarget.conversionSettings || "use_ring_tree",
         minimumRevenueSettings: editingTarget.minimumRevenueSettings || "use_ring_tree",
         revenueType: editingTarget.revenueType || "dynamic",
@@ -650,6 +652,8 @@ export function EnhancedRTBTargetDialog({
         dialIvrOptions: "",
         disableRecordings: false,
         timezone: "UTC",
+        timeZone: "(UTC-05:00) Eastern Time (US & Canada)",
+        hoursOfOperation: "Always Open",
         
         // Revenue Settings - Default values
         conversionSettings: "use_ring_tree",

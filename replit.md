@@ -182,6 +182,20 @@ Based on comprehensive review of Ringba's complete documentation structure cover
 7. **Request Settings**: API endpoint configuration with JavaScript/JPath/XPath parsing support
 
 ## Recent Changes  
+- July 31, 2025: **RTB TARGET HOURS OF OPERATION RESET BUG FIXED** - Resolved critical issue where Hours of Operation and Timezone fields were getting reset when editing RTB targets
+  - **Form Reset Logic Enhanced**: Added missing timeZone and hoursOfOperation fields to both editing and new target form reset useEffect
+  - **Field Persistence Fixed**: RTB target editing now properly preserves timezone and hours of operation configurations during form reset
+  - **Database Integration**: Ensured proper mapping between database stored values and form field initialization
+  - **User Experience**: RTB target editing now maintains all field values without unexpected resets
+  - **Status**: RTB target Hours of Operation field now persists correctly during edit operations
+- July 31, 2025: **RTB TARGET TIMEZONE AND HOURS OF OPERATION FIELDS IMPLEMENTED** - Successfully added complete timezone and hours of operation functionality to RTB Target creation form
+  - **Timezone Field Added**: Added timezone dropdown with common timezone options to RTB Target Basic tab
+  - **Hours of Operation Component**: Integrated full HoursOfOperationComponent from Create Target form with Basic/Advanced modes and break functionality
+  - **Database Schema Enhanced**: Added time_zone column to rtb_targets table with proper defaults
+  - **Form Validation**: Updated Zod schema to include timeZone and hoursOfOperation fields with proper validation
+  - **Default Values**: Set appropriate defaults for timezone (Eastern Time) and hours of operation (Always Open)
+  - **UI Integration**: Positioned fields below existing configuration in Basic tab with proper styling and tooltips
+  - **Status**: RTB Target form now includes complete timezone and hours of operation configuration matching Create Target functionality
 - July 31, 2025: **RTB TARGET DUPLICATION FUNCTIONALITY IMPLEMENTED** - Added duplicate option to RTB target actions menu enabling users to clone existing targets with "(Copy)" suffix
   - **Copy Button Added**: Added Copy icon and duplicate button to RTB target actions alongside Edit and Delete buttons
   - **Duplicate Mutation**: Implemented duplicateMutation with proper target cloning logic excluding id, timestamps, and performance metrics
