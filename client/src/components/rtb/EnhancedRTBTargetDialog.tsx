@@ -30,6 +30,9 @@ const enhancedRTBTargetSchema = z.object({
   // Toggle Settings
   enableDynamicNumber: z.boolean(),
   rtbShareableTags: z.boolean(),
+  shareInboundCallId: z.boolean().optional(),
+  exposeCallerId: z.boolean().optional(),
+  rtbId: z.string().optional(),
   
   // Dynamic Number/SIP conditional fields
   dynamicNumberType: z.enum(["Number", "SIP"]).optional(),
@@ -159,6 +162,9 @@ export function EnhancedRTBTargetDialog({
       contactPhone: "",
       enableDynamicNumber: false,
       rtbShareableTags: false,
+      shareInboundCallId: false,
+      exposeCallerId: false,
+      rtbId: "",
       dynamicNumberType: "Number",
       dynamicNumber: "",
       sipEndpoint: "",
@@ -227,6 +233,9 @@ export function EnhancedRTBTargetDialog({
         contactPhone: editingTarget.contactPhone || "",
         enableDynamicNumber: editingTarget.enableDynamicNumber || false,
         rtbShareableTags: editingTarget.rtbShareableTags || false,
+        shareInboundCallId: editingTarget.shareInboundCallId || false,
+        exposeCallerId: editingTarget.exposeCallerId || false,
+        rtbId: editingTarget.rtbId || "",
         dynamicNumberType: editingTarget.dynamicNumberType || "Number",
         dynamicNumber: editingTarget.dynamicNumber || "",
         sipEndpoint: editingTarget.sipEndpoint || "",
@@ -596,7 +605,7 @@ export function EnhancedRTBTargetDialog({
                                   <Info className="h-4 w-4 text-muted-foreground" />
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>Allow sharing of RTB tags and parameters with external bidding partners.</p>
+                                  <p>Allow sharing of RTB tags and parameters with external bidding partners. When enabled, Request Settings section becomes unavailable.</p>
                                 </TooltipContent>
                               </Tooltip>
                             </FormLabel>
@@ -611,6 +620,113 @@ export function EnhancedRTBTargetDialog({
                           </FormItem>
                         )}
                       />
+
+                      {/* RTB Configuration - Show only when RTB Shareable Tags is enabled */}
+                      {form.watch("rtbShareableTags") && (
+                        <div className="space-y-4 mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-l-4 border-blue-500">
+                          <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">RTB Configuration</h4>
+                          
+                          {/* Share Inbound Call ID */}
+                          <FormField
+                            control={form.control}
+                            name="shareInboundCallId"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between space-y-0">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-sm flex items-center gap-2">
+                                    Share Inbound Call ID
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Info className="h-3 w-3 text-muted-foreground" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Send the Call ID for each incoming call to the Buyer via [tag:user:publisherInboundCallId]</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </FormLabel>
+                                  <p className="text-xs text-muted-foreground">
+                                    Send unique Call ID to Buyer for each incoming call
+                                  </p>
+                                </div>
+                                <FormControl>
+                                  <ToggleSwitch
+                                    checked={field.value || false}
+                                    onCheckedChange={field.onChange}
+                                    size="sm"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          {/* Expose Caller ID */}
+                          <FormField
+                            control={form.control}
+                            name="exposeCallerId"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between space-y-0">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-sm flex items-center gap-2">
+                                    Expose Caller ID
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Info className="h-3 w-3 text-muted-foreground" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Expose caller ID to Buyer in multiple tags including inbound number, prefix, and suffix</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </FormLabel>
+                                  <p className="text-xs text-muted-foreground">
+                                    Share caller's phone number with Buyer in bidding process
+                                  </p>
+                                </div>
+                                <FormControl>
+                                  <ToggleSwitch
+                                    checked={field.value || false}
+                                    onCheckedChange={field.onChange}
+                                    size="sm"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          {/* RTB ID */}
+                          <FormField
+                            control={form.control}
+                            name="rtbId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2 text-sm">
+                                  RTB ID
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="h-3 w-3 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Long hexadecimal RTB ID provided by your Buyer (e.g., 1c22a98c60a74cf38944c0cc77eb0t12)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <span className="text-xs text-red-500">Required</span>
+                                </FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    placeholder="1c22a98c60a74cf38944c0cc77eb0t12"
+                                    value={field.value || ""}
+                                    onChange={field.onChange}
+                                    className="font-mono text-xs"
+                                  />
+                                </FormControl>
+                                <p className="text-xs text-muted-foreground">
+                                  Extract from buyer's URL: between /production/ and .json
+                                </p>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Conditional Dynamic Number/SIP fields - only show when disabled */}
