@@ -349,6 +349,9 @@ export default function Targets() {
   const [maxConcurrencyEnabled, setMaxConcurrencyEnabled] = useState(false);
   const [hourlyConcurrencyEnabled, setHourlyConcurrencyEnabled] = useState(false);
   const [weeklySettingsEnabled, setWeeklySettingsEnabled] = useState(false);
+  
+  // Predictive routing states
+  const [useEstimatedRevenue, setUseEstimatedRevenue] = useState(false);
 
   // Fetch targets
   const { data: targets = [], isLoading: targetsLoading } = useQuery<Target[]>({
@@ -898,14 +901,53 @@ export default function Targets() {
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium">Estimated Revenue</label>
                                   <div className="flex gap-2">
-                                    <Button variant="default" size="sm" className="text-xs">
+                                    <Button 
+                                      variant={!useEstimatedRevenue ? "default" : "outline"} 
+                                      size="sm" 
+                                      className="text-xs"
+                                      onClick={() => setUseEstimatedRevenue(false)}
+                                    >
                                       Use Campaign Setting
                                     </Button>
-                                    <Button variant="outline" size="sm" className="text-xs">
+                                    <Button 
+                                      variant={useEstimatedRevenue ? "default" : "outline"} 
+                                      size="sm" 
+                                      className="text-xs"
+                                      onClick={() => setUseEstimatedRevenue(true)}
+                                    >
                                       Use Estimated Revenue
                                     </Button>
                                   </div>
                                 </div>
+
+                                {/* Predictive Routing Configuration - Only show when Use Estimated Revenue is selected */}
+                                {useEstimatedRevenue && (
+                                  <div className="space-y-3 p-4 bg-gray-50 rounded-lg border">
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="text-sm font-medium">Predictive Routing Configuration</h4>
+                                      <span className="text-xs text-red-500 font-medium">Required</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Select defaultValue="">
+                                        <SelectTrigger className="flex-1">
+                                          <SelectValue placeholder="Choose a configuration" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="config1">Configuration 1</SelectItem>
+                                          <SelectItem value="config2">Configuration 2</SelectItem>
+                                          <SelectItem value="config3">Configuration 3</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <Button variant="outline" size="sm" className="px-2">
+                                        <Settings className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
+                                        <Plus className="h-4 w-4 mr-1" />
+                                        NEW
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
                                 
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium">Priority Bump</label>
