@@ -1725,46 +1725,56 @@ Please add tags with numerical values only."
                               )}
                             />
 
-                            {/* Static Duration Input - Show only when Static is selected */}
-                            {form.watch("callLengthValueType") === "Static" && (
-                              <FormField
-                                control={form.control}
-                                name="maxDynamicDuration"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel className="flex items-center gap-2">
-                                      Call Length (seconds)
-                                      <Tooltip>
-                                        <TooltipTrigger>
-                                          <Info className="h-4 w-4 text-muted-foreground" />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>Minimum call duration in seconds required for conversion.</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </FormLabel>
-                                    <FormControl>
-                                      <div className="flex items-center gap-2">
-                                        <Input 
-                                          type="number" 
-                                          step="1"
-                                          min="0"
-                                          placeholder="30"
-                                          value={field.value?.toString() || ""}
-                                          onChange={(e) => {
-                                            const value = e.target.value;
-                                            field.onChange(value === "" ? 0 : parseInt(value) || 0);
-                                          }}
-                                          className="w-24"
-                                        />
-                                        <span className="text-sm text-muted-foreground">seconds</span>
-                                      </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            )}
+                            {/* Duration Configuration - Show appropriate field based on Dynamic vs Static */}
+                            <FormField
+                              control={form.control}
+                              name="maxDynamicDuration"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="flex items-center gap-2">
+                                    {form.watch("callLengthValueType") === "Dynamic" 
+                                      ? "Max dynamic duration" 
+                                      : "Static call length"
+                                    }
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {form.watch("callLengthValueType") === "Dynamic" ? (
+                                          <p>The maximum accepted dynamic call duration, in seconds. If the ping response requires a higher call duration for conversion, the ping will be ignored.</p>
+                                        ) : (
+                                          <p>Fixed call duration in seconds required for conversion. Leave empty for unlimited duration.</p>
+                                        )}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </FormLabel>
+                                  <FormControl>
+                                    <div className="flex items-center gap-2">
+                                      <Input 
+                                        type="number" 
+                                        step="1"
+                                        min="0"
+                                        placeholder={form.watch("callLengthValueType") === "Dynamic" ? "unlimited" : "30"}
+                                        value={field.value?.toString() || ""}
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                                        }}
+                                        className="w-24"
+                                      />
+                                      <span className="text-sm text-muted-foreground">
+                                        {form.watch("callLengthValueType") === "Dynamic" 
+                                          ? (field.value === 0 || !field.value ? "unlimited" : "seconds")
+                                          : "seconds"
+                                        }
+                                      </span>
+                                    </div>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
                           </div>
                         )}
                       </div>
