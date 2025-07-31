@@ -942,7 +942,7 @@ export default function Targets() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <Select defaultValue="none">
-                                        <SelectTrigger className="flex-1">
+                                        <SelectTrigger className="w-full">
                                           <SelectValue placeholder="Choose a configuration" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -960,18 +960,6 @@ export default function Targets() {
                                           )}
                                         </SelectContent>
                                       </Select>
-                                      <Button variant="outline" size="sm" className="px-2">
-                                        <Settings className="h-4 w-4" />
-                                      </Button>
-                                      <Button 
-                                        variant="default" 
-                                        size="sm" 
-                                        className="bg-blue-600 hover:bg-blue-700"
-                                        onClick={() => window.open('/settings/predictive-routing', '_blank')}
-                                      >
-                                        <Plus className="h-4 w-4 mr-1" />
-                                        NEW
-                                      </Button>
                                     </div>
                                   </div>
                                 )}
