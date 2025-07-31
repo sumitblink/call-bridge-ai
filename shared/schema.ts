@@ -323,6 +323,20 @@ export const callEvents = pgTable("call_events", {
   metadata: json("metadata"), // Additional event data
 });
 
+// Predictive Routing Configurations table
+export const predictiveRoutingConfigs = pgTable("predictive_routing_configs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: varchar("name", { length: 256 }).notNull(),
+  type: varchar("type", { length: 20 }).notNull(), // 'basic', 'use_revenue', 'advanced'
+  newTargetPriority: integer("new_target_priority").default(0).notNull(), // -10 to 10 scale
+  underperformingTargetPriority: integer("underperforming_target_priority").default(0).notNull(), // -10 to 10 scale
+  trainingRequirement: integer("training_requirement").default(0).notNull(), // -10 to 10 scale
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Phase 3: Routing Decisions table for comprehensive routing analytics
 export const routingDecisions = pgTable("routing_decisions", {
   id: serial("id").primaryKey(),
@@ -1007,6 +1021,14 @@ export const insertRtbAuctionDetailsSchema = createInsertSchema(rtbAuctionDetail
 });
 export type RtbAuctionDetails = typeof rtbAuctionDetails.$inferSelect;
 export type InsertRtbAuctionDetails = z.infer<typeof insertRtbAuctionDetailsSchema>;
+
+export const insertPredictiveRoutingConfigSchema = createInsertSchema(predictiveRoutingConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type PredictiveRoutingConfig = typeof predictiveRoutingConfigs.$inferSelect;
+export type InsertPredictiveRoutingConfig = z.infer<typeof insertPredictiveRoutingConfigSchema>;
 
 export type Agent = typeof agents.$inferSelect;
 export type InsertAgent = z.infer<typeof insertAgentSchema>;

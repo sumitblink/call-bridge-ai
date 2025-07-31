@@ -1153,6 +1153,42 @@ class HybridStorage implements IStorage {
     );
   }
 
+  // Predictive Routing Configurations
+  async getPredictiveRoutingConfigs(userId?: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getPredictiveRoutingConfigs ? this.databaseStorage.getPredictiveRoutingConfigs(userId) : Promise.resolve([]),
+      () => Promise.resolve([]) // No memory fallback for predictive routing
+    );
+  }
+
+  async getPredictiveRoutingConfig(id: number): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getPredictiveRoutingConfig ? this.databaseStorage.getPredictiveRoutingConfig(id) : Promise.resolve(undefined),
+      () => Promise.resolve(undefined)
+    );
+  }
+
+  async createPredictiveRoutingConfig(config: any): Promise<any> {
+    return this.executeOperation(
+      () => this.databaseStorage.createPredictiveRoutingConfig ? this.databaseStorage.createPredictiveRoutingConfig(config) : Promise.resolve({ ...config, id: Date.now() }),
+      () => Promise.resolve({ ...config, id: Date.now() })
+    );
+  }
+
+  async updatePredictiveRoutingConfig(id: number, config: any): Promise<any | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.updatePredictiveRoutingConfig ? this.databaseStorage.updatePredictiveRoutingConfig(id, config) : Promise.resolve(undefined),
+      () => Promise.resolve(undefined)
+    );
+  }
+
+  async deletePredictiveRoutingConfig(id: number): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.deletePredictiveRoutingConfig ? this.databaseStorage.deletePredictiveRoutingConfig(id) : Promise.resolve(true),
+      () => Promise.resolve(true)
+    );
+  }
+
 }
 
 export const storage = new HybridStorage();

@@ -70,6 +70,9 @@ import {
   type InsertVisitorSession,
   type ConversionEvent,
   type InsertConversionEvent,
+  predictiveRoutingConfigs,
+  type PredictiveRoutingConfig,
+  type InsertPredictiveRoutingConfig,
 } from '@shared/schema';
 import type { IStorage } from './storage';
 
@@ -1769,6 +1772,74 @@ export class SupabaseStorage implements IStorage {
 
   async deleteCustomReport(id: number, userId: number): Promise<boolean> {
     return true;
+  }
+
+  // Predictive Routing Configurations
+  async getPredictiveRoutingConfigs(userId?: number): Promise<PredictiveRoutingConfig[]> {
+    try {
+      const query = db.select().from(predictiveRoutingConfigs);
+      if (userId) {
+        const result = await query.where(eq(predictiveRoutingConfigs.userId, userId));
+        return result;
+      }
+      return await query;
+    } catch (error) {
+      console.error('Error fetching predictive routing configurations:', error);
+      return [];
+    }
+  }
+
+  async getPredictiveRoutingConfig(id: number): Promise<PredictiveRoutingConfig | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(predictiveRoutingConfigs)
+        .where(eq(predictiveRoutingConfigs.id, id))
+        .limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching predictive routing configuration:', error);
+      return undefined;
+    }
+  }
+
+  async createPredictiveRoutingConfig(config: InsertPredictiveRoutingConfig): Promise<PredictiveRoutingConfig> {
+    try {
+      const result = await db
+        .insert(predictiveRoutingConfigs)
+        .values(config)
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating predictive routing configuration:', error);
+      throw error;
+    }
+  }
+
+  async updatePredictiveRoutingConfig(id: number, config: Partial<InsertPredictiveRoutingConfig>): Promise<PredictiveRoutingConfig | undefined> {
+    try {
+      const result = await db
+        .update(predictiveRoutingConfigs)
+        .set({ ...config, updatedAt: new Date() })
+        .where(eq(predictiveRoutingConfigs.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating predictive routing configuration:', error);
+      return undefined;
+    }
+  }
+
+  async deletePredictiveRoutingConfig(id: number): Promise<boolean> {
+    try {
+      await db
+        .delete(predictiveRoutingConfigs)
+        .where(eq(predictiveRoutingConfigs.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting predictive routing configuration:', error);
+      return false;
+    }
   }
 
   async copyCustomReport(id: number, userId: number): Promise<any> {

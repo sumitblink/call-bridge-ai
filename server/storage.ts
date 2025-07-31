@@ -45,6 +45,8 @@ import {
   type InsertRedtrackConfig,
   type URLParameter,
   type InsertURLParameter,
+  type PredictiveRoutingConfig,
+  type InsertPredictiveRoutingConfig,
 } from '@shared/schema';
 
 export interface IStorage {
@@ -298,6 +300,13 @@ export interface IStorage {
   createUrlParameter(parameter: InsertURLParameter): Promise<URLParameter>;
   updateUrlParameter(id: number, parameter: Partial<InsertURLParameter>): Promise<URLParameter | undefined>;
   deleteUrlParameter(id: number): Promise<boolean>;
+
+  // Predictive Routing Configurations
+  getPredictiveRoutingConfigs(userId?: number): Promise<PredictiveRoutingConfig[]>;
+  getPredictiveRoutingConfig(id: number): Promise<PredictiveRoutingConfig | undefined>;
+  createPredictiveRoutingConfig(config: InsertPredictiveRoutingConfig): Promise<PredictiveRoutingConfig>;
+  updatePredictiveRoutingConfig(id: number, config: Partial<InsertPredictiveRoutingConfig>): Promise<PredictiveRoutingConfig | undefined>;
+  deletePredictiveRoutingConfig(id: number): Promise<boolean>;
 
   // Integration Tracking Pixels
   getTrackingPixels(): Promise<any[]>;

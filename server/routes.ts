@@ -8302,32 +8302,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Predictive Routing Configuration API
   app.get('/api/settings/predictive-routing', requireAuth, async (req: any, res) => {
     try {
-      // For now, return mock data since we haven't implemented database tables yet
-      // This matches the interface expected by the frontend
-      const mockConfigs = [
-        {
-          id: 1,
-          name: "Healthcare Default",
-          type: "use_revenue",
-          newTargetPriority: 3,
-          underperformingTargetPriority: -2,
-          trainingRequirement: 0,
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 2,
-          name: "Insurance Advanced",
-          type: "advanced", 
-          newTargetPriority: 5,
-          underperformingTargetPriority: -3,
-          trainingRequirement: 2,
-          isActive: false,
-          createdAt: new Date(Date.now() - 86400000).toISOString()
-        }
-      ];
-      
-      res.json(mockConfigs);
+      const userId = req.user?.id;
+      const configs = await storage.getPredictiveRoutingConfigs(userId);
+      res.json(configs);
     } catch (error) {
       console.error('Error fetching predictive routing configurations:', error);
       res.status(500).json({ error: 'Failed to fetch predictive routing configurations' });
@@ -8336,22 +8313,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/settings/predictive-routing', requireAuth, async (req: any, res) => {
     try {
+      const userId = req.user?.id;
       const { name, type, newTargetPriority, underperformingTargetPriority, trainingRequirement, isActive } = req.body;
       
-      // For now, return mock response
-      // In the future, this would save to database
-      const mockConfig = {
-        id: Math.floor(Math.random() * 1000),
+      const configData = {
+        userId,
         name,
         type,
         newTargetPriority: parseInt(newTargetPriority) || 0,
         underperformingTargetPriority: parseInt(underperformingTargetPriority) || 0,
         trainingRequirement: parseInt(trainingRequirement) || 0,
         isActive: isActive !== undefined ? isActive : true,
-        createdAt: new Date().toISOString()
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
-      res.status(201).json(mockConfig);
+      const config = await storage.createPredictiveRoutingConfig(configData);
+      res.status(201).json(config);
     } catch (error) {
       console.error('Error creating predictive routing configuration:', error);
       res.status(500).json({ error: 'Failed to create predictive routing configuration' });
@@ -8363,19 +8341,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { name, type, newTargetPriority, underperformingTargetPriority, trainingRequirement, isActive } = req.body;
       
-      // For now, return mock response
-      const mockConfig = {
-        id: parseInt(id),
+      const updateData = {
         name,
         type,
         newTargetPriority: parseInt(newTargetPriority) || 0,
         underperformingTargetPriority: parseInt(underperformingTargetPriority) || 0,
         trainingRequirement: parseInt(trainingRequirement) || 0,
         isActive: isActive !== undefined ? isActive : true,
-        createdAt: new Date(Date.now() - 86400000).toISOString()
+        updatedAt: new Date()
       };
       
-      res.json(mockConfig);
+      const config = await storage.updatePredictiveRoutingConfig(parseInt(id), updateData);
+      if (config) {
+        res.json(config);
+      } else {
+        res.status(404).json({ error: 'Configuration not found' });
+      }
     } catch (error) {
       console.error('Error updating predictive routing configuration:', error);
       res.status(500).json({ error: 'Failed to update predictive routing configuration' });
@@ -8386,9 +8367,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
-      // For now, just return success
-      // In the future, this would delete from database
-      res.status(204).send();
+      const success = await storage.deletePredictiveRoutingConfig(parseInt(id));
+      if (success) {
+        res.status(204).send();
+      } else {
+        res.status(404).json({ error: 'Configuration not found' });
+      }
     } catch (error) {
       console.error('Error deleting predictive routing configuration:', error);
       res.status(500).json({ error: 'Failed to delete predictive routing configuration' });
