@@ -384,22 +384,22 @@ export default function PredictiveRoutingSettings() {
 
               {/* Advanced Settings - Only show when Advanced is ON */}
               {formData.type === "advanced" && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {/* Tracking Settings */}
-                  <div className="space-y-4">
-                    <h3 className="font-medium">Tracking Settings</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Count Attempts</Label>
-                        <select className="w-full border rounded px-3 py-2 bg-background">
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium">Tracking Settings</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Count Attempts</Label>
+                        <select className="w-full text-sm border rounded px-2 py-1.5 bg-background">
                           <option>On Dial</option>
                           <option>On Answer</option>
                           <option>On Conversion</option>
                         </select>
                       </div>
-                      <div className="space-y-2">
-                        <Label>Track Connections by</Label>
-                        <select className="w-full border rounded px-3 py-2 bg-background">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Track Connections by</Label>
+                        <select className="w-full text-sm border rounded px-2 py-1.5 bg-background">
                           <option>Buyer</option>
                           <option>Target</option>
                           <option>Campaign and Buyer</option>
@@ -412,61 +412,68 @@ export default function PredictiveRoutingSettings() {
                   </div>
 
                   {/* Call Filter Settings */}
-                  <div className="space-y-4">
-                    <h3 className="font-medium">Call Filter Settings</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Minimum Number of Calls</Label>
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium">Call Filter Settings</h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Min Calls</Label>
                         <Input
                           type="number"
                           defaultValue="15"
+                          className="text-sm h-8"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Desired Number of Calls</Label>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Desired Calls</Label>
                         <Input
                           type="number"
                           defaultValue="75"
+                          className="text-sm h-8"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Minimum Number of Hours</Label>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Skip Latest Hours</Label>
                         <Input
                           type="number"
+                          className="text-sm h-8"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Desired Number of Hours</Label>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Min Hours</Label>
+                        <Input
+                          type="number"
+                          className="text-sm h-8"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Desired Hours</Label>
                         <Input
                           type="number"
                           defaultValue="720"
-                        />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label>Skip Latest Hours</Label>
-                        <Input
-                          type="number"
+                          className="text-sm h-8"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Priority Settings */}
-                  <div className="space-y-4">
-                    <h3 className="font-medium">Priority Settings</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>New Targets</Label>
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium">Priority Settings</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">New Targets</Label>
                         <Input
                           type="number"
                           defaultValue="47"
+                          className="text-sm h-8"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Underperforming Targets</Label>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Underperforming Targets</Label>
                         <Input
                           type="number"
                           defaultValue="10"
+                          className="text-sm h-8"
                         />
                       </div>
                     </div>
