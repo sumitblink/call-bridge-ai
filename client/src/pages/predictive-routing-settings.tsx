@@ -38,9 +38,10 @@ export default function PredictiveRoutingSettings() {
   });
 
   // Fetch predictive routing configurations
-  const { data: configs, isLoading } = useQuery({
+  const { data: configs = [], isLoading, refetch } = useQuery<PredictiveConfig[]>({
     queryKey: ["/api/settings/predictive-routing"],
-    initialData: []
+    staleTime: 0,
+    refetchOnWindowFocus: false
   });
 
   // Create configuration mutation
@@ -168,10 +169,16 @@ export default function PredictiveRoutingSettings() {
               Manage predictive routing configurations for intelligent call distribution
             </p>
           </div>
-          <Button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            CREATE CONFIGURATION
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => refetch()} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              CREATE CONFIGURATION
+            </Button>
+          </div>
         </div>
 
         <Card>
