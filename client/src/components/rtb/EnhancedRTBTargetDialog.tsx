@@ -47,6 +47,37 @@ const HoursOfOperationComponent = ({ value, onChange }: HoursOfOperationProps) =
     Saturday: { enabled: true, openTime: "09:00 AM", closeTime: "09:00 PM", breaks: [] as Array<{ start: string; duration: number }> }
   });
 
+  // Initialize component state from the incoming value
+  useEffect(() => {
+    if (value === "Always Open") {
+      setIsEnabled(false);
+      setMode("Basic");
+    } else if (value.startsWith("Basic:")) {
+      setIsEnabled(true);
+      setMode("Basic");
+      // Parse basic hours if needed
+      const match = value.match(/Basic: (.+) - (.+)/);
+      if (match) {
+        setBasicHours(prev => ({
+          ...prev,
+          openTime: match[1],
+          closeTime: match[2]
+        }));
+      }
+    } else if (value.startsWith("Advanced:")) {
+      setIsEnabled(true);
+      setMode("Advanced");
+      // Parse advanced hours if needed
+      try {
+        const advancedData = value.replace("Advanced: ", "");
+        const parsedData = JSON.parse(advancedData);
+        setAdvancedHours(parsedData);
+      } catch (error) {
+        console.log("Could not parse advanced hours data:", error);
+      }
+    }
+  }, [value]);
+
   useEffect(() => {
     if (!isEnabled) {
       onChange("Always Open");

@@ -186,6 +186,8 @@ Based on comprehensive review of Ringba's complete documentation structure cover
   - **Form Reset Logic Enhanced**: Added missing timeZone and hoursOfOperation fields to both editing and new target form reset useEffect
   - **Field Persistence Fixed**: RTB target editing now properly preserves timezone and hours of operation configurations during form reset
   - **Database Integration**: Ensured proper mapping between database stored values and form field initialization
+  - **Component State Initialization**: Added initialization logic to properly restore Advanced/Basic mode state in Hours of Operation component
+  - **Value Parsing**: Enhanced HoursOfOperationComponent to parse saved values and restore correct mode (Always Open, Basic, Advanced)
   - **User Experience**: RTB target editing now maintains all field values without unexpected resets
   - **Status**: RTB target Hours of Operation field now persists correctly during edit operations
 - July 31, 2025: **RTB TARGET TIMEZONE AND HOURS OF OPERATION FIELDS IMPLEMENTED** - Successfully added complete timezone and hours of operation functionality to RTB Target creation form
