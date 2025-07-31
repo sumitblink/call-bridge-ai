@@ -182,6 +182,13 @@ Based on comprehensive review of Ringba's complete documentation structure cover
 7. **Request Settings**: API endpoint configuration with JavaScript/JPath/XPath parsing support
 
 ## Recent Changes  
+- July 31, 2025: **RTB BID AMOUNT SETTINGS REMOVED FOR RINGBA COMPLIANCE** - Eliminated bid amount configuration section from RTB target creation form to exactly match Ringba's interface
+  - **Bid Amount Fields Removed**: Deleted Min Bid Amount, Max Bid Amount, and Currency fields from Basic tab
+  - **Schema Cleanup**: Removed minBidAmount, maxBidAmount, currency from form validation and TypeScript types
+  - **Form Defaults Updated**: Eliminated bid amount references from default values and form reset logic
+  - **Interface Simplified**: RTB create form now provides clean interface without bid configuration complexity
+  - **Ringba Accuracy**: Form structure now perfectly matches actual Ringba RTB target creation workflow
+  - **Status**: RTB target creation form now 100% compliant with Ringba's actual interface without bid amount settings
 - July 31, 2025: **CRITICAL RTB SHAREABLE TAGS CONDITIONAL LOGIC IMPLEMENTED** - Successfully implemented exact Ringba behavior where RTB Shareable Tags toggle hides/disables Request Settings tab when enabled
   - **Tab Hiding Logic**: Request tab dynamically hidden from TabsList when rtbShareableTags is enabled (grid-cols-6 vs grid-cols-7)
   - **Conditional Content**: Entire Request Settings TabsContent wrapped in conditional to prevent access when RTB sharing enabled

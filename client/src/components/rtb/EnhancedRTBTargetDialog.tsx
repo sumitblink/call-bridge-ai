@@ -41,10 +41,7 @@ const enhancedRTBTargetSchema = z.object({
   sipUsername: z.string().optional(),
   sipPassword: z.string().optional(),
   
-  // Bid Amount Settings (moved to Basic tab)
-  minBidAmount: z.number().min(0, "Minimum bid amount must be positive"),
-  maxBidAmount: z.number().min(0, "Maximum bid amount must be positive"),
-  currency: z.enum(["USD", "EUR", "GBP", "CAD", "AUD"]),
+
   
   // Connection Settings
   connectionTimeout: z.number().min(1000, "Connection timeout must be at least 1000ms").max(30000, "Connection timeout cannot exceed 30000ms"),
@@ -108,9 +105,6 @@ const enhancedRTBTargetSchema = z.object({
   // JavaScript Response Parser
   responseParserType: z.enum(["json_path", "javascript"]).optional(),
   javascriptParser: z.string().optional(),
-}).refine((data) => data.maxBidAmount >= data.minBidAmount, {
-  message: "Maximum bid amount must be greater than or equal to minimum bid amount",
-  path: ["maxBidAmount"],
 });
 
 interface EnhancedRTBTargetDialogProps {
@@ -170,9 +164,7 @@ export function EnhancedRTBTargetDialog({
       sipEndpoint: "",
       sipUsername: "",
       sipPassword: "",
-      minBidAmount: 0,
-      maxBidAmount: 100,
-      currency: "USD",
+
       connectionTimeout: 5000,
       dialIvrOptions: editingTarget?.dialIvrOptions || "",
       disableRecordings: editingTarget?.disableRecordings || false,
@@ -241,9 +233,7 @@ export function EnhancedRTBTargetDialog({
         sipEndpoint: editingTarget.sipEndpoint || "",
         sipUsername: editingTarget.sipUsername || "",
         sipPassword: editingTarget.sipPassword || "",
-        minBidAmount: typeof editingTarget.minBidAmount === 'number' ? editingTarget.minBidAmount : (editingTarget.minBidAmount ? parseFloat(editingTarget.minBidAmount) : 0),
-        maxBidAmount: typeof editingTarget.maxBidAmount === 'number' ? editingTarget.maxBidAmount : (editingTarget.maxBidAmount ? parseFloat(editingTarget.maxBidAmount) : 100),
-        currency: editingTarget.currency || "USD",
+
         connectionTimeout: editingTarget.connectionTimeout || 5000,
         dialIvrOptions: editingTarget.dialIvrOptions || "",
         disableRecordings: editingTarget.disableRecordings || false,
@@ -291,9 +281,7 @@ export function EnhancedRTBTargetDialog({
         contactPhone: "",
         enableDynamicNumber: false,
         rtbShareableTags: false,
-        minBidAmount: 0,
-        maxBidAmount: 100,
-        currency: "USD",
+
         connectionTimeout: 5000,
         dialIvrOptions: "",
         disableRecordings: false,
@@ -344,10 +332,7 @@ export function EnhancedRTBTargetDialog({
         hourlyConcurrency: data.hourlyConcurrency,
         enableDynamicNumber: data.enableDynamicNumber,
         rtbShareableTags: data.rtbShareableTags,
-        // Include bid amount fields
-        minBidAmount: data.minBidAmount,
-        maxBidAmount: data.maxBidAmount,
-        currency: data.currency,
+
         restrictDuplicates: data.restrictDuplicates !== "Buyer Settings (Do not Restrict)",
         disableRecordings: data.disableRecordings,
         priorityBumpValue: data.priorityBump,
@@ -1014,108 +999,7 @@ Please add tags with numerical values only."
                       )}
                     />
 
-                    {/* Bid Amount Settings */}
-                    <div className="space-y-4 pt-4 border-t">
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-green-600" />
-                        <h4 className="text-sm font-medium">Bid Amount Settings</h4>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="minBidAmount"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                Min Bid Amount <span className="text-red-500">*</span>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Minimum bid amount this target will accept. Lower amounts may be automatically rejected.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.01"
-                                  min="0"
-                                  placeholder="0.00"
-                                  value={field.value || ""}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    field.onChange(value === "" ? 0 : parseFloat(value) || 0);
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
 
-                        <FormField
-                          control={form.control}
-                          name="maxBidAmount"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                Max Bid Amount <span className="text-red-500">*</span>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Maximum bid amount this target will submit. Higher values increase chances of winning auctions.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.01"
-                                  min="0"
-                                  placeholder="100.00"
-                                  value={field.value || ""}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    field.onChange(value === "" ? 0 : parseFloat(value) || 0);
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="currency"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Currency <span className="text-red-500">*</span></FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select Currency" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="USD">USD - US Dollar</SelectItem>
-                                  <SelectItem value="EUR">EUR - Euro</SelectItem>
-                                  <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                                  <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
-                                  <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
