@@ -1725,56 +1725,89 @@ Please add tags with numerical values only."
                               )}
                             />
 
-                            {/* Duration Configuration - Show appropriate field based on Dynamic vs Static */}
-                            <FormField
-                              control={form.control}
-                              name="maxDynamicDuration"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="flex items-center gap-2">
-                                    {form.watch("callLengthValueType") === "Dynamic" 
-                                      ? "Max dynamic duration" 
-                                      : "Static call length"
-                                    }
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <Info className="h-4 w-4 text-muted-foreground" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        {form.watch("callLengthValueType") === "Dynamic" ? (
+                            {/* Dynamic Duration Configuration */}
+                            {form.watch("callLengthValueType") === "Dynamic" && (
+                              <FormField
+                                control={form.control}
+                                name="maxDynamicDuration"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                      Max dynamic duration
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-4 w-4 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
                                           <p>The maximum accepted dynamic call duration, in seconds. If the ping response requires a higher call duration for conversion, the ping will be ignored.</p>
-                                        ) : (
-                                          <p>Fixed call duration in seconds required for conversion. Leave empty for unlimited duration.</p>
-                                        )}
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </FormLabel>
-                                  <FormControl>
-                                    <div className="flex items-center gap-2">
-                                      <Input 
-                                        type="number" 
-                                        step="1"
-                                        min="0"
-                                        placeholder={form.watch("callLengthValueType") === "Dynamic" ? "unlimited" : "30"}
-                                        value={field.value?.toString() || ""}
-                                        onChange={(e) => {
-                                          const value = e.target.value;
-                                          field.onChange(value === "" ? 0 : parseInt(value) || 0);
-                                        }}
-                                        className="w-24"
-                                      />
-                                      <span className="text-sm text-muted-foreground">
-                                        {form.watch("callLengthValueType") === "Dynamic" 
-                                          ? (field.value === 0 || !field.value ? "unlimited" : "seconds")
-                                          : "seconds"
-                                        }
-                                      </span>
-                                    </div>
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </FormLabel>
+                                    <FormControl>
+                                      <div className="flex items-center gap-2">
+                                        <Input 
+                                          type="number" 
+                                          step="1"
+                                          min="0"
+                                          placeholder=""
+                                          value={field.value?.toString() || ""}
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                                          }}
+                                          className="w-24"
+                                        />
+                                        <span className="text-sm text-muted-foreground">
+                                          {field.value === 0 || !field.value ? "unlimited" : "seconds"}
+                                        </span>
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
+
+                            {/* Static Duration Configuration */}
+                            {form.watch("callLengthValueType") === "Static" && (
+                              <FormField
+                                control={form.control}
+                                name="staticCallLength"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                      Call length (seconds)
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-4 w-4 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Fixed call duration in seconds required for conversion.</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </FormLabel>
+                                    <FormControl>
+                                      <div className="flex items-center gap-2">
+                                        <Input 
+                                          type="number" 
+                                          step="1"
+                                          min="1"
+                                          placeholder="30"
+                                          value={field.value?.toString() || ""}
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            field.onChange(value === "" ? 30 : parseInt(value) || 30);
+                                          }}
+                                          className="w-24"
+                                        />
+                                        <span className="text-sm text-muted-foreground">seconds</span>
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
                           </div>
                         )}
                       </div>
