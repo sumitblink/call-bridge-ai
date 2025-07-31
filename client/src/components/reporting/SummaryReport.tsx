@@ -45,7 +45,7 @@ export default function SummaryReport({ filters, dateRange, onFilterClick }: Sum
       const params = new URLSearchParams({
         groupBy: activeTab,
         dateRange,
-        ...(selectedTag && { tag: selectedTag }),
+        ...(selectedTag && selectedTag !== 'all' && { tag: selectedTag }),
         filters: JSON.stringify(filters)
       });
       const response = await fetch(`/api/reporting/summary?${params}`);
@@ -68,7 +68,7 @@ export default function SummaryReport({ filters, dateRange, onFilterClick }: Sum
       groupBy: activeTab,
       dateRange,
       format: 'csv',
-      ...(selectedTag && { tag: selectedTag }),
+      ...(selectedTag && selectedTag !== 'all' && { tag: selectedTag }),
       filters: JSON.stringify(filters)
     });
     window.open(`/api/reporting/summary/export?${params}`, '_blank');
@@ -172,7 +172,7 @@ export default function SummaryReport({ filters, dateRange, onFilterClick }: Sum
                   <SelectValue placeholder="Select a reporting tag" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Tags</SelectItem>
+                  <SelectItem value="all">All Tags</SelectItem>
                   {availableTags.map((tag: any) => (
                     <SelectItem key={tag.name} value={tag.name}>
                       {tag.displayName || tag.name}
