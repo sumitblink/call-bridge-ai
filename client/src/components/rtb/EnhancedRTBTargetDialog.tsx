@@ -583,7 +583,7 @@ export function EnhancedRTBTargetDialog({
                     {/* Conditional Dynamic Number/SIP fields - only show when enabled */}
                     {enableDynamicNumber && (
                       <div className="space-y-4 mt-4 pt-4 border-t border-border">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                           <FormField
                             control={form.control}
                             name="dynamicNumberType"
@@ -601,7 +601,7 @@ export function EnhancedRTBTargetDialog({
                                   </Tooltip>
                                 </FormLabel>
                                 <FormControl>
-                                  <div className="flex gap-2">
+                                  <div className="flex gap-2 max-w-xs">
                                     <Button
                                       type="button"
                                       variant={field.value === "Number" ? "default" : "outline"}
