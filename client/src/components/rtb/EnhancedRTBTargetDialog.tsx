@@ -55,6 +55,18 @@ const enhancedRTBTargetSchema = z.object({
   // Timezone
   timezone: z.string(),
   
+  // Revenue Settings
+  conversionSettings: z.enum(["use_ring_tree", "override"]).default("use_ring_tree"),
+  minimumRevenueSettings: z.enum(["use_ring_tree", "override"]).default("use_ring_tree"),
+  revenueType: z.enum(["dynamic", "static"]).optional(),
+  staticRevenueAmount: z.number().min(0).optional(),
+  failureRevenueAmount: z.number().min(0).optional(),
+  convertOn: z.enum(["Call Successfully Connected", "Call Length", "Postback/Webhook", "Dialed"]).optional(),
+  startCallLengthOn: z.enum(["Incoming", "Dial", "Connect"]).optional(),
+  callLengthValueType: z.enum(["Dynamic", "Static"]).optional(),
+  maxDynamicDuration: z.number().min(0).optional(),
+  minimumRevenueAmount: z.number().min(0).optional(),
+  
   // Cap Settings
   capOn: z.enum(["Conversion", "Call", "Revenue"]),
   globalCallCap: z.number().min(0).optional(),
@@ -161,6 +173,14 @@ export function EnhancedRTBTargetDialog({
       timezone: editingTarget?.timezone || "UTC+00:00",
       conversionSettings: "use_ring_tree",
       minimumRevenueSettings: "use_ring_tree",
+      revenueType: "dynamic",
+      staticRevenueAmount: 0,
+      failureRevenueAmount: 0,
+      convertOn: "Call Successfully Connected",
+      startCallLengthOn: "Incoming",
+      callLengthValueType: "Dynamic",
+      maxDynamicDuration: 0,
+      minimumRevenueAmount: 20,
       capOn: editingTarget?.capOn || "Conversion",
       globalCallCap: editingTarget?.globalCallCap || 0,
       monthlyCap: editingTarget?.monthlyCap || 0,
@@ -221,6 +241,14 @@ export function EnhancedRTBTargetDialog({
         timezone: editingTarget.timezone || "UTC+00:00",
         conversionSettings: editingTarget.conversionSettings || "use_ring_tree",
         minimumRevenueSettings: editingTarget.minimumRevenueSettings || "use_ring_tree",
+        revenueType: editingTarget.revenueType || "dynamic",
+        staticRevenueAmount: editingTarget.staticRevenueAmount || 0,
+        failureRevenueAmount: editingTarget.failureRevenueAmount || 0,
+        convertOn: editingTarget.convertOn || "Call Successfully Connected",
+        startCallLengthOn: editingTarget.startCallLengthOn || "Incoming",
+        callLengthValueType: editingTarget.callLengthValueType || "Dynamic",
+        maxDynamicDuration: editingTarget.maxDynamicDuration || 0,
+        minimumRevenueAmount: editingTarget.minimumRevenueAmount || 20,
         capOn: "Conversion",
         globalCallCap: editingTarget.globalCallCap || 0,
         monthlyCap: editingTarget.monthlyCap || 0,
@@ -1350,60 +1378,284 @@ Please add tags with numerical values only."
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Conversion Settings */}
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium flex items-center gap-2">
-                        Conversion Settings
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Configure how conversions are tracked and calculated for this target.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </h4>
-                      <div className="flex gap-2">
-                        <Button 
-                          type="button" 
-                          variant="default" 
-                          size="sm" 
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          Use Ring Tree Settings
-                        </Button>
-                        <Button type="button" variant="outline" size="sm">
-                          Override
-                        </Button>
+                    <FormField
+                      control={form.control}
+                      name="conversionSettings"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="space-y-4">
+                            <h4 className="text-sm font-medium flex items-center gap-2">
+                              Conversion Settings
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Configure how conversions are tracked and calculated for this target.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </h4>
+                            <div className="flex gap-2">
+                              <Button 
+                                type="button" 
+                                variant={field.value === "use_ring_tree" ? "default" : "outline"}
+                                size="sm" 
+                                className={field.value === "use_ring_tree" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                onClick={() => field.onChange("use_ring_tree")}
+                              >
+                                Use Ring Tree Settings
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant={field.value === "override" ? "default" : "outline"}
+                                size="sm"
+                                className={field.value === "override" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                onClick={() => field.onChange("override")}
+                              >
+                                Override
+                              </Button>
+                            </div>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Override Settings - Show only when Override is selected */}
+                    {form.watch("conversionSettings") === "override" && (
+                      <div className="space-y-6 pl-4 border-l-2 border-blue-200">
+                        {/* Revenue Type */}
+                        <FormField
+                          control={form.control}
+                          name="revenueType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <div className="space-y-4">
+                                <h4 className="text-sm font-medium flex items-center gap-2">
+                                  Revenue Type
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="h-4 w-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Choose between dynamic revenue calculation or static fixed amounts.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </h4>
+                                <div className="flex gap-2">
+                                  <Button 
+                                    type="button" 
+                                    variant={field.value === "dynamic" ? "default" : "outline"}
+                                    size="sm" 
+                                    className={field.value === "dynamic" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                    onClick={() => field.onChange("dynamic")}
+                                  >
+                                    Dynamic
+                                  </Button>
+                                  <Button 
+                                    type="button" 
+                                    variant={field.value === "static" ? "default" : "outline"}
+                                    size="sm"
+                                    className={field.value === "static" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                    onClick={() => field.onChange("static")}
+                                  >
+                                    Static
+                                  </Button>
+                                </div>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Static Revenue Amount - Show only when Static is selected */}
+                        {form.watch("revenueType") === "static" && (
+                          <FormField
+                            control={form.control}
+                            name="staticRevenueAmount"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  Static Revenue Amount
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="h-4 w-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Fixed revenue amount for static revenue calculation.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </FormLabel>
+                                <FormControl>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm">$</span>
+                                    <Input 
+                                      type="number" 
+                                      step="0.01"
+                                      min="0"
+                                      placeholder="0"
+                                      value={field.value?.toString() || ""}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        field.onChange(value === "" ? 0 : parseFloat(value) || 0);
+                                      }}
+                                      className="w-24"
+                                    />
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+
+                        {/* Failure Revenue Amount */}
+                        <FormField
+                          control={form.control}
+                          name="failureRevenueAmount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                Failure Revenue Amount
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Revenue amount assigned when call fails to convert.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </FormLabel>
+                              <FormControl>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm">$</span>
+                                  <Input 
+                                    type="number" 
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0"
+                                    value={field.value?.toString() || ""}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      field.onChange(value === "" ? 0 : parseFloat(value) || 0);
+                                    }}
+                                    className="w-24"
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Convert On */}
+                        <FormField
+                          control={form.control}
+                          name="convertOn"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                Convert On
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Define what event triggers a conversion for revenue calculation.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="w-64">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Call Successfully Connected">Call Successfully Connected</SelectItem>
+                                  <SelectItem value="Call Length">Call Length</SelectItem>
+                                  <SelectItem value="Postback/Webhook">Postback/Webhook</SelectItem>
+                                  <SelectItem value="Dialed">Dialed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
-                    </div>
+                    )}
 
                     {/* Minimum Revenue Amount */}
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium flex items-center gap-2">
-                        Minimum Revenue Amount
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Set minimum revenue threshold for this target.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </h4>
-                      <div className="flex gap-2">
-                        <Button 
-                          type="button" 
-                          variant="default" 
-                          size="sm" 
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          Use Ring Tree Settings
-                        </Button>
-                        <Button type="button" variant="outline" size="sm">
-                          Override
-                        </Button>
-                      </div>
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="minimumRevenueSettings"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="space-y-4">
+                            <h4 className="text-sm font-medium flex items-center gap-2">
+                              Minimum Revenue Amount
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Set minimum revenue threshold for this target.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </h4>
+                            <div className="flex gap-2">
+                              <Button 
+                                type="button" 
+                                variant={field.value === "use_ring_tree" ? "default" : "outline"}
+                                size="sm" 
+                                className={field.value === "use_ring_tree" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                onClick={() => field.onChange("use_ring_tree")}
+                              >
+                                Use Ring Tree Settings
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant={field.value === "override" ? "default" : "outline"}
+                                size="sm"
+                                className={field.value === "override" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                onClick={() => field.onChange("override")}
+                              >
+                                Override
+                              </Button>
+                            </div>
+
+                            {/* Override - Minimum Revenue Amount Input */}
+                            {field.value === "override" && (
+                              <FormField
+                                control={form.control}
+                                name="minimumRevenueAmount"
+                                render={({ field: amountField }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <div className="flex items-center gap-2 mt-4">
+                                        <span className="text-sm">$</span>
+                                        <Input 
+                                          type="number" 
+                                          step="0.01"
+                                          min="0"
+                                          placeholder="20"
+                                          value={amountField.value?.toString() || ""}
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            amountField.onChange(value === "" ? 0 : parseFloat(value) || 0);
+                                          }}
+                                          className="w-24"
+                                        />
+                                        <span className="text-sm text-muted-foreground italic">Required</span>
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
+                          </div>
+                        </FormItem>
+                      )}
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>
