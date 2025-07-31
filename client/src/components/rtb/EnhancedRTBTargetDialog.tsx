@@ -14,8 +14,9 @@ import { Slider } from "@/components/ui/slider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Settings, Globe, Clock, Shield, DollarSign, Target, TestTube, Phone, AlertTriangle, Info } from "lucide-react";
+import { Settings, Globe, Clock, Shield, DollarSign, Target, TestTube, Phone, AlertTriangle, Info, Plus, ExternalLink } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useQuery } from "@tanstack/react-query";
 
 const enhancedRTBTargetSchema = z.object({
   // Basic Configuration
@@ -57,6 +58,7 @@ const enhancedRTBTargetSchema = z.object({
   // Concurrency Settings
   maxConcurrency: z.number().min(0).optional(),
   hourlyConcurrency: z.number().min(0).optional(),
+  predictiveRoutingConfigId: z.number().optional(),
   
   // Duplicate Call Settings
   restrictDuplicates: z.enum(["Buyer Settings (Do not Restrict)", "Block", "Route to Fallback"]),
@@ -103,6 +105,13 @@ export function EnhancedRTBTargetDialog({
   editingTarget 
 }: EnhancedRTBTargetDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPredictiveRoutingSettings, setShowPredictiveRoutingSettings] = useState(false);
+
+  // Fetch predictive routing configurations
+  const { data: predictiveRoutingConfigs = [], refetch: refetchPredictiveConfigs } = useQuery({
+    queryKey: ['/api/settings/predictive-routing'],
+    enabled: open
+  });
   const form = useForm<z.infer<typeof enhancedRTBTargetSchema>>({
     resolver: zodResolver(enhancedRTBTargetSchema),
     defaultValues: {
@@ -128,6 +137,7 @@ export function EnhancedRTBTargetDialog({
       hourlyCap: editingTarget?.hourlyCap || 0,
       maxConcurrency: editingTarget?.maxConcurrency || 0,
       hourlyConcurrency: editingTarget?.hourlyConcurrency || 0,
+      predictiveRoutingConfigId: editingTarget?.predictiveRoutingConfigId || undefined,
       restrictDuplicates: editingTarget?.restrictDuplicates || "Buyer Settings (Do not Restrict)",
       estimatedRevenue: editingTarget?.estimatedRevenue || "Use Campaign Setting",
       priorityBump: editingTarget?.priorityBump || 0,
@@ -925,6 +935,71 @@ Please add tags with numerical values only."
                                 <SelectItem value="Route to Fallback">Route to Fallback</SelectItem>
                               </SelectContent>
                             </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        Predictive Routing Configuration
+                      </h4>
+                      <FormField
+                        control={form.control}
+                        name="predictiveRoutingConfigId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              Configuration
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Select a predictive routing configuration to apply intelligent call routing based on target performance and priority settings.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
+                            <div className="flex gap-2">
+                              <Select 
+                                onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
+                                value={field.value?.toString() || ""}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="flex-1">
+                                    <SelectValue placeholder="Select configuration..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="">No Configuration</SelectItem>
+                                  {predictiveRoutingConfigs.map((config: any) => (
+                                    <SelectItem key={config.id} value={config.id.toString()}>
+                                      {config.name} ({config.type})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // Open predictive routing settings in new tab
+                                  window.open('/settings/predictive-routing', '_blank');
+                                }}
+                                className="flex items-center gap-1"
+                              >
+                                <Plus className="h-4 w-4" />
+                                NEW
+                              </Button>
+                            </div>
+                            <FormDescription>
+                              Choose a predictive routing configuration or create a new one. This determines how calls are intelligently routed based on target performance.
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
