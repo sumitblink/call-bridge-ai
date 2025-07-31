@@ -188,7 +188,6 @@ export function RTBTargetAssignment({ campaignId, campaignName, isRtbEnabled }: 
                   <TableHead>Target</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Bid Range</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -212,10 +211,6 @@ export function RTBTargetAssignment({ campaignId, campaignName, isRtbEnabled }: 
                         >
                           {assignment.isActive !== false ? 'Active' : 'Inactive'}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {assignment.minBidAmount && assignment.maxBidAmount ? `$${assignment.minBidAmount} - $${assignment.maxBidAmount}` : 
-                         target ? `$${target.minBidAmount} - $${target.maxBidAmount}` : '-'}
                       </TableCell>
                     </TableRow>
                   );
@@ -253,7 +248,6 @@ export function RTBTargetAssignment({ campaignId, campaignName, isRtbEnabled }: 
                       <TableHead className="w-12">Assign</TableHead>
                       <TableHead>Target</TableHead>
                       <TableHead>Company</TableHead>
-                      <TableHead>Bid Range</TableHead>
                       <TableHead>Priority</TableHead>
                       <TableHead>Active</TableHead>
                     </TableRow>
