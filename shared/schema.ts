@@ -1422,6 +1422,7 @@ export const rtbTargets = pgTable("rtb_targets", {
   // JavaScript Response Parser
   responseParserType: varchar("response_parser_type", { length: 50 }).default("json_path"), // json_path, javascript
   javascriptParser: text("javascript_parser"), // Custom JavaScript code for response parsing
+  dynamicNumberParser: text("dynamic_number_parser"), // JavaScript code for dynamic number/SIP parsing
   
   // Revenue Settings - Ringba Compliance
   conversionSettings: varchar("conversion_settings", { length: 50 }).default("use_ring_tree"), // use_ring_tree, override

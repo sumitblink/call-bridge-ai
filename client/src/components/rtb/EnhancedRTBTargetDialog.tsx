@@ -105,6 +105,7 @@ const enhancedRTBTargetSchema = z.object({
   // JavaScript Response Parser
   responseParserType: z.enum(["json_path", "javascript"]).optional(),
   javascriptParser: z.string().optional(),
+  dynamicNumberParser: z.string().optional(),
 }).refine(
   (data) => {
     // When conversion settings is override, revenue type must be selected
@@ -216,6 +217,7 @@ export function EnhancedRTBTargetDialog({
       durationPath: editingTarget?.durationPath || "",
       responseParserType: editingTarget?.responseParserType || "json_path",
       javascriptParser: editingTarget?.javascriptParser || "",
+      dynamicNumberParser: editingTarget?.dynamicNumberParser || "",
     },
   });
 
@@ -284,6 +286,7 @@ export function EnhancedRTBTargetDialog({
         acceptanceParsing: "Choose Property",
         responseParserType: editingTarget.responseParserType || "json_path",
         javascriptParser: editingTarget.javascriptParser || "",
+        dynamicNumberParser: editingTarget.dynamicNumberParser || "",
       });
     } else {
       form.reset({
@@ -345,6 +348,7 @@ export function EnhancedRTBTargetDialog({
         durationPath: "",
         responseParserType: "json_path",
         javascriptParser: "",
+        dynamicNumberParser: "",
       });
     }
   }, [editingTarget, form]);
@@ -2127,38 +2131,73 @@ Please add tags with numerical values only."
                     />
 
                     {form.watch("responseParserType") === "javascript" && (
-                      <FormField
-                        control={form.control}
-                        name="javascriptParser"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              JavaScript Acceptance Logic
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <Info className="h-4 w-4 text-muted-foreground" />
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-sm">
-                                  <p>Write JavaScript code to determine if the buyer accepts the call. 
-                                  Use 'input' variable for the response data. Must return true/false.</p>
-                                  <p className="mt-1 text-xs">Example: input = JSON.parse(input); return input.status == 'accepted';</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="input = JSON.parse(input);&#10;return input.status == 'accepted';"
-                                className="font-mono text-sm min-h-[100px]"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              JavaScript code to evaluate buyer acceptance. Use 'input' for response data.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="javascriptParser"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                Call Acceptance Parsing (Required)
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-sm">
+                                    <p>JavaScript function to determine if the buyer accepts the call. 
+                                    Use 'input' variable for the response data. Must return true/false.</p>
+                                    <p className="mt-1 text-xs">Example: function(input) &#123;return JSON.parse(input).bidAmount &gt; 0;&#125;</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="function(input) {return JSON.parse(input).bidAmount > 0;}"
+                                  className="font-mono text-sm min-h-[80px]"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                JavaScript function to evaluate buyer acceptance. Must return true/false.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="dynamicNumberParser"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                Dynamic Number/SIP Parsing (Required)
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-sm">
+                                    <p>JavaScript function to extract phone number from RTB response. 
+                                    Use 'input' variable for the response data. Must return phone number string.</p>
+                                    <p className="mt-1 text-xs">Example: function(input) &#123;return JSON.parse(input).phoneNumber;&#125;</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="function(input) {return JSON.parse(input).phoneNumber;}"
+                                  className="font-mono text-sm min-h-[80px]"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                JavaScript function to extract destination phone number from response.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     )}
                   </CardContent>
                 </Card>
