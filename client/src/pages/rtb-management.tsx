@@ -35,9 +35,6 @@ type RtbTarget = {
   dailyCap: number;
   hourlyCap: number;
   monthlyCap: number;
-  minBidAmount: number;
-  maxBidAmount: number;
-  currency: string;
   totalPings: number;
   successfulBids: number;
   wonCalls: number;
@@ -356,7 +353,6 @@ export default function SimplifiedRTBManagementPage() {
                       <TableHead>Target</TableHead>
                       <TableHead>Company</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Bid Range</TableHead>
                       <TableHead>Success Rate</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -379,7 +375,6 @@ export default function SimplifiedRTBManagementPage() {
                             {target.isActive ? 'Active' : 'Inactive'}
                           </Badge>
                         </TableCell>
-                        <TableCell>${target.minBidAmount} - ${target.maxBidAmount}</TableCell>
                         <TableCell>
                           {target.totalPings > 0 
                             ? Math.round((target.successfulBids / target.totalPings) * 100)
