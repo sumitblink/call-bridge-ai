@@ -104,8 +104,14 @@ const enhancedRTBTargetSchema = z.object({
   
   // JavaScript Response Parser
   responseParserType: z.enum(["json_path", "javascript"]).optional(),
+  dynamicBidParser: z.string().optional(),
   javascriptParser: z.string().optional(),
   dynamicNumberParser: z.string().optional(),
+  
+  // Call Length Configuration
+  callLengthValueType: z.enum(["Dynamic", "Static"]).optional(),
+  maxDynamicDuration: z.number().min(0).nullable().optional(),
+  staticCallLength: z.number().min(1).optional(),
 }).refine(
   (data) => {
     // When conversion settings is override, revenue type must be selected
@@ -190,7 +196,8 @@ export function EnhancedRTBTargetDialog({
       convertOn: editingTarget?.convertOn || "Call Successfully Connected",
       startCallLengthOn: editingTarget?.startCallLengthOn || "Incoming",
       callLengthValueType: editingTarget?.callLengthValueType || "Dynamic",
-      maxDynamicDuration: editingTarget?.maxDynamicDuration || 0,
+      maxDynamicDuration: editingTarget?.maxDynamicDuration || null,
+      staticCallLength: editingTarget?.staticCallLength || 30,
       minimumRevenueAmount: editingTarget?.minimumRevenueAmount ?? 20,
       capOn: editingTarget?.capOn || "Conversion",
       globalCallCap: editingTarget?.globalCallCap || 0,
@@ -216,6 +223,7 @@ export function EnhancedRTBTargetDialog({
       currencyPath: editingTarget?.currencyPath || "",
       durationPath: editingTarget?.durationPath || "",
       responseParserType: editingTarget?.responseParserType || "json_path",
+      dynamicBidParser: editingTarget?.dynamicBidParser || "",
       javascriptParser: editingTarget?.javascriptParser || "",
       dynamicNumberParser: editingTarget?.dynamicNumberParser || "",
     },
@@ -1750,15 +1758,15 @@ Please add tags with numerical values only."
                                           step="1"
                                           min="0"
                                           placeholder=""
-                                          value={field.value?.toString() || ""}
+                                          value={field.value && field.value > 0 ? field.value.toString() : ""}
                                           onChange={(e) => {
                                             const value = e.target.value;
-                                            field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                                            field.onChange(value === "" ? null : parseInt(value) || null);
                                           }}
                                           className="w-24"
                                         />
                                         <span className="text-sm text-muted-foreground">
-                                          {field.value === 0 || !field.value ? "unlimited" : "seconds"}
+                                          {!field.value || field.value === 0 ? "unlimited" : "seconds"}
                                         </span>
                                       </div>
                                     </FormControl>
