@@ -1828,6 +1828,17 @@ export const visitorSessions = pgTable("visitor_sessions", {
   
   // Additional tracking fields
   gclid: varchar("gclid", { length: 255 }), // Google Click ID
+  
+  // Geographic data from IP lookup (Ringba-compliant)
+  geoCountry: varchar("geo_country", { length: 100 }),
+  geoCountryCode: varchar("geo_country_code", { length: 10 }),
+  geoRegion: varchar("geo_region", { length: 10 }), // State code (NY, CA)
+  geoRegionName: varchar("geo_region_name", { length: 100 }), // Full state name
+  geoCity: varchar("geo_city", { length: 100 }),
+  geoZipCode: varchar("geo_zip_code", { length: 20 }),
+  geoLatitude: decimal("geo_latitude", { precision: 10, scale: 6 }),
+  geoLongitude: decimal("geo_longitude", { precision: 10, scale: 6 }),
+  geoTimezone: varchar("geo_timezone", { length: 50 }),
   fbclid: varchar("fbclid", { length: 255 }), // Facebook Click ID
   clickId: varchar("click_id", { length: 255 }), // Generic click ID
   location: varchar("location", { length: 255 }), // Geographic location

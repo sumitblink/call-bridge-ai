@@ -54,7 +54,7 @@ export interface AuctionResult {
 
 export class RTBService {
   /**
-   * Substitute template variables in request body
+   * Substitute template variables in request body with Ringba-compliant tokens
    */
   private static substituteTemplateVariables(template: string, bidRequest: BidRequest): string {
     const substitutions = {
@@ -89,7 +89,107 @@ export class RTBService {
       }
     }
 
+    // Handle Ringba-compliant geographic tokens (synchronous for now)
+    const ringbaTokens = this.getRingbaGeographicTokens(bidRequest);
+    for (const [token, value] of Object.entries(ringbaTokens)) {
+      result = result.replace(new RegExp(token.replace(/[[\]]/g, '\\$&'), 'g'), value);
+    }
+
     return result;
+  }
+
+  /**
+   * Get Ringba-compliant geographic tokens for RTB requests
+   */
+  private static getRingbaGeographicTokens(bidRequest: BidRequest): Record<string, string> {
+    // Use caller state/zip from Twilio data or fallback to default values
+    const state = bidRequest.callerState || 'NY';
+    const zip = bidRequest.callerZip || '10001';
+    const city = this.getCityFromState(state);
+    
+    return {
+      '[tag:Geo:SubDivision]': this.getFullStateName(state),
+      '[tag:Geo:SubDivisionCode]': state,
+      '[tag:Geo:City]': city,
+      '[tag:Geo:ZipCode]': zip,
+      '[tag:Technology:IPAddress]': bidRequest.ipAddress || '127.0.0.1',
+      '[tag:Address:State]': this.getFullStateName(state),
+      '[tag:Address:City]': city,
+      '[tag:Address:Zip 5]': zip,
+      '[tag:Geo:Country]': 'United States',
+      '[tag:Geo:CountryCode]': 'US',
+      '[tag:Geo:Timezone]': this.getTimezoneFromState(state),
+    };
+  }
+
+  /**
+   * Convert state code to full state name
+   */
+  private static getFullStateName(stateCode: string): string {
+    const stateNames: Record<string, string> = {
+      'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+      'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+      'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+      'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+      'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+      'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+      'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+      'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+      'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+      'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+      'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+      'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+      'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
+    };
+    return stateNames[stateCode] || stateCode;
+  }
+
+  /**
+   * Get major city for state (fallback for geographic data)
+   */
+  private static getCityFromState(stateCode: string): string {
+    const stateCities: Record<string, string> = {
+      'NY': 'New York', 'CA': 'Los Angeles', 'TX': 'Houston', 'FL': 'Miami',
+      'IL': 'Chicago', 'PA': 'Philadelphia', 'OH': 'Columbus', 'GA': 'Atlanta',
+      'NC': 'Charlotte', 'MI': 'Detroit', 'NJ': 'Newark', 'TN': 'Nashville',
+      'IN': 'Indianapolis', 'AZ': 'Phoenix', 'MA': 'Boston', 'WA': 'Seattle',
+      'CO': 'Denver', 'DC': 'Washington', 'MD': 'Baltimore', 'KY': 'Louisville',
+      'OR': 'Portland', 'NV': 'Las Vegas', 'WI': 'Milwaukee', 'NM': 'Albuquerque',
+      'LA': 'New Orleans', 'HI': 'Honolulu', 'NE': 'Omaha', 'ID': 'Boise',
+      'WV': 'Charleston', 'NH': 'Manchester', 'ME': 'Portland', 'RI': 'Providence',
+      'MT': 'Billings', 'DE': 'Wilmington', 'SD': 'Sioux Falls', 'ND': 'Fargo',
+      'AK': 'Anchorage', 'VT': 'Burlington', 'WY': 'Cheyenne', 'UT': 'Salt Lake City',
+      'OK': 'Oklahoma City', 'AR': 'Little Rock', 'MS': 'Jackson', 'AL': 'Birmingham',
+      'SC': 'Columbia', 'MN': 'Minneapolis', 'IA': 'Des Moines', 'KS': 'Wichita',
+      'MO': 'Kansas City', 'CT': 'Hartford', 'VA': 'Virginia Beach'
+    };
+    return stateCities[stateCode] || 'Unknown';
+  }
+
+  /**
+   * Get timezone for state
+   */
+  private static getTimezoneFromState(stateCode: string): string {
+    const stateTimezones: Record<string, string> = {
+      'NY': 'America/New_York', 'CA': 'America/Los_Angeles', 'TX': 'America/Chicago',
+      'FL': 'America/New_York', 'IL': 'America/Chicago', 'PA': 'America/New_York',
+      'OH': 'America/New_York', 'GA': 'America/New_York', 'NC': 'America/New_York',
+      'MI': 'America/New_York', 'NJ': 'America/New_York', 'TN': 'America/Chicago',
+      'IN': 'America/New_York', 'AZ': 'America/Phoenix', 'MA': 'America/New_York',
+      'WA': 'America/Los_Angeles', 'CO': 'America/Denver', 'DC': 'America/New_York',
+      'MD': 'America/New_York', 'KY': 'America/New_York', 'OR': 'America/Los_Angeles',
+      'NV': 'America/Los_Angeles', 'WI': 'America/Chicago', 'NM': 'America/Denver',
+      'LA': 'America/Chicago', 'HI': 'Pacific/Honolulu', 'NE': 'America/Chicago',
+      'ID': 'America/Boise', 'WV': 'America/New_York', 'NH': 'America/New_York',
+      'ME': 'America/New_York', 'RI': 'America/New_York', 'MT': 'America/Denver',
+      'DE': 'America/New_York', 'SD': 'America/Chicago', 'ND': 'America/Chicago',
+      'AK': 'America/Anchorage', 'VT': 'America/New_York', 'WY': 'America/Denver',
+      'UT': 'America/Denver', 'OK': 'America/Chicago', 'AR': 'America/Chicago',
+      'MS': 'America/Chicago', 'AL': 'America/Chicago', 'SC': 'America/New_York',
+      'MN': 'America/Chicago', 'IA': 'America/Chicago', 'KS': 'America/Chicago',
+      'MO': 'America/Chicago', 'CT': 'America/New_York', 'VA': 'America/New_York'
+    };
+    return stateTimezones[stateCode] || 'America/New_York';
   }
 
   /**

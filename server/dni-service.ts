@@ -2,9 +2,10 @@
 // Provides JavaScript SDK for websites to dynamically insert tracking phone numbers
 
 import { db } from './db';
-import { campaigns, phoneNumbers, numberPools, numberPoolAssignments, callTrackingTags } from '@shared/schema';
+import { campaigns, phoneNumbers, numberPools, numberPoolAssignments, callTrackingTags, visitorSessions } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import type { Campaign, PhoneNumber, NumberPool } from '@shared/schema';
+import { GeoService, type GeographicData } from './geo-service';
 
 export interface DNIRequest {
   tagCode?: string;
@@ -364,7 +365,7 @@ export class DNIService {
   }
 
   /**
-   * Store tracking session for attribution analysis
+   * Store tracking session for attribution analysis with geographic data
    */
   private static async storeTrackingSession(
     trackingId: string,
@@ -383,7 +384,9 @@ export class DNIService {
         sessionId: request.sessionId
       });
       
-
+      // Get geographic data from IP address
+      const geoData = GeoService.getGeographicDataFromIP(request.ipAddress || '127.0.0.1');
+      console.log('DNI Geographic Data:', geoData);
       
       console.log('DNI CustomFields received:', request.customFields);
 
@@ -403,7 +406,9 @@ export class DNIService {
           source, medium, campaign, publisher, utm_source, utm_medium, utm_campaign, 
           utm_term, utm_content, landing_page, current_page,
           first_visit, last_activity, is_active, has_converted,
-          redtrack_clickid, redtrack_sub_1, redtrack_sub_2, redtrack_sub_3, redtrack_sub_4, redtrack_sub_5
+          redtrack_clickid, redtrack_sub_1, redtrack_sub_2, redtrack_sub_3, redtrack_sub_4, redtrack_sub_5,
+          geo_country, geo_country_code, geo_region, geo_region_name, geo_city, geo_zip_code,
+          geo_latitude, geo_longitude, geo_timezone
         ) VALUES (
           ${uniqueSessionId}, ${userId}, ${request.ipAddress || '127.0.0.1'}, ${request.userAgent || 'unknown'}, ${request.referrer || ''},
           ${request.source || ''}, ${request.medium || ''}, ${request.campaign || ''}, ${request.customFields?.publisher || null},
@@ -411,7 +416,10 @@ export class DNIService {
           ${request.term || null}, ${request.content || null}, ${request.customFields?.domain || 'unknown'}, ${request.customFields?.domain || 'unknown'},
           NOW(), NOW(), true, false,
           ${request.customFields?.clickid || null}, ${request.customFields?.sub1 || null}, ${request.customFields?.sub2 || null}, 
-          ${request.customFields?.sub3 || null}, ${request.customFields?.sub4 || null}, ${request.customFields?.sub5 || null}
+          ${request.customFields?.sub3 || null}, ${request.customFields?.sub4 || null}, ${request.customFields?.sub5 || null},
+          ${geoData?.country || null}, ${geoData?.countryCode || null}, ${geoData?.region || null}, 
+          ${geoData?.regionName || null}, ${geoData?.city || null}, ${geoData?.zipCode || null},
+          ${geoData?.latitude || null}, ${geoData?.longitude || null}, ${geoData?.timezone || null}
         )
         ON CONFLICT (session_id) 
         DO UPDATE SET
