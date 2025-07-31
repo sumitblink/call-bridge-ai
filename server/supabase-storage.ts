@@ -1103,12 +1103,20 @@ export class SupabaseStorage implements IStorage {
   }
 
   // RTB Targets
-  async getRtbTargets(): Promise<RtbTarget[]> {
-    return await db.select().from(rtbTargets).orderBy(desc(rtbTargets.createdAt));
+  async getRtbTargets(userId?: number): Promise<RtbTarget[]> {
+    let query = db.select().from(rtbTargets);
+    if (userId) {
+      query = query.where(eq(rtbTargets.userId, userId));
+    }
+    return await query.orderBy(desc(rtbTargets.createdAt));
   }
 
-  async getRtbTarget(id: number): Promise<RtbTarget | undefined> {
-    const result = await db.select().from(rtbTargets).where(eq(rtbTargets.id, id)).limit(1);
+  async getRtbTarget(id: number, userId?: number): Promise<RtbTarget | undefined> {
+    let conditions = [eq(rtbTargets.id, id)];
+    if (userId) {
+      conditions.push(eq(rtbTargets.userId, userId));
+    }
+    const result = await db.select().from(rtbTargets).where(and(...conditions)).limit(1);
     return result[0];
   }
 
@@ -1436,15 +1444,6 @@ export class SupabaseStorage implements IStorage {
   }
 
   // RTB methods - missing methods
-  async getRtbTargets(userId?: number): Promise<any[]> {
-    try {
-      const result = await db.select().from(rtbTargets);
-      return result;
-    } catch (error) {
-      console.warn('RTB targets query failed:', error);
-      return [];
-    }
-  }
 
   async getRtbBidRequests(campaignId?: number): Promise<any[]> {
     try {
@@ -1460,29 +1459,6 @@ export class SupabaseStorage implements IStorage {
     return await db.select().from(rtbBidResponses)
       .where(eq(rtbBidResponses.requestId, requestId))
       .orderBy(desc(rtbBidResponses.bidAmount));
-  }
-
-  async getRtbRouters(userId?: number): Promise<any[]> {
-    try {
-      const result = await db.select().from(rtbRouters);
-      return result;
-    } catch (error) {
-      console.warn('RTB routers query failed:', error);
-      return [];
-    }
-  }
-
-  async getRtbRouter(id: number): Promise<any | undefined> {
-    try {
-      const results = await db
-        .select()
-        .from(rtbRouters)
-        .where(eq(rtbRouters.id, id));
-      return results[0];
-    } catch (error) {
-      console.error('Error fetching RTB router:', error);
-      return undefined;
-    }
   }
 
   // Call Flow methods - PostgreSQL implementation
