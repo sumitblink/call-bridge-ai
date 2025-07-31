@@ -344,6 +344,11 @@ export default function Targets() {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
+  
+  // Concurrency toggle states
+  const [maxConcurrencyEnabled, setMaxConcurrencyEnabled] = useState(false);
+  const [hourlyConcurrencyEnabled, setHourlyConcurrencyEnabled] = useState(false);
+  const [weeklySettingsEnabled, setWeeklySettingsEnabled] = useState(false);
 
   // Fetch targets
   const { data: targets = [], isLoading: targetsLoading } = useQuery<Target[]>({
@@ -726,12 +731,35 @@ export default function Targets() {
                           </CardHeader>
                           <CardContent className="space-y-4">
                             {/* Max Concurrency Toggle */}
-                            <div className="flex items-center justify-between rounded-lg border p-4">
-                              <div className="space-y-0.5">
-                                <div className="text-sm font-medium">Max Concurrency</div>
-                                <div className="text-sm text-muted-foreground">None</div>
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <div className="text-sm font-medium">Max Concurrency</div>
+                                  <div className="text-sm text-muted-foreground">None</div>
+                                </div>
+                                <Switch 
+                                  checked={maxConcurrencyEnabled}
+                                  onCheckedChange={setMaxConcurrencyEnabled}
+                                />
                               </div>
-                              <Switch />
+                              
+                              {/* Max Concurrency Input - Only show when enabled */}
+                              {maxConcurrencyEnabled && (
+                                <div className="pl-4">
+                                  <div className="flex items-center space-x-3">
+                                    <label className="text-sm font-medium min-w-[120px]">Maximum Calls:</label>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="Enter max concurrent calls"
+                                      className="h-9 w-40"
+                                      min="1"
+                                      max="100"
+                                      defaultValue="5"
+                                    />
+                                    <span className="text-xs text-muted-foreground">concurrent calls</span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             {/* Hourly Concurrency Toggle */}
@@ -741,92 +769,104 @@ export default function Targets() {
                                   <div className="text-sm font-medium">Hourly Concurrency</div>
                                   <div className="text-sm text-muted-foreground">None</div>
                                 </div>
-                                <Switch />
+                                <Switch 
+                                  checked={hourlyConcurrencyEnabled}
+                                  onCheckedChange={setHourlyConcurrencyEnabled}
+                                />
                               </div>
 
-                              {/* 24-Hour Concurrency Table */}
-                              <Card className="border">
-                                <CardHeader className="pb-3">
-                                  <CardTitle className="text-sm">Daily Hourly Limits</CardTitle>
-                                  <CardDescription className="text-xs">Set concurrency limits for each hour of the day</CardDescription>
-                                </CardHeader>
-                                <CardContent className="p-3">
-                                  <div className="grid grid-cols-6 gap-2 text-xs">
-                                    {/* Hour headers and inputs */}
-                                    {Array.from({ length: 24 }, (_, i) => (
-                                      <div key={i} className="space-y-1">
-                                        <div className="text-center font-medium text-muted-foreground">
-                                          {String(i).padStart(2, '0')}:00
+                              {/* 24-Hour Concurrency Table - Only show when enabled */}
+                              {hourlyConcurrencyEnabled && (
+                                <>
+                                  <Card className="border">
+                                    <CardHeader className="pb-3">
+                                      <CardTitle className="text-sm">Daily Hourly Limits</CardTitle>
+                                      <CardDescription className="text-xs">Set concurrency limits for each hour of the day</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-3">
+                                      <div className="grid grid-cols-6 gap-2 text-xs">
+                                        {/* Hour headers and inputs */}
+                                        {Array.from({ length: 24 }, (_, i) => (
+                                          <div key={i} className="space-y-1">
+                                            <div className="text-center font-medium text-muted-foreground">
+                                              {String(i).padStart(2, '0')}:00
+                                            </div>
+                                            <Input 
+                                              type="number" 
+                                              placeholder="0"
+                                              className="h-8 text-center text-xs"
+                                              min="0"
+                                              max="100"
+                                            />
+                                          </div>
+                                        ))}
+                                      </div>
+                                      
+                                      {/* Quick Set Options */}
+                                      <div className="flex gap-2 mt-4 pt-3 border-t">
+                                        <Button variant="outline" size="sm" className="text-xs">
+                                          Set All to 5
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="text-xs">
+                                          Business Hours Only
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="text-xs">
+                                          Clear All
+                                        </Button>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+
+                                  {/* Advanced Weekly Settings */}
+                                  <Card className="border">
+                                    <CardHeader className="pb-3">
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <CardTitle className="text-sm">Advanced</CardTitle>
+                                          <CardDescription className="text-xs">Weekly concurrency patterns</CardDescription>
                                         </div>
-                                        <Input 
-                                          type="number" 
-                                          placeholder="0"
-                                          className="h-8 text-center text-xs"
-                                          min="0"
-                                          max="100"
+                                        <Switch 
+                                          checked={weeklySettingsEnabled}
+                                          onCheckedChange={setWeeklySettingsEnabled}
                                         />
                                       </div>
-                                    ))}
-                                  </div>
-                                  
-                                  {/* Quick Set Options */}
-                                  <div className="flex gap-2 mt-4 pt-3 border-t">
-                                    <Button variant="outline" size="sm" className="text-xs">
-                                      Set All to 5
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="text-xs">
-                                      Business Hours Only
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="text-xs">
-                                      Clear All
-                                    </Button>
-                                  </div>
-                                </CardContent>
-                              </Card>
-
-                              {/* Advanced Weekly Settings */}
-                              <Card className="border">
-                                <CardHeader className="pb-3">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <CardTitle className="text-sm">Advanced</CardTitle>
-                                      <CardDescription className="text-xs">Weekly concurrency patterns</CardDescription>
-                                    </div>
-                                    <Switch />
-                                  </div>
-                                </CardHeader>
-                                <CardContent className="p-3">
-                                  <div className="space-y-3">
-                                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
-                                      <div key={day} className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-2">
-                                          <Switch />
-                                          <span className="text-sm font-medium">{day}</span>
+                                    </CardHeader>
+                                    {weeklySettingsEnabled && (
+                                      <CardContent className="p-3">
+                                        <div className="space-y-3">
+                                          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                                            <div key={day} className="flex items-center justify-between">
+                                              <div className="flex items-center space-x-2">
+                                                <Switch />
+                                                <span className="text-sm font-medium">{day}</span>
+                                              </div>
+                                              <div className="flex items-center space-x-2">
+                                                <Input 
+                                                  type="number" 
+                                                  placeholder="0"
+                                                  className="h-8 w-16 text-center text-xs"
+                                                  min="0"
+                                                  max="100"
+                                                />
+                                                <span className="text-xs text-muted-foreground">calls/hour</span>
+                                              </div>
+                                            </div>
+                                          ))}
                                         </div>
-                                        <div className="flex items-center space-x-2">
-                                          <Input 
-                                            type="number" 
-                                            placeholder="0"
-                                            className="h-8 w-16 text-center text-xs"
-                                            min="0"
-                                            max="100"
-                                          />
-                                          <span className="text-xs text-muted-foreground">calls/hour</span>
+                                        
+                                        <div className="flex gap-2 mt-4 pt-3 border-t">
+                                          <Button variant="outline" size="sm" className="text-xs">
+                                            Copy from Daily
+                                          </Button>
+                                          <Button variant="outline" size="sm" className="text-xs">
+                                            Weekdays Only
+                                          </Button>
                                         </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  
-                                  <div className="flex gap-2 mt-4 pt-3 border-t">
-                                    <Button variant="outline" size="sm" className="text-xs">
-                                      Copy from Daily
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="text-xs">
-                                      Weekdays Only
-                                    </Button>
-                                  </div>
-                                </CardContent>
-                              </Card>
+                                      </CardContent>
+                                    )}
+                                  </Card>
+                                </>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
