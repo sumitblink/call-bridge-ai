@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Target, Plus, Settings, Trash2, DollarSign, Activity } from "lucide-react";
+import { Target, Plus, Settings, Trash2, Activity } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -272,12 +272,6 @@ export function RTBTargetAssignment({ campaignId, campaignName, isRtbEnabled }: 
                             </div>
                           </TableCell>
                           <TableCell>{target.companyName || '-'}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-3 h-3" />
-                              {target.minBidAmount} - {target.maxBidAmount}
-                            </div>
-                          </TableCell>
                           <TableCell>
                             <Input
                               type="number"
