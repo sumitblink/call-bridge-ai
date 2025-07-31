@@ -378,13 +378,15 @@ export function EnhancedRTBTargetDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="grid w-full grid-cols-7">
+              <TabsList className={`grid w-full ${form.watch("rtbShareableTags") ? 'grid-cols-6' : 'grid-cols-7'}`}>
                 <TabsTrigger value="basic">Basic</TabsTrigger>
                 <TabsTrigger value="caps">Cap Settings</TabsTrigger>
                 <TabsTrigger value="concurrency">Concurrency</TabsTrigger>
                 <TabsTrigger value="routing">Routing</TabsTrigger>
                 <TabsTrigger value="revenue">Revenue Settings</TabsTrigger>
-                <TabsTrigger value="request">Request</TabsTrigger>
+                {!form.watch("rtbShareableTags") && (
+                  <TabsTrigger value="request">Request</TabsTrigger>
+                )}
                 <TabsTrigger value="parsing">Parsing</TabsTrigger>
               </TabsList>
 
@@ -624,7 +626,12 @@ export function EnhancedRTBTargetDialog({
                       {/* RTB Configuration - Show only when RTB Shareable Tags is enabled */}
                       {form.watch("rtbShareableTags") && (
                         <div className="space-y-4 mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-l-4 border-blue-500">
-                          <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">RTB Configuration</h4>
+                          <div className="flex items-start justify-between">
+                            <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">RTB Configuration</h4>
+                            <div className="text-xs text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">
+                              Request Settings disabled
+                            </div>
+                          </div>
                           
                           {/* Share Inbound Call ID */}
                           <FormField
@@ -1776,8 +1783,9 @@ Please add tags with numerical values only."
                 </Card>
               </TabsContent>
 
-              {/* Request Settings Tab */}
-              <TabsContent value="request" className="space-y-6">
+              {/* Request Settings Tab - Hidden when RTB Shareable Tags is enabled */}
+              {!form.watch("rtbShareableTags") && (
+                <TabsContent value="request" className="space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -1917,7 +1925,8 @@ Please add tags with numerical values only."
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
+                </TabsContent>
+              )}
 
               {/* Response Parsing Tab */}
               <TabsContent value="parsing" className="space-y-6">

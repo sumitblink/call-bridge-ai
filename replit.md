@@ -182,6 +182,13 @@ Based on comprehensive review of Ringba's complete documentation structure cover
 7. **Request Settings**: API endpoint configuration with JavaScript/JPath/XPath parsing support
 
 ## Recent Changes  
+- July 31, 2025: **CRITICAL RTB SHAREABLE TAGS CONDITIONAL LOGIC IMPLEMENTED** - Successfully implemented exact Ringba behavior where RTB Shareable Tags toggle hides/disables Request Settings tab when enabled
+  - **Tab Hiding Logic**: Request tab dynamically hidden from TabsList when rtbShareableTags is enabled (grid-cols-6 vs grid-cols-7)
+  - **Conditional Content**: Entire Request Settings TabsContent wrapped in conditional to prevent access when RTB sharing enabled
+  - **Visual Warning**: Added "Request Settings disabled" badge to RTB Configuration panel header when active
+  - **Schema Enhancement**: Added rtbShareableTags, shareInboundCallId, exposeCallerId, rtbId fields to rtbTargets table
+  - **Authentic Ringba Compliance**: Matches official documentation where RTB Shareable Tags simplifies configuration by hiding complex Request Settings
+  - **Status**: RTB Shareable Tags now provides exact Ringba conditional behavior - when enabled, Request tab becomes unavailable matching documented requirements
 - July 31, 2025: **REVENUE SETTINGS CONDITIONAL LOGIC COMPLETED** - Implemented exact Ringba behavior with "Use Ring Tree Settings" showing simplified interface and "Override" revealing detailed configuration options exactly matching official documentation
 - July 31, 2025: **RINGBA INTERFACE MATCHING COMPLETED** - Added conditional Dynamic Number/SIP fields that appear only when toggle is enabled, showing Type selector (Number/SIP buttons) and Number field exactly like Ringba's form
   - **Conditional Field Display**: Dynamic Number/SIP toggle shows/hides additional fields based on state exactly like Ringba

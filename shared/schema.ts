@@ -1326,6 +1326,12 @@ export const rtbTargets = pgTable("rtb_targets", {
   hoursOfOperation: json("hours_of_operation"), // jsonb: {monday: {start: "09:00", end: "17:00"}, ...}
   isActive: boolean("is_active").default(true).notNull(),
   
+  // RTB Shareable Tags Configuration - NEW CRITICAL FIELDS
+  rtbShareableTags: boolean("rtb_shareable_tags").default(false).notNull(),
+  shareInboundCallId: boolean("share_inbound_call_id").default(false),
+  exposeCallerId: boolean("expose_caller_id").default(false),
+  rtbId: varchar("rtb_id", { length: 255 }),
+  
   // Capacity Management
   maxConcurrentCalls: integer("max_concurrent_calls").default(10).notNull(),
   hourlyConcurrency: integer("hourly_concurrency").default(5).notNull(),
@@ -1343,7 +1349,6 @@ export const rtbTargets = pgTable("rtb_targets", {
   enableDynamicSip: boolean("enable_dynamic_sip").default(false).notNull(),
   
   // RTB Shareable Tags
-  rtbShareableTags: boolean("rtb_shareable_tags").default(false).notNull(),
   sharedTagGroups: text("shared_tag_groups").array(), // group IDs for tag sharing
   
   // IVR Configuration
