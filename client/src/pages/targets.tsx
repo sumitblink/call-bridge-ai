@@ -15,7 +15,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Phone, Globe, Edit, Trash2, Settings, Target as TargetIcon, Navigation, Tag } from "lucide-react";
+import { Plus, Phone, Globe, Edit, Trash2, Settings, Target as TargetIcon, Tag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import { insertTargetSchema } from "@shared/schema";
@@ -492,11 +492,10 @@ export default function Targets() {
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 pb-2">
                     <Tabs defaultValue="basic" className="w-full">
-                      <TabsList className="grid w-full grid-cols-5">
+                      <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="basic">Basic</TabsTrigger>
                         <TabsTrigger value="caps">Cap Settings</TabsTrigger>
                         <TabsTrigger value="concurrency">Concurrency</TabsTrigger>
-                        <TabsTrigger value="routing">Routing</TabsTrigger>
                         <TabsTrigger value="tags">Tags</TabsTrigger>
                       </TabsList>
 
@@ -872,298 +871,49 @@ export default function Targets() {
                         </Card>
                       </TabsContent>
 
-                      <TabsContent value="routing" className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              <Navigation className="h-4 w-4" />
-                              Routing Configuration
-                            </CardTitle>
-                            <CardDescription>
-                              Configure advanced routing rules and conditions
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Routing Method</label>
-                                <Select defaultValue="direct">
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="direct">Direct</SelectItem>
-                                    <SelectItem value="ivr">IVR Menu</SelectItem>
-                                    <SelectItem value="conditional">Conditional</SelectItem>
-                                    <SelectItem value="time_based">Time Based</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Fallback Target</label>
-                                <Select>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select fallback target" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="voicemail">Voicemail</SelectItem>
-                                    <SelectItem value="hangup">Hangup</SelectItem>
-                                    <SelectItem value="another_target">Another Target</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Answer Timeout (seconds)</label>
-                                <Input type="number" defaultValue="30" min="5" max="120" />
-                                <p className="text-xs text-gray-500">Time to wait for answer (5-120 seconds)</p>
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Retry Attempts</label>
-                                <Input type="number" defaultValue="3" min="0" max="10" />
-                                <p className="text-xs text-gray-500">Number of retry attempts (0-10)</p>
-                              </div>
-                            </div>
-                            <div className="space-y-3">
-                              <div className="flex items-center space-x-2">
-                                <Switch />
-                                <label className="text-sm font-medium">Screen calls before connecting</label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Switch />
-                                <label className="text-sm font-medium">Record caller ID for reporting</label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Switch />
-                                <label className="text-sm font-medium">Enable call whisper</label>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
+
 
                       <TabsContent value="tags" className="space-y-6">
                         <Card>
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                               <Tag className="h-4 w-4" />
-                              Tags & Metadata
+                              Shareable Tags
                             </CardTitle>
                             <CardDescription>
-                              Configure tags and custom metadata for tracking and reporting
+                              Configure shareable tags and tag routing filters
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">Target Tags</label>
-                              <Input placeholder="Enter tags separated by commas (e.g., insurance, health, premium)" />
-                              <p className="text-xs text-gray-500">Tags help organize and filter targets in reports</p>
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">Campaign Categories</label>
-                              <Select>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select primary category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="insurance">Insurance</SelectItem>
-                                  <SelectItem value="healthcare">Healthcare</SelectItem>
-                                  <SelectItem value="finance">Finance</SelectItem>
-                                  <SelectItem value="automotive">Automotive</SelectItem>
-                                  <SelectItem value="education">Education</SelectItem>
-                                  <SelectItem value="real_estate">Real Estate</SelectItem>
-                                  <SelectItem value="legal">Legal</SelectItem>
-                                  <SelectItem value="other">Other</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Lead Source</label>
-                                <Input placeholder="e.g., Google Ads, Facebook, Organic" />
+                            {/* Override Mutable Info Toggle */}
+                            <div className="flex items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <div className="text-sm font-medium">Override Mutable Info</div>
+                                <div className="text-sm text-muted-foreground">None</div>
                               </div>
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Vertical</label>
-                                <Input placeholder="e.g., Auto Insurance, Life Insurance" />
-                              </div>
+                              <Switch />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Quality Score</label>
-                                <Select defaultValue="5">
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="1">1 - Poor</SelectItem>
-                                    <SelectItem value="2">2 - Below Average</SelectItem>
-                                    <SelectItem value="3">3 - Average</SelectItem>
-                                    <SelectItem value="4">4 - Good</SelectItem>
-                                    <SelectItem value="5">5 - Excellent</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Expected LTV</label>
-                                <Input type="number" placeholder="0.00" step="0.01" />
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">Notes</label>
-                              <textarea 
-                                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="Additional notes or special instructions for this target..."
-                              />
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <Tag className="h-4 w-4" />
+                              Tag Routing Filters
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="text-sm text-muted-foreground">
+                              Configure tag-based routing filters for this target
                             </div>
                           </CardContent>
                         </Card>
                       </TabsContent>
 
-                      <TabsContent value="routing" className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Routing Settings</CardTitle>
-                            <CardDescription>Configure how calls are routed to this target</CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                              <div className="space-y-4">
-                                <div className="space-y-2">
-                                  <label className="text-sm font-medium">Routing Priority</label>
-                                  <Select defaultValue="5">
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="1">1 - Highest Priority</SelectItem>
-                                      <SelectItem value="2">2 - High Priority</SelectItem>
-                                      <SelectItem value="3">3 - Medium Priority</SelectItem>
-                                      <SelectItem value="4">4 - Low Priority</SelectItem>
-                                      <SelectItem value="5">5 - Lowest Priority</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                  <label className="text-sm font-medium">Weight (%)</label>
-                                  <Input type="number" placeholder="100" min="0" max="100" />
-                                  <p className="text-xs text-gray-600">Percentage of calls to route here</p>
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-4">
-                                <div className="space-y-2">
-                                  <label className="text-sm font-medium">Timeout (seconds)</label>
-                                  <Input type="number" placeholder="30" min="5" max="120" />
-                                  <p className="text-xs text-gray-600">How long to ring before timeout</p>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                  <label className="text-sm font-medium">Retry Attempts</label>
-                                  <Select defaultValue="2">
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="0">No retries</SelectItem>
-                                      <SelectItem value="1">1 retry</SelectItem>
-                                      <SelectItem value="2">2 retries</SelectItem>
-                                      <SelectItem value="3">3 retries</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="border-t pt-4">
-                              <div className="space-y-4">
-                                <div className="flex items-center space-x-2">
-                                  <Switch id="failover-enabled" />
-                                  <label htmlFor="failover-enabled" className="text-sm">Enable failover routing</label>
-                                </div>
-                                
-                                <div className="flex items-center space-x-2">
-                                  <Switch id="recording-enabled" defaultChecked />
-                                  <label htmlFor="recording-enabled" className="text-sm">Record calls to this target</label>
-                                </div>
-                                
-                                <div className="flex items-center space-x-2">
-                                  <Switch id="transcription-enabled" />
-                                  <label htmlFor="transcription-enabled" className="text-sm">Auto-transcribe recordings</label>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
 
-                      <TabsContent value="tags" className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Tags & Filters</CardTitle>
-                            <CardDescription>Organize and filter calls with custom tags</CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-6">
-                            <div className="space-y-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Default Tags</label>
-                                <div className="flex flex-wrap gap-2 mb-2">
-                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">Insurance</Badge>
-                                  <Badge variant="secondary" className="bg-green-100 text-green-800">Healthcare</Badge>
-                                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">Premium</Badge>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Input placeholder="Add new tag..." className="flex-1" />
-                                  <Button variant="outline" size="sm">Add Tag</Button>
-                                </div>
-                              </div>
-                              
-                              <div className="border-t pt-4">
-                                <div className="space-y-4">
-                                  <div className="space-y-2">
-                                    <label className="text-sm font-medium">Call Quality Filters</label>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div className="flex items-center space-x-2">
-                                        <Switch id="min-duration" />
-                                        <label htmlFor="min-duration" className="text-sm">Minimum duration filter</label>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <Input type="number" placeholder="30" className="w-20" min="1" />
-                                        <span className="text-sm text-gray-600">seconds</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="space-y-2">
-                                    <label className="text-sm font-medium">Geographic Filters</label>
-                                    <Select>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select allowed regions..." />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="all">All Regions</SelectItem>
-                                        <SelectItem value="us">United States Only</SelectItem>
-                                        <SelectItem value="ca">Canada Only</SelectItem>
-                                        <SelectItem value="us-ca">US & Canada</SelectItem>
-                                        <SelectItem value="custom">Custom Filter</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  
-                                  <div className="space-y-2">
-                                    <label className="text-sm font-medium">Time-based Filters</label>
-                                    <div className="flex items-center space-x-2">
-                                      <Switch id="business-hours-only" />
-                                      <label htmlFor="business-hours-only" className="text-sm">Business hours only</label>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
+
+
                     </Tabs>
 
                     {/* Form Actions */}
