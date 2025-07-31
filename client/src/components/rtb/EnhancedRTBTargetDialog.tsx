@@ -159,6 +159,8 @@ export function EnhancedRTBTargetDialog({
       dialIvrOptions: editingTarget?.dialIvrOptions || "",
       disableRecordings: editingTarget?.disableRecordings || false,
       timezone: editingTarget?.timezone || "UTC+00:00",
+      conversionSettings: "use_ring_tree",
+      minimumRevenueSettings: "use_ring_tree",
       capOn: editingTarget?.capOn || "Conversion",
       globalCallCap: editingTarget?.globalCallCap || 0,
       monthlyCap: editingTarget?.monthlyCap || 0,
@@ -217,6 +219,8 @@ export function EnhancedRTBTargetDialog({
         dialIvrOptions: editingTarget.dialIvrOptions || "",
         disableRecordings: editingTarget.disableRecordings || false,
         timezone: editingTarget.timezone || "UTC+00:00",
+        conversionSettings: editingTarget.conversionSettings || "use_ring_tree",
+        minimumRevenueSettings: editingTarget.minimumRevenueSettings || "use_ring_tree",
         capOn: "Conversion",
         globalCallCap: editingTarget.globalCallCap || 0,
         monthlyCap: editingTarget.monthlyCap || 0,
@@ -1359,183 +1363,17 @@ Please add tags with numerical values only."
                         </Tooltip>
                       </h4>
                       <div className="flex gap-2">
-                        <Button type="button" variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
+                        <Button 
+                          type="button" 
+                          variant="default" 
+                          size="sm" 
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
                           Use Ring Tree Settings
                         </Button>
                         <Button type="button" variant="outline" size="sm">
                           Override
                         </Button>
-                      </div>
-                    </div>
-
-                    {/* Revenue Type */}
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium flex items-center gap-2">
-                        Revenue Type
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Choose between dynamic revenue calculation or static fixed amounts.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </h4>
-                      <div className="flex gap-2">
-                        <Button type="button" variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
-                          Dynamic
-                        </Button>
-                        <Button type="button" variant="outline" size="sm">
-                          Static
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Failure Revenue Amount */}
-                    <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="minBidAmount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              Failure Revenue Amount
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <Info className="h-4 w-4 text-muted-foreground" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Revenue amount assigned when call fails to convert.</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </FormLabel>
-                            <FormControl>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm">$</span>
-                                <Input 
-                                  type="number" 
-                                  step="0.01"
-                                  min="0"
-                                  placeholder="0"
-                                  value={field.value?.toString() || ""}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    field.onChange(value === "" ? 0 : parseFloat(value) || 0);
-                                  }}
-                                  className="w-20"
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Convert On */}
-                    <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="capOn"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              Convert On
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <Info className="h-4 w-4 text-muted-foreground" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Define what event triggers a conversion for revenue calculation.</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="w-48">
-                                  <SelectValue />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="Call Length">Call Length</SelectItem>
-                                <SelectItem value="Conversion">Conversion</SelectItem>
-                                <SelectItem value="Call">Call</SelectItem>
-                                <SelectItem value="Revenue">Revenue</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Start Call Length On */}
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium flex items-center gap-2">
-                        Start Call Length On
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Define when to start measuring call length for conversion tracking.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </h4>
-                      <div className="flex gap-2">
-                        <Button type="button" variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
-                          Incoming
-                        </Button>
-                        <Button type="button" variant="outline" size="sm">
-                          Dial
-                        </Button>
-                        <Button type="button" variant="outline" size="sm">
-                          Connect
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Conversion call length value */}
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium flex items-center gap-2">
-                        Conversion call length value
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Set how call length values are determined for conversion tracking.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </h4>
-                      <div className="flex gap-2">
-                        <Button type="button" variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
-                          Dynamic
-                        </Button>
-                        <Button type="button" variant="outline" size="sm">
-                          Static
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Max dynamic duration */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        <FormLabel className="text-sm font-medium flex items-center gap-2">
-                          Max dynamic duration
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="h-4 w-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Maximum duration for dynamic call length calculation.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </FormLabel>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">unlimited</span>
-                          <span className="text-sm text-muted-foreground">seconds</span>
-                        </div>
                       </div>
                     </div>
 
@@ -1552,25 +1390,18 @@ Please add tags with numerical values only."
                           </TooltipContent>
                         </Tooltip>
                       </h4>
-                      <div className="flex gap-2 mb-4">
-                        <Button type="button" variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button" 
+                          variant="default" 
+                          size="sm" 
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
                           Use Ring Tree Settings
                         </Button>
                         <Button type="button" variant="outline" size="sm">
                           Override
                         </Button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">$</span>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          min="0"
-                          placeholder="20"
-                          className="w-20"
-                          defaultValue="20"
-                        />
-                        <span className="text-sm text-muted-foreground italic">Required</span>
                       </div>
                     </div>
                   </CardContent>
