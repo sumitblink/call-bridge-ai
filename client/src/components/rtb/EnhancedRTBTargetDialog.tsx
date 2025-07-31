@@ -63,8 +63,6 @@ const enhancedRTBTargetSchema = z.object({
   failureRevenueAmount: z.coerce.number().min(0).default(0),
   convertOn: z.enum(["Call Successfully Connected", "Call Length", "Postback/Webhook", "Dialed"]).optional(),
   startCallLengthOn: z.enum(["Incoming", "Dial", "Connect"]).optional(),
-  callLengthValueType: z.enum(["Dynamic", "Static"]).optional(),
-  maxDynamicDuration: z.coerce.number().min(0).default(0),
   minimumRevenueAmount: z.coerce.number().min(0).default(20),
   
   // Cap Settings
@@ -111,7 +109,7 @@ const enhancedRTBTargetSchema = z.object({
   // Call Length Configuration
   callLengthValueType: z.enum(["Dynamic", "Static"]).optional(),
   maxDynamicDuration: z.number().min(0).nullable().optional(),
-  staticCallLength: z.number().min(1).optional(),
+  staticCallLength: z.number().min(0).nullable().optional(),
 }).refine(
   (data) => {
     // When conversion settings is override, revenue type must be selected
@@ -197,7 +195,7 @@ export function EnhancedRTBTargetDialog({
       startCallLengthOn: editingTarget?.startCallLengthOn || "Incoming",
       callLengthValueType: editingTarget?.callLengthValueType || "Dynamic",
       maxDynamicDuration: editingTarget?.maxDynamicDuration || null,
-      staticCallLength: editingTarget?.staticCallLength || 30,
+      staticCallLength: editingTarget?.staticCallLength || null,
       minimumRevenueAmount: editingTarget?.minimumRevenueAmount ?? 20,
       capOn: editingTarget?.capOn || "Conversion",
       globalCallCap: editingTarget?.globalCallCap || 0,
@@ -1799,16 +1797,18 @@ Please add tags with numerical values only."
                                         <Input 
                                           type="number" 
                                           step="1"
-                                          min="1"
-                                          placeholder="30"
-                                          value={field.value?.toString() || ""}
+                                          min="0"
+                                          placeholder=""
+                                          value={field.value && field.value > 0 ? field.value.toString() : ""}
                                           onChange={(e) => {
                                             const value = e.target.value;
-                                            field.onChange(value === "" ? 30 : parseInt(value) || 30);
+                                            field.onChange(value === "" ? null : parseInt(value) || null);
                                           }}
                                           className="w-24"
                                         />
-                                        <span className="text-sm text-muted-foreground">seconds</span>
+                                        <span className="text-sm text-muted-foreground">
+                                          {!field.value || field.value === 0 ? "unlimited" : "seconds"}
+                                        </span>
                                       </div>
                                     </FormControl>
                                     <FormMessage />
