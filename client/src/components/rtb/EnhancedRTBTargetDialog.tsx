@@ -15,9 +15,323 @@ import { Slider } from "@/components/ui/slider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Settings, Globe, Clock, Shield, DollarSign, Target, TestTube, Phone, AlertTriangle, Info, Plus, ExternalLink, AlertCircle } from "lucide-react";
+import { Settings, Globe, Clock, Shield, DollarSign, Target, TestTube, Phone, AlertTriangle, Info, Plus, ExternalLink, AlertCircle, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
+
+// Hours of Operation Component
+interface HoursOfOperationProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const HoursOfOperationComponent = ({ value, onChange }: HoursOfOperationProps) => {
+  const [isEnabled, setIsEnabled] = useState(value !== "Always Open");
+  const [mode, setMode] = useState<"Basic" | "Advanced">("Basic");
+  const [showBreakModal, setShowBreakModal] = useState(false);
+  const [currentBreakDay, setCurrentBreakDay] = useState<string>("");
+  const [breakStartTime, setBreakStartTime] = useState("12:00");
+  const [breakDuration, setBreakDuration] = useState("60");
+  const [basicHours, setBasicHours] = useState({
+    openTime: "09:00 AM",
+    closeTime: "09:00 PM",
+    breaks: [] as Array<{ start: string; duration: number }>
+  });
+  const [advancedHours, setAdvancedHours] = useState({
+    Sunday: { enabled: true, openTime: "09:00 AM", closeTime: "09:00 PM", breaks: [] as Array<{ start: string; duration: number }> },
+    Monday: { enabled: true, openTime: "09:00 AM", closeTime: "09:00 PM", breaks: [] as Array<{ start: string; duration: number }> },
+    Tuesday: { enabled: true, openTime: "09:00 AM", closeTime: "09:00 PM", breaks: [] as Array<{ start: string; duration: number }> },
+    Wednesday: { enabled: true, openTime: "09:00 AM", closeTime: "09:00 PM", breaks: [] as Array<{ start: string; duration: number }> },
+    Thursday: { enabled: true, openTime: "09:00 AM", closeTime: "09:00 PM", breaks: [] as Array<{ start: string; duration: number }> },
+    Friday: { enabled: true, openTime: "09:00 AM", closeTime: "09:00 PM", breaks: [] as Array<{ start: string; duration: number }> },
+    Saturday: { enabled: true, openTime: "09:00 AM", closeTime: "09:00 PM", breaks: [] as Array<{ start: string; duration: number }> }
+  });
+
+  useEffect(() => {
+    if (!isEnabled) {
+      onChange("Always Open");
+    } else if (mode === "Basic") {
+      onChange(`Basic: ${basicHours.openTime} - ${basicHours.closeTime}`);
+    } else {
+      onChange(`Advanced: ${JSON.stringify(advancedHours)}`);
+    }
+  }, [isEnabled, mode, basicHours, advancedHours, onChange]);
+
+  const openBreakModal = (day?: string) => {
+    setCurrentBreakDay(day || "basic");
+    setBreakStartTime("12:00");
+    setBreakDuration("60");
+    setShowBreakModal(true);
+  };
+
+  const confirmBreak = () => {
+    if (currentBreakDay === "basic") {
+      setBasicHours(prev => ({
+        ...prev,
+        breaks: [...prev.breaks, { start: breakStartTime, duration: parseInt(breakDuration) }]
+      }));
+    } else {
+      setAdvancedHours(prev => ({
+        ...prev,
+        [currentBreakDay]: {
+          ...prev[currentBreakDay as keyof typeof prev],
+          breaks: [...prev[currentBreakDay as keyof typeof prev].breaks, { start: breakStartTime, duration: parseInt(breakDuration) }]
+        }
+      }));
+    }
+    setShowBreakModal(false);
+  };
+
+  const cancelBreak = () => {
+    setShowBreakModal(false);
+  };
+
+  if (!isEnabled) {
+    return (
+      <div className="border rounded p-3 bg-white">
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={isEnabled}
+            onCheckedChange={setIsEnabled}
+          />
+          <span className="text-sm font-medium text-gray-600">Always Open</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="border rounded p-3 bg-white">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={isEnabled}
+              onCheckedChange={setIsEnabled}
+            />
+            <span className="text-sm font-medium">Hours of Operation</span>
+          </div>
+          <div className="flex space-x-1">
+            <Button
+              type="button"
+              variant={mode === "Basic" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("Basic")}
+              className="h-7 px-3 text-xs"
+            >
+              Basic
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "Advanced" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("Advanced")}
+              className="h-7 px-3 text-xs"
+            >
+              Advanced
+            </Button>
+          </div>
+        </div>
+
+        {mode === "Basic" && (
+          <div className="space-y-3">
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <label className="text-xs text-gray-600 block mb-1">Open</label>
+                <Input
+                  type="time"
+                  value={basicHours.openTime.replace(/\s(AM|PM)/, '')}
+                  onChange={(e) => setBasicHours(prev => ({ ...prev, openTime: e.target.value + ' AM' }))}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-gray-600 block mb-1">Close</label>
+                <Input
+                  type="time"
+                  value={basicHours.closeTime.replace(/\s(AM|PM)/, '')}
+                  onChange={(e) => setBasicHours(prev => ({ ...prev, closeTime: e.target.value + ' PM' }))}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => openBreakModal()}
+                className="h-8 px-2 text-xs"
+              >
+                + ADD BREAK
+              </Button>
+            </div>
+            
+            {/* Breaks Display */}
+            {basicHours.breaks.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-gray-600">Breaks</div>
+                {basicHours.breaks.map((breakItem, index) => (
+                  <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                    <span className="text-xs text-gray-700">
+                      {breakItem.start} for {breakItem.duration} minutes
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setBasicHours(prev => ({
+                          ...prev,
+                          breaks: prev.breaks.filter((_, i) => i !== index)
+                        }));
+                      }}
+                      className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {mode === "Advanced" && (
+          <div className="space-y-2">
+            {Object.entries(advancedHours).map(([day, hours]) => (
+              <div key={day} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center space-x-2 w-24">
+                    <Switch
+                      checked={hours.enabled}
+                      onCheckedChange={(checked) =>
+                        setAdvancedHours(prev => ({
+                          ...prev,
+                          [day]: { ...prev[day as keyof typeof prev], enabled: checked }
+                        }))
+                      }
+                      className="scale-75"
+                    />
+                    <span className="text-xs font-medium text-gray-700">{day.slice(0, 3)}</span>
+                  </div>
+                  <Input
+                    type="time"
+                    value={hours.openTime.replace(/\s(AM|PM)/, '')}
+                    onChange={(e) => 
+                      setAdvancedHours(prev => ({
+                        ...prev,
+                        [day]: { ...prev[day as keyof typeof prev], openTime: e.target.value + ' AM' }
+                      }))
+                    }
+                    disabled={!hours.enabled}
+                    className="h-7 text-xs"
+                  />
+                  <Input
+                    type="time"
+                    value={hours.closeTime.replace(/\s(AM|PM)/, '')}
+                    onChange={(e) => 
+                      setAdvancedHours(prev => ({
+                        ...prev,
+                        [day]: { ...prev[day as keyof typeof prev], closeTime: e.target.value + ' PM' }
+                      }))
+                    }
+                    disabled={!hours.enabled}
+                    className="h-7 text-xs"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openBreakModal(day)}
+                    disabled={!hours.enabled}
+                    className="h-7 px-2 text-xs"
+                  >
+                    + ADD BREAK
+                  </Button>
+                </div>
+                
+                {/* Breaks Display for this day */}
+                {hours.breaks.length > 0 && (
+                  <div className="ml-8 space-y-1">
+                    <div className="text-xs font-medium text-gray-600">Breaks</div>
+                    {hours.breaks.map((breakItem, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-1.5 rounded text-xs">
+                        <span className="text-gray-700">
+                          {breakItem.start} for {breakItem.duration} minutes
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setAdvancedHours(prev => ({
+                              ...prev,
+                              [day]: {
+                                ...prev[day as keyof typeof prev],
+                                breaks: prev[day as keyof typeof prev].breaks.filter((_, i) => i !== index)
+                              }
+                            }));
+                          }}
+                          className="h-5 w-5 p-0 text-gray-400 hover:text-red-500"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Break Modal */}
+      {showBreakModal && (
+        <Dialog open={showBreakModal} onOpenChange={setShowBreakModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Break</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium block mb-2">Start Time</label>
+                <Input
+                  type="time"
+                  value={breakStartTime}
+                  onChange={(e) => setBreakStartTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-2">Duration (Min)</label>
+                <Input
+                  type="number"
+                  value={breakDuration}
+                  onChange={(e) => setBreakDuration(e.target.value)}
+                  placeholder="45"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={cancelBreak}
+              >
+                CANCEL
+              </Button>
+              <Button
+                type="button"
+                onClick={confirmBreak}
+              >
+                SAVE
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+};
 
 const enhancedRTBTargetSchema = z.object({
   // Basic Configuration
@@ -55,6 +369,10 @@ const enhancedRTBTargetSchema = z.object({
   
   // Timezone
   timezone: z.string(),
+  
+  // Timezone and Hours of Operation
+  timeZone: z.string().optional(),
+  hoursOfOperation: z.string().optional(),
   
   // Revenue Settings
   conversionSettings: z.enum(["use_ring_tree", "override"]).default("use_ring_tree"),
@@ -193,6 +511,8 @@ export function EnhancedRTBTargetDialog({
       dialIvrOptions: editingTarget?.dialIvrOptions || "",
       disableRecordings: editingTarget?.disableRecordings || false,
       timezone: editingTarget?.timezone || "UTC+00:00",
+      timeZone: editingTarget?.timeZone || "(UTC-05:00) Eastern Time (US & Canada)",
+      hoursOfOperation: editingTarget?.hoursOfOperation || "Always Open",
       conversionSettings: editingTarget?.conversionSettings || "use_ring_tree",
       minimumRevenueSettings: editingTarget?.minimumRevenueSettings || "use_ring_tree",
       revenueType: editingTarget?.revenueType || "dynamic",
@@ -1016,48 +1336,79 @@ Please add tags with numerical values only."
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="timezone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Time Zone <span className="text-red-500">*</span></FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Search Timezone" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="UTC-08:00">UTC-08:00 (Pacific Standard Time)</SelectItem>
-                              <SelectItem value="UTC-07:00">UTC-07:00 (Mountain Standard Time)</SelectItem>
-                              <SelectItem value="UTC-06:00">UTC-06:00 (Central Standard Time)</SelectItem>
-                              <SelectItem value="UTC-05:00">UTC-05:00 (Eastern Standard Time)</SelectItem>
-                              <SelectItem value="UTC-04:00">UTC-04:00 (Atlantic Standard Time)</SelectItem>
-                              <SelectItem value="UTC-03:00">UTC-03:00 (Brazil Time)</SelectItem>
-                              <SelectItem value="UTC-02:00">UTC-02:00 (South Georgia Time)</SelectItem>
-                              <SelectItem value="UTC-01:00">UTC-01:00 (Azores Time)</SelectItem>
-                              <SelectItem value="UTC+00:00">UTC+00:00 (Greenwich Mean Time)</SelectItem>
-                              <SelectItem value="UTC+01:00">UTC+01:00 (Central European Time)</SelectItem>
-                              <SelectItem value="UTC+02:00">UTC+02:00 (Eastern European Time)</SelectItem>
-                              <SelectItem value="UTC+03:00">UTC+03:00 (Moscow Standard Time)</SelectItem>
-                              <SelectItem value="UTC+04:00">UTC+04:00 (Gulf Standard Time)</SelectItem>
-                              <SelectItem value="UTC+05:00">UTC+05:00 (Pakistan Standard Time)</SelectItem>
-                              <SelectItem value="UTC+06:00">UTC+06:00 (Bangladesh Standard Time)</SelectItem>
-                              <SelectItem value="UTC+07:00">UTC+07:00 (Indochina Time)</SelectItem>
-                              <SelectItem value="UTC+08:00">UTC+08:00 (China Standard Time)</SelectItem>
-                              <SelectItem value="UTC+09:00">UTC+09:00 (Japan Standard Time)</SelectItem>
-                              <SelectItem value="UTC+10:00">UTC+10:00 (Australian Eastern Time)</SelectItem>
-                              <SelectItem value="UTC+11:00">UTC+11:00 (Solomon Islands Time)</SelectItem>
-                              <SelectItem value="UTC+12:00">UTC+12:00 (New Zealand Standard Time)</SelectItem>
-                              <SelectItem value="UTC+13:00">UTC+13:00 (Tonga Time)</SelectItem>
-                              <SelectItem value="UTC+14:00">UTC+14:00 (Line Islands Time)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Timezone and Hours of Operation Section */}
+                    <div className="space-y-4 pt-4 border-t border-border">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Timezone & Hours of Operation
+                      </h4>
+                      
+                      <FormField
+                        control={form.control}
+                        name="timeZone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              Time Zone
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Select the timezone for this RTB target's operational hours.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Search Timezone" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="(UTC-05:00) Eastern Time (US & Canada)">(UTC-05:00) Eastern Time (US & Canada)</SelectItem>
+                                <SelectItem value="(UTC-06:00) Central Time (US & Canada)">(UTC-06:00) Central Time (US & Canada)</SelectItem>
+                                <SelectItem value="(UTC-07:00) Mountain Time (US & Canada)">(UTC-07:00) Mountain Time (US & Canada)</SelectItem>
+                                <SelectItem value="(UTC-08:00) Pacific Time (US & Canada)">(UTC-08:00) Pacific Time (US & Canada)</SelectItem>
+                                <SelectItem value="(UTC+00:00) Greenwich Mean Time">(UTC+00:00) Greenwich Mean Time</SelectItem>
+                                <SelectItem value="(UTC+01:00) Central European Time">(UTC+01:00) Central European Time</SelectItem>
+                                <SelectItem value="(UTC+02:00) Eastern European Time">(UTC+02:00) Eastern European Time</SelectItem>
+                                <SelectItem value="(UTC+03:00) Moscow Standard Time">(UTC+03:00) Moscow Standard Time</SelectItem>
+                                <SelectItem value="(UTC+08:00) China Standard Time">(UTC+08:00) China Standard Time</SelectItem>
+                                <SelectItem value="(UTC+09:00) Japan Standard Time">(UTC+09:00) Japan Standard Time</SelectItem>
+                                <SelectItem value="(UTC+10:00) Australian Eastern Time">(UTC+10:00) Australian Eastern Time</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="hoursOfOperation"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              Hours of Operation
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Configure when this RTB target is available to receive calls.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </FormLabel>
+                            <HoursOfOperationComponent 
+                              value={field.value || "Always Open"} 
+                              onChange={field.onChange} 
+                            />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
 
                   </CardContent>

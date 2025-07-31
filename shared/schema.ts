@@ -1444,6 +1444,9 @@ export const rtbTargets = pgTable("rtb_targets", {
   pingTimeout: integer("ping_timeout").default(5000), // milliseconds
   callOnFailure: boolean("call_on_failure").default(false),
   
+  // Timezone Configuration
+  timeZone: varchar("time_zone", { length: 100 }).default("(UTC-05:00) Eastern Time (US & Canada)"),
+  
   // Performance Tracking
   totalPings: integer("total_pings").default(0).notNull(),
   successfulBids: integer("successful_bids").default(0).notNull(),
@@ -1631,6 +1634,9 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
   dialTimeout: z.number().min(1).max(300).optional(), // 1-300 seconds
   pingTimeout: z.number().min(100).max(30000).optional(), // 100-30000 milliseconds
   callOnFailure: z.boolean().optional(),
+  
+  // Timezone validation
+  timeZone: z.string().optional(),
   
   // Phase 2: Geographic Targeting validation
   allowedStates: z.array(z.string().length(2)).optional(),
