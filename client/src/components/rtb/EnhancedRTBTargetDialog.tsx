@@ -59,13 +59,13 @@ const enhancedRTBTargetSchema = z.object({
   conversionSettings: z.enum(["use_ring_tree", "override"]).default("use_ring_tree"),
   minimumRevenueSettings: z.enum(["use_ring_tree", "override"]).default("use_ring_tree"),
   revenueType: z.enum(["dynamic", "static"]).optional(),
-  staticRevenueAmount: z.number().min(0).optional(),
-  failureRevenueAmount: z.number().min(0).optional(),
+  staticRevenueAmount: z.coerce.number().min(0).default(0),
+  failureRevenueAmount: z.coerce.number().min(0).default(0),
   convertOn: z.enum(["Call Successfully Connected", "Call Length", "Postback/Webhook", "Dialed"]).optional(),
   startCallLengthOn: z.enum(["Incoming", "Dial", "Connect"]).optional(),
   callLengthValueType: z.enum(["Dynamic", "Static"]).optional(),
-  maxDynamicDuration: z.number().min(0).optional(),
-  minimumRevenueAmount: z.number().min(0).optional(),
+  maxDynamicDuration: z.coerce.number().min(0).default(0),
+  minimumRevenueAmount: z.coerce.number().min(0).default(20),
   
   // Cap Settings
   capOn: z.enum(["Conversion", "Call", "Revenue"]),
