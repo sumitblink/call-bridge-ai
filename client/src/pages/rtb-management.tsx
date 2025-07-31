@@ -99,6 +99,7 @@ export default function SimplifiedRTBManagementPage() {
     mutationFn: async (target: RtbTarget) => {
       const response = await fetch(`/api/rtb/targets/${target.id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       if (!response.ok) {
         throw new Error('Failed to delete RTB target');
@@ -119,6 +120,7 @@ export default function SimplifiedRTBManagementPage() {
     mutationFn: async () => {
       const response = await fetch('/api/rtb/targets/clear-all', {
         method: 'DELETE',
+        credentials: 'include',
       });
       if (!response.ok) {
         throw new Error('Failed to clear all RTB targets');
@@ -145,6 +147,7 @@ export default function SimplifiedRTBManagementPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
       
