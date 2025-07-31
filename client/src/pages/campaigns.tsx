@@ -33,7 +33,6 @@ const campaignFormSchema = z.object({
   // RTB configuration moved to campaign level
   biddingTimeoutMs: z.number().min(1000).max(30000).optional(),
   minBiddersRequired: z.number().min(1).max(10).optional(),
-  enablePredictiveRouting: z.boolean().optional(),
 });
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
@@ -236,7 +235,6 @@ function CampaignForm({
       // RTB configuration at campaign level
       biddingTimeoutMs: campaign?.biddingTimeoutMs || 3000,
       minBiddersRequired: campaign?.minBiddersRequired || 1,
-      enablePredictiveRouting: campaign?.enablePredictiveRouting || false,
     },
   });
 
@@ -255,7 +253,6 @@ function CampaignForm({
         // RTB configuration moved to campaign level
         biddingTimeoutMs: data.biddingTimeoutMs,
         minBiddersRequired: data.minBiddersRequired,
-        enablePredictiveRouting: data.enablePredictiveRouting,
       };
       console.log('Campaign data to send:', campaignData);
       
@@ -292,7 +289,6 @@ function CampaignForm({
         // RTB configuration moved to campaign level
         biddingTimeoutMs: data.biddingTimeoutMs,
         minBiddersRequired: data.minBiddersRequired,
-        enablePredictiveRouting: data.enablePredictiveRouting,
       };
       console.log('Campaign update data to send:', campaignData);
       
@@ -507,27 +503,6 @@ function CampaignForm({
                       Minimum number of active bidders required (1-10)
                     </div>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="enablePredictiveRouting"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Predictive Routing</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Use AI to predict best bidder based on historical performance
-                      </div>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
                   </FormItem>
                 )}
               />

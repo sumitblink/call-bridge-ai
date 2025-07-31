@@ -82,7 +82,6 @@ export const campaigns = pgTable("campaigns", {
   // RTB Configuration (moved from routers)
   biddingTimeoutMs: integer("bidding_timeout_ms").default(3000),
   minBiddersRequired: integer("min_bidders_required").default(1),
-  enablePredictiveRouting: boolean("enable_predictive_routing").default(false),
   revenueType: varchar("revenue_type", { length: 50 }).default("per_call"), // per_call, per_minute, cpa, cpl
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
