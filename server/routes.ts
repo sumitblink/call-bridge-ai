@@ -6738,16 +6738,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const userId = req.user?.id;
       
+      console.log(`[RTB Delete] Attempting to delete target ${id} for user ${userId}`);
+      
       // Check if target exists and belongs to user
       const existingTarget = await storage.getRtbTarget(parseInt(id), userId);
       if (!existingTarget) {
+        console.log(`[RTB Delete] Target ${id} not found for user ${userId}`);
         return res.status(404).json({ error: 'RTB target not found' });
       }
       
+      console.log(`[RTB Delete] Found target ${id}, proceeding with deletion`);
       const success = await storage.deleteRtbTarget(parseInt(id));
       if (!success) {
+        console.log(`[RTB Delete] Deletion failed for target ${id}`);
         return res.status(404).json({ error: 'RTB target not found' });
       }
+      
+      console.log(`[RTB Delete] Successfully deleted target ${id}`);
       res.json({ success: true });
     } catch (error) {
       console.error('Error deleting RTB target:', error);

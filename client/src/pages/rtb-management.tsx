@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -97,13 +98,7 @@ export default function SimplifiedRTBManagementPage() {
   // Target operations
   const deleteMutation = useMutation({
     mutationFn: async (target: RtbTarget) => {
-      const response = await fetch(`/api/rtb/targets/${target.id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to delete RTB target');
-      }
+      const response = await apiRequest(`/api/rtb/targets/${target.id}`, 'DELETE');
       return response.json();
     },
     onSuccess: () => {
@@ -118,13 +113,7 @@ export default function SimplifiedRTBManagementPage() {
 
   const clearAllMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/rtb/targets/clear-all', {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to clear all RTB targets');
-      }
+      const response = await apiRequest('/api/rtb/targets/clear-all', 'DELETE');
       return response.json();
     },
     onSuccess: () => {
@@ -142,20 +131,7 @@ export default function SimplifiedRTBManagementPage() {
       const method = editingTarget ? 'PUT' : 'POST';
       const url = editingTarget ? `/api/rtb/targets/${editingTarget.id}` : '/api/rtb/targets';
       
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to ${editingTarget ? 'update' : 'create'} RTB target`);
-      }
-      
+      const response = await apiRequest(url, method, data);
       return response.json();
     },
     onSuccess: () => {
