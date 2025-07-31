@@ -2005,6 +2005,7 @@ Please add tags with numerical values only."
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {form.watch("responseParserType") === "json_path" && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -2091,6 +2092,7 @@ Please add tags with numerical values only."
                         )}
                       />
                     </div>
+                    )}
                   </CardContent>
                 </Card>
 
