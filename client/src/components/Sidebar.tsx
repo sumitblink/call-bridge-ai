@@ -143,11 +143,11 @@ export default function Sidebar() {
         })}
 
         {/* Settings Section */}
-        <div className="pt-6 border-t border-gray-100">
+        <div className="pt-3 border-t border-gray-100">
           {!isCollapsed && (
             <button
               onClick={() => setIsSettingsExpanded(!isSettingsExpanded)}
-              className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-gray-50 rounded-lg transition-colors"
+              className="w-full flex items-center justify-between px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-gray-50 rounded-lg transition-colors"
             >
               <span>Settings</span>
               {isSettingsExpanded ? 
