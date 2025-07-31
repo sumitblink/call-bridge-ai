@@ -156,7 +156,33 @@ Based on comprehensive review of Ringba's complete documentation structure cover
 - Revenue models support both fixed and percentage-based payouts with campaign-specific tier management
 - Integration framework supports 19+ platforms with comprehensive webhook, pixel, and postback systems
 
+## Ring Tree Target (RTT) System Analysis - July 31, 2025
+
+**Comprehensive Ringba RTT Knowledge Gained**: Analyzed official Ring Tree Target Setup Guide revealing RTT architecture and functionality:
+
+### Critical RTT Understanding
+- **RTTs are API Endpoints**: Not phone numbers, but third-party servers contacted via GET/POST requests for real-time bidding
+- **Complex Eligibility Logic**: Based on hours, caps, concurrency, duplicate restrictions, and tag routing filters  
+- **Simultaneous Bidding**: Ring tree pings all eligible RTTs at once to identify highest bidder
+- **Advanced Integration**: Requires coding ability for API endpoint configuration and response parsing
+
+### Revenue Settings Architecture Validation
+- **Conditional Button Structure**: "Use Ring Tree Settings" vs "Override" pattern confirmed as authentic Ringba design
+- **Progressive Disclosure**: Override reveals detailed configuration options with proper nesting
+- **Field Organization**: Revenue calculation rules, conversion settings, minimum thresholds match official structure
+- **Visual Design**: Blue button styling and conditional field display accurately replicated
+
+### Key Configuration Sections Identified
+1. **General Information**: Name, timezone, Dynamic Number/SIP toggle, RTB Shareable Tags
+2. **Cap Settings**: Monthly/daily/hourly limits by connected or converted calls  
+3. **Concurrency Settings**: Max concurrent calls with hourly/weekly advanced configuration
+4. **Duplicate Call Restrictions**: Time-based restrictions from same phone number
+5. **Predictive Routing**: Historical performance integration into bidding logic
+6. **Revenue Settings**: Ring tree vs override with detailed conversion rules
+7. **Request Settings**: API endpoint configuration with JavaScript/JPath/XPath parsing support
+
 ## Recent Changes  
+- July 31, 2025: **REVENUE SETTINGS CONDITIONAL LOGIC COMPLETED** - Implemented exact Ringba behavior with "Use Ring Tree Settings" showing simplified interface and "Override" revealing detailed configuration options exactly matching official documentation
 - July 31, 2025: **RINGBA INTERFACE MATCHING COMPLETED** - Added conditional Dynamic Number/SIP fields that appear only when toggle is enabled, showing Type selector (Number/SIP buttons) and Number field exactly like Ringba's form
   - **Conditional Field Display**: Dynamic Number/SIP toggle shows/hides additional fields based on state exactly like Ringba
   - **Type Selector Buttons**: Added Number/SIP button toggle matching Ringba's blue button design
