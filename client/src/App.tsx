@@ -27,7 +27,7 @@ import AdvancedAnalyticsPage from "@/pages/advanced-analytics";
 import UsefulAnalytics from "@/pages/useful-analytics";
 
 import EnhancedReporting from "@/pages/enhanced-reporting";
-
+import PredictiveRoutingSettings from "@/pages/predictive-routing-settings";
 
 import NotFound from "@/pages/not-found";
 
@@ -73,6 +73,7 @@ function Router() {
 
           <Route path="/analytics" component={UsefulAnalytics} />
           <Route path="/enhanced-reporting" component={EnhancedReporting} />
+          <Route path="/settings/predictive-routing" component={PredictiveRoutingSettings} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/redtrack" component={RedTrackPage} />
           <Route path="/help" component={Feedback} />

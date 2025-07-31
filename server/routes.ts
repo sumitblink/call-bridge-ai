@@ -8299,6 +8299,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Predictive Routing Configuration API
+  app.get('/api/settings/predictive-routing', requireAuth, async (req: any, res) => {
+    try {
+      // For now, return mock data since we haven't implemented database tables yet
+      // This matches the interface expected by the frontend
+      const mockConfigs = [
+        {
+          id: 1,
+          name: "Healthcare Default",
+          type: "use_revenue",
+          newTargetPriority: 3,
+          underperformingTargetPriority: -2,
+          trainingRequirement: 0,
+          isActive: true,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 2,
+          name: "Insurance Advanced",
+          type: "advanced", 
+          newTargetPriority: 5,
+          underperformingTargetPriority: -3,
+          trainingRequirement: 2,
+          isActive: false,
+          createdAt: new Date(Date.now() - 86400000).toISOString()
+        }
+      ];
+      
+      res.json(mockConfigs);
+    } catch (error) {
+      console.error('Error fetching predictive routing configurations:', error);
+      res.status(500).json({ error: 'Failed to fetch predictive routing configurations' });
+    }
+  });
+
+  app.post('/api/settings/predictive-routing', requireAuth, async (req: any, res) => {
+    try {
+      const { name, type, newTargetPriority, underperformingTargetPriority, trainingRequirement, isActive } = req.body;
+      
+      // For now, return mock response
+      // In the future, this would save to database
+      const mockConfig = {
+        id: Math.floor(Math.random() * 1000),
+        name,
+        type,
+        newTargetPriority: parseInt(newTargetPriority) || 0,
+        underperformingTargetPriority: parseInt(underperformingTargetPriority) || 0,
+        trainingRequirement: parseInt(trainingRequirement) || 0,
+        isActive: isActive !== undefined ? isActive : true,
+        createdAt: new Date().toISOString()
+      };
+      
+      res.status(201).json(mockConfig);
+    } catch (error) {
+      console.error('Error creating predictive routing configuration:', error);
+      res.status(500).json({ error: 'Failed to create predictive routing configuration' });
+    }
+  });
+
+  app.put('/api/settings/predictive-routing/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { name, type, newTargetPriority, underperformingTargetPriority, trainingRequirement, isActive } = req.body;
+      
+      // For now, return mock response
+      const mockConfig = {
+        id: parseInt(id),
+        name,
+        type,
+        newTargetPriority: parseInt(newTargetPriority) || 0,
+        underperformingTargetPriority: parseInt(underperformingTargetPriority) || 0,
+        trainingRequirement: parseInt(trainingRequirement) || 0,
+        isActive: isActive !== undefined ? isActive : true,
+        createdAt: new Date(Date.now() - 86400000).toISOString()
+      };
+      
+      res.json(mockConfig);
+    } catch (error) {
+      console.error('Error updating predictive routing configuration:', error);
+      res.status(500).json({ error: 'Failed to update predictive routing configuration' });
+    }
+  });
+
+  app.delete('/api/settings/predictive-routing/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      // For now, just return success
+      // In the future, this would delete from database
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting predictive routing configuration:', error);
+      res.status(500).json({ error: 'Failed to delete predictive routing configuration' });
+    }
+  });
+
   const httpServer = createServer(app);
   // Test landing page route for RedTrack integration testing
   app.get('/redtrack-test-lander.html', (req, res) => {
