@@ -363,6 +363,14 @@ export default function Targets() {
     queryKey: ['/api/buyers'],
   });
 
+  // Fetch predictive routing configurations
+  const { data: predictiveRoutingConfigs = [], isLoading: loadingConfigs } = useQuery<any[]>({
+    queryKey: ['/api/settings/predictive-routing'],
+    enabled: useEstimatedRevenue,
+    staleTime: 0,
+    refetchOnWindowFocus: false
+  });
+
   // Form setup with timezone and hours of operation in Basic tab
   const form = useForm<z.infer<typeof insertTargetSchema>>({
     resolver: zodResolver(insertTargetSchema),
@@ -926,6 +934,11 @@ export default function Targets() {
                                     <div className="flex items-center gap-2">
                                       <h4 className="text-sm font-medium">Predictive Routing Configuration</h4>
                                       <span className="text-xs text-red-500 font-medium">Required</span>
+                                      {!loadingConfigs && Array.isArray(predictiveRoutingConfigs) && (
+                                        <span className="text-xs text-muted-foreground">
+                                          ({predictiveRoutingConfigs.length} available)
+                                        </span>
+                                      )}
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <Select defaultValue="">
@@ -933,8 +946,18 @@ export default function Targets() {
                                           <SelectValue placeholder="Choose a configuration" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="1">Healthcare Default</SelectItem>
-                                          <SelectItem value="2">Insurance Advanced</SelectItem>
+                                          <SelectItem value="">No Configuration</SelectItem>
+                                          {loadingConfigs ? (
+                                            <SelectItem value="" disabled>Loading configurations...</SelectItem>
+                                          ) : Array.isArray(predictiveRoutingConfigs) && predictiveRoutingConfigs.length > 0 ? (
+                                            predictiveRoutingConfigs.map((config: any) => (
+                                              <SelectItem key={config.id} value={config.id.toString()}>
+                                                {config.name} ({config.type})
+                                              </SelectItem>
+                                            ))
+                                          ) : (
+                                            <SelectItem value="" disabled>No configurations found</SelectItem>
+                                          )}
                                         </SelectContent>
                                       </Select>
                                       <Button variant="outline" size="sm" className="px-2">

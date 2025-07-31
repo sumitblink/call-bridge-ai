@@ -156,7 +156,13 @@ Based on comprehensive review of Ringba's complete documentation structure cover
 - Revenue models support both fixed and percentage-based payouts with campaign-specific tier management
 - Integration framework supports 19+ platforms with comprehensive webhook, pixel, and postback systems
 
-## Recent Changes
+## Recent Changes  
+- July 31, 2025: **TARGET FORM PREDICTIVE ROUTING DROPDOWN FIXED** - Resolved hardcoded dropdown showing "Healthcare Default" and "Insurance Advanced" instead of user's actual configurations
+  - **API Integration Added**: Target form now uses same `/api/settings/predictive-routing` endpoint as RTB Target Dialog and Settings page
+  - **Dynamic Loading**: Dropdown properly loads user's configurations ("test" and "test test") with loading states and configuration count display
+  - **Consistent Behavior**: Target form dropdown now matches EnhancedRTBTargetDialog functionality with proper error handling
+  - **Real Data Display**: Eliminated hardcoded values and implemented authentic database-driven configuration selection
+  - **Status**: Target creation form now displays actual user configurations instead of placeholder data
 - July 31, 2025: **PREDICTIVE ROUTING DATABASE PERSISTENCE COMPLETELY FIXED** - Resolved critical mock data issue preventing proper configuration storage and retrieval
   - **Mock API Endpoints Replaced**: All predictive routing endpoints now use real database operations instead of hardcoded mock data
   - **Database Schema Created**: Successfully deployed predictiveRoutingConfigs table with proper structure and constraints
