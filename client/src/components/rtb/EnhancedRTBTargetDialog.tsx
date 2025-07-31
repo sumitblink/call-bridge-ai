@@ -34,6 +34,9 @@ const enhancedRTBTargetSchema = z.object({
   // Dynamic Number/SIP conditional fields
   dynamicNumberType: z.enum(["Number", "SIP"]).optional(),
   dynamicNumber: z.string().optional(),
+  sipEndpoint: z.string().optional(),
+  sipUsername: z.string().optional(),
+  sipPassword: z.string().optional(),
   
   // Bid Amount Settings (moved to Basic tab)
   minBidAmount: z.number().min(0, "Minimum bid amount must be positive"),
@@ -146,6 +149,9 @@ export function EnhancedRTBTargetDialog({
       rtbShareableTags: false,
       dynamicNumberType: "Number",
       dynamicNumber: "",
+      sipEndpoint: "",
+      sipUsername: "",
+      sipPassword: "",
       minBidAmount: 0,
       maxBidAmount: 100,
       currency: "USD",
@@ -185,6 +191,7 @@ export function EnhancedRTBTargetDialog({
   const capOn = form.watch("capOn");
   const estimatedRevenue = form.watch("estimatedRevenue");
   const enableDynamicNumber = form.watch("enableDynamicNumber");
+  const dynamicNumberType = form.watch("dynamicNumberType");
 
   // Reset form when editingTarget changes
   useEffect(() => {
@@ -200,6 +207,9 @@ export function EnhancedRTBTargetDialog({
         rtbShareableTags: editingTarget.rtbShareableTags || false,
         dynamicNumberType: editingTarget.dynamicNumberType || "Number",
         dynamicNumber: editingTarget.dynamicNumber || "",
+        sipEndpoint: editingTarget.sipEndpoint || "",
+        sipUsername: editingTarget.sipUsername || "",
+        sipPassword: editingTarget.sipPassword || "",
         minBidAmount: typeof editingTarget.minBidAmount === 'number' ? editingTarget.minBidAmount : (editingTarget.minBidAmount ? parseFloat(editingTarget.minBidAmount) : 0),
         maxBidAmount: typeof editingTarget.maxBidAmount === 'number' ? editingTarget.maxBidAmount : (editingTarget.maxBidAmount ? parseFloat(editingTarget.maxBidAmount) : 100),
         currency: editingTarget.currency || "USD",
@@ -617,39 +627,124 @@ export function EnhancedRTBTargetDialog({
                             )}
                           />
                           
-                          <FormField
-                            control={form.control}
-                            name="dynamicNumber"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="flex items-center gap-2">
-                                  Number
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="h-4 w-4 text-muted-foreground" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>The phone number or SIP endpoint that will be dynamically assigned for this target.</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                  <span className="text-xs text-muted-foreground ml-auto">Required</span>
-                                </FormLabel>
-                                <FormControl>
-                                  <div className="flex gap-2">
-                                    <Input 
-                                      placeholder={form.watch("dynamicNumberType") === "SIP" ? "sip:user@domain.com" : "+1-555-123-4567"}
-                                      {...field} 
-                                      className="flex-1"
-                                    />
-                                    <Button type="button" variant="outline" size="sm">
-                                      <Plus className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          {dynamicNumberType === "Number" ? (
+                            <FormField
+                              control={form.control}
+                              name="dynamicNumber"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="flex items-center gap-2">
+                                    Number
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>The phone number that will be dynamically assigned for this target.</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                    <span className="text-xs text-muted-foreground ml-auto">Required</span>
+                                  </FormLabel>
+                                  <FormControl>
+                                    <div className="flex gap-2">
+                                      <Input 
+                                        placeholder="+1-555-123-4567"
+                                        {...field} 
+                                        className="flex-1"
+                                      />
+                                      <Button type="button" variant="outline" size="sm">
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          ) : (
+                            <div className="space-y-4">
+                              <FormField
+                                control={form.control}
+                                name="sipEndpoint"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                      SIP Endpoint
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-4 w-4 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>The SIP server endpoint for routing calls.</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                      <span className="text-xs text-muted-foreground ml-auto">Required</span>
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input 
+                                        placeholder="sip.example.com"
+                                        {...field} 
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="sipUsername"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                      SIP Username
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-4 w-4 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Username for SIP authentication.</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input 
+                                        placeholder="username"
+                                        {...field} 
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="sipPassword"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                      SIP Password
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-4 w-4 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Password for SIP authentication.</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input 
+                                        type="password"
+                                        placeholder="Password"
+                                        {...field} 
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
