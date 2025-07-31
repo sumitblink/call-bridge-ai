@@ -867,6 +867,65 @@ export default function Targets() {
                                 </>
                               )}
                             </div>
+
+                            {/* Restrict Duplicate Calls Settings */}
+                            <div className="space-y-4 border-t pt-4">
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-medium">Restrict Duplicate Calls Settings</h3>
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Restrict Duplicate</label>
+                                <Select defaultValue="buyer_settings">
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="buyer_settings">Buyer Settings (Do not Restrict)</SelectItem>
+                                    <SelectItem value="restrict">Restrict</SelectItem>
+                                    <SelectItem value="do_not_restrict">Do Not Restrict</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            {/* Predictive Routing Settings */}
+                            <div className="space-y-4 border-t pt-4">
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-medium">Predictive Routing Settings</h3>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                <div className="space-y-2">
+                                  <label className="text-sm font-medium">Estimated Revenue</label>
+                                  <div className="flex gap-2">
+                                    <Button variant="default" size="sm" className="text-xs">
+                                      Use Campaign Setting
+                                    </Button>
+                                    <Button variant="outline" size="sm" className="text-xs">
+                                      Use Estimated Revenue
+                                    </Button>
+                                  </div>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <label className="text-sm font-medium">Priority Bump</label>
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                      <span>-10</span>
+                                      <span>Default</span>
+                                      <span>+10</span>
+                                    </div>
+                                    <input 
+                                      type="range" 
+                                      min="-10" 
+                                      max="10" 
+                                      defaultValue="0"
+                                      className="w-full h-2 bg-gradient-to-r from-blue-500 via-gray-300 to-green-500 rounded-lg appearance-none cursor-pointer"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </CardContent>
                         </Card>
                       </TabsContent>
@@ -880,15 +939,12 @@ export default function Targets() {
                               <Tag className="h-4 w-4" />
                               Shareable Tags
                             </CardTitle>
-                            <CardDescription>
-                              Configure shareable tags and tag routing filters
-                            </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            {/* Override Mutable Info Toggle */}
+                            {/* Override Shareable Tags Toggle */}
                             <div className="flex items-center justify-between rounded-lg border p-4">
                               <div className="space-y-0.5">
-                                <div className="text-sm font-medium">Override Mutable Info</div>
+                                <div className="text-sm font-medium">Override Shareable Tags</div>
                                 <div className="text-sm text-muted-foreground">None</div>
                               </div>
                               <Switch />
@@ -904,9 +960,10 @@ export default function Targets() {
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            <div className="text-sm text-muted-foreground">
-                              Configure tag-based routing filters for this target
-                            </div>
+                            <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
+                              <Plus className="h-4 w-4 mr-2" />
+                              ADD FILTER
+                            </Button>
                           </CardContent>
                         </Card>
                       </TabsContent>
