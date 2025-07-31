@@ -109,7 +109,7 @@ const enhancedRTBTargetSchema = z.object({
   // Call Length Configuration
   callLengthValueType: z.enum(["Dynamic", "Static"]).optional(),
   maxDynamicDuration: z.number().min(0).nullable().optional(),
-  staticCallLength: z.number().min(0).nullable().optional(),
+  staticCallLength: z.number().min(1).optional(),
 }).refine(
   (data) => {
     // When conversion settings is override, revenue type must be selected
@@ -195,7 +195,7 @@ export function EnhancedRTBTargetDialog({
       startCallLengthOn: editingTarget?.startCallLengthOn || "Incoming",
       callLengthValueType: editingTarget?.callLengthValueType || "Dynamic",
       maxDynamicDuration: editingTarget?.maxDynamicDuration || null,
-      staticCallLength: editingTarget?.staticCallLength || null,
+      staticCallLength: editingTarget?.staticCallLength || 30,
       minimumRevenueAmount: editingTarget?.minimumRevenueAmount ?? 20,
       capOn: editingTarget?.capOn || "Conversion",
       globalCallCap: editingTarget?.globalCallCap || 0,
@@ -1782,7 +1782,7 @@ Please add tags with numerical values only."
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormLabel className="flex items-center gap-2">
-                                      Call length (seconds)
+                                      Length
                                       <Tooltip>
                                         <TooltipTrigger>
                                           <Info className="h-4 w-4 text-muted-foreground" />
@@ -1793,23 +1793,18 @@ Please add tags with numerical values only."
                                       </Tooltip>
                                     </FormLabel>
                                     <FormControl>
-                                      <div className="flex items-center gap-2">
-                                        <Input 
-                                          type="number" 
-                                          step="1"
-                                          min="0"
-                                          placeholder=""
-                                          value={field.value && field.value > 0 ? field.value.toString() : ""}
-                                          onChange={(e) => {
-                                            const value = e.target.value;
-                                            field.onChange(value === "" ? null : parseInt(value) || null);
-                                          }}
-                                          className="w-24"
-                                        />
-                                        <span className="text-sm text-muted-foreground">
-                                          {!field.value || field.value === 0 ? "unlimited" : "seconds"}
-                                        </span>
-                                      </div>
+                                      <Input 
+                                        type="number" 
+                                        step="1"
+                                        min="1"
+                                        placeholder="30"
+                                        value={field.value?.toString() || ""}
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          field.onChange(value === "" ? 30 : parseInt(value) || 30);
+                                        }}
+                                        className="w-24"
+                                      />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>

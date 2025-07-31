@@ -1435,7 +1435,7 @@ export const rtbTargets = pgTable("rtb_targets", {
   startCallLengthOn: varchar("start_call_length_on", { length: 50 }).default("Incoming"), // Incoming, Dial, Connect
   callLengthValueType: varchar("call_length_value_type", { length: 50 }).default("Dynamic"), // Dynamic, Static
   maxDynamicDuration: integer("max_dynamic_duration"), // seconds for dynamic max duration (null = unlimited)
-  staticCallLength: integer("static_call_length"), // seconds for static call length (null = unlimited)
+  staticCallLength: integer("static_call_length").default(30), // seconds for static call length
   minimumRevenueAmount: decimal("minimum_revenue_amount", { precision: 10, scale: 2 }).default("20.00"),
   
   // Performance Tracking
@@ -1618,7 +1618,7 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
   // Call Length Configuration validation
   callLengthValueType: z.enum(["Dynamic", "Static"]).optional(),
   maxDynamicDuration: z.number().min(0).nullable().optional(),
-  staticCallLength: z.number().min(0).nullable().optional(),
+  staticCallLength: z.number().min(1).optional(),
   
   // Phase 2: Geographic Targeting validation
   allowedStates: z.array(z.string().length(2)).optional(),
