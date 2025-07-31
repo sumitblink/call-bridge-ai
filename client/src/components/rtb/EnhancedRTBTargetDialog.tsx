@@ -158,7 +158,7 @@ export function EnhancedRTBTargetDialog({
       connectionTimeout: 5000,
       dialIvrOptions: editingTarget?.dialIvrOptions || "",
       disableRecordings: editingTarget?.disableRecordings || false,
-      timezone: editingTarget?.timezone || "UTC",
+      timezone: editingTarget?.timezone || "UTC+00:00",
       capOn: editingTarget?.capOn || "Conversion",
       globalCallCap: editingTarget?.globalCallCap || 0,
       monthlyCap: editingTarget?.monthlyCap || 0,
@@ -216,7 +216,7 @@ export function EnhancedRTBTargetDialog({
         connectionTimeout: editingTarget.connectionTimeout || 5000,
         dialIvrOptions: editingTarget.dialIvrOptions || "",
         disableRecordings: editingTarget.disableRecordings || false,
-        timezone: editingTarget.timezone || "UTC",
+        timezone: editingTarget.timezone || "UTC+00:00",
         capOn: "Conversion",
         globalCallCap: editingTarget.globalCallCap || 0,
         monthlyCap: editingTarget.monthlyCap || 0,
@@ -828,10 +828,29 @@ Please add tags with numerical values only."
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="UTC">UTC</SelectItem>
-                              <SelectItem value="America/New_York">America/New_York</SelectItem>
-                              <SelectItem value="America/Los_Angeles">America/Los_Angeles</SelectItem>
-                              <SelectItem value="Europe/London">Europe/London</SelectItem>
+                              <SelectItem value="UTC-08:00">UTC-08:00 (Pacific Standard Time)</SelectItem>
+                              <SelectItem value="UTC-07:00">UTC-07:00 (Mountain Standard Time)</SelectItem>
+                              <SelectItem value="UTC-06:00">UTC-06:00 (Central Standard Time)</SelectItem>
+                              <SelectItem value="UTC-05:00">UTC-05:00 (Eastern Standard Time)</SelectItem>
+                              <SelectItem value="UTC-04:00">UTC-04:00 (Atlantic Standard Time)</SelectItem>
+                              <SelectItem value="UTC-03:00">UTC-03:00 (Brazil Time)</SelectItem>
+                              <SelectItem value="UTC-02:00">UTC-02:00 (South Georgia Time)</SelectItem>
+                              <SelectItem value="UTC-01:00">UTC-01:00 (Azores Time)</SelectItem>
+                              <SelectItem value="UTC+00:00">UTC+00:00 (Greenwich Mean Time)</SelectItem>
+                              <SelectItem value="UTC+01:00">UTC+01:00 (Central European Time)</SelectItem>
+                              <SelectItem value="UTC+02:00">UTC+02:00 (Eastern European Time)</SelectItem>
+                              <SelectItem value="UTC+03:00">UTC+03:00 (Moscow Standard Time)</SelectItem>
+                              <SelectItem value="UTC+04:00">UTC+04:00 (Gulf Standard Time)</SelectItem>
+                              <SelectItem value="UTC+05:00">UTC+05:00 (Pakistan Standard Time)</SelectItem>
+                              <SelectItem value="UTC+06:00">UTC+06:00 (Bangladesh Standard Time)</SelectItem>
+                              <SelectItem value="UTC+07:00">UTC+07:00 (Indochina Time)</SelectItem>
+                              <SelectItem value="UTC+08:00">UTC+08:00 (China Standard Time)</SelectItem>
+                              <SelectItem value="UTC+09:00">UTC+09:00 (Japan Standard Time)</SelectItem>
+                              <SelectItem value="UTC+10:00">UTC+10:00 (Australian Eastern Time)</SelectItem>
+                              <SelectItem value="UTC+11:00">UTC+11:00 (Solomon Islands Time)</SelectItem>
+                              <SelectItem value="UTC+12:00">UTC+12:00 (New Zealand Standard Time)</SelectItem>
+                              <SelectItem value="UTC+13:00">UTC+13:00 (Tonga Time)</SelectItem>
+                              <SelectItem value="UTC+14:00">UTC+14:00 (Line Islands Time)</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
