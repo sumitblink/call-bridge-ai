@@ -941,14 +941,14 @@ export default function Targets() {
                                       )}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <Select defaultValue="">
+                                      <Select defaultValue="none">
                                         <SelectTrigger className="flex-1">
                                           <SelectValue placeholder="Choose a configuration" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="">No Configuration</SelectItem>
+                                          <SelectItem value="none">No Configuration</SelectItem>
                                           {loadingConfigs ? (
-                                            <SelectItem value="" disabled>Loading configurations...</SelectItem>
+                                            <SelectItem value="loading" disabled>Loading configurations...</SelectItem>
                                           ) : Array.isArray(predictiveRoutingConfigs) && predictiveRoutingConfigs.length > 0 ? (
                                             predictiveRoutingConfigs.map((config: any) => (
                                               <SelectItem key={config.id} value={config.id.toString()}>
@@ -956,7 +956,7 @@ export default function Targets() {
                                               </SelectItem>
                                             ))
                                           ) : (
-                                            <SelectItem value="" disabled>No configurations found</SelectItem>
+                                            <SelectItem value="notfound" disabled>No configurations found</SelectItem>
                                           )}
                                         </SelectContent>
                                       </Select>

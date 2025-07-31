@@ -975,8 +975,8 @@ Please add tags with numerical values only."
                             </FormLabel>
                             <div className="flex gap-2">
                               <Select 
-                                onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
-                                value={field.value?.toString() || ""}
+                                onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
+                                value={field.value?.toString() || "none"}
                               >
                                 <FormControl>
                                   <SelectTrigger className="flex-1">
@@ -984,9 +984,9 @@ Please add tags with numerical values only."
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="">No Configuration</SelectItem>
+                                  <SelectItem value="none">No Configuration</SelectItem>
                                   {loadingConfigs ? (
-                                    <SelectItem value="" disabled>Loading configurations...</SelectItem>
+                                    <SelectItem value="loading" disabled>Loading configurations...</SelectItem>
                                   ) : Array.isArray(predictiveRoutingConfigs) && predictiveRoutingConfigs.length > 0 ? (
                                     predictiveRoutingConfigs.map((config: any) => (
                                       <SelectItem key={config.id} value={config.id.toString()}>
@@ -994,7 +994,7 @@ Please add tags with numerical values only."
                                       </SelectItem>
                                     ))
                                   ) : (
-                                    <SelectItem value="" disabled>No configurations found</SelectItem>
+                                    <SelectItem value="notfound" disabled>No configurations found</SelectItem>
                                   )}
                                 </SelectContent>
                               </Select>
