@@ -364,27 +364,14 @@ export class RTBService {
   }
 
   /**
-   * Determine effective Caller ID requirement based on Ringba hierarchy
-   * Priority: Target Level > Campaign Level
+   * Validate bid request meets caller ID requirements (Campaign-level only)
    */
-  private static getEffectiveCallerIdRequirement(campaign: any, target: any): boolean {
-    // Target level setting takes precedence (most specific)
-    if (target.requireCallerId !== undefined) {
-      return target.requireCallerId;
-    }
-    
-    // Fall back to campaign level setting
-    return campaign.rtbRequireCallerId || false;
-  }
-
-  /**
-   * Validate bid request meets caller ID requirements
-   */
-  private static validateCallerIdRequirement(bidRequest: BidRequest, campaign: any, target: any): { valid: boolean; reason?: string } {
-    const requireCallerId = this.getEffectiveCallerIdRequirement(campaign, target);
+  private static validateCallerIdRequirement(bidRequest: BidRequest, campaign: any): { valid: boolean; reason?: string } {
+    // Use campaign-level setting only (simplified approach)
+    const requireCallerId = campaign.rtbRequireCallerId || false;
     
     if (!requireCallerId) {
-      return { valid: true }; // Caller ID not required
+      return { valid: true }; // Caller ID not required at campaign level
     }
     
     // Check if caller ID is present and valid
@@ -392,7 +379,7 @@ export class RTBService {
     if (!callerId || callerId.trim() === '') {
       return { 
         valid: false, 
-        reason: `Caller ID required but not provided (Campaign: ${campaign.rtbRequireCallerId ? 'Required' : 'Not Required'}, Target: ${target.requireCallerId !== undefined ? (target.requireCallerId ? 'Required' : 'Not Required') : 'Inherit'})` 
+        reason: `Caller ID required by campaign settings but not provided` 
       };
     }
     
@@ -491,8 +478,8 @@ export class RTBService {
             continue;
           }
           
-          // Validate caller ID requirements using hierarchy
-          const callerIdValidation = this.validateCallerIdRequirement(bidRequest, campaign, target);
+          // Validate caller ID requirements (campaign-level only)
+          const callerIdValidation = this.validateCallerIdRequirement(bidRequest, campaign);
           if (!callerIdValidation.valid) {
             console.log(`[RTB] Target ${assignment.rtbTargetId} rejected: ${callerIdValidation.reason}`);
             continue;

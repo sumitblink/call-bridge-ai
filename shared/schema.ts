@@ -1502,7 +1502,6 @@ export const rtbTargets = pgTable("rtb_targets", {
   
   // Ringba-Style RTB Settings
   onlySip: boolean("only_sip").default(false), // Only provide SIP numbers
-  requireCallerId: boolean("require_caller_id").default(false), // Require caller ID in every ping
   
   // Rate Limiting (Per Publisher)
   maxRequestsPerMinute: integer("max_requests_per_minute").default(60),

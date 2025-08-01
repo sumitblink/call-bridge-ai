@@ -471,7 +471,6 @@ const enhancedRTBTargetSchema = z.object({
   
   // Ringba-Style RTB Settings
   onlySip: z.boolean().optional(),
-  requireCallerId: z.boolean().optional(),
   
   // Rate Limiting
   maxRequestsPerMinute: z.number().min(1).max(10000).optional(),
@@ -868,7 +867,6 @@ export function EnhancedRTBTargetDialog({
       
       // Ringba-Style RTB Settings
       onlySip: editingTarget?.onlySip || false,
-      requireCallerId: editingTarget?.requireCallerId || false,
       
       // Rate Limiting
       maxRequestsPerMinute: editingTarget?.maxRequestsPerMinute || 60,
@@ -992,7 +990,6 @@ export function EnhancedRTBTargetDialog({
         
         // Ringba-Style RTB Settings
         onlySip: editingTarget.onlySip || false,
-        requireCallerId: editingTarget.requireCallerId || false,
         
         // Rate Limiting
         maxRequestsPerMinute: editingTarget.maxRequestsPerMinute || 60,
@@ -1082,7 +1079,6 @@ export function EnhancedRTBTargetDialog({
         
         // Ringba-Style RTB Settings
         onlySip: false,
-        requireCallerId: false,
         
         // Rate Limiting
         maxRequestsPerMinute: 60,
@@ -2149,46 +2145,14 @@ Please add tags with numerical values only."
                       )}
                     </div>
 
-                    {/* Caller ID Requirements Section */}
+                    {/* SIP Configuration Section */}
                     <div className="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border">
                       <h4 className="text-sm font-semibold flex items-center gap-2">
                         <Phone className="h-4 w-4" />
-                        Caller ID Requirements
+                        SIP Configuration
                       </h4>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="requireCallerId"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between space-y-0">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-sm flex items-center gap-2">
-                                  Require Caller ID
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="h-3 w-3 text-muted-foreground" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Require caller ID information in every RTB ping for enhanced tracking.</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </FormLabel>
-                                <p className="text-xs text-muted-foreground">
-                                  Block calls without caller ID
-                                </p>
-                              </div>
-                              <FormControl>
-                                <ToggleSwitch
-                                  checked={field.value || false}
-                                  onCheckedChange={field.onChange}
-                                  size="sm"
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        
+                      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                         <FormField
                           control={form.control}
                           name="onlySip"
