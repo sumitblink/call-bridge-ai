@@ -134,11 +134,11 @@ export class RTBTestService {
 
       // Determine auction winner (highest bid)
       const successfulBids = results.filter(r => r.results?.post?.success && r.results.post.bidAmount);
-      const winner = successfulBids.reduce((prev, current) => {
+      const winner = successfulBids.length > 0 ? successfulBids.reduce((prev, current) => {
         const prevBid = parseFloat(prev.results?.post?.bidAmount || '0');
         const currentBid = parseFloat(current.results?.post?.bidAmount || '0');
         return currentBid > prevBid ? current : prev;
-      }, successfulBids[0]);
+      }, successfulBids[0]) : null;
 
       return {
         campaign: campaign[0],
@@ -165,6 +165,7 @@ export class RTBTestService {
       requestId,
       timestamp: new Date().toISOString(),
       callerId: testData.callerId || '+15551234567',
+      CID: testData.callerId || '+15551234567', // Required CID parameter in E.164 format
       inboundNumber: '+19786432489',
       publisherId: testData.publisherId || 'test_publisher',
       publisherSubId: testData.publisherSubId || 'sub_001',
