@@ -206,12 +206,7 @@ export class RTBTestService {
       '[Geo:Zipcode]': testData.callerZip || '90210',
       '[Zip Code:Zip Code]': testData.callerZip || '90210',
       
-      // Additional common patterns
-      'CID': callerIdFormatted,
-      'exposeCallerId': 'yes',
-      'publisherInboundCallId': requestId,
-      'Zipcode': testData.callerZip || '90210',
-      'ZipCode': testData.callerZip || '90210'
+      // Remove these - they're causing incorrect replacements
     };
     
     // Perform macro substitution
