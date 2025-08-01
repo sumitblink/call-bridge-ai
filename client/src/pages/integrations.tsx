@@ -99,30 +99,110 @@ export default function IntegrationsPage() {
   const [isTokenSearchOpen, setIsTokenSearchOpen] = useState(false);
   const [isHeaderTokenSearchOpen, setIsHeaderTokenSearchOpen] = useState(false);
   const [currentHeaderIndex, setCurrentHeaderIndex] = useState<number | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Basic Call Variables']));
+  const [tokenSearchQuery, setTokenSearchQuery] = useState('');
   const urlInputRef = useRef<HTMLInputElement>(null);
   const headerValueInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Comprehensive token library organized by categories
-  const tokenLibrary = {
-    'Call Data': [
-      { token: '{call_id}', description: 'Unique call identifier' },
-      { token: '{phone_number}', description: 'Dialed phone number' },
-      { token: '{caller_id}', description: 'Caller\'s phone number' },
-      { token: '{duration}', description: 'Call duration in seconds' },
-      { token: '{status}', description: 'Call status (completed, busy, no-answer, failed)' },
-      { token: '{recording_url}', description: 'Call recording URL' },
-      { token: '{timestamp}', description: 'Call timestamp' }
-    ],
-    'Campaign & Routing': [
-      { token: '{campaign_id}', description: 'Campaign identifier' },
-      { token: '{buyer_id}', description: 'Assigned buyer ID' },
-      { token: '{agent_id}', description: 'Agent ID (if applicable)' }
-    ],
-    'RedTrack Integration': [
-      { token: '[tag:User:clickid]', description: 'RedTrack click ID' },
-      { token: '[Call:ConversionPayout]', description: 'Call payout value' },
-      { token: '{redtrack_campaign_id}', description: 'RedTrack campaign ID' },
-      { token: '{redtrack_offer_id}', description: 'RedTrack offer ID' },
+  // Add dynamic URL parameter tokens
+  const urlParameterTokens = [
+    { value: '[tag:User:utm_source]', label: 'UTM Source', description: 'Marketing campaign source' },
+    { value: '[tag:User:utm_medium]', label: 'UTM Medium', description: 'Marketing campaign medium' },
+    { value: '[tag:User:utm_campaign]', label: 'UTM Campaign', description: 'Marketing campaign name' },
+    { value: '[tag:User:utm_term]', label: 'UTM Term', description: 'Marketing campaign term' },
+    { value: '[tag:User:utm_content]', label: 'UTM Content', description: 'Marketing campaign content' },
+    { value: '[tag:User:gclid]', label: 'Google Click ID', description: 'Google Ads click identifier' },
+    { value: '[tag:User:fbclid]', label: 'Facebook Click ID', description: 'Facebook Ads click ID' },
+    { value: '[tag:User:ttclid]', label: 'TikTok Click ID', description: 'TikTok Ads click ID' },
+    { value: '[tag:User:msclkid]', label: 'Microsoft Click ID', description: 'Microsoft Ads click ID' },
+    { value: '[tag:User:twclid]', label: 'Twitter Click ID', description: 'Twitter Ads click ID' },
+    { value: '[tag:User:li_fat_id]', label: 'LinkedIn Fat ID', description: 'LinkedIn Ads identifier' },
+    { value: '[tag:User:sc_click_id]', label: 'Snapchat Click ID', description: 'Snapchat Ads click ID' },
+    { value: '[tag:User:custom_param]', label: 'Custom Parameter', description: 'Custom URL parameter' }
+  ];
+
+  // Enhanced token categories with URL parameters
+  const tokenCategories = [
+    {
+      name: "Basic Call Variables",
+      tokens: [
+        { value: '{requestId}', label: 'requestId', description: 'Unique request identifier' },
+        { value: '{campaignId}', label: 'campaignId', description: 'Campaign identifier' },
+        { value: '{callerId}', label: 'callerId', description: 'Caller\'s phone number' },
+        { value: '{callStartTime}', label: 'callStartTime', description: 'Call start timestamp' },
+        { value: '{timestamp}', label: 'timestamp', description: 'Current timestamp' },
+        { value: '{minBid}', label: 'minBid', description: 'Minimum bid amount' },
+        { value: '{maxBid}', label: 'maxBid', description: 'Maximum bid amount' },
+        { value: '{currency}', label: 'currency', description: 'Currency code' }
+      ]
+    },
+    {
+      name: 'URL Parameters',
+      tokens: urlParameterTokens
+    },
+    {
+      name: "Call Information",
+      tokens: [
+        { value: '[Call:ConnectionId]', label: 'Call Connection Id', description: 'Call connection identifier' },
+        { value: '[Call:ConnectionTime]', label: 'Call Connection Time', description: 'Time when call was connected' },
+        { value: '[Call:TimeToConnectInSeconds]', label: 'Time To Connect In Seconds', description: 'Seconds to establish connection' },
+        { value: '[Call:CompletedTime]', label: 'Call Completed Time', description: 'Time when call completed' },
+        { value: '[Call:LengthInSeconds]', label: 'Call Length In Seconds', description: 'Total call duration in seconds' },
+        { value: '[Call:ConnectionLengthInSeconds]', label: 'Connection Length In Seconds', description: 'Connected portion duration' },
+        { value: '[Call:IsConversion]', label: 'Is Conversion', description: 'Whether call converted' },
+        { value: '[Call:ConversionAmount]', label: 'Conversion Amount', description: 'Revenue from conversion' },
+        { value: '[Call:Cost]', label: 'Call Cost', description: 'Cost of the call' },
+        { value: '[Call:Profit]', label: 'Profit', description: 'Profit from call' },
+        { value: '[Call:LastDialTime]', label: 'Last Dial Time', description: 'Time of last dial attempt' },
+        { value: '[Call:TimeToCallInSeconds]', label: 'Time To Call In Seconds', description: 'Seconds from impression to call' },
+        { value: '[Call:DateTime]', label: 'Call Date Time', description: 'Call timestamp' },
+        { value: '[Call:InboundCallId]', label: 'Inbound Call Id', description: 'Inbound call identifier' },
+        { value: '[Call:InboundPhoneNumber]', label: 'Inbound Phone Number', description: 'Number that received call' },
+        { value: '[Call:ProviderCallId]', label: 'Provider Call Id', description: 'Provider call identifier' },
+        { value: '[Call:ConversionPayout]', label: 'Conversion Payout', description: 'Payout amount for conversion' }
+      ]
+    },
+    {
+      name: "Campaign Configuration",
+      tokens: [
+        { value: '[Campaign:Id]', label: 'Campaign Id', description: 'Campaign identifier' },
+        { value: '[Campaign:UserCampaignId]', label: 'User Campaign Id', description: 'User campaign identifier' },
+        { value: '[Campaign:NumberDisplayFormat]', label: 'Number Display Format', description: 'Number display format' },
+        { value: '[Campaign:CountryCode]', label: 'Country Code', description: 'Campaign country code' },
+        { value: '[Campaign:OfferId]', label: 'Offer Id', description: 'Offer identifier' },
+        { value: '[Campaign:OfferDraftId]', label: 'Offer Draft Id', description: 'Offer draft identifier' },
+        { value: '[Campaign:Type]', label: 'Campaign Type', description: 'Type of campaign' },
+        { value: '[Campaign:VerticalId]', label: 'Vertical Id', description: 'Vertical identifier' },
+        { value: '[Campaign:Name]', label: 'Campaign Name', description: 'Campaign name' },
+        { value: '[Campaign:Version]', label: 'Campaign Version', description: 'Campaign version' }
+      ]
+    },
+    {
+      name: "Targeting and Routing",
+      tokens: [
+        { value: '[Target:ConnectedTarget]', label: 'Connected Target', description: 'Target that connected' },
+        { value: '[Target:Id]', label: 'Target Id', description: 'Target identifier' },
+        { value: '[Target:GroupId]', label: 'Target Group Id', description: 'Target group identifier' },
+        { value: '[Target:IsHighRate]', label: 'Is High Rate Target', description: 'Whether target is high rate' },
+        { value: '[Target:RingbaNumberId]', label: 'Ringba Number Id', description: 'Ringba number identifier' },
+        { value: '[Target:RingbaRtbSettingId]', label: 'Ringba Rtb Setting Id', description: 'RTB setting identifier' },
+        { value: '[Target:SubId]', label: 'Target Sub Id', description: 'Target sub identifier' },
+        { value: '[Target:CallIncrement]', label: 'Target Call Increment', description: 'Call increment for target' },
+        { value: '[Target:SearchNumber]', label: 'Search Number', description: 'Search number' },
+        { value: '[Target:PriorityBump]', label: 'Priority Bump', description: 'Priority adjustment' },
+        { value: '[Target:Name]', label: 'Target Name', description: 'Target name' },
+        { value: '[Target:BuyerId]', label: 'Buyer Id', description: 'Buyer identifier' },
+        { value: '[Target:BuyerName]', label: 'Buyer Name', description: 'Buyer name' },
+        { value: '[Target:BuyerSubId]', label: 'Buyer Sub Id', description: 'Buyer sub identifier' }
+      ]
+    },
+    {
+      name: "RedTrack Integration",
+      tokens: [
+        { value: '[tag:User:clickid]', label: 'RedTrack Click ID', description: 'RedTrack click ID' },
+        { value: '[Call:ConversionPayout]', label: 'Call payout value', description: 'Call payout value' },
+        { value: '{redtrack_campaign_id}', label: 'RedTrack campaign ID', description: 'RedTrack campaign ID' },
+        { value: '{redtrack_offer_id}', label: 'RedTrack offer ID', description: 'RedTrack offer ID' },
       { token: '{redtrack_affiliate_id}', description: 'RedTrack affiliate ID' },
       { token: '{redtrack_sub_id}', description: 'RedTrack sub ID' }
     ],
