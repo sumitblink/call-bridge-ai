@@ -79,10 +79,8 @@ export function RTBTestDialog({ open, onOpenChange, target, campaignId, mode }: 
         throw new Error('Invalid test configuration');
       }
 
-      const result = await apiRequest(endpoint, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
+      const response = await apiRequest(endpoint, 'POST', payload);
+      const result = await response.json();
 
       setTestResult(result);
       setActiveTab('results');
