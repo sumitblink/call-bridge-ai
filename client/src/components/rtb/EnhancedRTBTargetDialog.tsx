@@ -3392,70 +3392,74 @@ Please add tags with numerical values only."
                         <FormItem>
                           <div className="flex items-center justify-between">
                             <FormLabel>Request Body Template</FormLabel>
-                            <Popover open={isTokenSearchOpen} onOpenChange={setIsTokenSearchOpen}>
-                              <PopoverTrigger asChild>
-                                <Button 
-                                  type="button" 
-                                  variant="outline" 
-                                  size="sm"
-                                  className="flex items-center gap-1"
-                                >
-                                  <Search className="h-4 w-4" />
-                                  Search Token
-                                  <ChevronDown className="h-4 w-4" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-[500px] h-[500px] p-0 bg-slate-900 text-white border-slate-700 flex flex-col" align="end" side="left" sideOffset={10}>
-                                <div className="p-3 border-b border-slate-700 flex-shrink-0">
-                                  <div className="flex items-center gap-2">
-                                    <Search className="h-4 w-4 text-slate-400" />
-                                    <input 
-                                      type="text" 
-                                      placeholder="Search Token" 
-                                      value={tokenSearchQuery}
-                                      onChange={(e) => setTokenSearchQuery(e.target.value)}
-                                      className="bg-transparent text-white placeholder-slate-400 flex-1 outline-none text-sm"
-                                    />
+                            <>
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm"
+                                className="flex items-center gap-1"
+                                onClick={() => setIsTokenSearchOpen(true)}
+                              >
+                                <Search className="h-4 w-4" />
+                                Search Token
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                              
+                              <Dialog open={isTokenSearchOpen} onOpenChange={setIsTokenSearchOpen}>
+                                <DialogContent className="w-[600px] max-w-[90vw] h-[80vh] max-h-[600px] p-0 bg-slate-900 text-white border-slate-700">
+                                  <DialogHeader className="p-4 border-b border-slate-700">
+                                    <DialogTitle className="text-white">Search Tokens</DialogTitle>
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <Search className="h-4 w-4 text-slate-400" />
+                                      <input 
+                                        type="text" 
+                                        placeholder="Search Token" 
+                                        value={tokenSearchQuery}
+                                        onChange={(e) => setTokenSearchQuery(e.target.value)}
+                                        className="bg-slate-800 text-white placeholder-slate-400 flex-1 outline-none text-sm px-3 py-2 rounded border border-slate-600 focus:border-slate-500"
+                                      />
+                                    </div>
+                                  </DialogHeader>
+                                  
+                                  <div className="flex-1 overflow-y-auto token-search-scroll px-4">
+                                    {filteredCategories.map((category) => {
+                                      const isExpanded = shouldExpandCategory(category.name);
+                                      return (
+                                        <div key={category.name} className="border-b border-slate-700 last:border-b-0">
+                                          <button
+                                            onClick={() => toggleCategory(category.name)}
+                                            className="w-full flex items-center justify-between p-3 hover:bg-slate-800 transition-colors rounded"
+                                          >
+                                            <span className="text-sm font-medium text-white">{category.name}</span>
+                                            <ChevronDown 
+                                              className={`h-4 w-4 text-slate-400 transition-transform ${
+                                                isExpanded ? 'rotate-180' : ''
+                                              }`} 
+                                            />
+                                          </button>
+                                          {isExpanded && (
+                                            <div className="bg-slate-800/30 rounded-b mb-2">
+                                              {category.tokens.map((token) => (
+                                                <button
+                                                  key={token.value}
+                                                  onClick={() => insertTokenAtCursor(token.value)}
+                                                  className="w-full text-left p-3 pl-6 hover:bg-slate-700 transition-colors border-t border-slate-700/50 first:border-t-0 rounded"
+                                                >
+                                                  <div className="flex flex-col items-start">
+                                                    <div className="font-mono text-sm text-white mb-1">{token.value}</div>
+                                                    <div className="text-xs text-slate-400 leading-relaxed">{token.description}</div>
+                                                  </div>
+                                                </button>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
                                   </div>
-                                </div>
-                                <div className="flex-1 overflow-y-auto token-search-scroll">
-                                  {filteredCategories.map((category) => {
-                                    const isExpanded = shouldExpandCategory(category.name);
-                                    return (
-                                      <div key={category.name} className="border-b border-slate-700 last:border-b-0">
-                                        <button
-                                          onClick={() => toggleCategory(category.name)}
-                                          className="w-full flex items-center justify-between p-3 hover:bg-slate-800 transition-colors"
-                                        >
-                                          <span className="text-sm font-medium text-white">{category.name}</span>
-                                          <ChevronDown 
-                                            className={`h-4 w-4 text-slate-400 transition-transform ${
-                                              isExpanded ? 'rotate-180' : ''
-                                            }`} 
-                                          />
-                                        </button>
-                                        {isExpanded && (
-                                          <div className="bg-slate-800/50">
-                                            {category.tokens.map((token) => (
-                                              <button
-                                                key={token.value}
-                                                onClick={() => insertTokenAtCursor(token.value)}
-                                                className="w-full text-left p-3 pl-6 hover:bg-slate-700 transition-colors border-t border-slate-700/50 first:border-t-0"
-                                              >
-                                                <div className="flex flex-col items-start">
-                                                  <div className="font-mono text-sm text-white mb-1">{token.value}</div>
-                                                  <div className="text-xs text-slate-400 leading-relaxed">{token.description}</div>
-                                                </div>
-                                              </button>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </PopoverContent>
-                            </Popover>
+                                </DialogContent>
+                              </Dialog>
+                            </>
                           </div>
                           <FormControl>
                             <Textarea 
