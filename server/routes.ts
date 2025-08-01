@@ -76,7 +76,8 @@ async function fireTrackingPixelsForEvent(call: any, callStatus: string, duratio
     for (const pixel of eventPixels) {
       let fireUrl = pixel.code;
       
-      // Replace token macros with actual values
+      // Get clickId from call record first, then fallback to unknown
+      console.log(`[Pixel Debug] Call object clickId: ${call.clickId}`);
       const clickId = call.clickId || 'unknown';
       const payout = call.payout || '0.00';
       const callDuration = duration || call.duration || '0';
@@ -1746,6 +1747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if RTB is enabled for this campaign and has assigned targets
+      console.log(`[Pool Webhook] Campaign RTB status: enableRtb=${campaign.enableRtb}`);
       if (campaign.enableRtb) {
         try {
           console.log(`[Pool Webhook] Checking RTB targets for campaign ${campaign.id}`);

@@ -1857,12 +1857,12 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
-  async addCallEvent(event: any): Promise<any> {
+  async addCallEvent(callId: number, event: any): Promise<any> {
     try {
       const result = await db.insert(callEvents).values({
-        callId: event.callId,
+        callId: callId,
         eventType: event.eventType,
-        eventData: event.eventData,
+        eventData: event.eventData || event,
         timestamp: new Date()
       }).returning();
       return result[0];
