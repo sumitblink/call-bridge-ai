@@ -524,6 +524,8 @@ export function EnhancedRTBTargetDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPredictiveRoutingSettings, setShowPredictiveRoutingSettings] = useState(false);
   const [isTokenSearchOpen, setIsTokenSearchOpen] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Basic Call Variables']));
+  const [tokenSearchQuery, setTokenSearchQuery] = useState('');
   const requestBodyInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Complete RTB tokens organized by category - Based on comprehensive token list
@@ -712,8 +714,40 @@ export function EnhancedRTBTargetDialog({
     }
   ];
 
-  // Flatten all tokens for search
+  // Flatten all tokens for search and filter logic
   const allTokens = tokenCategories.flatMap(category => category.tokens);
+  
+  // Filter categories and tokens based on search query
+  const filteredCategories = tokenSearchQuery 
+    ? tokenCategories.map(category => ({
+        ...category,
+        tokens: category.tokens.filter(token => 
+          token.value.toLowerCase().includes(tokenSearchQuery.toLowerCase()) ||
+          token.label.toLowerCase().includes(tokenSearchQuery.toLowerCase()) ||
+          token.description.toLowerCase().includes(tokenSearchQuery.toLowerCase())
+        )
+      })).filter(category => category.tokens.length > 0)
+    : tokenCategories;
+
+  // Auto-expand categories when searching
+  const shouldExpandCategory = (categoryName: string) => {
+    if (tokenSearchQuery) {
+      // If searching, expand all categories that have matching tokens
+      return filteredCategories.some(cat => cat.name === categoryName);
+    }
+    return expandedCategories.has(categoryName);
+  };
+
+  // Function to toggle category expansion
+  const toggleCategory = (categoryName: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryName)) {
+      newExpanded.delete(categoryName);
+    } else {
+      newExpanded.add(categoryName);
+    }
+    setExpandedCategories(newExpanded);
+  };
 
   // Function to insert token at cursor position
   const insertTokenAtCursor = (token: string) => {
@@ -727,6 +761,7 @@ export function EnhancedRTBTargetDialog({
     
     form.setValue('requestBody', newValue);
     setIsTokenSearchOpen(false);
+    setTokenSearchQuery(''); // Clear search when closing
     
     // Focus back to input and position cursor after inserted token
     setTimeout(() => {
@@ -3370,29 +3405,55 @@ Please add tags with numerical values only."
                                   <ChevronDown className="h-4 w-4" />
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[500px] p-0" align="end" side="left" sideOffset={10}>
-                                <Command>
-                                  <CommandInput placeholder="Search tokens..." className="border-0 border-b" />
-                                  <CommandList className="max-h-[400px] overflow-y-auto">
-                                    <CommandEmpty>No tokens found.</CommandEmpty>
-                                    {tokenCategories.map((category) => (
-                                      <CommandGroup key={category.name} heading={category.name}>
-                                        {category.tokens.map((token) => (
-                                          <CommandItem
-                                            key={token.value}
-                                            onSelect={() => insertTokenAtCursor(token.value)}
-                                            className="cursor-pointer py-2 px-3 hover:bg-accent"
-                                          >
-                                            <div className="flex flex-col items-start w-full">
-                                              <div className="font-mono text-sm font-medium">{token.value}</div>
-                                              <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{token.description}</div>
-                                            </div>
-                                          </CommandItem>
-                                        ))}
-                                      </CommandGroup>
-                                    ))}
-                                  </CommandList>
-                                </Command>
+                              <PopoverContent className="w-[500px] p-0 bg-slate-900 text-white border-slate-700" align="end" side="left" sideOffset={10}>
+                                <div className="p-3 border-b border-slate-700">
+                                  <div className="flex items-center gap-2">
+                                    <Search className="h-4 w-4 text-slate-400" />
+                                    <input 
+                                      type="text" 
+                                      placeholder="Search Token" 
+                                      value={tokenSearchQuery}
+                                      onChange={(e) => setTokenSearchQuery(e.target.value)}
+                                      className="bg-transparent text-white placeholder-slate-400 flex-1 outline-none text-sm"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="max-h-[400px] overflow-y-auto">
+                                  {filteredCategories.map((category) => {
+                                    const isExpanded = shouldExpandCategory(category.name);
+                                    return (
+                                      <div key={category.name} className="border-b border-slate-700 last:border-b-0">
+                                        <button
+                                          onClick={() => toggleCategory(category.name)}
+                                          className="w-full flex items-center justify-between p-3 hover:bg-slate-800 transition-colors"
+                                        >
+                                          <span className="text-sm font-medium text-white">{category.name}</span>
+                                          <ChevronDown 
+                                            className={`h-4 w-4 text-slate-400 transition-transform ${
+                                              isExpanded ? 'rotate-180' : ''
+                                            }`} 
+                                          />
+                                        </button>
+                                        {isExpanded && (
+                                          <div className="bg-slate-800/50">
+                                            {category.tokens.map((token) => (
+                                              <button
+                                                key={token.value}
+                                                onClick={() => insertTokenAtCursor(token.value)}
+                                                className="w-full text-left p-3 pl-6 hover:bg-slate-700 transition-colors border-t border-slate-700/50 first:border-t-0"
+                                              >
+                                                <div className="flex flex-col items-start">
+                                                  <div className="font-mono text-sm text-white mb-1">{token.value}</div>
+                                                  <div className="text-xs text-slate-400 leading-relaxed">{token.description}</div>
+                                                </div>
+                                              </button>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </PopoverContent>
                             </Popover>
                           </div>
