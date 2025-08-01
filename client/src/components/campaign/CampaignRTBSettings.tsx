@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -119,7 +119,47 @@ export default function CampaignRTBSettings({ campaignId, campaign }: CampaignRT
     },
   });
 
+  // Reset form values when campaign data changes
+  useEffect(() => {
+    if (campaign) {
+      console.log('RTB Settings: Resetting form with campaign data:', {
+        rtbRequireCallerId: campaign.rtbRequireCallerId,
+        campaignId: campaign.id
+      });
+      form.reset({
+        rtbOnlySip: campaign.rtbOnlySip || false,
+        rtbRequireCallerId: campaign.rtbRequireCallerId || false,
+        rtbJornayaEnabled: campaign.rtbJornayaEnabled || false,
+        rtbTrustedFormCertId: campaign.rtbTrustedFormCertId || "",
+        rtbBidGoodForSeconds: campaign.rtbBidGoodForSeconds || 60,
+        rtbGiveBidInstead: campaign.rtbGiveBidInstead || "reject",
+        rtbMaxRequestsPerMinute: campaign.rtbMaxRequestsPerMinute || 100,
+        rtbBidModifier: campaign.rtbBidModifier || "",
+        rtbMaxBid: campaign.rtbMaxBid || "",
+        rtbMinBid: campaign.rtbMinBid || "",
+        rtbPayoutOn: campaign.rtbPayoutOn || "",
+        rtbDuplicatePayouts: campaign.rtbDuplicatePayouts || "disabled",
+        rtbPassThroughEnabled: campaign.rtbPassThroughEnabled || false,
+        rtbPassThroughMaxBid: campaign.rtbPassThroughMaxBid || 100,
+        rtbAllowBidOfLink: campaign.rtbAllowBidOfLink || false,
+        rtbBidMarginType: campaign.rtbBidMarginType || "percentage",
+        rtbBidMargin: campaign.rtbBidMargin || 25,
+        rtbNoBidMarginAfterAdjustment: campaign.rtbNoBidMarginAfterAdjustment || 3,
+        rtbMinCallDurationForPayout: campaign.rtbMinCallDurationForPayout || 10,
+        rtbPayoutSequence: campaign.rtbPayoutSequence || "30",
+        rtbCustomScoringEnabled: campaign.rtbCustomScoringEnabled || false,
+        biddingTimeoutMs: campaign.biddingTimeoutMs || 3000,
+        minBiddersRequired: campaign.minBiddersRequired || 1,
+      });
+    }
+  }, [campaign, form]);
+
   const onSubmit = (data: RTBSettingsFormData) => {
+    console.log('RTB Settings: Submitting form data:', {
+      rtbRequireCallerId: data.rtbRequireCallerId,
+      campaignId,
+      fullData: data
+    });
     updateMutation.mutate(data);
   };
 
