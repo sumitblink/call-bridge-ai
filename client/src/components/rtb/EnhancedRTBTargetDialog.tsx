@@ -3406,48 +3406,48 @@ Please add tags with numerical values only."
                               </Button>
                               
                               <Dialog open={isTokenSearchOpen} onOpenChange={setIsTokenSearchOpen}>
-                                <DialogContent className="w-[600px] max-w-[90vw] h-[80vh] max-h-[600px] p-0 bg-slate-900 text-white border-slate-700">
-                                  <DialogHeader className="p-4 border-b border-slate-700">
-                                    <DialogTitle className="text-white">Search Tokens</DialogTitle>
+                                <DialogContent className="w-[450px] max-w-[90vw] h-[500px] p-0 bg-slate-900 text-white border-slate-700">
+                                  <DialogHeader className="p-3 border-b border-slate-700">
+                                    <DialogTitle className="text-white text-sm">Search Tokens</DialogTitle>
                                     <div className="flex items-center gap-2 mt-2">
-                                      <Search className="h-4 w-4 text-slate-400" />
+                                      <Search className="h-3 w-3 text-slate-400" />
                                       <input 
                                         type="text" 
                                         placeholder="Search Token" 
                                         value={tokenSearchQuery}
                                         onChange={(e) => setTokenSearchQuery(e.target.value)}
-                                        className="bg-slate-800 text-white placeholder-slate-400 flex-1 outline-none text-sm px-3 py-2 rounded border border-slate-600 focus:border-slate-500"
+                                        className="bg-slate-800 text-white placeholder-slate-400 flex-1 outline-none text-xs px-2 py-1 rounded border border-slate-600 focus:border-slate-500"
                                       />
                                     </div>
                                   </DialogHeader>
                                   
-                                  <div className="flex-1 overflow-y-auto token-search-scroll px-4">
+                                  <div className="flex-1 overflow-y-auto token-search-scroll px-2">
                                     {filteredCategories.map((category) => {
                                       const isExpanded = shouldExpandCategory(category.name);
                                       return (
-                                        <div key={category.name} className="border-b border-slate-700 last:border-b-0">
+                                        <div key={category.name} className="border-b border-slate-700/50 last:border-b-0">
                                           <button
                                             onClick={() => toggleCategory(category.name)}
-                                            className="w-full flex items-center justify-between p-3 hover:bg-slate-800 transition-colors rounded"
+                                            className="w-full flex items-center justify-between p-2 hover:bg-slate-800 transition-colors text-left"
                                           >
-                                            <span className="text-sm font-medium text-white">{category.name}</span>
+                                            <span className="text-xs font-medium text-white">{category.name}</span>
                                             <ChevronDown 
-                                              className={`h-4 w-4 text-slate-400 transition-transform ${
+                                              className={`h-3 w-3 text-slate-400 transition-transform ${
                                                 isExpanded ? 'rotate-180' : ''
                                               }`} 
                                             />
                                           </button>
                                           {isExpanded && (
-                                            <div className="bg-slate-800/30 rounded-b mb-2">
+                                            <div className="bg-slate-800/20 mb-1">
                                               {category.tokens.map((token) => (
                                                 <button
                                                   key={token.value}
                                                   onClick={() => insertTokenAtCursor(token.value)}
-                                                  className="w-full text-left p-3 pl-6 hover:bg-slate-700 transition-colors border-t border-slate-700/50 first:border-t-0 rounded"
+                                                  className="w-full text-left p-2 pl-4 hover:bg-slate-700/50 transition-colors text-left"
                                                 >
                                                   <div className="flex flex-col items-start">
-                                                    <div className="font-mono text-sm text-white mb-1">{token.value}</div>
-                                                    <div className="text-xs text-slate-400 leading-relaxed">{token.description}</div>
+                                                    <div className="font-mono text-xs text-white mb-0.5">{token.value}</div>
+                                                    <div className="text-[10px] text-slate-400 leading-tight">{token.description}</div>
                                                   </div>
                                                 </button>
                                               ))}
