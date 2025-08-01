@@ -128,14 +128,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
           { value: '[tag:User:utm_medium]', label: 'UTM Medium', description: 'Campaign medium parameter' },
           { value: '[tag:User:utm_campaign]', label: 'UTM Campaign', description: 'Campaign name parameter' },
           { value: '[tag:User:utm_term]', label: 'UTM Term', description: 'Campaign term parameter' },
-          { value: '[tag:User:utm_content]', label: 'UTM Content', description: 'Campaign content parameter' },
-          { value: '[tag:User:affiliate_id]', label: 'Affiliate ID', description: 'Affiliate identifier parameter' },
-          { value: '[tag:User:publisher_id]', label: 'Publisher ID', description: 'Publisher identifier parameter' },
-          { value: '[tag:User:sub_id]', label: 'Sub ID', description: 'Sub identifier parameter' },
-          { value: '[tag:User:click_id]', label: 'Click ID', description: 'Click tracking parameter' },
-          { value: '[tag:User:source]', label: 'Source', description: 'Traffic source parameter' },
-          { value: '[tag:User:keyword]', label: 'Keyword', description: 'Keyword parameter' },
-          { value: '[tag:User:custom_param]', label: 'Custom Parameter', description: 'Custom URL parameter' }
+          { value: '[tag:User:utm_content]', label: 'UTM Content', description: 'Campaign content parameter' }
         ]
       }
     ];
