@@ -17,6 +17,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { RTBTestDialog } from "@/components/rtb/RTBTestDialog";
 import { Plus, Edit, Trash2, Copy, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone, Globe, Info } from "lucide-react";
 
+
+
 // RTB Target type
 type RtbTarget = {
   id: number;
@@ -82,6 +84,43 @@ export default function SimplifiedRTBManagementPage() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // RTB Error Code Parser - Enhanced bid failure explanations
+  const parseRTBErrorDetails = (errorMessage: string): string => {
+    if (!errorMessage) return "";
+    
+    // Extract error codes and rejection reasons from Ringba RTB responses
+    const errorPatterns = [
+      { pattern: /Code:\s*1001/i, message: "Campaign Disabled (paused, RTB off, or Call Flow added)" },
+      { pattern: /Code:\s*1002/i, message: "Initial tag filter (tag mismatch or empty value)" },
+      { pattern: /Code:\s*1003/i, message: "No capacity (target disabled, capacity reached, or closed)" },
+      { pattern: /Code:\s*1004/i, message: "Caller ID blocked (spam, duplicate, or TCPA Shield)" },
+      { pattern: /Code:\s*1005/i, message: "Final tag filters (tag not sent or didn't match)" },
+      { pattern: /Code:\s*1006/i, message: "Final capacity check (tag routing filters rejected)" },
+      { pattern: /Code:\s*1007/i, message: "Closed or Capped (hours/payout limits reached)" },
+      { pattern: /Code:\s*1024/i, message: "Rate-limited (max requests per minute/hour/day)" },
+      { pattern: /Code:\s*1025/i, message: "Ringba rate-limited (duplicate bid in progress)" },
+      { pattern: /Code:\s*1026/i, message: "Pool rate limited (4 active bids for same CID)" },
+      { pattern: /Code:\s*1100/i, message: "Caller ID verification (invalid +E164 format)" },
+      { pattern: /Code:\s*1105/i, message: "3rd Party Data rejection (Jornaya, custom API)" },
+      { pattern: /Code:\s*3024/i, message: "Required tags not sent (missing bid modifiers)" },
+      { pattern: /Final capacity check/i, message: "Target capacity or routing filter limit" },
+      { pattern: /Caller ID verification/i, message: "Phone number format or verification issue" },
+      { pattern: /Zero bid/i, message: "Bid calculation resulted in $0 (normal behavior)" },
+      { pattern: /timeout/i, message: "Request timeout (slow or unresponsive endpoint)" },
+      { pattern: /connection/i, message: "Network connection issue" },
+      { pattern: /Invalid JSON/i, message: "Malformed response from RTB endpoint" }
+    ];
+    
+    for (const { pattern, message } of errorPatterns) {
+      if (pattern.test(errorMessage)) {
+        return message;
+      }
+    }
+    
+    // Return shortened version of original message if no pattern matches
+    return errorMessage.length > 50 ? errorMessage.substring(0, 50) + "..." : errorMessage;
+  };
 
   // Fetch RTB targets
   const { data: targets = [], isLoading: isLoadingTargets } = useQuery<RtbTarget[]>({
@@ -487,7 +526,20 @@ export default function SimplifiedRTBManagementPage() {
                 <CardDescription>RTB auction requests and responses</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="mb-4 flex justify-end items-center">
+                <div className="mb-4 flex justify-between items-start">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-md">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Info className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">Common RTB Failure Codes</span>
+                    </div>
+                    <div className="text-xs text-blue-700 space-y-1">
+                      <div><strong>1006:</strong> Final capacity check (normal filtering)</div>
+                      <div><strong>1100:</strong> Caller ID verification (format issue)</div>
+                      <div><strong>1003:</strong> No capacity available</div>
+                      <div><strong>1004:</strong> Caller ID blocked/filtered</div>
+                      <div>These are normal RTB market behaviors, not system errors.</div>
+                    </div>
+                  </div>
                   <Badge variant="secondary">
                     {bidRequests.length} Total Auctions
                   </Badge>
@@ -711,7 +763,7 @@ export default function SimplifiedRTBManagementPage() {
                                               <TableHead className="text-xs">Bid Amount</TableHead>
                                               <TableHead className="text-xs">Response Time</TableHead>
                                               <TableHead className="text-xs">Destination</TableHead>
-                                              <TableHead className="text-xs">Status</TableHead>
+                                              <TableHead className="text-xs">Status & Rejection Details</TableHead>
                                               <TableHead className="text-xs">Winner</TableHead>
                                             </TableRow>
                                           </TableHeader>
@@ -756,17 +808,41 @@ export default function SimplifiedRTBManagementPage() {
                                                   <div className="text-xs text-gray-500">External Route</div>
                                                 </TableCell>
                                                 <TableCell>
-                                                  <Badge 
-                                                    variant={response.responseStatus === 'success' ? 'default' : 'destructive'}
-                                                    className="text-xs"
-                                                  >
-                                                    {response.responseStatus}
-                                                  </Badge>
-                                                  {response.rejectionReason && (
-                                                    <div className="text-xs text-red-600 mt-1">
-                                                      {response.rejectionReason}
+                                                  <div className="space-y-1.5 max-w-[250px]">
+                                                    <div className="flex items-center space-x-2">
+                                                      {response.responseStatus === 'success' ? (
+                                                        <CheckCircle className="h-3 w-3 text-green-500" />
+                                                      ) : (
+                                                        <XCircle className="h-3 w-3 text-red-500" />
+                                                      )}
+                                                      <Badge 
+                                                        variant={response.responseStatus === 'success' ? 'default' : 'destructive'}
+                                                        className="text-xs"
+                                                      >
+                                                        {response.responseStatus}
+                                                      </Badge>
                                                     </div>
-                                                  )}
+                                                    
+                                                    {response.rejectionReason && (
+                                                      <div className="text-xs bg-red-50 text-red-700 p-1.5 rounded border">
+                                                        <div className="font-medium">Rejection:</div>
+                                                        <div>{response.rejectionReason}</div>
+                                                      </div>
+                                                    )}
+                                                    
+                                                    {response.errorMessage && (
+                                                      <div className="text-xs bg-orange-50 text-orange-700 p-1.5 rounded border">
+                                                        <div className="font-medium">Error Details:</div>
+                                                        <div className="break-words" title={response.errorMessage}>
+                                                          {parseRTBErrorDetails(response.errorMessage)}
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                    
+                                                    {!response.rejectionReason && !response.errorMessage && response.responseStatus === 'success' && (
+                                                      <div className="text-xs text-green-600">Bid accepted successfully</div>
+                                                    )}
+                                                  </div>
                                                 </TableCell>
                                                 <TableCell>
                                                   {response.isWinningBid ? (
@@ -830,6 +906,26 @@ export default function SimplifiedRTBManagementPage() {
                                           <span className="text-gray-600">Failed Bids:</span>
                                           <Badge variant="outline" className="bg-red-50 text-red-700 text-xs">{failedBids}</Badge>
                                         </div>
+                                        {auctionDetails[request.id]?.bidResponses && (
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Error Summary:</span>
+                                            <span className="font-mono text-xs">
+                                              {(() => {
+                                                const responses = auctionDetails[request.id].bidResponses;
+                                                const errorCounts = responses.reduce((acc: any, r: any) => {
+                                                  if (r.errorMessage) {
+                                                    const errorType = parseRTBErrorDetails(r.errorMessage).split(' (')[0];
+                                                    acc[errorType] = (acc[errorType] || 0) + 1;
+                                                  }
+                                                  return acc;
+                                                }, {});
+                                                return Object.entries(errorCounts).length > 0 
+                                                  ? Object.entries(errorCounts).map(([error, count]) => `${count}x ${error}`).join(', ')
+                                                  : 'No errors';
+                                              })()}
+                                            </span>
+                                          </div>
+                                        )}
                                         <div className="flex justify-between">
                                           <span className="text-gray-600">Success Rate:</span>
                                           <span className="font-semibold">{request.totalTargetsPinged > 0 ? Math.round((request.successfulResponses / request.totalTargetsPinged) * 100) : 0}%</span>
