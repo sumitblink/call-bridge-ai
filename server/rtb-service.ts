@@ -30,6 +30,13 @@ export interface BidRequest {
   sessionId?: string;
   referrer?: string;
   customFields?: Record<string, any>;
+  
+  // Enhanced tracking for Ringba compliance
+  inboundNumber?: string; // The specific number that received the call
+  inboundCallId?: string; // Publisher-specific call ID format
+  publisherId?: number; // Publisher who generated the call
+  publisherSubId?: string; // Publisher's SubID for tracking
+  exposeCallerId?: boolean; // Whether to expose caller ID to bidder
 }
 
 export interface BidResponse {
@@ -54,6 +61,38 @@ export interface AuctionResult {
 
 export class RTBService {
   /**
+   * Generate a publisher-specific inbound call ID
+   */
+  static generateInboundCallId(publisherId?: number, campaignId?: number): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 6);
+    const pubId = publisherId ? `P${publisherId}` : 'P0';
+    const campId = campaignId ? `C${campaignId}` : 'C0';
+    return `${pubId}_${campId}_${timestamp}_${random}`;
+  }
+
+  /**
+   * Create a sample request body template with Ringba-compliant tokens
+   * This demonstrates how to use the enhanced tracking data
+   */
+  static createSampleRequestBody(): string {
+    return JSON.stringify({
+      "CID": "[tag:InboundNumber:Number-NoPlus]",
+      "exposeCallerId": "{exposeCallerId}",
+      "publisherInboundCallId": "[Call:InboundCallId]",
+      "SubId": "[Publisher:SubId]",
+      "callerId": "[Call:CallerId]",
+      "callerState": "[tag:Geo:SubDivisionCode]",
+      "callerZip": "[tag:Geo:ZipCode]",
+      "campaignId": "{campaignId}",
+      "requestId": "{requestId}",
+      "timestamp": "{timestamp}",
+      "inboundNumber": "[tag:InboundNumber:Number]",
+      "publisherId": "[Publisher:Id]"
+    }, null, 2);
+  }
+
+  /**
    * Substitute template variables in request body with Ringba-compliant tokens
    */
   private static substituteTemplateVariables(template: string, bidRequest: BidRequest): string {
@@ -75,6 +114,13 @@ export class RTBService {
       '{ipAddress}': bidRequest.ipAddress || '',
       '{sessionId}': bidRequest.sessionId || '',
       '{referrer}': bidRequest.referrer || '',
+      
+      // Enhanced Ringba-compliant tokens
+      '{inboundNumber}': bidRequest.inboundNumber || '',
+      '{inboundCallId}': bidRequest.inboundCallId || '',
+      '{publisherId}': bidRequest.publisherId?.toString() || '',
+      '{publisherSubId}': bidRequest.publisherSubId || '',
+      '{exposeCallerId}': bidRequest.exposeCallerId ? 'yes' : 'no',
     };
 
     let result = template;
@@ -119,6 +165,15 @@ export class RTBService {
       '[tag:Geo:Country]': 'United States',
       '[tag:Geo:CountryCode]': 'US',
       '[tag:Geo:Timezone]': this.getTimezoneFromState(state),
+      
+      // Enhanced Ringba-compliant tokens for your specific requirements
+      '[tag:InboundNumber:Number-NoPlus]': (bidRequest.inboundNumber || '').replace(/^\+1/, ''),
+      '[tag:InboundNumber:Number]': bidRequest.inboundNumber || '',
+      '[Call:InboundCallId]': bidRequest.inboundCallId || bidRequest.requestId,
+      '[Publisher:SubId]': bidRequest.publisherSubId || '',
+      '[Publisher:Id]': bidRequest.publisherId?.toString() || '',
+      '[Call:CallerId]': bidRequest.callerId || '',
+      '[Call:CallerIdNoPlus]': (bidRequest.callerId || '').replace(/^\+1/, ''),
     };
   }
 
@@ -351,7 +406,7 @@ export class RTBService {
         };
       }
 
-      // Create bid request record (no router needed now)
+      // Create bid request record with enhanced tracking
       const requestRecord: InsertRtbBidRequest = {
         requestId: bidRequest.requestId,
         campaignId: bidRequest.campaignId,
@@ -363,7 +418,14 @@ export class RTBService {
         tags: bidRequest.tags,
         timeoutMs: bidRequest.timeoutMs || biddingTimeoutMs,
         totalTargetsPinged: activeAssignments.length,
-        successfulResponses: 0
+        successfulResponses: 0,
+        
+        // Enhanced publisher tracking for Ringba compliance
+        publisherId: bidRequest.publisherId,
+        publisherSubId: bidRequest.publisherSubId,
+        inboundNumber: bidRequest.inboundNumber,
+        inboundCallId: bidRequest.inboundCallId || this.generateInboundCallId(bidRequest.publisherId, bidRequest.campaignId),
+        exposeCallerId: bidRequest.exposeCallerId
       };
 
       const storedRequest = await storage.createRtbBidRequest(requestRecord);

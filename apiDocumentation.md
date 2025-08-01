@@ -337,6 +337,8 @@ Content-Type: application/json
 
 ### RTB Template Variables
 The following variables can be used in RTB request body templates:
+
+**Basic Variables:**
 - `{requestId}` - Unique request identifier
 - `{campaignId}` - Campaign ID
 - `{callerId}` - Caller's phone number
@@ -345,6 +347,36 @@ The following variables can be used in RTB request body templates:
 - `{maxBid}` - Maximum bid amount
 - `{currency}` - Currency code
 - `{timestamp}` - Current timestamp
+
+**Enhanced Publisher Tracking (Ringba-compliant):**
+- `{inboundNumber}` - The specific number that received the call
+- `{inboundCallId}` - Publisher-specific call ID
+- `{publisherId}` - Publisher who generated the call
+- `{publisherSubId}` - Publisher's SubID for tracking
+- `{exposeCallerId}` - Whether to expose caller ID (yes/no)
+
+**Ringba-Compliant Tokens:**
+- `[tag:InboundNumber:Number-NoPlus]` - Inbound number without +1 prefix
+- `[tag:InboundNumber:Number]` - Full inbound number
+- `[Call:InboundCallId]` - Publisher inbound call ID
+- `[Publisher:SubId]` - Publisher SubID
+- `[Publisher:Id]` - Publisher ID
+- `[Call:CallerId]` - Caller ID
+- `[Call:CallerIdNoPlus]` - Caller ID without +1 prefix
+
+**Example Request Body:**
+```json
+{
+  "CID": "[tag:InboundNumber:Number-NoPlus]",
+  "exposeCallerId": "{exposeCallerId}",
+  "publisherInboundCallId": "[Call:InboundCallId]",
+  "SubId": "[Publisher:SubId]",
+  "callerId": "[Call:CallerId]",
+  "callerState": "[tag:Geo:SubDivisionCode]",
+  "campaignId": "{campaignId}",
+  "requestId": "{requestId}"
+}
+```
 
 ### List RTB Routers
 ```http

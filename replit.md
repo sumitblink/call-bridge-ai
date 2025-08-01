@@ -33,7 +33,7 @@ Preferred communication style: Simple, everyday language.
 - **Twilio Integration**: Webhooks for incoming calls, call status tracking, automatic recording, and number provisioning.
 - **Analytics & Tracking**: Detailed call logs, performance metrics, DNI tracking for campaign attribution, and pixel integration for external systems.
 - **Call Flow System**: Advanced IVR capabilities with node types (Menu, Gather, Play, Business Hours, Router, Splitter, Tracking Pixel, Custom Logic) supporting complex routing, A/B testing, and conditional logic.
-- **Real-Time Bidding (RTB)**: Direct campaign-to-RTB target assignments, supporting external bidder integration and real-time auctions. Predictive routing feature removed from campaign UI as actual routing logic was not implemented.
+- **Real-Time Bidding (RTB)**: Direct campaign-to-RTB target assignments, supporting external bidder integration and real-time auctions. Enhanced with publisher tracking, inbound number capture, and Ringba-compliant token system. Predictive routing feature removed from campaign UI as actual routing logic was not implemented.
 - **User Interface**: Focus on a clean, professional, Ringba-style interface with compact filter systems, simplified reporting, and intuitive configuration dialogs. Components are designed for consistency, including unified table formats, simplified accordion UIs, and conditional field displays.
 - **Data Integrity**: Robust validation for URL parameters (UTM), RTB configurations, and financial data to ensure clean analytics.
 - **Performance Optimization**: Ultra-fast DNI service (sub-50ms) implemented with caching and query optimization to prevent caller loss. Aggressive auto-refresh loops replaced with event-driven refresh for reduced database load.

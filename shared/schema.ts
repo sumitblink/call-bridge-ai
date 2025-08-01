@@ -204,7 +204,10 @@ export const calls = pgTable("calls", {
   targetId: integer("target_id").references(() => targets.id), // Specific target/destination
   publisherId: integer("publisher_id").references(() => publishers.id), // Publisher/affiliate who generated the call
   publisherName: varchar("publisher_name", { length: 255 }), // Publisher name from DNI tracking
+  publisherSubId: varchar("publisher_sub_id", { length: 255 }), // Publisher SubID for tracking
   trackingTagId: integer("tracking_tag_id").references(() => callTrackingTags.id), // Tracking tag that generated this call
+  inboundNumber: varchar("inbound_number", { length: 20 }), // Specific inbound number that received the call
+  inboundCallId: varchar("inbound_call_id", { length: 100 }), // Publisher-specific call ID
   callSid: varchar("call_sid", { length: 100 }),
   fromNumber: varchar("from_number", { length: 20 }).notNull(),
   toNumber: varchar("to_number", { length: 20 }).notNull(),
@@ -1520,13 +1523,20 @@ export const rtbBidRequests = pgTable("rtb_bid_requests", {
   id: serial("id").primaryKey(),
   requestId: varchar("request_id", { length: 128 }).notNull().unique(),
   campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
-  rtbRouterId: integer("rtb_router_id").references(() => rtbRouters.id).notNull(),
+  rtbRouterId: integer("rtb_router_id").references(() => rtbRouters.id),
   
   // Call Information
   callerId: varchar("caller_id", { length: 20 }),
   callerState: varchar("caller_state", { length: 2 }),
   callerZip: varchar("caller_zip", { length: 10 }),
   callStartTime: timestamp("call_start_time").notNull(),
+  
+  // Enhanced Publisher Tracking for Ringba compliance
+  publisherId: integer("publisher_id").references(() => publishers.id),
+  publisherSubId: varchar("publisher_sub_id", { length: 255 }),
+  inboundNumber: varchar("inbound_number", { length: 20 }),
+  inboundCallId: varchar("inbound_call_id", { length: 100 }),
+  exposeCallerId: boolean("expose_caller_id").default(true),
   
   // Request Configuration
   tags: json("tags"), // jsonb for flexible metadata

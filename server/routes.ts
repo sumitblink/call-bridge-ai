@@ -7016,6 +7016,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RTB Enhanced Demo - Generate sample request body with enhanced tracking
+  app.get('/api/rtb/sample-request-body', requireAuth, async (req: any, res) => {
+    try {
+      const { RTBService } = await import('./rtb-service');
+      const sampleBody = RTBService.createSampleRequestBody();
+      
+      res.json({
+        success: true,
+        sampleRequestBody: sampleBody,
+        parsedExample: JSON.parse(sampleBody),
+        availableTokens: {
+          basic: [
+            '{requestId}', '{campaignId}', '{callerId}', '{timestamp}',
+            '{minBid}', '{maxBid}', '{currency}'
+          ],
+          enhanced: [
+            '{inboundNumber}', '{inboundCallId}', '{publisherId}',
+            '{publisherSubId}', '{exposeCallerId}'
+          ],
+          ringbaCompliant: [
+            '[tag:InboundNumber:Number-NoPlus]', '[Call:InboundCallId]',
+            '[Publisher:SubId]', '[Call:CallerId]'
+          ]
+        }
+      });
+    } catch (error) {
+      console.error('Error generating sample request body:', error);
+      res.status(500).json({ error: 'Failed to generate sample request body' });
+    }
+  });
+
   // RTB Bid Requests and Responses
   app.get('/api/rtb/bid-requests', requireAuth, async (req: any, res) => {
     try {
