@@ -717,9 +717,37 @@ export function EnhancedRTBTargetDialog({
   // Flatten all tokens for search and filter logic
   const allTokens = tokenCategories.flatMap(category => category.tokens);
   
+  // Add dynamic URL parameter tokens
+  const urlParameterTokens = [
+    { value: '[tag:User:utm_source]', label: 'UTM Source', description: 'Campaign source parameter' },
+    { value: '[tag:User:utm_medium]', label: 'UTM Medium', description: 'Campaign medium parameter' },
+    { value: '[tag:User:utm_campaign]', label: 'UTM Campaign', description: 'Campaign name parameter' },
+    { value: '[tag:User:utm_term]', label: 'UTM Term', description: 'Campaign term parameter' },
+    { value: '[tag:User:utm_content]', label: 'UTM Content', description: 'Campaign content parameter' },
+    { value: '[tag:User:affiliate_id]', label: 'Affiliate ID', description: 'Affiliate identifier parameter' },
+    { value: '[tag:User:publisher_id]', label: 'Publisher ID', description: 'Publisher identifier parameter' },
+    { value: '[tag:User:sub_id]', label: 'Sub ID', description: 'Sub identifier parameter' },
+    { value: '[tag:User:click_id]', label: 'Click ID', description: 'Click tracking parameter' },
+    { value: '[tag:User:source]', label: 'Source', description: 'Traffic source parameter' },
+    { value: '[tag:User:keyword]', label: 'Keyword', description: 'Keyword parameter' },
+    { value: '[tag:User:ad_id]', label: 'Ad ID', description: 'Advertisement identifier' },
+    { value: '[tag:User:campaign_id]', label: 'Campaign ID', description: 'Campaign identifier parameter' },
+    { value: '[tag:User:placement_id]', label: 'Placement ID', description: 'Ad placement identifier' },
+    { value: '[tag:User:custom_param]', label: 'Custom Parameter', description: 'Custom URL parameter' }
+  ];
+
+  // Enhanced token categories with URL parameters
+  const enhancedTokenCategories = [
+    ...tokenCategories,
+    {
+      name: 'URL Parameters',
+      tokens: urlParameterTokens
+    }
+  ];
+
   // Filter categories and tokens based on search query
   const filteredCategories = tokenSearchQuery 
-    ? tokenCategories.map(category => ({
+    ? enhancedTokenCategories.map(category => ({
         ...category,
         tokens: category.tokens.filter(token => 
           token.value.toLowerCase().includes(tokenSearchQuery.toLowerCase()) ||
@@ -727,7 +755,7 @@ export function EnhancedRTBTargetDialog({
           token.description.toLowerCase().includes(tokenSearchQuery.toLowerCase())
         )
       })).filter(category => category.tokens.length > 0)
-    : tokenCategories;
+    : enhancedTokenCategories;
 
   // Auto-expand categories when searching
   const shouldExpandCategory = (categoryName: string) => {
