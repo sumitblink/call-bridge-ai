@@ -168,6 +168,32 @@ export default function SimplifiedRTBManagementPage() {
     },
   });
 
+  // Clear auction activity mutation
+  const clearMutation = useMutation({
+    mutationFn: async () => {
+      console.log(`[RTB Frontend] Clearing RTB auction activity log`);
+      const response = await apiRequest('/api/rtb/clear-audit-data', 'DELETE');
+      return response.json();
+    },
+    onSuccess: () => {
+      console.log(`[RTB Frontend] Auction activity cleared successfully`);
+      queryClient.invalidateQueries({ queryKey: ['/api/rtb/bid-requests'] });
+      toast({ title: "Success", description: "RTB auction activity log cleared successfully" });
+    },
+    onError: (error: any) => {
+      console.error(`[RTB Frontend] Clear auction activity error:`, error);
+      toast({ 
+        title: "Clear Failed", 
+        description: `Error: ${error.message}`,
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const clearAuctionActivity = () => {
+    clearMutation.mutate();
+  };
+
   // Duplicate target mutation
   const duplicateMutation = useMutation({
     mutationFn: async (target: RtbTarget) => {
@@ -540,9 +566,25 @@ export default function SimplifiedRTBManagementPage() {
                       <div>These are normal RTB market behaviors, not system errors.</div>
                     </div>
                   </div>
-                  <Badge variant="secondary">
-                    {bidRequests.length} Total Auctions
-                  </Badge>
+                  <div className="flex items-center space-x-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearAuctionActivity}
+                      disabled={clearMutation.isPending}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      {clearMutation.isPending ? (
+                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <Trash2 className="h-3 w-3" />
+                      )}
+                      Clear Activity Log
+                    </Button>
+                    <Badge variant="secondary">
+                      {bidRequests.length} Total Auctions
+                    </Badge>
+                  </div>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -567,7 +609,10 @@ export default function SimplifiedRTBManagementPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {bidRequests.slice(0, 15).map((request) => {
+                      {bidRequests
+                        .sort((a, b) => new Date(b.callStartTime).getTime() - new Date(a.callStartTime).getTime())
+                        .slice(0, 15)
+                        .map((request) => {
                         const avgResponseTime = request.totalResponseTimeMs && request.successfulResponses 
                           ? Math.round(request.totalResponseTimeMs / request.successfulResponses)
                           : null;

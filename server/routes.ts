@@ -8415,6 +8415,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear RTB audit data
+  app.delete('/api/rtb/clear-audit-data', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      console.log(`[RTB API] Clearing RTB audit data for user ${userId}`);
+      
+      await storage.clearRtbAuditData();
+      
+      res.json({ message: 'RTB audit data cleared successfully' });
+    } catch (error) {
+      console.error('Error clearing RTB audit data:', error);
+      res.status(500).json({ error: 'Failed to clear RTB audit data' });
+    }
+  });
+
   const httpServer = createServer(app);
   // Test landing page route for RedTrack integration testing
   app.get('/redtrack-test-lander.html', (req, res) => {
