@@ -1446,6 +1446,32 @@ export const rtbTargets = pgTable("rtb_targets", {
   pingTimeout: integer("ping_timeout").default(5000), // milliseconds
   callOnFailure: boolean("call_on_failure").default(false),
   
+  // Ringba-Style RTB Settings
+  onlySip: boolean("only_sip").default(false), // Only provide SIP numbers
+  requireCallerId: boolean("require_caller_id").default(false), // Require caller ID in every ping
+  
+  // Rate Limiting (Per Publisher)
+  maxRequestsPerMinute: integer("max_requests_per_minute").default(60),
+  maxRequestsPerHour: integer("max_requests_per_hour").default(1000),
+  maxRequestsPerDay: integer("max_requests_per_day").default(10000),
+  rateLimitPeriod: varchar("rate_limit_period", { length: 20 }).default("per_minute"), // per_minute, per_hour, per_day
+  
+  // Bid Expiration
+  bidGoodForSeconds: integer("bid_good_for_seconds").default(300), // 5 minutes default
+  staleBidBehavior: varchar("stale_bid_behavior", { length: 20 }).default("reject"), // reject, route_normally
+  
+  // Bid Settings (baseBidAmount - using existing maxBidAmount and minBidAmount from lines 1369-1370)
+  baseBidAmount: decimal("base_bid_amount", { precision: 10, scale: 2 }).default("10.00"),
+  
+  // Payout Configuration  
+  payoutOn: varchar("payout_on", { length: 30 }).default("call_connected"), // call_length, call_connected, inbound_call
+  payoutCallLength: integer("payout_call_length").default(30), // seconds (when payoutOn = call_length)
+  
+  // Duplicate Payouts
+  duplicatePayouts: varchar("duplicate_payouts", { length: 20 }).default("disabled"), // disabled, enabled, time_limit
+  duplicateTimeLimitHours: integer("duplicate_time_limit_hours").default(24), // hours between duplicate calls
+  duplicateTimeLimitDays: integer("duplicate_time_limit_days").default(0), // additional days
+  
   // Timezone Configuration
   timeZone: varchar("time_zone", { length: 100 }).default("(UTC-05:00) Eastern Time (US & Canada)"),
   
