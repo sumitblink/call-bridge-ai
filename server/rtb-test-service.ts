@@ -31,8 +31,8 @@ export class RTBTestService {
 
       const rtbTarget = target[0];
 
-      // Generate test request body
-      const requestBody = this.generateTestRequestBody(testData);
+      // Use bidder's configured request body template with macro substitution
+      const requestBody = this.generateRequestBodyFromTemplate(rtbTarget, testData);
       
       // Simulate ping (GET request)
       const pingResult = await this.sendTestPing(rtbTarget, requestBody);
@@ -48,7 +48,8 @@ export class RTBTestService {
           timeoutMs: rtbTarget.timeoutMs
         },
         testData,
-        requestBody: JSON.parse(requestBody),
+        requestBody: requestBody,
+        parsedRequestBody: this.tryParseJSON(requestBody),
         results: {
           ping: pingResult,
           post: postResult
@@ -156,39 +157,97 @@ export class RTBTestService {
   }
 
   /**
-   * Generate test request body with dynamic data
+   * Generate request body from bidder's template with macro substitution
    */
-  private static generateTestRequestBody(testData: any): string {
-    const requestId = `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  private static generateRequestBodyFromTemplate(target: any, testData: any): string {
+    // Use bidder's configured request body template or fallback to default
+    let template = target.requestBody;
     
-    // Format phone numbers - remove +1 prefix for US numbers
-    const formatPhoneNumber = (phone: string): string => {
-      if (!phone) return '5551234567';
-      return phone.replace(/^\+1/, '').replace(/\D/g, '');
+    // If no template configured, use a minimal default
+    if (!template) {
+      template = JSON.stringify({
+        requestId: "{requestId}",
+        callerId: "{callerId}",
+        timestamp: "{timestamp}"
+      });
+    }
+    
+    // Generate test values
+    const requestId = `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const callerIdFormatted = this.formatPhoneNumber(testData.callerId || '+15551234567');
+    const inboundNumberFormatted = this.formatPhoneNumber('+19786432489');
+    const timestamp = new Date().toISOString();
+    
+    // Create macro replacement mapping - supports both {macro} and [tag:Type:Field] formats
+    const macros: Record<string, string> = {
+      // Standard macros
+      '{requestId}': requestId,
+      '{callerId}': testData.callerId || '+15551234567',
+      '{timestamp}': timestamp,
+      '{callerState}': testData.callerState || 'CA',
+      '{callerZip}': testData.callerZip || '90210',
+      '{callerAreaCode}': testData.callerAreaCode || '555',
+      '{publisherId}': testData.publisherId || 'test_publisher',
+      '{publisherSubId}': testData.publisherSubId || 'sub_001',
+      '{minBid}': (testData.minBid || 10).toString(),
+      '{maxBid}': (testData.maxBid || 50).toString(),
+      '{currency}': 'USD',
+      '{inboundNumber}': '+19786432489',
+      
+      // Ringba-style macros [tag:Type:Field]
+      '[Call:CallerId]': testData.callerId || '+15551234567',
+      '[Call:CallerIdNoPlus]': callerIdFormatted,
+      '[Call:InboundCallId]': requestId,
+      '[tag:InboundNumber:Number]': '+19786432489',
+      '[tag:InboundNumber:Number-NoPlus]': inboundNumberFormatted,
+      '[Publisher:Id]': testData.publisherId || 'test_publisher',
+      '[Publisher:SubId]': testData.publisherSubId || 'sub_001',
+      '[Geo:State]': testData.callerState || 'CA',
+      '[Geo:Zipcode]': testData.callerZip || '90210',
+      '[Zip Code:Zip Code]': testData.callerZip || '90210',
+      
+      // Additional common patterns
+      'CID': callerIdFormatted,
+      'exposeCallerId': 'yes',
+      'publisherInboundCallId': requestId,
+      'Zipcode': testData.callerZip || '90210',
+      'ZipCode': testData.callerZip || '90210'
     };
     
-    const callerIdFormatted = formatPhoneNumber(testData.callerId || '+15551234567');
-    const inboundNumberFormatted = formatPhoneNumber('+19786432489');
+    // Perform macro substitution
+    let processedTemplate = template;
+    for (const [macro, value] of Object.entries(macros)) {
+      // Handle both quoted and unquoted macro replacements
+      processedTemplate = processedTemplate.replace(new RegExp(this.escapeRegExp(macro), 'g'), value);
+    }
     
-    return JSON.stringify({
-      requestId,
-      timestamp: new Date().toISOString(),
-      callerId: callerIdFormatted,
-      CID: callerIdFormatted, // Required CID parameter without +1 prefix
-      inboundNumber: inboundNumberFormatted,
-      InboundNumber: inboundNumberFormatted, // Additional tag format
-      publisherId: testData.publisherId || 'test_publisher',
-      publisherSubId: testData.publisherSubId || 'sub_001',
-      callerState: testData.callerState || 'CA',
-      callerZip: testData.callerZip || '90210',
-      callerAreaCode: testData.callerAreaCode || '555',
-      minBid: testData.minBid || 10,
-      maxBid: testData.maxBid || 50,
-      currency: 'USD',
-      vertical: 'Healthcare',
-      campaignType: 'test',
-      ...testData.customTags
-    }, null, 2);
+    return processedTemplate;
+  }
+  
+  /**
+   * Format phone number - remove +1 prefix for US numbers
+   */
+  private static formatPhoneNumber(phone: string): string {
+    if (!phone) return '5551234567';
+    return phone.replace(/^\+1/, '').replace(/\D/g, '');
+  }
+  
+  /**
+   * Escape special regex characters for safe string replacement
+   */
+  private static escapeRegExp(string: string): string {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  
+  /**
+   * Safely parse JSON string, return null if invalid
+   */
+  private static tryParseJSON(jsonString: string): any {
+    try {
+      return JSON.parse(jsonString);
+    } catch (error) {
+      return { error: 'Invalid JSON format', original: jsonString };
+    }
   }
 
   /**
