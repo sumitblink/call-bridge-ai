@@ -364,6 +364,42 @@ export class RTBService {
   }
 
   /**
+   * Determine effective Caller ID requirement based on Ringba hierarchy
+   * Priority: Target Level > Campaign Level
+   */
+  private static getEffectiveCallerIdRequirement(campaign: any, target: any): boolean {
+    // Target level setting takes precedence (most specific)
+    if (target.requireCallerId !== undefined) {
+      return target.requireCallerId;
+    }
+    
+    // Fall back to campaign level setting
+    return campaign.rtbRequireCallerId || false;
+  }
+
+  /**
+   * Validate bid request meets caller ID requirements
+   */
+  private static validateCallerIdRequirement(bidRequest: BidRequest, campaign: any, target: any): { valid: boolean; reason?: string } {
+    const requireCallerId = this.getEffectiveCallerIdRequirement(campaign, target);
+    
+    if (!requireCallerId) {
+      return { valid: true }; // Caller ID not required
+    }
+    
+    // Check if caller ID is present and valid
+    const callerId = bidRequest.callerId;
+    if (!callerId || callerId.trim() === '') {
+      return { 
+        valid: false, 
+        reason: `Caller ID required but not provided (Campaign: ${campaign.rtbRequireCallerId ? 'Required' : 'Not Required'}, Target: ${target.requireCallerId !== undefined ? (target.requireCallerId ? 'Required' : 'Not Required') : 'Inherit'})` 
+      };
+    }
+    
+    return { valid: true };
+  }
+
+  /**
    * Initiate a real-time bidding auction for an incoming call
    */
   static async initiateAuction(
@@ -438,17 +474,31 @@ export class RTBService {
 
       const storedRequest = await storage.createRtbBidRequest(requestRecord);
 
-      // Filter targets by geographic eligibility first
+      // Filter targets by geographic eligibility and caller ID requirements
       const eligibleTargets: typeof activeAssignments = [];
       
       for (const assignment of activeAssignments) {
         try {
           const target = await storage.getRtbTarget(assignment.rtbTargetId);
-          if (target && await RTBService.validateGeographicTargeting(target, bidRequest)) {
-            eligibleTargets.push(assignment);
-          } else {
-            console.log(`[RTB] Target ${assignment.rtbTargetId} failed geographic validation`);
+          if (!target) {
+            console.log(`[RTB] Target ${assignment.rtbTargetId} not found`);
+            continue;
           }
+          
+          // Validate geographic targeting
+          if (!await RTBService.validateGeographicTargeting(target, bidRequest)) {
+            console.log(`[RTB] Target ${assignment.rtbTargetId} failed geographic validation`);
+            continue;
+          }
+          
+          // Validate caller ID requirements using hierarchy
+          const callerIdValidation = this.validateCallerIdRequirement(bidRequest, campaign, target);
+          if (!callerIdValidation.valid) {
+            console.log(`[RTB] Target ${assignment.rtbTargetId} rejected: ${callerIdValidation.reason}`);
+            continue;
+          }
+          
+          eligibleTargets.push(assignment);
         } catch (error) {
           console.error(`[RTB] Error validating target ${assignment.rtbTargetId}:`, error);
         }
