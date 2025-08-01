@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Plus, Edit, Trash2, Download, ExternalLink, Info, Search, ChevronDown } from 'lucide-react';
+import { Copy, Plus, Edit, Trash2, Download, ExternalLink, Info, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -58,96 +58,123 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   });
 
   const [isTokenSearchOpen, setIsTokenSearchOpen] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Call Data']));
+  const [tokenSearchQuery, setTokenSearchQuery] = useState('');
   const urlInputRef = useRef<HTMLInputElement>(null);
 
-  // Comprehensive token library organized by categories
-  const tokenLibrary = {
-    'Call Data': [
-      { token: '{call_id}', description: 'Unique call identifier' },
-      { token: '{phone_number}', description: 'Dialed phone number' },
-      { token: '{caller_id}', description: 'Caller\'s phone number' },
-      { token: '{duration}', description: 'Call duration in seconds' },
-      { token: '{status}', description: 'Call status (completed, busy, no-answer, failed)' },
-      { token: '{recording_url}', description: 'Call recording URL' },
-      { token: '{timestamp}', description: 'Call timestamp' }
-    ],
-    'Campaign & Routing': [
-      { token: '{campaign_id}', description: 'Campaign identifier' },
-      { token: '{buyer_id}', description: 'Assigned buyer ID' },
-      { token: '{agent_id}', description: 'Agent ID (if applicable)' }
-    ],
-    'RedTrack Integration': [
-      { token: '[tag:User:clickid]', description: 'RedTrack click ID' },
-      { token: '[Call:ConversionPayout]', description: 'Call payout value' },
-      { token: '{redtrack_campaign_id}', description: 'RedTrack campaign ID' },
-      { token: '{redtrack_offer_id}', description: 'RedTrack offer ID' },
-      { token: '{redtrack_affiliate_id}', description: 'RedTrack affiliate ID' },
-      { token: '{redtrack_sub_id}', description: 'RedTrack sub ID' }
-    ],
-    'UTM Parameters': [
-      { token: '{utm_source}', description: 'UTM source parameter' },
-      { token: '{utm_medium}', description: 'UTM medium parameter' },
-      { token: '{utm_campaign}', description: 'UTM campaign parameter' },
-      { token: '{utm_content}', description: 'UTM content parameter' },
-      { token: '{utm_term}', description: 'UTM term parameter' }
-    ],
-    'RedTrack Sub Parameters': [
-      { token: '{clickid}', description: 'Click ID parameter' },
-      { token: '{sub1}', description: 'RedTrack sub parameter 1' },
-      { token: '{sub2}', description: 'RedTrack sub parameter 2' },
-      { token: '{sub3}', description: 'RedTrack sub parameter 3' },
-      { token: '{sub4}', description: 'RedTrack sub parameter 4' },
-      { token: '{sub5}', description: 'RedTrack sub parameter 5' },
-      { token: '{sub6}', description: 'RedTrack sub parameter 6' },
-      { token: '{sub7}', description: 'RedTrack sub parameter 7' },
-      { token: '{sub8}', description: 'RedTrack sub parameter 8' }
-    ],
-    'Traffic Source Parameters': [
-      { token: '{publisher}', description: 'Publisher parameter' },
-      { token: '{gclid}', description: 'Google Ads click ID' },
-      { token: '{fbclid}', description: 'Facebook click ID' },
-      { token: '{msclkid}', description: 'Microsoft Ads click ID' },
-      { token: '{ttclid}', description: 'TikTok click ID' },
-      { token: '{twclid}', description: 'Twitter click ID' },
-      { token: '{liclid}', description: 'LinkedIn click ID' },
-      { token: '{subid}', description: 'Sub ID parameter' },
-      { token: '{affid}', description: 'Affiliate ID parameter' },
-      { token: '{pubid}', description: 'Publisher ID parameter' }
-    ],
-    'Ad Platform Parameters': [
-      { token: '{source}', description: 'Traffic source' },
-      { token: '{medium}', description: 'Traffic medium' },
-      { token: '{content}', description: 'Content parameter' },
-      { token: '{term}', description: 'Term parameter' },
-      { token: '{keyword}', description: 'Keyword parameter' },
-      { token: '{placement}', description: 'Placement parameter' },
-      { token: '{adgroup}', description: 'Ad group parameter' },
-      { token: '{creative}', description: 'Creative parameter' },
-      { token: '{device}', description: 'Device parameter' },
-      { token: '{network}', description: 'Network parameter' },
-      { token: '{matchtype}', description: 'Match type parameter' },
-      { token: '{adposition}', description: 'Ad position parameter' },
-      { token: '{target}', description: 'Target parameter' },
-      { token: '{targetid}', description: 'Target ID parameter' }
-    ],
-    'Custom Fields': [
-      { token: '{custom_field_1}', description: 'Custom field 1' },
-      { token: '{custom_field_2}', description: 'Custom field 2' },
-      { token: '{custom_field_3}', description: 'Custom field 3' },
-      { token: '{loc_physical_ms}', description: 'Physical location parameter' },
-      { token: '{loc_interest_ms}', description: 'Interest location parameter' }
-    ]
+  // Comprehensive RTB tokens organized by category - Based on comprehensive token list
+  const tokenCategories = [
+    {
+      name: 'Call Information',
+      tokens: [
+        { value: '[Call:InboundCallId]', label: 'Inbound Call ID', description: 'Unique identifier for the inbound call' },
+        { value: '[Call:Duration]', label: 'Call Duration', description: 'Duration of the call in seconds' },
+        { value: '[Call:Status]', label: 'Call Status', description: 'Status of the call (completed, busy, no-answer, failed)' },
+        { value: '[Call:StartTime]', label: 'Call Start Time', description: 'Timestamp when the call started' },
+        { value: '[Call:EndTime]', label: 'Call End Time', description: 'Timestamp when the call ended' },
+        { value: '[Call:RecordingUrl]', label: 'Recording URL', description: 'URL to the call recording' },
+        { value: '[Call:CallerId]', label: 'Caller ID', description: 'Phone number of the caller' }
+      ]
+    },
+    {
+      name: 'Targeting',
+      tokens: [
+        { value: '[Target:Name]', label: 'Target Name', description: 'Name of the target receiving the call' },
+        { value: '[Target:Id]', label: 'Target ID', description: 'Unique identifier for the target' },
+        { value: '[Target:Weight]', label: 'Target Weight', description: 'Weight assigned to the target for routing' },
+        { value: '[Target:Payout]', label: 'Target Payout', description: 'Payout amount for the target' },
+        { value: '[Target:Revenue]', label: 'Target Revenue', description: 'Revenue generated from the target' }
+      ]
+    },
+    {
+      name: 'Geolocation',
+      tokens: [
+        { value: '[Geo:Country]', label: 'Country', description: 'Country of the caller' },
+        { value: '[Geo:State]', label: 'State', description: 'State or province of the caller' },
+        { value: '[Geo:City]', label: 'City', description: 'City of the caller' },
+        { value: '[Geo:ZipCode]', label: 'Zip Code', description: 'Postal code of the caller' },
+        { value: '[Geo:AreaCode]', label: 'Area Code', description: 'Area code of the caller\'s phone number' },
+        { value: '[Geo:TimeZone]', label: 'Time Zone', description: 'Time zone of the caller' }
+      ]
+    },
+    {
+      name: 'Publisher Information',
+      tokens: [
+        { value: '[Publisher:Id]', label: 'Publisher ID', description: 'Unique identifier for the publisher' },
+        { value: '[Publisher:Name]', label: 'Publisher Name', description: 'Name of the publisher' },
+        { value: '[Publisher:SubId]', label: 'Publisher Sub ID', description: 'Sub-identifier for tracking' },
+        { value: '[Publisher:AffiliateId]', label: 'Affiliate ID', description: 'Affiliate identifier' },
+        { value: '[Publisher:ClickId]', label: 'Click ID', description: 'Unique click tracking identifier' }
+      ]
+    },
+    {
+      name: 'Campaign Data',
+      tokens: [
+        { value: '[Campaign:Id]', label: 'Campaign ID', description: 'Unique identifier for the campaign' },
+        { value: '[Campaign:Name]', label: 'Campaign Name', description: 'Name of the campaign' },
+        { value: '[Campaign:PhoneNumber]', label: 'Campaign Phone', description: 'Phone number associated with the campaign' }
+      ]
+    },
+    {
+      name: 'URL Parameters',
+      tokens: [
+        { value: '[tag:User:utm_source]', label: 'UTM Source', description: 'Campaign source parameter' },
+        { value: '[tag:User:utm_medium]', label: 'UTM Medium', description: 'Campaign medium parameter' },
+        { value: '[tag:User:utm_campaign]', label: 'UTM Campaign', description: 'Campaign name parameter' },
+        { value: '[tag:User:utm_term]', label: 'UTM Term', description: 'Campaign term parameter' },
+        { value: '[tag:User:utm_content]', label: 'UTM Content', description: 'Campaign content parameter' },
+        { value: '[tag:User:affiliate_id]', label: 'Affiliate ID', description: 'Affiliate identifier parameter' },
+        { value: '[tag:User:publisher_id]', label: 'Publisher ID', description: 'Publisher identifier parameter' },
+        { value: '[tag:User:sub_id]', label: 'Sub ID', description: 'Sub identifier parameter' },
+        { value: '[tag:User:click_id]', label: 'Click ID', description: 'Click tracking parameter' },
+        { value: '[tag:User:source]', label: 'Source', description: 'Traffic source parameter' },
+        { value: '[tag:User:keyword]', label: 'Keyword', description: 'Keyword parameter' },
+        { value: '[tag:User:custom_param]', label: 'Custom Parameter', description: 'Custom URL parameter' }
+      ]
+    }
+  ];
+
+  // Filter categories and tokens based on search query
+  const filteredCategories = tokenSearchQuery 
+    ? tokenCategories.map(category => ({
+        ...category,
+        tokens: category.tokens.filter(token => 
+          token.value.toLowerCase().includes(tokenSearchQuery.toLowerCase()) ||
+          token.label.toLowerCase().includes(tokenSearchQuery.toLowerCase()) ||
+          token.description.toLowerCase().includes(tokenSearchQuery.toLowerCase())
+        )
+      })).filter(category => category.tokens.length > 0)
+    : tokenCategories;
+
+  // Auto-expand categories when searching
+  const shouldExpandCategory = (categoryName: string) => {
+    if (tokenSearchQuery) {
+      // If searching, expand all categories that have matching tokens
+      return filteredCategories.some(cat => cat.name === categoryName);
+    }
+    return expandedCategories.has(categoryName);
+  };
+
+  // Function to toggle category expansion
+  const toggleCategory = (categoryName: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryName)) {
+      newExpanded.delete(categoryName);
+    } else {
+      newExpanded.add(categoryName);
+    }
+    setExpandedCategories(newExpanded);
   };
 
   // Function to insert token at cursor position
-  const insertTokenAtCursor = (token: string) => {
+  const insertTokenAtCursor = (tokenValue: string) => {
     const input = urlInputRef.current;
     if (!input) return;
 
     const start = input.selectionStart || 0;
     const end = input.selectionEnd || 0;
     const currentValue = formData.url;
-    const newValue = currentValue.substring(0, start) + token + currentValue.substring(end);
+    const newValue = currentValue.substring(0, start) + tokenValue + currentValue.substring(end);
     
     setFormData({ ...formData, url: newValue });
     setIsTokenSearchOpen(false);
@@ -155,7 +182,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     // Focus back to input and position cursor after inserted token
     setTimeout(() => {
       input.focus();
-      const newPosition = start + token.length;
+      const newPosition = start + tokenValue.length;
       input.setSelectionRange(newPosition, newPosition);
     }, 0);
   };
@@ -567,8 +594,8 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                 <div>
                   <div className="flex items-center gap-2">
                     <Label htmlFor="url">Custom Pixel URL</Label>
-                    <Popover open={isTokenSearchOpen} onOpenChange={setIsTokenSearchOpen}>
-                      <PopoverTrigger asChild>
+                    <Dialog open={isTokenSearchOpen} onOpenChange={setIsTokenSearchOpen}>
+                      <DialogTrigger asChild>
                         <Button
                           type="button"
                           size="sm"
@@ -579,35 +606,77 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                           SEARCH TOKEN
                           <ChevronDown className="w-3 h-3" />
                         </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[480px] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search tokens..." className="h-9" />
-                          <CommandList className="max-h-[400px]">
-                            <CommandEmpty>No tokens found.</CommandEmpty>
-                            {Object.entries(tokenLibrary).map(([category, tokens]) => (
-                              <CommandGroup key={category} heading={category}>
-                                {tokens.map((tokenItem, index) => (
-                                  <CommandItem
-                                    key={`${category}-${index}`}
-                                    value={`${tokenItem.token} ${tokenItem.description}`}
-                                    onSelect={() => insertTokenAtCursor(tokenItem.token)}
-                                    className="flex flex-col items-start gap-1 py-2"
-                                  >
-                                    <div className="font-mono text-blue-600 font-medium">
-                                      {tokenItem.token}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      {tokenItem.description}
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+                        <DialogHeader>
+                          <DialogTitle>Select Token</DialogTitle>
+                        </DialogHeader>
+                        
+                        {/* Search Input */}
+                        <div className="pb-4">
+                          <Input
+                            placeholder="Search tokens..."
+                            value={tokenSearchQuery}
+                            onChange={(e) => setTokenSearchQuery(e.target.value)}
+                            className="h-9"
+                          />
+                        </div>
+
+                        {/* Token Categories */}
+                        <div className="flex-1 overflow-y-auto pr-2">
+                          <div className="space-y-1">
+                            {filteredCategories.map((category) => (
+                              <div key={category.name} className="border border-gray-200 rounded-lg">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleCategory(category.name)}
+                                  className="w-full px-3 py-2 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 rounded-t-lg border-b"
+                                >
+                                  <span className="font-medium text-sm">{category.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500">
+                                      {category.tokens.length} {category.tokens.length === 1 ? 'token' : 'tokens'}
+                                    </span>
+                                    {shouldExpandCategory(category.name) ? (
+                                      <ChevronDown className="w-4 h-4" />
+                                    ) : (
+                                      <ChevronRight className="w-4 h-4" />
+                                    )}
+                                  </div>
+                                </button>
+                                
+                                {shouldExpandCategory(category.name) && (
+                                  <div className="p-2 space-y-1">
+                                    {category.tokens.map((token, index) => (
+                                      <button
+                                        key={`${category.name}-${index}`}
+                                        type="button"
+                                        onClick={() => insertTokenAtCursor(token.value)}
+                                        className="w-full text-left p-2 rounded hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-colors"
+                                      >
+                                        <div className="font-mono text-blue-600 text-sm font-medium">
+                                          {token.value}
+                                        </div>
+                                        <div className="text-xs text-gray-600 mt-1">
+                                          {token.description}
+                                        </div>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             ))}
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                          </div>
+                        </div>
+                        
+                        {/* No Results */}
+                        {tokenSearchQuery && filteredCategories.length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            No tokens found matching "{tokenSearchQuery}"
+                          </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
                   </div>
                   <Input
                     ref={urlInputRef}
