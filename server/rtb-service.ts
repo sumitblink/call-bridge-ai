@@ -746,9 +746,19 @@ export class RTBService {
       }
 
       const responseText = await response.text();
-      console.log(`[RTB] Response body from ${target.name}:`, responseText);
+      console.log(`[RTB] ===== RESPONSE FROM ${target.name} =====`);
+      console.log(`[RTB] Status: ${response.status} ${response.statusText}`);
+      console.log(`[RTB] Response body:`, responseText);
+      console.log(`[RTB] ===== END RESPONSE =====`);
       
-      const responseData = JSON.parse(responseText);
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(`[RTB] Failed to parse JSON response from ${target.name}:`, parseError);
+        console.log(`[RTB] Raw response text:`, responseText);
+        throw new Error(`Invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+      }
 
       // Use advanced response parsing with JSONPath
       const bidAmount = this.extractResponseValue(responseData, target.bidAmountPath) || 
