@@ -526,9 +526,7 @@ export function EnhancedRTBTargetDialog({
   const [isTokenSearchOpen, setIsTokenSearchOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Basic Call Variables']));
   const [tokenSearchQuery, setTokenSearchQuery] = useState('');
-  const [currentTokenField, setCurrentTokenField] = useState<'requestBody' | 'endpointUrl'>('requestBody');
   const requestBodyInputRef = useRef<HTMLTextAreaElement>(null);
-  const endpointUrlInputRef = useRef<HTMLInputElement>(null);
 
   // Complete RTB tokens organized by category - Based on comprehensive token list
   const tokenCategories = [
@@ -781,15 +779,15 @@ export function EnhancedRTBTargetDialog({
 
   // Function to insert token at cursor position
   const insertTokenAtCursor = (token: string) => {
-    const input = currentTokenField === 'requestBody' ? requestBodyInputRef.current : endpointUrlInputRef.current;
+    const input = requestBodyInputRef.current;
     if (!input) return;
 
     const start = input.selectionStart || 0;
     const end = input.selectionEnd || 0;
-    const currentValue = form.getValues(currentTokenField) || '';
+    const currentValue = form.getValues('requestBody') || '';
     const newValue = currentValue.substring(0, start) + token + currentValue.substring(end);
     
-    form.setValue(currentTokenField, newValue);
+    form.setValue('requestBody', newValue);
     setIsTokenSearchOpen(false);
     setTokenSearchQuery(''); // Clear search when closing
     
@@ -3358,33 +3356,10 @@ Please add tags with numerical values only."
                       name="endpointUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <div className="flex items-center justify-between">
-                            <FormLabel>URL <span className="text-red-500">*</span></FormLabel>
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              size="sm"
-                              className="flex items-center gap-1"
-                              onClick={() => {
-                                setCurrentTokenField('endpointUrl');
-                                setIsTokenSearchOpen(true);
-                              }}
-                            >
-                              <Search className="h-4 w-4" />
-                              Search Token
-                              <ChevronDown className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <FormLabel>URL <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
-                            <Input 
-                              ref={endpointUrlInputRef}
-                              placeholder="https://ringba.com?callerId={callerId}&campaign={campaignId}" 
-                              {...field} 
-                            />
+                            <Input placeholder="https://ringba.com" {...field} />
                           </FormControl>
-                          <FormDescription>
-                            Click "Search Token" to browse and insert available tracking parameters into your endpoint URL
-                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -3451,10 +3426,7 @@ Please add tags with numerical values only."
                                 variant="outline" 
                                 size="sm"
                                 className="flex items-center gap-1"
-                                onClick={() => {
-                                  setCurrentTokenField('requestBody');
-                                  setIsTokenSearchOpen(true);
-                                }}
+                                onClick={() => setIsTokenSearchOpen(true)}
                               >
                                 <Search className="h-4 w-4" />
                                 Search Token
@@ -3464,9 +3436,7 @@ Please add tags with numerical values only."
                               <Dialog open={isTokenSearchOpen} onOpenChange={setIsTokenSearchOpen}>
                                 <DialogContent className="w-[450px] max-w-[90vw] h-[500px] p-0 bg-background border-border">
                                   <DialogHeader className="p-3 border-b border-border">
-                                    <DialogTitle className="text-foreground text-sm">
-                                      Search Tokens - {currentTokenField === 'requestBody' ? 'Request Body' : 'Endpoint URL'}
-                                    </DialogTitle>
+                                    <DialogTitle className="text-foreground text-sm">Search Tokens</DialogTitle>
                                     <div className="flex items-center gap-2 mt-2">
                                       <Search className="h-3 w-3 text-muted-foreground" />
                                       <input 
