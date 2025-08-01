@@ -547,10 +547,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCall(call: InsertCall): Promise<Call> {
+    console.log('[Database] createCall input data:', {
+      clickId: call.clickId,
+      sessionId: call.sessionId,
+      campaignId: call.campaignId,
+      callSid: call.callSid
+    });
+    
     const [newCall] = await db
       .insert(calls)
       .values(call)
       .returning();
+      
+    console.log('[Database] createCall output data:', {
+      id: newCall.id,
+      clickId: newCall.clickId,
+      sessionId: newCall.sessionId,
+      campaignId: newCall.campaignId,
+      callSid: newCall.callSid
+    });
+    
     return newCall;
   }
 

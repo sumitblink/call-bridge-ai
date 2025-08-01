@@ -120,26 +120,7 @@ async function fireTrackingPixelsForEvent(call: any, callStatus: string, duratio
       
       console.log(`🔥 PIXEL FIRED [${pixelEvent}]: ${pixel.name} → ${fireUrl}`);
       
-      // Log pixel fire event for tracking in call details
-      try {
-        await storage.addCallEvent(call.id, {
-          eventType: 'pixel_fired',
-          nodeType: 'pixel',
-          nodeName: pixel.name,
-          stepName: pixelEvent,
-          metadata: {
-            pixelId: pixel.id,
-            pixelName: pixel.name,
-            pixelType: pixel.pixelType,
-            fireUrl,
-            triggerEvent: pixelEvent,
-            clickId: call.clickId || 'unknown',
-            status: 'fired'
-          }
-        });
-      } catch (eventError) {
-        console.error('[Pixel] Error logging pixel fire event:', eventError);
-      }
+      // TODO: Add pixel fire event logging once addCallEvent is implemented
     }
   } catch (error) {
     console.error('[Pixel] Error firing tracking pixels:', error);
@@ -1994,7 +1975,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         buyerId: callData.buyerId,
         numberPoolId: callData.numberPoolId,
         phoneNumberId: callData.phoneNumberId,
-        callSid: callData.callSid
+        callSid: callData.callSid,
+        clickId: callData.clickId,
+        sessionId: callData.sessionId,
+        publisherName: callData.publisherName
       });
       
       const callRecord = await storage.createCall(callData);
@@ -2007,7 +1991,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Fire tracking pixels for "incoming" event using event-based firing
-      await fireTrackingPixelsForEvent(callRecord, 'ringing', '0');
+      try {
+        await fireTrackingPixelsForEvent(callRecord, 'ringing', '0');
+      } catch (pixelError) {
+        console.error('[Pool Webhook] Error firing tracking pixels:', pixelError);
+      }
 
       // Generate TwiML to forward the call with appropriate messaging
       const connectMessage = routingMethod === 'rtb' 
