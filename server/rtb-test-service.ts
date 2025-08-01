@@ -161,12 +161,22 @@ export class RTBTestService {
   private static generateTestRequestBody(testData: any): string {
     const requestId = `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
+    // Format phone numbers - remove +1 prefix for US numbers
+    const formatPhoneNumber = (phone: string): string => {
+      if (!phone) return '5551234567';
+      return phone.replace(/^\+1/, '').replace(/\D/g, '');
+    };
+    
+    const callerIdFormatted = formatPhoneNumber(testData.callerId || '+15551234567');
+    const inboundNumberFormatted = formatPhoneNumber('+19786432489');
+    
     return JSON.stringify({
       requestId,
       timestamp: new Date().toISOString(),
-      callerId: testData.callerId || '+15551234567',
-      CID: testData.callerId || '+15551234567', // Required CID parameter in E.164 format
-      inboundNumber: '+19786432489',
+      callerId: callerIdFormatted,
+      CID: callerIdFormatted, // Required CID parameter without +1 prefix
+      inboundNumber: inboundNumberFormatted,
+      InboundNumber: inboundNumberFormatted, // Additional tag format
       publisherId: testData.publisherId || 'test_publisher',
       publisherSubId: testData.publisherSubId || 'sub_001',
       callerState: testData.callerState || 'CA',

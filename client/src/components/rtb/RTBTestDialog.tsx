@@ -43,7 +43,7 @@ interface TestResult {
 
 export function RTBTestDialog({ open, onOpenChange, target, campaignId, mode }: RTBTestDialogProps) {
   const [testData, setTestData] = useState({
-    callerId: '+15551234567',
+    callerId: '5551234567',
     publisherId: 'test_publisher_001',
     publisherSubId: 'sub_001',
     callerState: 'CA',
@@ -158,8 +158,9 @@ export function RTBTestDialog({ open, onOpenChange, target, campaignId, mode }: 
                       id="callerId"
                       value={testData.callerId}
                       onChange={(e) => setTestData(prev => ({ ...prev, callerId: e.target.value }))}
-                      placeholder="+15551234567"
+                      placeholder="5551234567"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">10-digit format without +1 prefix</p>
                   </div>
                   <div>
                     <Label htmlFor="callerState">Caller State</Label>
