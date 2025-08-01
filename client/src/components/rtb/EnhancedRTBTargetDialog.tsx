@@ -1156,9 +1156,8 @@ export function EnhancedRTBTargetDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <Tabs defaultValue="basic" className="w-full">
-              <TabsList className={`grid w-full ${form.watch("rtbShareableTags") ? 'grid-cols-7' : 'grid-cols-8'}`}>
+              <TabsList className={`grid w-full ${form.watch("rtbShareableTags") ? 'grid-cols-6' : 'grid-cols-7'}`}>
                 <TabsTrigger value="basic">Basic</TabsTrigger>
-                <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="caps">Cap Settings</TabsTrigger>
                 <TabsTrigger value="concurrency">Concurrency</TabsTrigger>
                 <TabsTrigger value="routing">Routing</TabsTrigger>
@@ -1829,469 +1828,254 @@ Please add tags with numerical values only."
                 </Card>
               </TabsContent>
 
-              {/* General Settings Tab - Ringba-Compliant RTB Features */}
-              <TabsContent value="general" className="space-y-6">
+              {/* Cap Settings Tab */}
+              <TabsContent value="caps" className="space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      General RTB Settings
+                      <DollarSign className="h-4 w-4" />
+                      Cap Settings
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Ringba-compliant RTB configuration for enterprise-level bidding
-                    </p>
                   </CardHeader>
-                  <CardContent className="space-y-6">
-                    
-                    {/* Rate Limiting Section */}
-                    <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-900/20 rounded-lg border">
-                      <h4 className="text-sm font-semibold flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Rate Limiting
-                      </h4>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="maxRequestsPerMinute"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                Max Requests/Minute
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Maximum number of RTB requests allowed per minute. Prevents overloading target systems.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  min="1"
-                                  max="10000"
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value))}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="maxRequestsPerHour"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                Max Requests/Hour
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Maximum number of RTB requests allowed per hour for sustained load management.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  min="1"
-                                  max="100000"
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value))}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="maxRequestsPerDay"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                Max Requests/Day
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Daily cap on RTB requests to manage traffic volume and costs.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  min="1"
-                                  max="1000000"
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value))}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="rateLimitPeriod"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Rate Limit Period</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="per_minute">Per Minute</SelectItem>
-                                  <SelectItem value="per_hour">Per Hour</SelectItem>
-                                  <SelectItem value="per_day">Per Day</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="capOn"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cap On</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Conversion">Conversion</SelectItem>
+                              <SelectItem value="Call">Call</SelectItem>
+                              <SelectItem value="Revenue">Revenue</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                    {/* Bid Expiration Section */}
-                    <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border">
-                      <h4 className="text-sm font-semibold flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Bid Expiration
-                      </h4>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="bidGoodForSeconds"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                Bid Valid Duration (seconds)
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>How long a bid remains valid before expiring. Typical range: 60-600 seconds.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  min="1"
-                                  max="3600"
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value))}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="staleBidBehavior"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                Stale Bid Behavior
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>How to handle expired bids: reject them or route normally.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="reject">Reject Stale Bids</SelectItem>
-                                  <SelectItem value="route_normally">Route Normally</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Duplicate Payouts Section */}
-                    <div className="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border">
-                      <h4 className="text-sm font-semibold flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        Duplicate Payouts
-                      </h4>
-                      
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="duplicatePayouts"
+                        name="globalCallCap"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              Duplicate Payout Mode
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <Info className="h-4 w-4 text-muted-foreground" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Controls how duplicate calls from the same caller are handled for payouts.</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <FormLabel>Global Call Cap</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center space-x-2">
+                                <ToggleSwitch 
+                                  checked={field.value !== 0}
+                                  onCheckedChange={(checked) => field.onChange(checked ? 1000 : 0)}
+                                  size="sm"
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  {field.value === 0 ? "None" : field.value}
+                                </span>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="monthlyCap"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Monthly Cap</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center space-x-2">
+                                <ToggleSwitch 
+                                  checked={field.value !== 0}
+                                  onCheckedChange={(checked) => field.onChange(checked ? 5000 : 0)}
+                                  size="sm"
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  {field.value === 0 ? "None" : field.value}
+                                </span>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="dailyCap"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Daily Cap</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center space-x-2">
+                                <ToggleSwitch 
+                                  checked={field.value !== 0}
+                                  onCheckedChange={(checked) => field.onChange(checked ? 100 : 0)}
+                                  size="sm"
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  {field.value === 0 ? "None" : field.value}
+                                </span>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="hourlyCap"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Hourly Cap</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center space-x-2">
+                                <ToggleSwitch 
+                                  checked={field.value !== 0}
+                                  onCheckedChange={(checked) => field.onChange(checked ? 10 : 0)}
+                                  size="sm"
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  {field.value === 0 ? "None" : field.value}
+                                </span>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="concurrency" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Concurrency Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="maxConcurrency"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Max Concurrency</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center space-x-2">
+                                <ToggleSwitch 
+                                  checked={field.value !== 0}
+                                  onCheckedChange={(checked) => field.onChange(checked ? 10 : 0)}
+                                  size="sm"
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  {field.value === 0 ? "None" : field.value}
+                                </span>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="hourlyConcurrency"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Hourly Concurrency</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center space-x-2">
+                                <ToggleSwitch 
+                                  checked={field.value !== 0}
+                                  onCheckedChange={(checked) => field.onChange(checked ? 5 : 0)}
+                                  size="sm"
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  {field.value === 0 ? "None" : field.value}
+                                </span>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Restrict Duplicate Calls Settings</h4>
+                      <FormField
+                        control={form.control}
+                        name="restrictDuplicates"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Restrict Duplicate</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="disabled">Disabled - No Duplicate Protection</SelectItem>
-                                <SelectItem value="enabled">Enabled - Always Block Duplicates</SelectItem>
-                                <SelectItem value="time_limit">Time Limit - Block Within Time Window</SelectItem>
+                                <SelectItem value="Buyer Settings (Do not Restrict)">Buyer Settings (Do not Restrict)</SelectItem>
+                                <SelectItem value="Block">Block</SelectItem>
+                                <SelectItem value="Route to Fallback">Route to Fallback</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
-                      {form.watch("duplicatePayouts") === "time_limit" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="duplicateTimeLimitHours"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="flex items-center gap-2">
-                                  Time Limit (Hours)
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="h-4 w-4 text-muted-foreground" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Block duplicate payouts within this many hours (1-8760 hours).</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    min="1"
-                                    max="8760"
-                                    {...field}
-                                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="duplicateTimeLimitDays"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="flex items-center gap-2">
-                                  Time Limit (Days)
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="h-4 w-4 text-muted-foreground" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Alternative to hours - specify in days (0-365 days). Use either hours or days.</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    min="0"
-                                    max="365"
-                                    {...field}
-                                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      )}
                     </div>
 
-                    {/* SIP Configuration Section */}
-                    <div className="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border">
-                      <h4 className="text-sm font-semibold flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        SIP Configuration
+                    <Separator />
+
+                    <div>
+                      <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        Predictive Routing Configuration
                       </h4>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="onlySip"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between space-y-0">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-sm flex items-center gap-2">
-                                  SIP Only
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="h-3 w-3 text-muted-foreground" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Only provide SIP endpoints in RTB responses (no phone numbers).</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </FormLabel>
-                                <p className="text-xs text-muted-foreground">
-                                  Restrict to SIP routing only
-                                </p>
-                              </div>
+                      <FormField
+                        control={form.control}
+                        name="predictiveRoutingConfigId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Predictive Routing Configuration</FormLabel>
+                            <Select onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} value={field.value?.toString() || "none"}>
                               <FormControl>
-                                <ToggleSwitch
-                                  checked={field.value || false}
-                                  onCheckedChange={field.onChange}
-                                  size="sm"
-                                />
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
                               </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                              <SelectContent>
+                                <SelectItem value="none">None</SelectItem>
+                                <SelectItem value="1">Configuration 1</SelectItem>
+                                <SelectItem value="2">Configuration 2</SelectItem>
+                                <SelectItem value="3">Configuration 3</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-
-                    {/* Bid Configuration Section */}
-                    <div className="space-y-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border">
-                      <h4 className="text-sm font-semibold flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4" />
-                        Bid Configuration
-                      </h4>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="baseBidAmount"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                Base Bid Amount ($)
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Default bid amount when no dynamic bidding logic is applied.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  min="0"
-                                  step="0.01"
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="payoutOn"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                Payout Trigger
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>When to trigger payout for successful calls.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="call_connected">Call Connected</SelectItem>
-                                  <SelectItem value="call_length">Call Length</SelectItem>
-                                  <SelectItem value="inbound_call">Inbound Call</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      {form.watch("payoutOn") === "call_length" && (
-                        <FormField
-                          control={form.control}
-                          name="payoutCallLength"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="flex items-center gap-2">
-                                Minimum Call Length (seconds)
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Minimum call duration required to trigger payout (1-3600 seconds).</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  min="1"
-                                  max="3600"
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value))}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                    </div>
-
                   </CardContent>
                 </Card>
               </TabsContent>
