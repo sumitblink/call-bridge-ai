@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,12 @@ import { Separator } from "@/components/ui/separator";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Settings, Globe, Clock, Shield, DollarSign, Target, TestTube, Phone, AlertTriangle, Info, Plus, ExternalLink, AlertCircle, Trash2 } from "lucide-react";
+import { Settings, Globe, Clock, Shield, DollarSign, Target, TestTube, Phone, AlertTriangle, Info, Plus, ExternalLink, AlertCircle, Trash2, Search, ChevronDown } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 
@@ -495,6 +497,60 @@ export function EnhancedRTBTargetDialog({
 }: EnhancedRTBTargetDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPredictiveRoutingSettings, setShowPredictiveRoutingSettings] = useState(false);
+  const [isTokenSearchOpen, setIsTokenSearchOpen] = useState(false);
+  const requestBodyInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Available RTB tokens
+  const availableTokens = [
+    // Basic Variables
+    { value: '{requestId}', label: 'Request ID', description: 'Unique request identifier' },
+    { value: '{campaignId}', label: 'Campaign ID', description: 'Campaign identifier' },
+    { value: '{callerId}', label: 'Caller ID', description: 'Caller\'s phone number' },
+    { value: '{callStartTime}', label: 'Call Start Time', description: 'Call start timestamp' },
+    { value: '{timestamp}', label: 'Timestamp', description: 'Current timestamp' },
+    { value: '{minBid}', label: 'Min Bid', description: 'Minimum bid amount' },
+    { value: '{maxBid}', label: 'Max Bid', description: 'Maximum bid amount' },
+    { value: '{currency}', label: 'Currency', description: 'Currency code' },
+    
+    // Enhanced Publisher Tracking
+    { value: '{inboundNumber}', label: 'Inbound Number', description: 'Specific number that received the call' },
+    { value: '{inboundCallId}', label: 'Inbound Call ID', description: 'Publisher-specific call ID' },
+    { value: '{publisherId}', label: 'Publisher ID', description: 'Publisher who generated the call' },
+    { value: '{publisherSubId}', label: 'Publisher Sub ID', description: 'Publisher\'s SubID for tracking' },
+    { value: '{exposeCallerId}', label: 'Expose Caller ID', description: 'Whether to expose caller ID' },
+    
+    // Ringba-Compliant Tokens
+    { value: '[tag:InboundNumber:Number-NoPlus]', label: 'CID (No Plus)', description: 'Inbound number without +1 prefix' },
+    { value: '[tag:InboundNumber:Number]', label: 'Inbound Number', description: 'Full inbound number' },
+    { value: '[Call:InboundCallId]', label: 'Publisher Call ID', description: 'Publisher inbound call ID' },
+    { value: '[Publisher:SubId]', label: 'Publisher SubID', description: 'Publisher SubID' },
+    { value: '[Publisher:Id]', label: 'Publisher ID Token', description: 'Publisher ID token' },
+    { value: '[Call:CallerId]', label: 'Caller ID Token', description: 'Caller ID token' },
+    { value: '[Call:CallerIdNoPlus]', label: 'Caller ID (No Plus)', description: 'Caller ID without +1 prefix' },
+    { value: '[tag:Geo:SubDivisionCode]', label: 'State Code', description: 'Caller\'s state code' },
+    { value: '[tag:Geo:ZipCode]', label: 'Zip Code', description: 'Caller\'s zip code' }
+  ];
+
+  // Function to insert token at cursor position
+  const insertTokenAtCursor = (token: string) => {
+    const input = requestBodyInputRef.current;
+    if (!input) return;
+
+    const start = input.selectionStart || 0;
+    const end = input.selectionEnd || 0;
+    const currentValue = form.getValues('requestBody') || '';
+    const newValue = currentValue.substring(0, start) + token + currentValue.substring(end);
+    
+    form.setValue('requestBody', newValue);
+    setIsTokenSearchOpen(false);
+    
+    // Focus back to input and position cursor after inserted token
+    setTimeout(() => {
+      input.focus();
+      const newPosition = start + token.length;
+      input.setSelectionRange(newPosition, newPosition);
+    }, 0);
+  };
 
   // Fetch predictive routing configurations
   const { data: predictiveRoutingConfigs = [], refetch: refetchPredictiveConfigs, isLoading: loadingConfigs } = useQuery<any[]>({
@@ -2537,16 +2593,83 @@ Please add tags with numerical values only."
                       name="requestBody"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Request Body Template</FormLabel>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Request Body Template</FormLabel>
+                            <Popover open={isTokenSearchOpen} onOpenChange={setIsTokenSearchOpen}>
+                              <PopoverTrigger asChild>
+                                <Button 
+                                  type="button" 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="flex items-center gap-1"
+                                >
+                                  <Search className="h-4 w-4" />
+                                  Search Token
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-96 p-0" align="end">
+                                <Command>
+                                  <CommandInput placeholder="Search tokens..." />
+                                  <CommandList className="max-h-80 overflow-y-auto">
+                                    <CommandEmpty>No tokens found.</CommandEmpty>
+                                    <CommandGroup heading="Basic Variables">
+                                      {availableTokens.slice(0, 8).map((token) => (
+                                        <CommandItem
+                                          key={token.value}
+                                          onSelect={() => insertTokenAtCursor(token.value)}
+                                          className="cursor-pointer"
+                                        >
+                                          <div className="flex flex-col items-start">
+                                            <div className="font-mono text-sm">{token.value}</div>
+                                            <div className="text-xs text-muted-foreground">{token.description}</div>
+                                          </div>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                    <CommandGroup heading="Enhanced Publisher Tracking">
+                                      {availableTokens.slice(8, 13).map((token) => (
+                                        <CommandItem
+                                          key={token.value}
+                                          onSelect={() => insertTokenAtCursor(token.value)}
+                                          className="cursor-pointer"
+                                        >
+                                          <div className="flex flex-col items-start">
+                                            <div className="font-mono text-sm">{token.value}</div>
+                                            <div className="text-xs text-muted-foreground">{token.description}</div>
+                                          </div>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                    <CommandGroup heading="Ringba-Compliant Tokens">
+                                      {availableTokens.slice(13).map((token) => (
+                                        <CommandItem
+                                          key={token.value}
+                                          onSelect={() => insertTokenAtCursor(token.value)}
+                                          className="cursor-pointer"
+                                        >
+                                          <div className="flex flex-col items-start">
+                                            <div className="font-mono text-sm">{token.value}</div>
+                                            <div className="text-xs text-muted-foreground">{token.description}</div>
+                                          </div>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
                           <FormControl>
                             <Textarea 
-                              placeholder='{"requestId": "{requestId}", "campaignId": "{campaignId}", "callerId": "{callerId}", "callStartTime": "{callStartTime}", "minBid": {minBid}, "maxBid": {maxBid}, "currency": "{currency}"}'
+                              ref={requestBodyInputRef}
+                              placeholder='{"CID": "[tag:InboundNumber:Number-NoPlus]", "exposeCallerId": "{exposeCallerId}", "publisherInboundCallId": "[Call:InboundCallId]", "SubId": "[Publisher:SubId]", "callerId": "{callerId}", "campaignId": "{campaignId}", "requestId": "{requestId}"}'
                               className="min-h-[120px] font-mono text-sm"
                               {...field}
                             />
                           </FormControl>
                           <FormDescription>
-                            Use template variables: {"{requestId}"}, {"{campaignId}"}, {"{callerId}"}, {"{callStartTime}"}, {"{minBid}"}, {"{maxBid}"}, {"{currency}"}
+                            Click "Search Token" to browse and insert available tracking parameters. Supports Ringba-compliant tokens like [tag:InboundNumber:Number-NoPlus], [Call:InboundCallId], [Publisher:SubId]
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
