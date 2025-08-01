@@ -609,6 +609,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createCall(call: any): Promise<Call> {
+    console.log('[SupabaseStorage] createCall input clickId:', call.clickId);
     const result = await db.insert(calls).values({
       campaignId: call.campaignId,
       buyerId: call.buyerId,
@@ -632,9 +633,21 @@ export class SupabaseStorage implements IStorage {
       revenue: call.revenue || '0.0000',
       profit: call.profit || '0.0000',
       sessionId: call.sessionId,
+      clickId: call.clickId, // Add missing clickId field
+      utmSource: call.utmSource,
+      utmMedium: call.utmMedium,
+      utmCampaign: call.utmCampaign,
+      utmContent: call.utmContent,
+      utmTerm: call.utmTerm,
+      referrer: call.referrer,
+      landingPage: call.landingPage,
+      userAgent: call.userAgent,
+      ipAddress: call.ipAddress,
+      geoLocation: call.geoLocation,
       createdAt: new Date(),
       updatedAt: new Date()
     }).returning();
+    console.log('[SupabaseStorage] createCall output clickId:', result[0].clickId);
     return result[0];
   }
 
