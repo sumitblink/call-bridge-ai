@@ -607,7 +607,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                           <ChevronDown className="w-3 h-3" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="w-[450px] max-w-[90vw] h-[500px] p-0 bg-background border-border">
+                      <DialogContent className="w-[450px] max-w-[90vw] max-h-[70vh] p-0 bg-background border-border flex flex-col">
                         <DialogHeader className="p-3 border-b border-border">
                           <DialogTitle className="text-foreground text-sm">Search Tokens</DialogTitle>
                           <div className="flex items-center gap-2 mt-2">
@@ -622,41 +622,43 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                           </div>
                         </DialogHeader>
                         
-                        <div className="flex-1 overflow-y-auto token-search-scroll px-2">
-                          {filteredCategories.map((category) => {
-                            const isExpanded = shouldExpandCategory(category.name);
-                            return (
-                              <div key={category.name} className="border-b border-border/50 last:border-b-0">
-                                <button
-                                  onClick={() => toggleCategory(category.name)}
-                                  className="w-full flex items-center justify-between p-2 hover:bg-accent hover:text-accent-foreground transition-colors text-left"
-                                >
-                                  <span className="text-xs font-medium text-foreground">{category.name}</span>
-                                  <ChevronDown 
-                                    className={`h-3 w-3 text-muted-foreground transition-transform ${
-                                      isExpanded ? 'rotate-180' : ''
-                                    }`} 
-                                  />
-                                </button>
-                                {isExpanded && (
-                                  <div className="bg-muted/30 mb-1 rounded">
-                                    {category.tokens.map((token, index) => (
-                                      <button
-                                        key={`${category.name}-${index}`}
-                                        onClick={() => insertTokenAtCursor(token.value)}
-                                        className="w-full text-left p-2 pl-4 hover:bg-accent hover:text-accent-foreground transition-colors rounded"
-                                      >
-                                        <div className="flex flex-col items-start">
-                                          <div className="font-mono text-xs text-foreground mb-0.5">{token.value}</div>
-                                          <div className="text-[10px] text-muted-foreground leading-tight">{token.description}</div>
-                                        </div>
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}</div>
+                        <div className="flex-1 overflow-y-auto token-search-scroll p-2 min-h-0">
+                          <div className="space-y-1">
+                            {filteredCategories.map((category) => {
+                              const isExpanded = shouldExpandCategory(category.name);
+                              return (
+                                <div key={category.name} className="border border-border/30 rounded-md">
+                                  <button
+                                    onClick={() => toggleCategory(category.name)}
+                                    className="w-full flex items-center justify-between p-2 hover:bg-accent hover:text-accent-foreground transition-colors text-left rounded-t-md"
+                                  >
+                                    <span className="text-xs font-medium text-foreground">{category.name}</span>
+                                    <ChevronDown 
+                                      className={`h-3 w-3 text-muted-foreground transition-transform ${
+                                        isExpanded ? 'rotate-180' : ''
+                                      }`} 
+                                    />
+                                  </button>
+                                  {isExpanded && (
+                                    <div className="bg-muted/20 border-t border-border/30">
+                                      {category.tokens.map((token, index) => (
+                                        <button
+                                          key={`${category.name}-${index}`}
+                                          onClick={() => insertTokenAtCursor(token.value)}
+                                          className="w-full text-left p-2 pl-3 hover:bg-accent hover:text-accent-foreground transition-colors border-b border-border/10 last:border-b-0"
+                                        >
+                                          <div className="flex flex-col items-start">
+                                            <div className="font-mono text-xs text-foreground mb-0.5">{token.value}</div>
+                                            <div className="text-[10px] text-muted-foreground leading-tight">{token.description}</div>
+                                          </div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div></div>
                       </DialogContent>
                     </Dialog>
                   </div>
