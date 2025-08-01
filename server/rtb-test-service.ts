@@ -134,10 +134,10 @@ export class RTBTestService {
       const results = await Promise.all(testPromises);
 
       // Determine auction winner (highest bid)
-      const successfulBids = results.filter(r => r.results?.post?.success && r.results.post.bidAmount);
+      const successfulBids = results.filter(r => !r.error && (r as any).results?.post?.success && (r as any).results.post.bidAmount);
       const winner = successfulBids.length > 0 ? successfulBids.reduce((prev, current) => {
-        const prevBid = parseFloat(prev.results?.post?.bidAmount || '0');
-        const currentBid = parseFloat(current.results?.post?.bidAmount || '0');
+        const prevBid = parseFloat(((prev as any).results?.post?.bidAmount || '0'));
+        const currentBid = parseFloat(((current as any).results?.post?.bidAmount || '0'));
         return currentBid > prevBid ? current : prev;
       }, successfulBids[0]) : null;
 
