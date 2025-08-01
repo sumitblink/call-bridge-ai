@@ -1,4 +1,5 @@
 import { storage } from './storage-db';
+import fetch from 'node-fetch';
 import type { 
   RtbTarget, 
   RtbRouter, 
@@ -705,6 +706,10 @@ export class RTBService {
         headers['Authorization'] = `Bearer ${target.authToken}`;
       } else if (target.authMethod === 'basic' && target.authToken) {
         headers['Authorization'] = `Basic ${target.authToken}`;
+      } else if (target.authMethod === 'choose_authentication') {
+        // For Ringba RTB endpoints, authentication is typically handled via URL tokens
+        // No explicit Authorization header needed - authentication is in the endpoint URL
+        console.log(`[RTB] Using URL-based authentication for ${target.name}`);
       }
 
       // Add custom headers
@@ -713,14 +718,22 @@ export class RTBService {
       }
 
       const startTime = Date.now();
+      const timeoutMs = target.timeoutMs || 5000;
       
-      // Make HTTP request to target endpoint
+      // Debug: Log the request being sent
+      console.log(`[RTB] Sending request to ${target.name} (${target.endpointUrl})`);
+      console.log(`[RTB] Request body: ${requestBody}`);
+      console.log(`[RTB] Headers:`, headers);
+      
+      // Make HTTP request to target endpoint using AbortSignal.timeout (same as working test service)
       const response = await fetch(target.endpointUrl, {
         method: target.httpMethod || 'POST',
         headers,
         body: target.httpMethod === 'GET' ? undefined : requestBody,
-        timeout: target.timeoutMs
+        signal: AbortSignal.timeout(timeoutMs)
       });
+      
+      console.log(`[RTB] Got response from ${target.name}: ${response.status} ${response.statusText}`);
 
       const responseTime = Date.now() - startTime;
 
@@ -732,7 +745,10 @@ export class RTBService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const responseData = await response.json() as any;
+      const responseText = await response.text();
+      console.log(`[RTB] Response body from ${target.name}:`, responseText);
+      
+      const responseData = JSON.parse(responseText);
 
       // Use advanced response parsing with JSONPath
       const bidAmount = this.extractResponseValue(responseData, target.bidAmountPath) || 
@@ -768,7 +784,17 @@ export class RTBService {
       };
 
     } catch (error) {
-      console.error(`Bid request failed for target ${targetId}:`, error);
+      const responseTime = startTime ? (Date.now() - startTime) : 0;
+      console.error(`[RTB] Bid request failed for target ${target.name} (ID: ${targetId}):`, error);
+      console.error(`[RTB] Error type:`, error instanceof Error ? error.name : typeof error);
+      console.error(`[RTB] Error message:`, error instanceof Error ? error.message : error);
+      console.error(`[RTB] Response time: ${responseTime}ms, Timeout setting: ${target.timeoutMs || 5000}ms`);
+      
+      // For timeout errors, log specific details
+      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('timeout'))) {
+        console.log(`[RTB] ${target.name} TIMED OUT after ${responseTime}ms (limit: ${target.timeoutMs || 5000}ms)`);
+      }
+      
       return null;
     }
   }
