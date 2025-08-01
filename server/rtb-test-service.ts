@@ -1,5 +1,5 @@
 import { db } from './db';
-import { rtbTargets, campaigns, rtbTargetAssignments } from '@shared/schema';
+import { rtbTargets, campaigns, campaignRtbTargets } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 
 export class RTBTestService {
@@ -91,13 +91,13 @@ export class RTBTestService {
       const assignments = await db
         .select({
           rtbTarget: rtbTargets,
-          assignment: rtbTargetAssignments
+          assignment: campaignRtbTargets
         })
-        .from(rtbTargetAssignments)
-        .innerJoin(rtbTargets, eq(rtbTargetAssignments.rtbTargetId, rtbTargets.id))
+        .from(campaignRtbTargets)
+        .innerJoin(rtbTargets, eq(campaignRtbTargets.rtbTargetId, rtbTargets.id))
         .where(
           and(
-            eq(rtbTargetAssignments.campaignId, campaignId),
+            eq(campaignRtbTargets.campaignId, campaignId),
             eq(rtbTargets.isActive, true)
           )
         );
