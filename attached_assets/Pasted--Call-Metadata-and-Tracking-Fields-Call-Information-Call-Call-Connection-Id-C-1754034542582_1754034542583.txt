@@ -1,0 +1,223 @@
+**Call Metadata and Tracking Fields**
+
+---
+
+### 📞 Call Information
+
+* Call
+* Call Connection Id
+* Call Connection Time
+* Time To Connect In Seconds
+* Call Completed Time
+* Call Length In Seconds
+* Connection Length In Seconds
+* Is Conversion
+* Conversion Amount
+* Call Cost
+* Profit
+* Last Dial Time
+* Time To Call In Seconds
+* Call Date Time
+* Inbound Call Id
+* Inbound Phone Number
+* Provider Call Id
+* Conversion Payout
+* Is Hangup Rerouted Call
+* Rerouted Global Inbound Call Id
+* Webhook Count
+* From Impression
+
+### 📅 Impression and Account Data
+
+* Account Id
+* Number Pool Id
+* Number Pool Name
+* Affiliate Name
+* Affiliate Id
+* Affiliate Sub Id
+* Token
+* Impression Date Time
+* Is Pool Hit
+* Rtb Bid Id
+
+### 🧱 Targeting and Routing
+
+* Connected Target
+* Id
+* Target Group Id
+* Is High Rate Target
+* Ringba Number Id
+* Ringba Rtb Setting Id
+* Sub Id
+* Target Call Increment
+* Search Numer
+* Caps Migrated
+* Priority Bump
+* Is Criteria Inverted
+* Block Recordings
+* Name
+* Version
+* Connected Target Group Id
+* Is Simal Dial
+* Disable Targets
+
+### 🌐 Campaign Configuration
+
+* Campaign
+* Id
+* User Campaign Id
+* Number Display Format
+* Country Code
+* Offer Id
+* Offer Draft Id
+* Eval Anonym Duplication
+* Payout Dupes Global
+* Campaign Type
+* Filter Calls Through Tcpa Shield
+* Play Tcpa Warning Message
+* Shaken Stir Allowed Attestations
+* Vertical Id
+* Name
+* Version
+
+### 🔎 Tracking Identifiers
+
+* Tracking Id
+* User
+* Flclid
+* Zip Code
+* Integration
+* Gbraid
+* Wbraid
+* Google Click Id
+* Google Keyword
+* Tracking S 1–6
+* Tracking Request Id
+* Redtrack Cid
+* Redtrack
+* Tracking Event Id
+
+### 🌎 Geolocation
+
+* Geo
+* Zipcode
+* Country
+* Country Code
+* Sub Division
+* Sub Division Code
+* City
+* Latitude
+* Longitude
+
+### 📰 Advertising Metadata
+
+* Facebook Campaign Name
+* Ad Set Name
+* Campaign Id
+* Rtclickid
+* Redtrack Cmpid
+* Tracking Offer Id
+
+### 🌐 Placement and Pages
+
+* Ping Tree
+* Bid Id
+* Placement Info
+* Placement Id
+* Landing Page Id
+* Landing Page Version
+* Number Pool Id
+* Number Pool Name
+* Search Term
+* Search Key Word
+
+### 🕒 Timestamp and Date Details
+
+* Utc Hour, Minute, Second
+* Hour, Minute, Second
+* Date
+* Utc Week Day
+* Utc Day
+* Utc Month
+* Utc Year
+* Utc Date
+* Iso Date
+* Week Day
+* Day
+* Month
+* Year
+* Time Zone
+* Date
+
+### 💼 Publisher Information
+
+* Publisher Name
+* Company Id
+* Sub Id
+
+### 📱 Phone Number Metadata
+
+* Replacement Number
+* Inbound Number
+* Number
+* Number No Plus
+* Number E.164
+* Country Code
+* Country Digits
+* Area Code
+* Is Phone Number Valid
+* Prefix
+* Suffix
+* Shaken Stir Validated
+* Shaken Stir Attestation
+* Region
+* State
+* Province
+* Province Code
+* Dialed Number
+* Number
+* Name
+
+### ⏱ Call Summary
+
+* Call Length Total
+* From Connect
+* From Dial
+* Conversion
+* Converted During Call
+* Call Info
+* Is Duplicate
+
+### 📶 Target and Buyer Details
+
+* Target Name
+* Target Id
+* Target Sub Id
+* Buyer Id
+* Buyer Name
+* Buyer Sub Id
+
+### ✉️ IVR & End Call Metadata
+
+* Ivr Id
+* Ivr Name
+* End Call
+* End Call Source
+* Recording
+* Recording Url
+
+### 🧶 Technology Metadata
+
+* Is Mobile
+* User Agent String
+* OS
+* OS Version
+* Browser
+* Browser Version
+* IP Address
+
+### 📊 Technical Connection Info
+
+* Connection Info
+* Request Info
+* Screen Info
