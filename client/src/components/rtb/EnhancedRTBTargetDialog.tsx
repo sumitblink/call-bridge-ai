@@ -3491,10 +3491,16 @@ Please add tags with numerical values only."
                           </div>
                           <FormControl>
                             <Textarea 
-                              ref={requestBodyInputRef}
+                              ref={(el) => {
+                                requestBodyInputRef.current = el;
+                                field.ref(el);
+                              }}
                               placeholder='{"CID": "[tag:InboundNumber:Number-NoPlus]", "exposeCallerId": "{exposeCallerId}", "publisherInboundCallId": "[Call:InboundCallId]", "SubId": "[Publisher:SubId]", "callerId": "{callerId}", "campaignId": "{campaignId}", "requestId": "{requestId}"}'
                               className="min-h-[120px] font-mono text-sm"
-                              {...field}
+                              name={field.name}
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
                             />
                           </FormControl>
                           <FormDescription>
