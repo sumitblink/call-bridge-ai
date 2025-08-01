@@ -3434,17 +3434,17 @@ Please add tags with numerical values only."
                               </Button>
                               
                               <Dialog open={isTokenSearchOpen} onOpenChange={setIsTokenSearchOpen}>
-                                <DialogContent className="w-[450px] max-w-[90vw] h-[500px] p-0 bg-slate-900 text-white border-slate-700">
-                                  <DialogHeader className="p-3 border-b border-slate-700">
-                                    <DialogTitle className="text-white text-sm">Search Tokens</DialogTitle>
+                                <DialogContent className="w-[450px] max-w-[90vw] h-[500px] p-0 bg-background border-border">
+                                  <DialogHeader className="p-3 border-b border-border">
+                                    <DialogTitle className="text-foreground text-sm">Search Tokens</DialogTitle>
                                     <div className="flex items-center gap-2 mt-2">
-                                      <Search className="h-3 w-3 text-slate-400" />
+                                      <Search className="h-3 w-3 text-muted-foreground" />
                                       <input 
                                         type="text" 
                                         placeholder="Search Token" 
                                         value={tokenSearchQuery}
                                         onChange={(e) => setTokenSearchQuery(e.target.value)}
-                                        className="bg-slate-800 text-white placeholder-slate-400 flex-1 outline-none text-xs px-2 py-1 rounded border border-slate-600 focus:border-slate-500"
+                                        className="bg-input text-foreground placeholder-muted-foreground flex-1 outline-none text-xs px-2 py-1 rounded border border-border focus:border-primary"
                                       />
                                     </div>
                                   </DialogHeader>
@@ -3453,29 +3453,29 @@ Please add tags with numerical values only."
                                     {filteredCategories.map((category) => {
                                       const isExpanded = shouldExpandCategory(category.name);
                                       return (
-                                        <div key={category.name} className="border-b border-slate-700/50 last:border-b-0">
+                                        <div key={category.name} className="border-b border-border/50 last:border-b-0">
                                           <button
                                             onClick={() => toggleCategory(category.name)}
-                                            className="w-full flex items-center justify-between p-2 hover:bg-slate-800 transition-colors text-left"
+                                            className="w-full flex items-center justify-between p-2 hover:bg-accent hover:text-accent-foreground transition-colors text-left"
                                           >
-                                            <span className="text-xs font-medium text-white">{category.name}</span>
+                                            <span className="text-xs font-medium text-foreground">{category.name}</span>
                                             <ChevronDown 
-                                              className={`h-3 w-3 text-slate-400 transition-transform ${
+                                              className={`h-3 w-3 text-muted-foreground transition-transform ${
                                                 isExpanded ? 'rotate-180' : ''
                                               }`} 
                                             />
                                           </button>
                                           {isExpanded && (
-                                            <div className="bg-slate-800/20 mb-1">
+                                            <div className="bg-muted/30 mb-1 rounded">
                                               {category.tokens.map((token) => (
                                                 <button
                                                   key={token.value}
                                                   onClick={() => insertTokenAtCursor(token.value)}
-                                                  className="w-full text-left p-2 pl-4 hover:bg-slate-700/50 transition-colors text-left"
+                                                  className="w-full text-left p-2 pl-4 hover:bg-accent hover:text-accent-foreground transition-colors rounded"
                                                 >
                                                   <div className="flex flex-col items-start">
-                                                    <div className="font-mono text-xs text-white mb-0.5">{token.value}</div>
-                                                    <div className="text-[10px] text-slate-400 leading-tight">{token.description}</div>
+                                                    <div className="font-mono text-xs text-foreground mb-0.5">{token.value}</div>
+                                                    <div className="text-[10px] text-muted-foreground leading-tight">{token.description}</div>
                                                   </div>
                                                 </button>
                                               ))}
