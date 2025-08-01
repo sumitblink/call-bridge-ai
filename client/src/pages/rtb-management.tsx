@@ -1119,7 +1119,7 @@ export default function SimplifiedRTBManagementPage() {
         <RTBTestDialog
           open={testDialogOpen}
           onOpenChange={setTestDialogOpen}
-          target={testTarget}
+          target={testTarget || undefined}
           mode={testMode}
         />
       </div>
