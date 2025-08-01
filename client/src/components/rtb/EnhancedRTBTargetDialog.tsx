@@ -526,49 +526,194 @@ export function EnhancedRTBTargetDialog({
   const [isTokenSearchOpen, setIsTokenSearchOpen] = useState(false);
   const requestBodyInputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Available RTB tokens - Ringba-compliant format
-  const availableTokens = [
-    // Basic Call Variables
-    { value: '{requestId}', label: 'Request ID', description: 'Unique request identifier' },
-    { value: '{campaignId}', label: 'Campaign ID', description: 'Campaign identifier' },
-    { value: '{callerId}', label: 'Caller ID', description: 'Caller\'s phone number' },
-    { value: '{callStartTime}', label: 'Call Start Time', description: 'Call start timestamp' },
-    { value: '{timestamp}', label: 'Timestamp', description: 'Current timestamp' },
-    { value: '{minBid}', label: 'Min Bid', description: 'Minimum bid amount' },
-    { value: '{maxBid}', label: 'Max Bid', description: 'Maximum bid amount' },
-    { value: '{currency}', label: 'Currency', description: 'Currency code' },
-    
-    // Enhanced Publisher Tracking (Ringba Format)
-    { value: '{inboundNumber}', label: 'Inbound Number', description: 'Specific number that received the call' },
-    { value: '{inboundCallId}', label: 'Inbound Call ID', description: 'Publisher-specific call ID' },
-    { value: '{publisherId}', label: 'Publisher ID', description: 'Publisher who generated the call' },
-    { value: '{publisherSubId}', label: 'Publisher Sub ID', description: 'Publisher\'s SubID for tracking' },
-    { value: '{exposeCallerId}', label: 'Expose Caller ID', description: 'Whether to expose caller ID' },
-    
-    // Ringba-Compliant Tag Tokens
-    { value: '[tag:InboundNumber:Number-NoPlus]', label: 'CID (No Plus)', description: 'Inbound number without +1 prefix (Ringba format)' },
-    { value: '[tag:InboundNumber:Number]', label: 'Inbound Number Tag', description: 'Full inbound number (Ringba format)' },
-    { value: '[Call:InboundCallId]', label: 'Publisher Call ID', description: 'Publisher inbound call ID (Ringba format)' },
-    { value: '[Publisher:SubId]', label: 'Publisher SubID', description: 'Publisher SubID (Ringba format)' },
-    { value: '[Publisher:Id]', label: 'Publisher ID Token', description: 'Publisher ID token (Ringba format)' },
-    { value: '[Call:CallerId]', label: 'Caller ID Token', description: 'Caller ID token (Ringba format)' },
-    { value: '[Call:CallerIdNoPlus]', label: 'Caller ID (No Plus)', description: 'Caller ID without +1 prefix (Ringba format)' },
-    
-    // Geographic & URL Parameters (Ringba Style)
-    { value: '[tag:Geo:SubDivisionCode]', label: 'State Code', description: 'Caller\'s state code (Ringba format)' },
-    { value: '[tag:Geo:ZipCode]', label: 'Zip Code', description: 'Caller\'s zip code (Ringba format)' },
-    { value: '[tag:Geo:City]', label: 'City', description: 'Caller\'s city (Ringba format)' },
-    { value: '[tag:User:affiliate_id]', label: 'Affiliate ID', description: 'URL parameter: affiliate_id' },
-    { value: '[tag:User:keyword]', label: 'Keyword', description: 'URL parameter: keyword' },
-    { value: '[tag:User:source]', label: 'Source', description: 'URL parameter: source' },
-    { value: '[tag:User:medium]', label: 'Medium', description: 'URL parameter: medium' },
-    { value: '[tag:User:campaign]', label: 'Campaign', description: 'URL parameter: campaign' },
-    { value: '[tag:User:utm_source]', label: 'UTM Source', description: 'URL parameter: utm_source' },
-    { value: '[tag:User:utm_medium]', label: 'UTM Medium', description: 'URL parameter: utm_medium' },
-    { value: '[tag:User:utm_campaign]', label: 'UTM Campaign', description: 'URL parameter: utm_campaign' },
-    { value: '[tag:User:utm_term]', label: 'UTM Term', description: 'URL parameter: utm_term' },
-    { value: '[tag:User:utm_content]', label: 'UTM Content', description: 'URL parameter: utm_content' }
+  // Complete RTB tokens organized by category - Based on comprehensive token list
+  const tokenCategories = [
+    {
+      name: "Basic Call Variables",
+      tokens: [
+        { value: '{requestId}', label: 'requestId', description: 'Unique request identifier' },
+        { value: '{campaignId}', label: 'campaignId', description: 'Campaign identifier' },
+        { value: '{callerId}', label: 'callerId', description: 'Caller\'s phone number' },
+        { value: '{callStartTime}', label: 'callStartTime', description: 'Call start timestamp' },
+        { value: '{timestamp}', label: 'timestamp', description: 'Current timestamp' },
+        { value: '{minBid}', label: 'minBid', description: 'Minimum bid amount' },
+        { value: '{maxBid}', label: 'maxBid', description: 'Maximum bid amount' },
+        { value: '{currency}', label: 'currency', description: 'Currency code' }
+      ]
+    },
+    {
+      name: "Call Information",
+      tokens: [
+        { value: '[Call:ConnectionId]', label: 'Call Connection Id', description: 'Call connection identifier' },
+        { value: '[Call:ConnectionTime]', label: 'Call Connection Time', description: 'Time when call was connected' },
+        { value: '[Call:TimeToConnectInSeconds]', label: 'Time To Connect In Seconds', description: 'Seconds to establish connection' },
+        { value: '[Call:CompletedTime]', label: 'Call Completed Time', description: 'Time when call completed' },
+        { value: '[Call:LengthInSeconds]', label: 'Call Length In Seconds', description: 'Total call duration in seconds' },
+        { value: '[Call:ConnectionLengthInSeconds]', label: 'Connection Length In Seconds', description: 'Connected portion duration' },
+        { value: '[Call:IsConversion]', label: 'Is Conversion', description: 'Whether call converted' },
+        { value: '[Call:ConversionAmount]', label: 'Conversion Amount', description: 'Revenue from conversion' },
+        { value: '[Call:Cost]', label: 'Call Cost', description: 'Cost of the call' },
+        { value: '[Call:Profit]', label: 'Profit', description: 'Profit from call' },
+        { value: '[Call:LastDialTime]', label: 'Last Dial Time', description: 'Time of last dial attempt' },
+        { value: '[Call:TimeToCallInSeconds]', label: 'Time To Call In Seconds', description: 'Seconds from impression to call' },
+        { value: '[Call:DateTime]', label: 'Call Date Time', description: 'Call timestamp' },
+        { value: '[Call:InboundCallId]', label: 'Inbound Call Id', description: 'Inbound call identifier' },
+        { value: '[Call:InboundPhoneNumber]', label: 'Inbound Phone Number', description: 'Number that received call' },
+        { value: '[Call:ProviderCallId]', label: 'Provider Call Id', description: 'Provider call identifier' },
+        { value: '[Call:ConversionPayout]', label: 'Conversion Payout', description: 'Payout amount for conversion' }
+      ]
+    },
+    {
+      name: "Account and Impression Data", 
+      tokens: [
+        { value: '[Account:Id]', label: 'Account Id', description: 'Account identifier' },
+        { value: '[NumberPool:Id]', label: 'Number Pool Id', description: 'Number pool identifier' },
+        { value: '[NumberPool:Name]', label: 'Number Pool Name', description: 'Number pool name' },
+        { value: '[Affiliate:Name]', label: 'Affiliate Name', description: 'Affiliate name' },
+        { value: '[Affiliate:Id]', label: 'Affiliate Id', description: 'Affiliate identifier' },
+        { value: '[Affiliate:SubId]', label: 'Affiliate Sub Id', description: 'Affiliate sub identifier' },
+        { value: '[Impression:Token]', label: 'Token', description: 'Impression token' },
+        { value: '[Impression:DateTime]', label: 'Impression Date Time', description: 'When impression occurred' },
+        { value: '[Impression:IsPoolHit]', label: 'Is Pool Hit', description: 'Whether pool was hit' },
+        { value: '[Impression:RtbBidId]', label: 'Rtb Bid Id', description: 'RTB bid identifier' }
+      ]
+    },
+    {
+      name: "Targeting and Routing",
+      tokens: [
+        { value: '[Target:ConnectedTarget]', label: 'Connected Target', description: 'Target that connected' },
+        { value: '[Target:Id]', label: 'Target Id', description: 'Target identifier' },
+        { value: '[Target:GroupId]', label: 'Target Group Id', description: 'Target group identifier' },
+        { value: '[Target:IsHighRate]', label: 'Is High Rate Target', description: 'Whether target is high rate' },
+        { value: '[Target:RingbaNumberId]', label: 'Ringba Number Id', description: 'Ringba number identifier' },
+        { value: '[Target:RingbaRtbSettingId]', label: 'Ringba Rtb Setting Id', description: 'RTB setting identifier' },
+        { value: '[Target:SubId]', label: 'Target Sub Id', description: 'Target sub identifier' },
+        { value: '[Target:CallIncrement]', label: 'Target Call Increment', description: 'Call increment for target' },
+        { value: '[Target:SearchNumber]', label: 'Search Number', description: 'Search number' },
+        { value: '[Target:PriorityBump]', label: 'Priority Bump', description: 'Priority adjustment' },
+        { value: '[Target:Name]', label: 'Target Name', description: 'Target name' },
+        { value: '[Target:BuyerId]', label: 'Buyer Id', description: 'Buyer identifier' },
+        { value: '[Target:BuyerName]', label: 'Buyer Name', description: 'Buyer name' },
+        { value: '[Target:BuyerSubId]', label: 'Buyer Sub Id', description: 'Buyer sub identifier' }
+      ]
+    },
+    {
+      name: "Campaign Configuration",
+      tokens: [
+        { value: '[Campaign:Id]', label: 'Campaign Id', description: 'Campaign identifier' },
+        { value: '[Campaign:UserCampaignId]', label: 'User Campaign Id', description: 'User campaign identifier' },
+        { value: '[Campaign:NumberDisplayFormat]', label: 'Number Display Format', description: 'Number display format' },
+        { value: '[Campaign:CountryCode]', label: 'Country Code', description: 'Campaign country code' },
+        { value: '[Campaign:OfferId]', label: 'Offer Id', description: 'Offer identifier' },
+        { value: '[Campaign:OfferDraftId]', label: 'Offer Draft Id', description: 'Offer draft identifier' },
+        { value: '[Campaign:Type]', label: 'Campaign Type', description: 'Type of campaign' },
+        { value: '[Campaign:VerticalId]', label: 'Vertical Id', description: 'Vertical identifier' },
+        { value: '[Campaign:Name]', label: 'Campaign Name', description: 'Campaign name' },
+        { value: '[Campaign:Version]', label: 'Campaign Version', description: 'Campaign version' }
+      ]
+    },
+    {
+      name: "Tracking Identifiers",
+      tokens: [
+        { value: '[Tracking:Id]', label: 'Tracking Id', description: 'Tracking identifier' },
+        { value: '[Tracking:User]', label: 'User', description: 'Tracking user' },
+        { value: '[Tracking:Flclid]', label: 'Flclid', description: 'Facebook click ID' },
+        { value: '[Tracking:ZipCode]', label: 'Zip Code', description: 'Tracking zip code' },
+        { value: '[Tracking:Integration]', label: 'Integration', description: 'Integration identifier' },
+        { value: '[Tracking:Gbraid]', label: 'Gbraid', description: 'Google brand identifier' },
+        { value: '[Tracking:Wbraid]', label: 'Wbraid', description: 'Web brand identifier' },
+        { value: '[Tracking:GoogleClickId]', label: 'Google Click Id', description: 'Google click identifier' },
+        { value: '[Tracking:GoogleKeyword]', label: 'Google Keyword', description: 'Google keyword' },
+        { value: '[Tracking:S1]', label: 'Tracking S1', description: 'Tracking parameter S1' },
+        { value: '[Tracking:S2]', label: 'Tracking S2', description: 'Tracking parameter S2' },
+        { value: '[Tracking:S3]', label: 'Tracking S3', description: 'Tracking parameter S3' },
+        { value: '[Tracking:S4]', label: 'Tracking S4', description: 'Tracking parameter S4' },
+        { value: '[Tracking:S5]', label: 'Tracking S5', description: 'Tracking parameter S5' },
+        { value: '[Tracking:S6]', label: 'Tracking S6', description: 'Tracking parameter S6' },
+        { value: '[Tracking:RequestId]', label: 'Tracking Request Id', description: 'Tracking request identifier' },
+        { value: '[Tracking:RedtrackCid]', label: 'Redtrack Cid', description: 'RedTrack campaign ID' },
+        { value: '[Tracking:EventId]', label: 'Tracking Event Id', description: 'Tracking event identifier' }
+      ]
+    },
+    {
+      name: "Geolocation",
+      tokens: [
+        { value: '[Geo:Zipcode]', label: 'Zipcode', description: 'Geographic zip code' },
+        { value: '[Geo:Country]', label: 'Country', description: 'Country name' },
+        { value: '[Geo:CountryCode]', label: 'Country Code', description: 'Country code' },
+        { value: '[Geo:SubDivision]', label: 'Sub Division', description: 'State or province name' },
+        { value: '[Geo:SubDivisionCode]', label: 'Sub Division Code', description: 'State or province code' },
+        { value: '[Geo:City]', label: 'City', description: 'City name' },
+        { value: '[Geo:Latitude]', label: 'Latitude', description: 'Geographic latitude' },
+        { value: '[Geo:Longitude]', label: 'Longitude', description: 'Geographic longitude' }
+      ]
+    },
+    {
+      name: "Publisher Information",
+      tokens: [
+        { value: '[Publisher:Name]', label: 'Publisher Name', description: 'Publisher name' },
+        { value: '[Publisher:Id]', label: 'Publisher Id', description: 'Publisher identifier' },
+        { value: '[Publisher:CompanyId]', label: 'Company Id', description: 'Publisher company identifier' },
+        { value: '[Publisher:SubId]', label: 'Publisher Sub Id', description: 'Publisher sub identifier' }
+      ]
+    },
+    {
+      name: "Phone Number Metadata",
+      tokens: [
+        { value: '[InboundNumber:Number]', label: 'Inbound Number', description: 'Inbound phone number' },
+        { value: '[InboundNumber:NumberNoPlus]', label: 'Number No Plus', description: 'Number without + prefix' },
+        { value: '[InboundNumber:NumberE164]', label: 'Number E.164', description: 'E.164 formatted number' },
+        { value: '[InboundNumber:CountryCode]', label: 'Country Code', description: 'Phone country code' },
+        { value: '[InboundNumber:CountryDigits]', label: 'Country Digits', description: 'Country digits' },
+        { value: '[InboundNumber:AreaCode]', label: 'Area Code', description: 'Phone area code' },
+        { value: '[InboundNumber:IsValid]', label: 'Is Phone Number Valid', description: 'Whether number is valid' },
+        { value: '[InboundNumber:Prefix]', label: 'Prefix', description: 'Number prefix' },
+        { value: '[InboundNumber:Suffix]', label: 'Suffix', description: 'Number suffix' },
+        { value: '[InboundNumber:Region]', label: 'Region', description: 'Phone number region' },
+        { value: '[InboundNumber:State]', label: 'State', description: 'Phone number state' },
+        { value: '[InboundNumber:Province]', label: 'Province', description: 'Phone number province' },
+        { value: '[InboundNumber:ProvinceCode]', label: 'Province Code', description: 'Province code' }
+      ]
+    },
+    {
+      name: "Technology Metadata",
+      tokens: [
+        { value: '[Technology:IsMobile]', label: 'Is Mobile', description: 'Whether device is mobile' },
+        { value: '[Technology:UserAgentString]', label: 'User Agent String', description: 'Browser user agent' },
+        { value: '[Technology:OS]', label: 'OS', description: 'Operating system' },
+        { value: '[Technology:OSVersion]', label: 'OS Version', description: 'OS version' },
+        { value: '[Technology:Browser]', label: 'Browser', description: 'Browser name' },
+        { value: '[Technology:BrowserVersion]', label: 'Browser Version', description: 'Browser version' },
+        { value: '[Technology:IPAddress]', label: 'IP Address', description: 'User IP address' }
+      ]
+    },
+    {
+      name: "Date and Time",
+      tokens: [
+        { value: '[DateTime:UtcHour]', label: 'Utc Hour', description: 'UTC hour' },
+        { value: '[DateTime:UtcMinute]', label: 'Utc Minute', description: 'UTC minute' },
+        { value: '[DateTime:UtcSecond]', label: 'Utc Second', description: 'UTC second' },
+        { value: '[DateTime:Hour]', label: 'Hour', description: 'Local hour' },
+        { value: '[DateTime:Minute]', label: 'Minute', description: 'Local minute' },
+        { value: '[DateTime:Second]', label: 'Second', description: 'Local second' },
+        { value: '[DateTime:Date]', label: 'Date', description: 'Date' },
+        { value: '[DateTime:UtcWeekDay]', label: 'Utc Week Day', description: 'UTC week day' },
+        { value: '[DateTime:UtcDay]', label: 'Utc Day', description: 'UTC day' },
+        { value: '[DateTime:UtcMonth]', label: 'Utc Month', description: 'UTC month' },
+        { value: '[DateTime:UtcYear]', label: 'Utc Year', description: 'UTC year' },
+        { value: '[DateTime:UtcDate]', label: 'Utc Date', description: 'UTC date' },
+        { value: '[DateTime:IsoDate]', label: 'Iso Date', description: 'ISO formatted date' },
+        { value: '[DateTime:WeekDay]', label: 'Week Day', description: 'Week day' },
+        { value: '[DateTime:Day]', label: 'Day', description: 'Day' },
+        { value: '[DateTime:Month]', label: 'Month', description: 'Month' },
+        { value: '[DateTime:Year]', label: 'Year', description: 'Year' },
+        { value: '[DateTime:TimeZone]', label: 'Time Zone', description: 'Time zone' }
+      ]
+    }
   ];
+
+  // Flatten all tokens for search
+  const allTokens = tokenCategories.flatMap(category => category.tokens);
 
   // Function to insert token at cursor position
   const insertTokenAtCursor = (token: string) => {
@@ -3230,62 +3375,22 @@ Please add tags with numerical values only."
                                   <CommandInput placeholder="Search tokens..." />
                                   <CommandList className="max-h-80 overflow-y-auto">
                                     <CommandEmpty>No tokens found.</CommandEmpty>
-                                    <CommandGroup heading="Basic Call Variables">
-                                      {availableTokens.slice(0, 8).map((token) => (
-                                        <CommandItem
-                                          key={token.value}
-                                          onSelect={() => insertTokenAtCursor(token.value)}
-                                          className="cursor-pointer"
-                                        >
-                                          <div className="flex flex-col items-start">
-                                            <div className="font-mono text-sm">{token.value}</div>
-                                            <div className="text-xs text-muted-foreground">{token.description}</div>
-                                          </div>
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                    <CommandGroup heading="Publisher Tracking">
-                                      {availableTokens.slice(8, 13).map((token) => (
-                                        <CommandItem
-                                          key={token.value}
-                                          onSelect={() => insertTokenAtCursor(token.value)}
-                                          className="cursor-pointer"
-                                        >
-                                          <div className="flex flex-col items-start">
-                                            <div className="font-mono text-sm">{token.value}</div>
-                                            <div className="text-xs text-muted-foreground">{token.description}</div>
-                                          </div>
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                    <CommandGroup heading="Ringba Tag Tokens">
-                                      {availableTokens.slice(13, 20).map((token) => (
-                                        <CommandItem
-                                          key={token.value}
-                                          onSelect={() => insertTokenAtCursor(token.value)}
-                                          className="cursor-pointer"
-                                        >
-                                          <div className="flex flex-col items-start">
-                                            <div className="font-mono text-sm">{token.value}</div>
-                                            <div className="text-xs text-muted-foreground">{token.description}</div>
-                                          </div>
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                    <CommandGroup heading="URL Parameters">
-                                      {availableTokens.slice(20).map((token) => (
-                                        <CommandItem
-                                          key={token.value}
-                                          onSelect={() => insertTokenAtCursor(token.value)}
-                                          className="cursor-pointer"
-                                        >
-                                          <div className="flex flex-col items-start">
-                                            <div className="font-mono text-sm">{token.value}</div>
-                                            <div className="text-xs text-muted-foreground">{token.description}</div>
-                                          </div>
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
+                                    {tokenCategories.map((category) => (
+                                      <CommandGroup key={category.name} heading={category.name}>
+                                        {category.tokens.map((token) => (
+                                          <CommandItem
+                                            key={token.value}
+                                            onSelect={() => insertTokenAtCursor(token.value)}
+                                            className="cursor-pointer"
+                                          >
+                                            <div className="flex flex-col items-start">
+                                              <div className="font-mono text-sm">{token.value}</div>
+                                              <div className="text-xs text-muted-foreground">{token.description}</div>
+                                            </div>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    ))}
                                   </CommandList>
                                 </Command>
                               </PopoverContent>
