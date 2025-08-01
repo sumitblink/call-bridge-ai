@@ -1286,7 +1286,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Campaign RTB Target Assignments (replaces router assignments)
-  async getCampaignRtbTargets(campaignId: number): Promise<CampaignRtbTarget[]> {
+  async getCampaignRtbTargets(campaignId: string): Promise<CampaignRtbTarget[]> {
     return await db
       .select()
       .from(campaignRtbTargets)

@@ -226,7 +226,6 @@ export interface IStorage {
   deleteRtbRouter(id: number): Promise<boolean>;
   
   // Campaign RTB Target Assignments (replaces router assignments)
-  getCampaignRtbTargets(campaignId: number): Promise<CampaignRtbTarget[]>;
   createCampaignRtbTarget(assignment: InsertCampaignRtbTarget): Promise<CampaignRtbTarget>;
   deleteCampaignRtbTarget(campaignId: number, targetId: number): Promise<boolean>;
   
