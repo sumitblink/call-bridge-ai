@@ -552,20 +552,7 @@ export default function SimplifiedRTBManagementPage() {
                 <CardDescription>RTB auction requests and responses</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="mb-4 flex justify-between items-start">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-md">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Info className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-800">Common RTB Failure Codes</span>
-                    </div>
-                    <div className="text-xs text-blue-700 space-y-1">
-                      <div><strong>1006:</strong> Final capacity check (normal filtering)</div>
-                      <div><strong>1100:</strong> Caller ID verification (format issue)</div>
-                      <div><strong>1003:</strong> No capacity available</div>
-                      <div><strong>1004:</strong> Caller ID blocked/filtered</div>
-                      <div>These are normal RTB market behaviors, not system errors.</div>
-                    </div>
-                  </div>
+                <div className="mb-4 flex justify-end items-center">
                   <div className="flex items-center space-x-3">
                     <Button
                       variant="outline"
