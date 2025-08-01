@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Auth from "@/pages/auth";
-import Documentation from "@/pages/documentation";
 import Campaigns from "@/pages/campaigns";
 import CampaignDetail from "@/pages/campaign-detail";
 import Buyers from "@/pages/buyers";
@@ -18,7 +17,6 @@ import IVRSetup from "@/pages/ivr-setup";
 import Integrations from "@/pages/integrations";
 import PhoneNumbers from "@/pages/phone-numbers";
 import RTBManagement from "@/pages/rtb-management";
-import Feedback from "@/pages/feedback";
 import CallFlows from "@/pages/call-flows";
 import RedTrackPage from "@/pages/redtrack";
 
@@ -49,7 +47,6 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/documentation" component={Documentation} />
       {!isAuthenticated ? (
         <>
           <Route path="/" component={Auth} />
@@ -76,7 +73,6 @@ function Router() {
           <Route path="/settings/predictive-routing" component={PredictiveRoutingSettings} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/redtrack" component={RedTrackPage} />
-          <Route path="/help" component={Feedback} />
 
           <Route component={NotFound} />
         </>

@@ -1,11 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { Phone, BarChart3, BellRing, Users, PhoneCall, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut, HelpCircle, Menu, X, Database, Target, MessageCircle, GitBranch, Activity, TrendingUp, ChevronDown, ChevronRight, ExternalLink, Settings } from "lucide-react";
+import { Phone, BarChart3, BellRing, Users, PhoneCall, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut, Menu, X, Database, Target, GitBranch, Activity, TrendingUp, ChevronDown, ChevronRight, ExternalLink, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Documentation } from "@/components/ui/documentation";
 import { useState } from "react";
 
 const navigation = [
@@ -20,7 +19,7 @@ const navigation = [
   { name: "RTB Management", href: "/rtb-management", icon: Target, current: false },
   { name: "Call Flows", href: "/call-flows", icon: GitBranch, current: false },
   { name: "Integrations", href: "/integrations", icon: Zap, current: false },
-  { name: "Help & Q&A", href: "/help", icon: MessageCircle, current: false },
+
 
 ];
 
@@ -274,28 +273,7 @@ export default function Sidebar() {
           })}
         </div>
       </nav>
-      {/* Help & Documentation */}
-      <div className="px-4 py-2 border-t border-gray-200">
-        <Documentation 
-          trigger={
-            <Button
-              variant="ghost"
-              className={`w-full ${isCollapsed ? 'justify-center' : 'justify-start'} text-gray-600 hover:text-gray-900 hover:bg-gray-50 relative group`}
-              title={isCollapsed ? "Help & Documentation" : ""}
-            >
-              <HelpCircle className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} ${isCollapsed ? '' : 'mr-3'}`} />
-              {!isCollapsed && "Help & Documentation"}
-              
-              {/* Tooltip for collapsed state */}
-              {isCollapsed && (
-                <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                  Help & Documentation
-                </div>
-              )}
-            </Button>
-          }
-        />
-      </div>
+
       {/* User Profile */}
       <div className="px-4 py-4 border-t border-gray-200">
         <div className={`flex items-center ${isCollapsed ? 'flex-col space-y-2' : 'justify-between'}`}>
