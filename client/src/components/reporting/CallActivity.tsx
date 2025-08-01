@@ -188,7 +188,7 @@ function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps
                 <span className="text-gray-600">Buyer:</span> {(buyer as any)?.companyName || buyer?.name || 'No buyer assigned'}
               </div>
               <div>
-                <span className="text-gray-600">Target:</span> {(targets.find((t: any) => t.id === (call as any).targetId))?.name || 'No target assigned'}
+                <span className="text-gray-600">Target:</span> {(targets?.find((t: any) => t.id === (call as any).targetId))?.name || 'No target assigned'}
               </div>
               <div>
                 <span className="text-gray-600">Revenue:</span> ${call.revenue}
@@ -552,7 +552,7 @@ export default function CallActivity() {
         const buyer = buyers.find(b => b.id === call.buyerId);
         return <div className="truncate text-xs">{(buyer as any)?.companyName || buyer?.name || 'No Buyer'}</div>;
       case 'target':
-        const target = targets.find((t: any) => t.id === (call as any).targetId);
+        const target = targets?.find((t: any) => t.id === (call as any).targetId);
         return <div className="truncate text-xs">{target?.name || 'No Target'}</div>;
       case 'fromNumber':
         return <div className="font-mono text-xs">{call.fromNumber}</div>;
@@ -607,7 +607,7 @@ export default function CallActivity() {
       
       // Additional missing column mappings from database
       case 'targetNumber':
-        const callTarget = targets.find((t: any) => t.id === (call as any).targetId);
+        const callTarget = targets?.find((t: any) => t.id === (call as any).targetId);
         return <div className="font-mono text-xs">{callTarget?.phoneNumber || '-'}</div>;
       case 'targetId':
         return <div className="text-xs">{(call as any).targetId || '-'}</div>;
