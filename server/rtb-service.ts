@@ -774,7 +774,7 @@ export class RTBService {
                        responseData.bidAmount || responseData.price || 0;
       
       const destinationNumber = this.extractResponseValue(responseData, target.destinationNumberPath) || 
-                               responseData.destinationNumber || responseData.phoneNumber || '';
+                               responseData.destinationNumber || responseData.phoneNumber || null;
       
       const currency = this.extractResponseValue(responseData, target.currencyPath) || 
                       responseData.bidCurrency || responseData.currency || target.currency;
@@ -786,9 +786,22 @@ export class RTBService {
                         responseData.accepted || responseData.accept || true;
 
       // Validate response format
-      if (!this.validateBidResponse({ bidAmount, destinationNumber, currency }, target)) {
+      const responseToValidate = { bidAmount, destinationNumber, currency };
+      console.log(`[RTB] Validating response for ${target.name}:`, responseToValidate);
+      
+      if (!this.validateBidResponse(responseToValidate, target)) {
+        console.log(`[RTB] Response validation FAILED for ${target.name}:`, {
+          bidAmount: bidAmount,
+          bidAmountType: typeof bidAmount,
+          destinationNumber: destinationNumber,
+          destinationNumberType: typeof destinationNumber,
+          isValidBidAmount: !isNaN(parseFloat(bidAmount)) && parseFloat(bidAmount) >= 0,
+          isBidZero: parseFloat(bidAmount) === 0
+        });
         throw new Error('Invalid bid response format');
       }
+      
+      console.log(`[RTB] Response validation PASSED for ${target.name}`);
 
       const isValid = this.isBidValid({ bidAmount, destinationNumber, currency, accepted: acceptance }, target);
       
@@ -844,13 +857,24 @@ export class RTBService {
    * Validate bid response structure
    */
   private static validateBidResponse(response: any, target: RtbTarget): boolean {
-    return (
-      typeof response === 'object' &&
-      (typeof response.bidAmount === 'number' || !isNaN(parseFloat(response.bidAmount))) &&
-      typeof response.destinationNumber === 'string' &&
-      parseFloat(response.bidAmount) >= 0 &&
-      response.destinationNumber.length > 0
-    );
+    // Basic response object validation
+    if (typeof response !== 'object' || response === null) {
+      return false;
+    }
+    
+    // Check if bidAmount is present and valid (can be 0 for rejections)
+    const bidAmount = parseFloat(response.bidAmount);
+    if (isNaN(bidAmount) || bidAmount < 0) {
+      return false;
+    }
+    
+    // For bid rejections (bidAmount = 0), destinationNumber is not required
+    if (bidAmount === 0) {
+      return true; // Valid rejection response
+    }
+    
+    // For valid bids (bidAmount > 0), destinationNumber is required
+    return typeof response.destinationNumber === 'string' && response.destinationNumber.length > 0;
   }
 
   /**
@@ -858,8 +882,14 @@ export class RTBService {
    */
   private static isBidValid(response: any, target: RtbTarget): boolean {
     const bidAmount = parseFloat(response.bidAmount);
-    const minBid = parseFloat(target.minBidAmount as any);
-    const maxBid = parseFloat(target.maxBidAmount as any);
+    
+    // If bid amount is 0, this is a rejection - mark as invalid for auction purposes
+    if (bidAmount === 0) {
+      return false; // Valid response format, but rejected bid
+    }
+    
+    const minBid = parseFloat(target.minBidAmount as any) || 0;
+    const maxBid = parseFloat(target.maxBidAmount as any) || 999999;
     
     // Check if the bid is explicitly accepted (if acceptance field is present)
     const isAccepted = response.accepted === undefined ? true : Boolean(response.accepted);

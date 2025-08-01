@@ -1,0 +1,61 @@
+[Pool Webhook] Found 2 RTB targets assigned to campaign
+[Pool Webhook] Attempting RTB bidding with 2 targets
+[Pool Webhook] Conducting bidding with request: {
+  requestId: 'pool_16_CAb519f34fdc62b79a4af5560f1b7f9e31',
+  campaignId: '928a699e-e241-46ab-bc54-9f6779d38b32',
+  campaignRtbId: '04a3040e3b3c74ba4c880e832ea9cdf1',
+  callerId: '+12129200892',
+  callerState: 'NY',
+  callerZip: '10167',
+  callStartTime: 2025-08-01T12:48:46.707Z,
+  timeoutMs: 5000
+}
+[RTB] Using URL-based authentication for Medi - VIP Response - RTB
+[RTB] Sending request to Medi - VIP Response - RTB (https://rtb.ringba.com/v1/production/43e808fa20e14e4189ed7e9756295d9b.json)
+[RTB] Request body: {"CID":"2129200892","exposeCallerId":"yes","publisherInboundCallId":"pool_16_CAb519f34fdc62b79a4af5560f1b7f9e31"}
+[RTB] Headers: {
+  'Content-Type': 'application/json',
+  'User-Agent': 'CallCenter-RTB/1.0'
+}
+[RTB] Using URL-based authentication for Medi - WeGenerate - Internal - Medi - Tier 1
+[RTB] Sending request to Medi - WeGenerate - Internal - Medi - Tier 1 (https://rtb.ringba.com/v1/production/891586da72c44c15ab47961bec4e5926.json)
+[RTB] Request body: {"CID":"2129200892","exposeCallerId":"yes","publisherInboundCallId":"pool_16_CAb519f34fdc62b79a4af5560f1b7f9e31","SubId":""}
+[RTB] Headers: {
+  'Content-Type': 'application/json',
+  'User-Agent': 'CallCenter-RTB/1.0'
+}
+[RTB] Got response from Medi - VIP Response - RTB: 200 OK
+[RTB] ===== RESPONSE FROM Medi - VIP Response - RTB =====
+[RTB] Status: 200 OK
+[RTB] Response body: {"bidId":"RTBff7cd3484f09445d96903fedbb54f69b","bidAmount":0,"rejectReason":"No capacity (Code: 1003)"}
+[RTB] ===== END RESPONSE =====
+[RTB] Bid request failed for target ID 31: Error: Invalid bid response format
+    at Function.sendBidRequest (/home/runner/workspace/server/rtb-service.ts:790:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Promise.allSettled (index 0)
+    at async Function.initiateAuction (/home/runner/workspace/server/rtb-service.ts:473:23)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1766:35)
+[RTB] Error type: Error
+[RTB] Error message: Invalid bid response format
+[RTB] Got response from Medi - WeGenerate - Internal - Medi - Tier 1: 200 OK
+[RTB] ===== RESPONSE FROM Medi - WeGenerate - Internal - Medi - Tier 1 =====
+[RTB] Status: 200 OK
+[RTB] Response body: {"bidId":"RTB55eca1bfa23a408796b0740dc7075202","bidAmount":0,"rejectReason":"No capacity (Code: 1003)"}
+[RTB] ===== END RESPONSE =====
+[RTB] Bid request failed for target ID 32: Error: Invalid bid response format
+    at Function.sendBidRequest (/home/runner/workspace/server/rtb-service.ts:790:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Promise.allSettled (index 1)
+    at async Function.initiateAuction (/home/runner/workspace/server/rtb-service.ts:473:23)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1766:35)
+[RTB] Error type: Error
+[RTB] Error message: Invalid bid response format
+[Pool Webhook] Bidding result: {
+  success: false,
+  winningBid: undefined,
+  totalTargetsPinged: 2,
+  successfulResponses: 0,
+  totalResponseTime: 291,
+  error: 'No valid bids received'
+}
+[Pool Webhook] RTB bidding failed or no winning bid: No valid bids received
