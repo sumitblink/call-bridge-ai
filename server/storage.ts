@@ -1499,6 +1499,13 @@ export class MemStorage implements IStorage {
     return this.rtbBidResponses.filter(res => res.requestId === requestId);
   }
 
+  async clearRtbAuditData(): Promise<void> {
+    console.log('Clearing RTB audit data from memory storage');
+    this.rtbBidResponses = [];
+    this.rtbBidRequests = [];
+    console.log('RTB audit data cleared from memory');
+  }
+
   async getRtbRouters(userId?: number): Promise<any[]> {
     if (userId) {
       return this.rtbRouters.filter(router => router.userId === userId);
