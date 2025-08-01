@@ -122,10 +122,6 @@ export default function CampaignRTBSettings({ campaignId, campaign }: CampaignRT
   // Reset form values when campaign data changes
   useEffect(() => {
     if (campaign) {
-      console.log('RTB Settings: Resetting form with campaign data:', {
-        rtbRequireCallerId: campaign.rtbRequireCallerId,
-        campaignId: campaign.id
-      });
       form.reset({
         rtbOnlySip: campaign.rtbOnlySip || false,
         rtbRequireCallerId: campaign.rtbRequireCallerId || false,
@@ -155,11 +151,6 @@ export default function CampaignRTBSettings({ campaignId, campaign }: CampaignRT
   }, [campaign, form]);
 
   const onSubmit = (data: RTBSettingsFormData) => {
-    console.log('RTB Settings: Submitting form data:', {
-      rtbRequireCallerId: data.rtbRequireCallerId,
-      campaignId,
-      fullData: data
-    });
     updateMutation.mutate(data);
   };
 

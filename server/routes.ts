@@ -939,7 +939,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Campaign not found" });
       }
       
-      const validatedData = insertCampaignSchema.partial().parse(req.body);
+      // Preprocess numeric fields to convert empty strings to null
+      const preprocessedBody = { ...req.body };
+      const numericFields = ['rtbMaxBid', 'rtbMinBid', 'rtbPassThroughMaxBid', 'rtbBidModifier', 'rtbBidMargin'];
+      
+      for (const field of numericFields) {
+        if (preprocessedBody[field] === '') {
+          preprocessedBody[field] = null;
+        }
+      }
+      
+      const validatedData = insertCampaignSchema.partial().parse(preprocessedBody);
       
       // Validate campaign activation requirements - check if campaign will be active after update
       const finalStatus = validatedData.status !== undefined ? validatedData.status : existingCampaign.status;
@@ -996,7 +1006,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Campaign not found" });
       }
       
-      const validatedData = insertCampaignSchema.partial().parse(req.body);
+      // Preprocess numeric fields to convert empty strings to null
+      const preprocessedBody = { ...req.body };
+      const numericFields = ['rtbMaxBid', 'rtbMinBid', 'rtbPassThroughMaxBid', 'rtbBidModifier', 'rtbBidMargin'];
+      
+      for (const field of numericFields) {
+        if (preprocessedBody[field] === '') {
+          preprocessedBody[field] = null;
+        }
+      }
+      
+      const validatedData = insertCampaignSchema.partial().parse(preprocessedBody);
       
       // Validate campaign activation requirements - check if campaign will be active after update
       const finalStatus = validatedData.status !== undefined ? validatedData.status : existingCampaign.status;
