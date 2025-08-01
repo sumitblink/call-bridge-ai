@@ -599,7 +599,7 @@ export default function SimplifiedRTBManagementPage() {
                       {bidRequests
                         .sort((a, b) => new Date(b.callStartTime).getTime() - new Date(a.callStartTime).getTime())
                         .slice(0, 15)
-                        .map((request) => {
+                        .flatMap((request) => {
                         const avgResponseTime = request.totalResponseTimeMs && request.successfulResponses 
                           ? Math.round(request.totalResponseTimeMs / request.successfulResponses)
                           : null;
@@ -607,9 +607,8 @@ export default function SimplifiedRTBManagementPage() {
                         const hasWinner = request.winningTargetId && request.winningBidAmount;
                         const isExpanded = expandedAuctions.has(request.id);
                         
-                        return (
-                          <React.Fragment key={request.id}>
-                            <TableRow className="hover:bg-muted/50">
+                        const rows = [
+                            <TableRow key={`row-${request.id}`} className="hover:bg-muted/50">
                               <TableCell>
                                 <Button
                                   variant="ghost"
@@ -762,11 +761,11 @@ export default function SimplifiedRTBManagementPage() {
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </TableCell>
-                          </TableRow>
+                          </TableRow>,
                           
-                          {/* Expandable auction details row */}
-                          {isExpanded && (
-                            <TableRow>
+                          // Expandable auction details row
+                          ...(isExpanded ? [
+                            <TableRow key={`expanded-${request.id}`}>
                               <TableCell colSpan={15} className="bg-muted/30 border-t-0">
                                 <div className="py-4 space-y-4">
                                   {/* Basic auction info header */}
@@ -973,7 +972,7 @@ export default function SimplifiedRTBManagementPage() {
                                       </div>
                                       <div className="space-y-2 text-sm">
                                         {hasWinner ? (
-                                          <>
+                                          <div>
                                             <div className="flex justify-between">
                                               <span className="text-gray-600">Winner:</span>
                                               <span className="font-medium text-blue-600">{getTargetName(request.winningTargetId!)}</span>
@@ -986,7 +985,7 @@ export default function SimplifiedRTBManagementPage() {
                                               <span className="text-gray-600">Destination:</span>
                                               <span className="font-mono text-blue-600">{request.destinationNumber || 'N/A'}</span>
                                             </div>
-                                          </>
+                                          </div>
                                         ) : (
                                           <div className="text-center py-2">
                                             <span className="text-gray-500 italic">No auction winner</span>
@@ -1030,9 +1029,9 @@ export default function SimplifiedRTBManagementPage() {
                                 </div>
                               </TableCell>
                             </TableRow>
-                          )}
-                          </React.Fragment>
-                        );
+                          ] : [])
+                        ];
+                        return rows;
                       })}
                     </TableBody>
                   </Table>
@@ -1103,10 +1102,10 @@ export default function SimplifiedRTBManagementPage() {
                 className="bg-red-600 hover:bg-red-700"
               >
                 {deleteMutation.isPending ? (
-                  <>
+                  <div className="flex items-center">
                     <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                     Deleting...
-                  </>
+                  </div>
                 ) : (
                   'Delete'
                 )}
