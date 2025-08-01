@@ -84,6 +84,44 @@ export const campaigns = pgTable("campaigns", {
   minBiddersRequired: integer("min_bidders_required").default(1),
   revenueType: varchar("revenue_type", { length: 50 }).default("per_call"), // per_call, per_minute, cpa, cpl
   
+  // Comprehensive Ringba-style RTB Settings
+  // Real Time Bidding
+  rtbOnlySip: boolean("rtb_only_sip").default(false),
+  rtbRequireCallerId: boolean("rtb_require_caller_id").default(false),
+  rtbJornayaEnabled: boolean("rtb_jornaya_enabled").default(false),
+  rtbTrustedFormCertId: varchar("rtb_trusted_form_cert_id", { length: 100 }),
+  
+  // Bid Expiration
+  rtbBidGoodForSeconds: integer("rtb_bid_good_for_seconds").default(60),
+  rtbGiveBidInstead: varchar("rtb_give_bid_instead", { length: 50 }).default("reject"), // reject, accept_normally, etc.
+  
+  // Rate Limit
+  rtbMaxRequestsPerMinute: integer("rtb_max_requests_per_minute").default(100),
+  
+  // Bid Settings
+  rtbBidModifier: decimal("rtb_bid_modifier", { precision: 5, scale: 2 }).default("1.00"),
+  rtbMaxBid: decimal("rtb_max_bid", { precision: 10, scale: 2 }),
+  rtbMinBid: decimal("rtb_min_bid", { precision: 10, scale: 2 }),
+  rtbPayoutOn: varchar("rtb_payout_on", { length: 50 }).default("call_qualifying"), // call_qualifying, call_connected, etc.
+  rtbDuplicatePayouts: varchar("rtb_duplicate_payouts", { length: 50 }).default("disabled"), // disabled, enabled, time_based
+  
+  // Pass Through Settings
+  rtbPassThroughEnabled: boolean("rtb_pass_through_enabled").default(false),
+  rtbPassThroughMaxBid: decimal("rtb_pass_through_max_bid", { precision: 10, scale: 2 }),
+  rtbAllowBidOfLink: boolean("rtb_allow_bid_of_link").default(false),
+  rtbBidMarginType: varchar("rtb_bid_margin_type", { length: 20 }).default("percentage"), // percentage, amount
+  rtbBidMargin: decimal("rtb_bid_margin", { precision: 5, scale: 2 }).default("0.00"),
+  rtbNoBidMarginAfterAdjustment: integer("rtb_no_bid_margin_after_adjustment").default(3),
+  rtbMinCallDurationForPayout: integer("rtb_min_call_duration_for_payout").default(10), // seconds
+  rtbPayoutSequence: varchar("rtb_payout_sequence", { length: 50 }).default("seconds"), // seconds, immediately
+  
+  // Custom Scoring
+  rtbCustomScoringEnabled: boolean("rtb_custom_scoring_enabled").default(false),
+  rtbCustomScoringRules: json("rtb_custom_scoring_rules"),
+  
+  // Bid Modifiers
+  rtbBidModifiers: json("rtb_bid_modifiers"), // Array of bid modifier rules
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
