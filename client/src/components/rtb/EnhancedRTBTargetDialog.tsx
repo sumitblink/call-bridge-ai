@@ -640,6 +640,7 @@ export function EnhancedRTBTargetDialog({
     {
       name: "Geolocation",
       tokens: [
+        { value: '[Zip Code:Zip Code]', label: 'Zip Code', description: 'Caller zip code (Ringba format)' },
         { value: '[Geo:Zipcode]', label: 'Zipcode', description: 'Geographic zip code' },
         { value: '[Geo:Country]', label: 'Country', description: 'Country name' },
         { value: '[Geo:CountryCode]', label: 'Country Code', description: 'Country code' },
