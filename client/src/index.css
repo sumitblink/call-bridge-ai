@@ -66,6 +66,30 @@
   }
 }
 
+/* Custom scrollbar styles for token search */
+.token-search-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #334155;
+}
+
+.token-search-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.token-search-scroll::-webkit-scrollbar-track {
+  background: #334155;
+  border-radius: 4px;
+}
+
+.token-search-scroll::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+.token-search-scroll::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
 @layer utilities {
   .bg-primary-50 {
     background-color: var(--primary-50);

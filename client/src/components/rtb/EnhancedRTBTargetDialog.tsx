@@ -3405,8 +3405,8 @@ Please add tags with numerical values only."
                                   <ChevronDown className="h-4 w-4" />
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[500px] p-0 bg-slate-900 text-white border-slate-700" align="end" side="left" sideOffset={10}>
-                                <div className="p-3 border-b border-slate-700">
+                              <PopoverContent className="w-[500px] h-[500px] p-0 bg-slate-900 text-white border-slate-700 flex flex-col" align="end" side="left" sideOffset={10}>
+                                <div className="p-3 border-b border-slate-700 flex-shrink-0">
                                   <div className="flex items-center gap-2">
                                     <Search className="h-4 w-4 text-slate-400" />
                                     <input 
@@ -3418,7 +3418,7 @@ Please add tags with numerical values only."
                                     />
                                   </div>
                                 </div>
-                                <div className="max-h-[400px] overflow-y-auto">
+                                <div className="flex-1 overflow-y-auto token-search-scroll">
                                   {filteredCategories.map((category) => {
                                     const isExpanded = shouldExpandCategory(category.name);
                                     return (
