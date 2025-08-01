@@ -19,6 +19,7 @@ import { CampaignReadinessDashboard } from "@/components/campaign/CampaignReadin
 import { RTBTargetAssignment } from "@/components/campaign/RTBTargetAssignment";
 import CampaignUrlParameters from "@/components/campaign/CampaignUrlParameters";
 import CampaignTrackingPixels from "@/components/campaign/CampaignTrackingPixels";
+import CampaignRTBSettings from "@/components/campaign/CampaignRTBSettings";
 
 
 export default function CampaignDetail() {
@@ -108,7 +109,7 @@ export default function CampaignDetail() {
 
         {/* Campaign Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-9" : "grid-cols-8") : (campaign.routingType === "pool" ? "grid-cols-8" : "grid-cols-7")}`}>
+          <TabsList className={`grid w-full ${campaign.enableRtb ? (campaign.routingType === "pool" ? "grid-cols-10" : "grid-cols-9") : (campaign.routingType === "pool" ? "grid-cols-8" : "grid-cols-7")}`}>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
@@ -127,6 +128,12 @@ export default function CampaignDetail() {
               <TabsTrigger value="rtb" className="flex items-center space-x-2">
                 <Target className="h-4 w-4" />
                 <span className="hidden sm:inline">RTB Targets</span>
+              </TabsTrigger>
+            )}
+            {campaign.enableRtb && (
+              <TabsTrigger value="rtb-settings" className="flex items-center space-x-2">
+                <Zap className="h-4 w-4" />
+                <span className="hidden sm:inline">RTB Settings</span>
               </TabsTrigger>
             )}
             <TabsTrigger value="tracking" className="flex items-center space-x-2">
@@ -184,6 +191,15 @@ export default function CampaignDetail() {
                 campaignId={campaign.id} 
                 campaignName={campaign.name}
                 isRtbEnabled={campaign.enableRtb}
+              />
+            </TabsContent>
+          )}
+
+          {campaign.enableRtb && (
+            <TabsContent value="rtb-settings">
+              <CampaignRTBSettings 
+                campaignId={campaign.id} 
+                campaign={campaign}
               />
             </TabsContent>
           )}

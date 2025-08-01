@@ -30,47 +30,6 @@ const campaignFormSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
   country: z.string().min(1, "Country is required"),
   enableRtb: z.boolean().default(false),
-  // RTB configuration moved to campaign level
-  biddingTimeoutMs: z.number().min(1000).max(30000).optional(),
-  minBiddersRequired: z.number().min(1).max(10).optional(),
-  
-  // Comprehensive Ringba-style RTB Settings
-  // Real Time Bidding
-  rtbOnlySip: z.boolean().default(false),
-  rtbRequireCallerId: z.boolean().default(false),
-  rtbJornayaEnabled: z.boolean().default(false),
-  rtbTrustedFormCertId: z.string().optional(),
-  
-  // Bid Expiration
-  rtbBidGoodForSeconds: z.number().default(60),
-  rtbGiveBidInstead: z.string().default("reject"),
-  
-  // Rate Limit
-  rtbMaxRequestsPerMinute: z.number().default(100),
-  
-  // Bid Settings
-  rtbBidModifier: z.string().optional(),
-  rtbMaxBid: z.string().optional(),
-  rtbMinBid: z.string().optional(),
-  rtbPayoutOn: z.string().optional(),
-  rtbDuplicatePayouts: z.string().default("disabled"),
-  
-  // Pass Through Settings
-  rtbPassThroughEnabled: z.boolean().default(false),
-  rtbPassThroughMaxBid: z.number().optional(),
-  rtbAllowBidOfLink: z.boolean().default(false),
-  rtbBidMarginType: z.string().default("percentage"),
-  rtbBidMargin: z.number().default(25),
-  rtbNoBidMarginAfterAdjustment: z.number().default(3),
-  rtbMinCallDurationForPayout: z.number().default(10),
-  rtbPayoutSequence: z.string().default("30"),
-  
-  // Custom Scoring
-  rtbCustomScoringEnabled: z.boolean().default(false),
-  rtbCustomScoringRules: z.object({}).optional(),
-  
-  // Bid Modifiers
-  rtbBidModifiers: z.array(z.object({})).optional(),
 });
 
 type CampaignFormData = z.infer<typeof campaignFormSchema>;
@@ -440,482 +399,51 @@ function CampaignForm({
           )}
         />
 
-        {/* Comprehensive RTB Configuration Section - Ringba Style */}
-        <div className="space-y-6 pt-4 border-t">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Real Time Bidding
+        {/* Simplified RTB Configuration Section */}
+        <div className="space-y-4 pt-4 border-t">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            Real-Time Bidding (RTB)
           </h3>
           
-          {/* RTB Enable Section */}
-          <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="enableRtb"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Enable</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="rtbOnlySip"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Only SIP</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="rtbRequireCallerId"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Require Caller ID</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <div className="flex items-center justify-between">
-              <FormLabel className="text-sm font-medium">Jornaya</FormLabel>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700">Enabled</Button>
-                <Button variant="outline" size="sm">Enabled</Button>
-                <Button variant="outline" size="sm">Required</Button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <FormLabel className="text-sm font-medium">Trusted Form Cert ID</FormLabel>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700">Disabled</Button>
-                <Button variant="outline" size="sm">Enabled</Button>
-                <Button variant="outline" size="sm">Required</Button>
-              </div>
-            </div>
-          </div>
+          <FormField
+            control={form.control}
+            name="enableRtb"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <FormLabel className="text-base">Enable RTB</FormLabel>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Enable real-time bidding for premium call routing<br/>
+                            External partners can bid on calls automatically</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Turn on real-time bidding for this campaign
+                  </div>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
           {form.watch("enableRtb") && (
-            <div className="space-y-6">
-              {/* Bid Expiration Section */}
-              <div className="space-y-4">
-                <h4 className="text-base font-semibold">Bid Expiration</h4>
-                
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Bid Good For</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <FormField
-                      control={form.control}
-                      name="rtbBidGoodForSeconds"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              className="w-20"
-                              {...field}
-                              value={field.value || 60}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 60)}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <span className="text-sm text-muted-foreground">seconds</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Give Bid Instead</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">Reject</Button>
-                    <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700">Accept Normally</Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Rate Limit Section */}
-              <div className="space-y-4">
-                <h4 className="text-base font-semibold">Rate Limit</h4>
-                
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Maximum Requests</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <FormField
-                      control={form.control}
-                      name="rtbMaxRequestsPerMinute"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              className="w-20"
-                              {...field}
-                              value={field.value || 100}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 100)}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <span className="text-sm text-muted-foreground">Per Minute</span>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Prevent bursts to scheduling using default values will be applied in "Not request per minute"
-                </p>
-              </div>
-
-              {/* Bid Settings Section */}
-              <div className="space-y-4">
-                <h4 className="text-base font-semibold">Bid Settings</h4>
-                
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Bid Bid Modifier</FormLabel>
-                  <FormField
-                    control={form.control}
-                    name="rtbBidModifier"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            className="w-32"
-                            placeholder="Account Specific via Pricing Settings"
-                            {...field}
-                            value={field.value || ""}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Max Bid</FormLabel>
-                  <FormField
-                    control={form.control}
-                    name="rtbMaxBid"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            className="w-32"
-                            placeholder="Account Campaign Pricing Settings"
-                            {...field}
-                            value={field.value || ""}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Min Bid</FormLabel>
-                  <FormField
-                    control={form.control}
-                    name="rtbMinBid"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            className="w-32"
-                            placeholder="Open Offers in Pre Pricing Settings"
-                            {...field}
-                            value={field.value || ""}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Payout On</FormLabel>
-                  <FormField
-                    control={form.control}
-                    name="rtbPayoutOn"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            className="w-32"
-                            placeholder="Open Offers in Call Qualifying Conversions Settings"
-                            {...field}
-                            value={field.value || ""}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Duplicate Payouts</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700">Disabled</Button>
-                    <Button variant="outline" size="sm">Enabled</Button>
-                    <Button variant="outline" size="sm">Time Based</Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pass Through Settings Section */}
-              <div className="space-y-4">
-                <h4 className="text-base font-semibold">Pass Through Settings</h4>
-                
-                <FormField
-                  control={form.control}
-                  name="rtbPassThroughEnabled"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between">
-                      <FormLabel className="text-sm font-medium">Enable</FormLabel>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Max Bid</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <FormField
-                      control={form.control}
-                      name="rtbPassThroughMaxBid"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              className="w-20"
-                              {...field}
-                              value={field.value || 100}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 100)}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <span className="text-sm text-muted-foreground">Seconds</span>
-                  </div>
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="rtbAllowBidOfLink"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between">
-                      <FormLabel className="text-sm font-medium">Allow Bid of Link</FormLabel>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Bid Margin Type</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700">Percentage</Button>
-                    <Button variant="outline" size="sm">Amount</Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Bid Margin</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <FormField
-                      control={form.control}
-                      name="rtbBidMargin"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              className="w-20"
-                              {...field}
-                              value={field.value || 25}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 25)}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">No Bid Margin After Adjustment</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <FormField
-                      control={form.control}
-                      name="rtbNoBidMarginAfterAdjustment"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              className="w-20"
-                              {...field}
-                              value={field.value || 3}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 3)}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Min Call Duration for Payout</FormLabel>
-                  <FormField
-                    control={form.control}
-                    name="rtbMinCallDurationForPayout"
-                    render={({ field }) => (
-                      <FormItem>
-                        <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
-                          <FormControl>
-                            <SelectTrigger className="w-48">
-                              <SelectValue placeholder="Select from Target Duration" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="10">10 seconds</SelectItem>
-                            <SelectItem value="30">30 seconds</SelectItem>
-                            <SelectItem value="60">60 seconds</SelectItem>
-                            <SelectItem value="90">90 seconds</SelectItem>
-                            <SelectItem value="120">120 seconds</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Payout Sequence</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <FormField
-                      control={form.control}
-                      name="rtbPayoutSequence"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              className="w-20"
-                              {...field}
-                              value={field.value || 30}
-                              onChange={(e) => field.onChange(e.target.value || "30")}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <span className="text-sm text-muted-foreground">Seconds</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Custom Scoring Section */}
-              <div className="space-y-4">
-                <h4 className="text-base font-semibold">Custom Scoring</h4>
-                
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Custom Scoring</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700">Disabled</Button>
-                    <Button variant="outline" size="sm">Enabled</Button>
-                    <Button variant="outline" size="sm">Required</Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bid Modifiers Section */}
-              <div className="space-y-4">
-                <h4 className="text-base font-semibold">Bid Modifiers</h4>
-                
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  ADD NEW MODIFIER
-                </Button>
-
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Tag</span>
-                    <span>Logic</span>
-                    <span>Value</span>
-                  </div>
-                  <div className="text-center text-sm text-muted-foreground mt-4">
-                    No bid modifiers.
-                  </div>
-                </div>
-              </div>
-
-              {/* Legacy Settings */}
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="biddingTimeoutMs"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Bidding Timeout (ms)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={1000}
-                          max={30000}
-                          placeholder="3000"
-                          {...field}
-                          value={field.value || ""}
-                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                        />
-                      </FormControl>
-                      <div className="text-xs text-muted-foreground">
-                        Maximum time to wait for bidder responses (1000-30000ms)
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="minBiddersRequired"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Minimum Bidders Required</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={10}
-                          placeholder="1"
-                          {...field}
-                          value={field.value || ""}
-                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                        />
-                      </FormControl>
-                      <div className="text-xs text-muted-foreground">
-                        Minimum number of active bidders required (1-10)
-                      </div>
-                    </FormItem>
-                  )}
-                />
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                <Info className="h-4 w-4 inline mr-2" />
+                RTB settings can be configured in the campaign's RTB tab after creation
               </div>
             </div>
           )}
