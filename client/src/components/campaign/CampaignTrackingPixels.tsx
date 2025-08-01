@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,76 +63,95 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   const urlInputRef = useRef<HTMLInputElement>(null);
 
   // Comprehensive RTB tokens organized by category - Based on comprehensive token list
-  const tokenCategories = [
-    {
-      name: 'Call Information',
-      tokens: [
-        { value: '[Call:InboundCallId]', label: 'Inbound Call ID', description: 'Unique identifier for the inbound call' },
-        { value: '[Call:Duration]', label: 'Call Duration', description: 'Duration of the call in seconds' },
-        { value: '[Call:Status]', label: 'Call Status', description: 'Status of the call (completed, busy, no-answer, failed)' },
-        { value: '[Call:StartTime]', label: 'Call Start Time', description: 'Timestamp when the call started' },
-        { value: '[Call:EndTime]', label: 'Call End Time', description: 'Timestamp when the call ended' },
-        { value: '[Call:RecordingUrl]', label: 'Recording URL', description: 'URL to the call recording' },
-        { value: '[Call:CallerId]', label: 'Caller ID', description: 'Phone number of the caller' }
-      ]
-    },
-    {
-      name: 'Targeting',
-      tokens: [
-        { value: '[Target:Name]', label: 'Target Name', description: 'Name of the target receiving the call' },
-        { value: '[Target:Id]', label: 'Target ID', description: 'Unique identifier for the target' },
-        { value: '[Target:Weight]', label: 'Target Weight', description: 'Weight assigned to the target for routing' },
-        { value: '[Target:Payout]', label: 'Target Payout', description: 'Payout amount for the target' },
-        { value: '[Target:Revenue]', label: 'Target Revenue', description: 'Revenue generated from the target' }
-      ]
-    },
-    {
-      name: 'Geolocation',
-      tokens: [
-        { value: '[Geo:Country]', label: 'Country', description: 'Country of the caller' },
-        { value: '[Geo:State]', label: 'State', description: 'State or province of the caller' },
-        { value: '[Geo:City]', label: 'City', description: 'City of the caller' },
-        { value: '[Geo:ZipCode]', label: 'Zip Code', description: 'Postal code of the caller' },
-        { value: '[Geo:AreaCode]', label: 'Area Code', description: 'Area code of the caller\'s phone number' },
-        { value: '[Geo:TimeZone]', label: 'Time Zone', description: 'Time zone of the caller' }
-      ]
-    },
-    {
-      name: 'Publisher Information',
-      tokens: [
-        { value: '[Publisher:Id]', label: 'Publisher ID', description: 'Unique identifier for the publisher' },
-        { value: '[Publisher:Name]', label: 'Publisher Name', description: 'Name of the publisher' },
-        { value: '[Publisher:SubId]', label: 'Publisher Sub ID', description: 'Sub-identifier for tracking' },
-        { value: '[Publisher:AffiliateId]', label: 'Affiliate ID', description: 'Affiliate identifier' },
-        { value: '[Publisher:ClickId]', label: 'Click ID', description: 'Unique click tracking identifier' }
-      ]
-    },
-    {
-      name: 'Campaign Data',
-      tokens: [
-        { value: '[Campaign:Id]', label: 'Campaign ID', description: 'Unique identifier for the campaign' },
-        { value: '[Campaign:Name]', label: 'Campaign Name', description: 'Name of the campaign' },
-        { value: '[Campaign:PhoneNumber]', label: 'Campaign Phone', description: 'Phone number associated with the campaign' }
-      ]
-    },
-    {
-      name: 'URL Parameters',
-      tokens: [
-        { value: '[tag:User:utm_source]', label: 'UTM Source', description: 'Campaign source parameter' },
-        { value: '[tag:User:utm_medium]', label: 'UTM Medium', description: 'Campaign medium parameter' },
-        { value: '[tag:User:utm_campaign]', label: 'UTM Campaign', description: 'Campaign name parameter' },
-        { value: '[tag:User:utm_term]', label: 'UTM Term', description: 'Campaign term parameter' },
-        { value: '[tag:User:utm_content]', label: 'UTM Content', description: 'Campaign content parameter' },
-        { value: '[tag:User:affiliate_id]', label: 'Affiliate ID', description: 'Affiliate identifier parameter' },
-        { value: '[tag:User:publisher_id]', label: 'Publisher ID', description: 'Publisher identifier parameter' },
-        { value: '[tag:User:sub_id]', label: 'Sub ID', description: 'Sub identifier parameter' },
-        { value: '[tag:User:click_id]', label: 'Click ID', description: 'Click tracking parameter' },
-        { value: '[tag:User:source]', label: 'Source', description: 'Traffic source parameter' },
-        { value: '[tag:User:keyword]', label: 'Keyword', description: 'Keyword parameter' },
-        { value: '[tag:User:custom_param]', label: 'Custom Parameter', description: 'Custom URL parameter' }
-      ]
+  const tokenCategories = useMemo(() => {
+    const baseCategories = [
+      {
+        name: 'Call Information',
+        tokens: [
+          { value: '[Call:InboundCallId]', label: 'Inbound Call ID', description: 'Unique identifier for the inbound call' },
+          { value: '[Call:Duration]', label: 'Call Duration', description: 'Duration of the call in seconds' },
+          { value: '[Call:Status]', label: 'Call Status', description: 'Status of the call (completed, busy, no-answer, failed)' },
+          { value: '[Call:StartTime]', label: 'Call Start Time', description: 'Timestamp when the call started' },
+          { value: '[Call:EndTime]', label: 'Call End Time', description: 'Timestamp when the call ended' },
+          { value: '[Call:RecordingUrl]', label: 'Recording URL', description: 'URL to the call recording' },
+          { value: '[Call:CallerId]', label: 'Caller ID', description: 'Phone number of the caller' }
+        ]
+      },
+      {
+        name: 'Targeting',
+        tokens: [
+          { value: '[Target:Name]', label: 'Target Name', description: 'Name of the target receiving the call' },
+          { value: '[Target:Id]', label: 'Target ID', description: 'Unique identifier for the target' },
+          { value: '[Target:Weight]', label: 'Target Weight', description: 'Weight assigned to the target for routing' },
+          { value: '[Target:Payout]', label: 'Target Payout', description: 'Payout amount for the target' },
+          { value: '[Target:Revenue]', label: 'Target Revenue', description: 'Revenue generated from the target' }
+        ]
+      },
+      {
+        name: 'Geolocation',
+        tokens: [
+          { value: '[Geo:Country]', label: 'Country', description: 'Country of the caller' },
+          { value: '[Geo:State]', label: 'State', description: 'State or province of the caller' },
+          { value: '[Geo:City]', label: 'City', description: 'City of the caller' },
+          { value: '[Geo:ZipCode]', label: 'Zip Code', description: 'Postal code of the caller' },
+          { value: '[Geo:AreaCode]', label: 'Area Code', description: 'Area code of the caller\'s phone number' },
+          { value: '[Geo:TimeZone]', label: 'Time Zone', description: 'Time zone of the caller' }
+        ]
+      },
+      {
+        name: 'Publisher Information',
+        tokens: [
+          { value: '[Publisher:Id]', label: 'Publisher ID', description: 'Unique identifier for the publisher' },
+          { value: '[Publisher:Name]', label: 'Publisher Name', description: 'Name of the publisher' },
+          { value: '[Publisher:SubId]', label: 'Publisher Sub ID', description: 'Sub-identifier for tracking' },
+          { value: '[Publisher:AffiliateId]', label: 'Affiliate ID', description: 'Affiliate identifier' },
+          { value: '[Publisher:ClickId]', label: 'Click ID', description: 'Unique click tracking identifier' }
+        ]
+      },
+      {
+        name: 'Campaign Data',
+        tokens: [
+          { value: '[Campaign:Id]', label: 'Campaign ID', description: 'Unique identifier for the campaign' },
+          { value: '[Campaign:Name]', label: 'Campaign Name', description: 'Name of the campaign' },
+          { value: '[Campaign:PhoneNumber]', label: 'Campaign Phone', description: 'Phone number associated with the campaign' }
+        ]
+      },
+      {
+        name: 'URL Parameters',
+        tokens: [
+          { value: '[tag:User:utm_source]', label: 'UTM Source', description: 'Campaign source parameter' },
+          { value: '[tag:User:utm_medium]', label: 'UTM Medium', description: 'Campaign medium parameter' },
+          { value: '[tag:User:utm_campaign]', label: 'UTM Campaign', description: 'Campaign name parameter' },
+          { value: '[tag:User:utm_term]', label: 'UTM Term', description: 'Campaign term parameter' },
+          { value: '[tag:User:utm_content]', label: 'UTM Content', description: 'Campaign content parameter' },
+          { value: '[tag:User:affiliate_id]', label: 'Affiliate ID', description: 'Affiliate identifier parameter' },
+          { value: '[tag:User:publisher_id]', label: 'Publisher ID', description: 'Publisher identifier parameter' },
+          { value: '[tag:User:sub_id]', label: 'Sub ID', description: 'Sub identifier parameter' },
+          { value: '[tag:User:click_id]', label: 'Click ID', description: 'Click tracking parameter' },
+          { value: '[tag:User:source]', label: 'Source', description: 'Traffic source parameter' },
+          { value: '[tag:User:keyword]', label: 'Keyword', description: 'Keyword parameter' },
+          { value: '[tag:User:custom_param]', label: 'Custom Parameter', description: 'Custom URL parameter' }
+        ]
+      }
+    ];
+
+    // Add dynamic URL parameters from integrations
+    if (urlParameters && urlParameters.length > 0) {
+      const urlParamCategory = baseCategories.find(cat => cat.name === 'URL Parameters');
+      if (urlParamCategory) {
+        // Add custom URL parameters to the existing URL Parameters category
+        urlParameters.forEach((param: any) => {
+          urlParamCategory.tokens.push({
+            value: `[tag:User:${param.parameterName}]`,
+            label: param.reportName || param.parameterName,
+            description: param.description || `Custom URL parameter: ${param.parameterName}`
+          });
+        });
+      }
     }
-  ];
+
+    return baseCategories;
+  }, [urlParameters]);
 
   // Filter categories and tokens based on search query
   const filteredCategories = tokenSearchQuery 
@@ -237,6 +256,11 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
 
       return Array.isArray(data) ? data : [];
     }
+  });
+
+  // Fetch URL parameters for dynamic token generation
+  const { data: urlParameters = [] } = useQuery({
+    queryKey: ['/api/integrations/url-parameters'],
   });
 
   // Delete campaign pixel mutation
