@@ -14,6 +14,7 @@ import { Phase2GeographicTargetingDialog } from "@/components/rtb/Phase2Geograph
 import Phase3AdvancedFilteringDialog from "@/components/rtb/Phase3AdvancedFilteringDialog";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { RTBTestDialog } from "@/components/rtb/RTBTestDialog";
 import { Plus, Edit, Trash2, Copy, Target, Activity, TrendingUp, DollarSign, Clock, CheckCircle, XCircle, Play, TestTube, Zap, Users, Settings, BarChart, ArrowRight, ChevronDown, ChevronRight, Eye, Timer, Phone, Globe, Info } from "lucide-react";
 
 // RTB Target type
@@ -74,6 +75,9 @@ export default function SimplifiedRTBManagementPage() {
   const [phase3Target, setPhase3Target] = useState<RtbTarget | null>(null);
   const [expandedAuctions, setExpandedAuctions] = useState<Set<number>>(new Set());
   const [auctionDetails, setAuctionDetails] = useState<{[key: number]: any}>({});
+  const [testDialogOpen, setTestDialogOpen] = useState(false);
+  const [testTarget, setTestTarget] = useState<RtbTarget | null>(null);
+  const [testMode, setTestMode] = useState<'target' | 'auction'>('target');
 
   
   const { toast } = useToast();
@@ -437,6 +441,18 @@ export default function SimplifiedRTBManagementPage() {
                               ) : (
                                 <Copy className="w-3 h-3" />
                               )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setTestTarget(target);
+                                setTestMode('target');
+                                setTestDialogOpen(true);
+                              }}
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-600"
+                            >
+                              <TestTube className="w-3 h-3" />
                             </Button>
                             <Button
                               size="sm"
@@ -970,6 +986,14 @@ export default function SimplifiedRTBManagementPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* RTB Test Dialog */}
+        <RTBTestDialog
+          open={testDialogOpen}
+          onOpenChange={setTestDialogOpen}
+          target={testTarget}
+          mode={testMode}
+        />
       </div>
     </Layout>
   );

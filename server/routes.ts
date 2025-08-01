@@ -6992,6 +6992,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RTB Testing Routes - Similar to Ringba's "Test" functionality
+  
+  // Test individual RTB target
+  app.post('/api/rtb/targets/:targetId/test', requireAuth, async (req: any, res) => {
+    try {
+      const { RTBTestService } = await import('./rtb-test-service');
+      const targetId = parseInt(req.params.targetId);
+      const testData = req.body;
+      
+      const result = await RTBTestService.testRTBTarget(targetId, testData);
+      res.json(result);
+    } catch (error) {
+      console.error('Error testing RTB target:', error);
+      res.status(500).json({ 
+        error: 'Failed to test RTB target',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Test RTB auction for campaign
+  app.post('/api/rtb/campaigns/:campaignId/test-auction', requireAuth, async (req: any, res) => {
+    try {
+      const { RTBTestService } = await import('./rtb-test-service');
+      const campaignId = req.params.campaignId;
+      const testData = req.body;
+      
+      const result = await RTBTestService.testRTBAuction(campaignId, testData);
+      res.json(result);
+    } catch (error) {
+      console.error('Error testing RTB auction:', error);
+      res.status(500).json({ 
+        error: 'Failed to test RTB auction',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Get RTB test history
+  app.get('/api/rtb/test-history', requireAuth, async (req: any, res) => {
+    try {
+      const { RTBTestService } = await import('./rtb-test-service');
+      const userId = req.user?.id;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      const history = await RTBTestService.getTestHistory(userId, limit);
+      res.json(history);
+    } catch (error) {
+      console.error('Error fetching RTB test history:', error);
+      res.status(500).json({ error: 'Failed to fetch RTB test history' });
+    }
+  });
+
   // RTB Bid Requests and Responses
   app.get('/api/rtb/bid-requests', requireAuth, async (req: any, res) => {
     try {
