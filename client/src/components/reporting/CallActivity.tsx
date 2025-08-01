@@ -78,9 +78,10 @@ interface CallDetailsExpandedProps {
   call: Call;
   campaign?: Campaign;
   buyer?: Buyer;
+  targets?: any[];
 }
 
-function CallDetailsExpanded({ call, campaign, buyer }: CallDetailsExpandedProps) {
+function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpandedProps) {
   return (
     <div className="space-y-2">
       {/* Basic Info Cards - Start directly without header */}
@@ -1082,6 +1083,7 @@ export default function CallActivity() {
                               call={call}
                               campaign={campaigns.find(c => c.id === call.campaignId)}
                               buyer={call.buyerId ? buyers.find(b => b.id === call.buyerId) : undefined}
+                              targets={targets}
                             />
                           </div>
                         </TableCell>

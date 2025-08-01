@@ -3493,8 +3493,12 @@ Please add tags with numerical values only."
                           <FormControl>
                             <Textarea 
                               ref={(el) => {
-                                requestBodyInputRef.current = el;
-                                field.ref(el);
+                                if (requestBodyInputRef && requestBodyInputRef.current !== undefined) {
+                                  (requestBodyInputRef as any).current = el;
+                                }
+                                if (field.ref) {
+                                  field.ref(el);
+                                }
                               }}
                               placeholder='{"CID": "[tag:InboundNumber:Number-NoPlus]", "exposeCallerId": "{exposeCallerId}", "publisherInboundCallId": "[Call:InboundCallId]", "SubId": "[Publisher:SubId]", "callerId": "{callerId}", "campaignId": "{campaignId}", "requestId": "{requestId}"}'
                               className="min-h-[120px] font-mono text-sm"
