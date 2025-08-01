@@ -172,19 +172,7 @@ export default function SimplifiedRTBManagementPage() {
     },
   });
 
-  const clearAllMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('/api/rtb/targets/clear-all', 'DELETE');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/rtb/targets'] });
-      toast({ title: "Success", description: "All RTB targets cleared successfully" });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
+
 
   // Create RTB target mutation
   const createMutation = useMutation({
@@ -379,12 +367,9 @@ export default function SimplifiedRTBManagementPage() {
           {/* RTB Targets Tab */}
           <TabsContent value="targets" className="space-y-4">
             <div className="flex justify-end items-center">
-              <Button 
-                variant="outline" 
-                onClick={() => clearAllMutation.mutate()}
-                disabled={clearAllMutation.isPending}
-              >
-                Clear All
+              <Button onClick={() => setIsTargetDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add RTB Target
               </Button>
             </div>
 
