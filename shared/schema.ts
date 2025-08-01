@@ -751,7 +751,7 @@ export const phoneNumberTags = pgTable("phone_number_tags", {
   index("unique_phone_tag").on(table.phoneNumberId, table.tagName),
 ]);
 
-// Publishers - For affiliate/traffic source management
+// Publishers - For affiliate/traffic source management (Enhanced with Ringba features)
 export const publishers = pgTable("publishers", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -765,12 +765,28 @@ export const publishers = pgTable("publishers", {
   trafficSource: varchar("traffic_source", { length: 100 }), // google-ads, facebook, bing, organic, email
   quality: varchar("quality", { length: 20 }).default("standard"), // premium, standard, test, blocked
   
+  // Ringba-style Publisher Settings
+  subId: varchar("sub_id", { length: 100 }), // Publisher Sub ID for tracking
+  canCreateNumbers: boolean("can_create_numbers").default(false), // Allow publisher to create numbers
+  canCreateNumberPools: boolean("can_create_number_pools").default(false), // Allow publisher to create pools
+  blockCallsAfterPayoutCap: boolean("block_calls_after_payout_cap").default(true), // Block calls when cap reached
+  hasRecordingAccess: boolean("has_recording_access").default(false), // Access to call recordings
+  payoutCap: decimal("payout_cap", { precision: 10, scale: 2 }), // Monthly payout cap
+  payoutCapPeriod: varchar("payout_cap_period", { length: 20 }).default("monthly"), // daily, weekly, monthly
+  
+  // Performance Tracking (Enhanced)
+  callsHour: integer("calls_hour").default(0), // Calls in last hour
+  callsDay: integer("calls_day").default(0), // Calls today
+  callsMonth: integer("calls_month").default(0), // Calls this month
+  callsTotal: integer("calls_total").default(0), // Total calls ever
+  liveCalls: integer("live_calls").default(0), // Current active calls
+  
   // Financial Settings
   defaultPayout: decimal("default_payout", { precision: 10, scale: 2 }).default("0.00"),
   payoutModel: varchar("payout_model", { length: 50 }).default("per_call"), // per_call, per_minute, cpa, cpl, revenue_share
   currency: varchar("currency", { length: 10 }).default("USD"),
   
-  // Performance Tracking
+  // Legacy Performance Tracking
   callsGenerated: integer("calls_generated").default(0),
   conversions: integer("conversions").default(0),
   totalPayout: decimal("total_payout", { precision: 10, scale: 2 }).default("0.00"),
