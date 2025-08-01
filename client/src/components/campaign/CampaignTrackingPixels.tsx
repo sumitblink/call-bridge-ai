@@ -607,74 +607,56 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
                           <ChevronDown className="w-3 h-3" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-                        <DialogHeader>
-                          <DialogTitle>Select Token</DialogTitle>
+                      <DialogContent className="w-[450px] max-w-[90vw] h-[500px] p-0 bg-background border-border">
+                        <DialogHeader className="p-3 border-b border-border">
+                          <DialogTitle className="text-foreground text-sm">Search Tokens</DialogTitle>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Search className="h-3 w-3 text-muted-foreground" />
+                            <input 
+                              type="text" 
+                              placeholder="Search Token" 
+                              value={tokenSearchQuery}
+                              onChange={(e) => setTokenSearchQuery(e.target.value)}
+                              className="bg-input text-foreground placeholder-muted-foreground flex-1 outline-none text-xs px-2 py-1 rounded border border-border focus:border-primary"
+                            />
+                          </div>
                         </DialogHeader>
                         
-                        {/* Search Input */}
-                        <div className="pb-4">
-                          <Input
-                            placeholder="Search tokens..."
-                            value={tokenSearchQuery}
-                            onChange={(e) => setTokenSearchQuery(e.target.value)}
-                            className="h-9"
-                          />
-                        </div>
-
-                        {/* Token Categories */}
-                        <div className="flex-1 overflow-y-auto pr-2">
-                          <div className="space-y-1">
-                            {filteredCategories.map((category) => (
-                              <div key={category.name} className="border border-gray-200 rounded-lg">
+                        <div className="flex-1 overflow-y-auto token-search-scroll px-2">
+                          {filteredCategories.map((category) => {
+                            const isExpanded = shouldExpandCategory(category.name);
+                            return (
+                              <div key={category.name} className="border-b border-border/50 last:border-b-0">
                                 <button
-                                  type="button"
                                   onClick={() => toggleCategory(category.name)}
-                                  className="w-full px-3 py-2 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 rounded-t-lg border-b"
+                                  className="w-full flex items-center justify-between p-2 hover:bg-accent hover:text-accent-foreground transition-colors text-left"
                                 >
-                                  <span className="font-medium text-sm">{category.name}</span>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-500">
-                                      {category.tokens.length} {category.tokens.length === 1 ? 'token' : 'tokens'}
-                                    </span>
-                                    {shouldExpandCategory(category.name) ? (
-                                      <ChevronDown className="w-4 h-4" />
-                                    ) : (
-                                      <ChevronRight className="w-4 h-4" />
-                                    )}
-                                  </div>
+                                  <span className="text-xs font-medium text-foreground">{category.name}</span>
+                                  <ChevronDown 
+                                    className={`h-3 w-3 text-muted-foreground transition-transform ${
+                                      isExpanded ? 'rotate-180' : ''
+                                    }`} 
+                                  />
                                 </button>
-                                
-                                {shouldExpandCategory(category.name) && (
-                                  <div className="p-2 space-y-1">
+                                {isExpanded && (
+                                  <div className="bg-muted/30 mb-1 rounded">
                                     {category.tokens.map((token, index) => (
                                       <button
                                         key={`${category.name}-${index}`}
-                                        type="button"
                                         onClick={() => insertTokenAtCursor(token.value)}
-                                        className="w-full text-left p-2 rounded hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-colors"
+                                        className="w-full text-left p-2 pl-4 hover:bg-accent hover:text-accent-foreground transition-colors rounded"
                                       >
-                                        <div className="font-mono text-blue-600 text-sm font-medium">
-                                          {token.value}
-                                        </div>
-                                        <div className="text-xs text-gray-600 mt-1">
-                                          {token.description}
+                                        <div className="flex flex-col items-start">
+                                          <div className="font-mono text-xs text-foreground mb-0.5">{token.value}</div>
+                                          <div className="text-[10px] text-muted-foreground leading-tight">{token.description}</div>
                                         </div>
                                       </button>
                                     ))}
                                   </div>
                                 )}
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        {/* No Results */}
-                        {tokenSearchQuery && filteredCategories.length === 0 && (
-                          <div className="text-center py-8 text-gray-500">
-                            No tokens found matching "{tokenSearchQuery}"
-                          </div>
-                        )}
+                            );
+                          })}</div>
                       </DialogContent>
                     </Dialog>
                   </div>
