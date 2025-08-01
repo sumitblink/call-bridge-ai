@@ -3370,10 +3370,10 @@ Please add tags with numerical values only."
                                   <ChevronDown className="h-4 w-4" />
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-96 p-0" align="end">
+                              <PopoverContent className="w-[500px] p-0" align="end" side="left" sideOffset={10}>
                                 <Command>
-                                  <CommandInput placeholder="Search tokens..." />
-                                  <CommandList className="max-h-80 overflow-y-auto">
+                                  <CommandInput placeholder="Search tokens..." className="border-0 border-b" />
+                                  <CommandList className="max-h-[400px] overflow-y-auto">
                                     <CommandEmpty>No tokens found.</CommandEmpty>
                                     {tokenCategories.map((category) => (
                                       <CommandGroup key={category.name} heading={category.name}>
@@ -3381,11 +3381,11 @@ Please add tags with numerical values only."
                                           <CommandItem
                                             key={token.value}
                                             onSelect={() => insertTokenAtCursor(token.value)}
-                                            className="cursor-pointer"
+                                            className="cursor-pointer py-2 px-3 hover:bg-accent"
                                           >
-                                            <div className="flex flex-col items-start">
-                                              <div className="font-mono text-sm">{token.value}</div>
-                                              <div className="text-xs text-muted-foreground">{token.description}</div>
+                                            <div className="flex flex-col items-start w-full">
+                                              <div className="font-mono text-sm font-medium">{token.value}</div>
+                                              <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{token.description}</div>
                                             </div>
                                           </CommandItem>
                                         ))}
