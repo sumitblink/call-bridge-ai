@@ -2109,15 +2109,7 @@ export class MemStorage implements IStorage {
     return activeCalls;
   }
 
-  async addCallEvent(event: any): Promise<any> {
-    const newEvent = {
-      id: this.callEvents.length + 1,
-      ...event,
-      timestamp: new Date()
-    };
-    this.callEvents.push(newEvent);
-    return newEvent;
-  }
+
 
   async getAgentStats(userId: number, agentId: number): Promise<any> {
     const agent = this.agents.get(agentId);

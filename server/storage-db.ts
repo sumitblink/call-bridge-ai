@@ -576,6 +576,43 @@ export class DatabaseStorage implements IStorage {
     return newLog;
   }
 
+  async getCallEvents(callId: number): Promise<any[]> {
+    try {
+      const events = await db
+        .select()
+        .from(callEvents)
+        .where(eq(callEvents.callId, callId))
+        .orderBy(callEvents.timestamp);
+      return events;
+    } catch (error) {
+      console.error('Error fetching call events:', error);
+      return [];
+    }
+  }
+
+  async addCallEvent(callId: number, event: any): Promise<any> {
+    try {
+      const [result] = await db
+        .insert(callEvents)
+        .values({
+          callId: callId,
+          eventType: event.eventType || 'custom',
+          nodeId: event.nodeId,
+          nodeName: event.nodeName,
+          nodeType: event.nodeType,
+          stepName: event.stepName,
+          userInput: event.userInput,
+          duration: event.duration,
+          metadata: event.metadata || event,
+        })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error('Error adding call event:', error);
+      throw error;
+    }
+  }
+
   // Stats
   async getStats(): Promise<{
     activeCampaigns: number;
