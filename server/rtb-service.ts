@@ -142,6 +142,13 @@ export class RTBService {
       result = result.replace(new RegExp(token.replace(/[[\]]/g, '\\$&'), 'g'), value);
     }
 
+    // Handle Ringba-compliant caller ID tokens
+    const callerId = bidRequest.callerId || '';
+    const callerIdNoPlus = callerId.startsWith('+1') ? callerId.substring(2) : callerId.replace(/^\+/, '');
+    
+    result = result.replace(/\[Call:CallerId\]/g, callerId);
+    result = result.replace(/\[Call:CallerIdNoPlus\]/g, callerIdNoPlus);
+
     return result;
   }
 
@@ -646,6 +653,8 @@ export class RTBService {
     targetId: number,
     bidRequest: BidRequest
   ): Promise<BidResponse | null> {
+    const startTime = Date.now(); // Move startTime to the beginning so it's in scope for error handling
+    
     try {
       const target = await storage.getRtbTarget(targetId);
       if (!target || !target.isActive) {
@@ -717,7 +726,7 @@ export class RTBService {
         Object.assign(headers, target.authHeaders);
       }
 
-      const startTime = Date.now();
+      // startTime already defined at function beginning
       const timeoutMs = target.timeoutMs || 5000;
       
       // Debug: Log the request being sent
@@ -794,8 +803,8 @@ export class RTBService {
       };
 
     } catch (error) {
-      const responseTime = startTime ? (Date.now() - startTime) : 0;
-      console.error(`[RTB] Bid request failed for target ${target.name} (ID: ${targetId}):`, error);
+      const responseTime = Date.now() - startTime;
+      console.error(`[RTB] Bid request failed for target ID ${targetId}:`, error);
       console.error(`[RTB] Error type:`, error instanceof Error ? error.name : typeof error);
       console.error(`[RTB] Error message:`, error instanceof Error ? error.message : error);
       console.error(`[RTB] Response time: ${responseTime}ms, Timeout setting: ${target.timeoutMs || 5000}ms`);
