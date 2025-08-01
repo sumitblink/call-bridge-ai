@@ -77,7 +77,12 @@ async function fireTrackingPixelsForEvent(call: any, callStatus: string, duratio
       let fireUrl = pixel.code;
       
       // Get clickId from call record first, then fallback to unknown
-      console.log(`[Pixel Debug] Call object clickId: ${call.clickId}`);
+      console.log(`[Pixel Debug] Call object:`, {
+        id: call.id,
+        clickId: call.clickId,
+        sessionId: call.sessionId,
+        campaignId: call.campaignId
+      });
       const clickId = call.clickId || 'unknown';
       const payout = call.payout || '0.00';
       const callDuration = duration || call.duration || '0';
@@ -1997,7 +2002,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: callRecord.id,
         numberPoolId: callRecord.numberPoolId,
         phoneNumberId: callRecord.phoneNumberId,
-        clickId: callData.clickId
+        clickId: callRecord.clickId,
+        callDataClickId: callData.clickId
       });
 
       // Fire tracking pixels for "incoming" event using event-based firing
