@@ -62,6 +62,11 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
   const [tokenSearchQuery, setTokenSearchQuery] = useState('');
   const urlInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch URL parameters for dynamic token generation - must be before tokenCategories
+  const { data: urlParameters = [] } = useQuery({
+    queryKey: ['/api/integrations/url-parameters'],
+  });
+
   // Comprehensive RTB tokens organized by category - Based on comprehensive token list
   const tokenCategories = useMemo(() => {
     const baseCategories = [
@@ -258,10 +263,7 @@ export default function CampaignTrackingPixels({ campaignId }: CampaignTrackingP
     }
   });
 
-  // Fetch URL parameters for dynamic token generation
-  const { data: urlParameters = [] } = useQuery({
-    queryKey: ['/api/integrations/url-parameters'],
-  });
+
 
   // Delete campaign pixel mutation
   const deletePixelMutation = useMutation({
