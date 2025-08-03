@@ -74,7 +74,8 @@ function Router() {
           <Route path="/integrations" component={Integrations} />
           <Route path="/redtrack" component={RedTrackPage} />
 
-          <Route component={NotFound} />
+          {/* Temporarily commented out catch-all route to debug 404 appearing at bottom */}
+          {/* <Route component={NotFound} /> */}
         </>
       )}
     </Switch>
