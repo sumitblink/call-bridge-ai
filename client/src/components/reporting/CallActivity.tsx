@@ -1226,8 +1226,8 @@ export default function CallActivity() {
                   if (expandedRows.has(call.id)) {
                     rows.push(
                       <TableRow key={`expanded-${call.id}`}>
-                        <TableCell colSpan={visibleColumns.length + 1} className="p-0 bg-muted/20">
-                          <div className="p-3 border-t">
+                        <TableCell colSpan={visibleColumns.length + 1} className="p-0 bg-gray-100 dark:bg-gray-800">
+                          <div className="p-4 border-t bg-gray-50 dark:bg-gray-900">
                             <CallDetailsExpanded 
                               call={call}
                               campaign={campaigns.find(c => c.id === call.campaignId)}
