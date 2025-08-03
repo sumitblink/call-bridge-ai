@@ -423,43 +423,35 @@ export default function CallActivity() {
     };
   }
 
-  // Infinite query for paginated calls with lazy loading
-  const {
-    data: callsData,
-    isLoading: isLoadingCalls,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
+  // Simple query for calls with proper error handling - no infinite scroll to prevent issues
+  const { data: callsResponse, isLoading: isLoadingCalls, error: callsError } = useQuery({
     queryKey: ['/api/calls'],
-    queryFn: ({ pageParam }: { pageParam: number }) => 
-      fetch(`/api/calls?page=${pageParam}&limit=25`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).then(res => {
-        if (!res.ok) {
-          console.error('Calls API Error:', res.status, res.statusText);
-          throw new Error(`HTTP error! status: ${res.status}`);
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/calls?page=1&limit=100', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          console.error('Calls API Error:', response.status, response.statusText);
+          return { calls: [], pagination: { total: 0, page: 1, limit: 100, totalPages: 0, hasNextPage: false, hasPreviousPage: false } };
         }
-        return res.json();
-      }).then(data => {
-        // console.log('Calls API Response:', data);
-        return data;
-      }).catch(error => {
+        
+        return response.json();
+      } catch (error) {
         console.error('Calls API Fetch Error:', error);
-        throw error;
-      }) as Promise<PaginatedResponse>,
-    initialPageParam: 1,
-    getNextPageParam: (lastPage: PaginatedResponse) => 
-      lastPage.pagination.hasNextPage ? lastPage.pagination.page + 1 : undefined,
+        return { calls: [], pagination: { total: 0, page: 1, limit: 100, totalPages: 0, hasNextPage: false, hasPreviousPage: false } };
+      }
+    },
     staleTime: 1000 * 60 * 2, // Cache for 2 minutes
   });
 
-  // Flatten all pages into single calls array
-  const calls = callsData?.pages.flatMap((page: PaginatedResponse) => page.calls) || [];
-  const totalCalls = callsData?.pages[0]?.pagination.total || 0;
+  // Extract calls data from response
+  const calls = callsResponse?.calls || [];
+  const totalCalls = callsResponse?.pagination.total || 0;
 
   // Debug pagination state (remove in production)
   // console.log('Pagination Debug:', {
@@ -491,18 +483,7 @@ export default function CallActivity() {
     staleTime: 0 // Force fresh data
   });
 
-  // Debounced infinite scroll handler to prevent excessive calls
-  const handleScroll = useCallback(() => {
-    const container = tableContainerRef.current;
-    if (!container || !hasNextPage || isFetchingNextPage) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    const scrolledToBottom = scrollTop + clientHeight >= scrollHeight - 100; // Load when 100px from bottom
-
-    if (scrolledToBottom) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  // Removed infinite scroll functionality for simplicity
 
   // Infinite scroll DISABLED to prevent freezing - use manual Load More button instead
   // useEffect(() => {
@@ -1096,44 +1077,11 @@ export default function CallActivity() {
               </TableBody>
             </Table>
             
-            {/* Loading indicator for infinite scroll */}
-            {isFetchingNextPage && (
-              <div className="flex items-center justify-center py-4 border-t bg-muted/30">
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <span>Loading more calls...</span>
-                </div>
-              </div>
-            )}
-            
-            {/* Load More Button and Total count indicator */}
+            {/* Simple call count display */}
             {calls.length > 0 && (
               <div className="border-t bg-muted/20">
-                {hasNextPage && (
-                  <div className="flex justify-center py-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => fetchNextPage()}
-                      disabled={isFetchingNextPage}
-                      className="text-xs"
-                    >
-                      {isFetchingNextPage ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-                          <span>Loading...</span>
-                        </div>
-                      ) : (
-                        `Load More Calls (${totalCalls - calls.length} remaining)`
-                      )}
-                    </Button>
-                  </div>
-                )}
-                <div className="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground">
-                  <span>Showing {calls.length} of {totalCalls} total calls</span>
-                  {hasNextPage && !isFetchingNextPage && (
-                    <span>Scroll down or click "Load More" to see more</span>
-                  )}
+                <div className="flex items-center justify-center px-4 py-2 text-xs text-muted-foreground">
+                  <span>Showing {calls.length} calls</span>
                 </div>
               </div>
             )}
