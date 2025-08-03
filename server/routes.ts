@@ -1752,18 +1752,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Check if RTB is enabled for this campaign and has assigned targets
-      console.log(`[Pool Webhook] Campaign RTB status: enableRtb=${campaign.enableRtb}`);
+      // 🎯 RTB AUCTION PHASE - Real-Time Bidding for External Buyers
+      console.log(`\n🎯 === RTB AUCTION STARTING ===`);
+      console.log(`📞 Call from ${fromNumber} → Campaign: ${campaign.name}`);
+      console.log(`🔧 RTB Status: ${campaign.enableRtb ? 'ENABLED' : 'DISABLED'}`);
+      
       if (campaign.enableRtb) {
         try {
-          console.log(`[Pool Webhook] Checking RTB targets for campaign ${campaign.id}`);
-          
           // Get RTB targets assigned to this campaign
           const rtbTargets = await storage.getCampaignRtbTargets(campaign.id);
-          console.log(`[Pool Webhook] Found ${rtbTargets.length} RTB targets assigned to campaign`);
+          console.log(`🎯 Found ${rtbTargets.length} RTB bidders configured for this campaign`);
           
           if (rtbTargets.length > 0) {
-            console.log(`[Pool Webhook] Attempting RTB bidding with ${rtbTargets.length} targets`);
+            console.log(`💰 STARTING AUCTION: Sending bid requests to ${rtbTargets.length} external buyers...`);
             
             // Import RTB service and conduct bidding
             const { RTBService } = await import('./rtb-service');
@@ -1772,7 +1773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const bidRequest = {
               requestId: `pool_${poolId}_${CallSid}`,
               campaignId: campaign.id,
-              campaignRtbId: campaign.rtbId || undefined, // Use RTB ID for external bid requests
+              campaignRtbId: campaign.rtbId || undefined,
               callerId: fromNumber,
               callerState: req.body.CallerState || null,
               callerZip: req.body.CallerZip || null,
@@ -1780,7 +1781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               timeoutMs: 5000 // 5 second timeout for bidding
             };
             
-            console.log(`[Pool Webhook] Conducting bidding with request:`, bidRequest);
+            console.log(`📤 Auction Request ID: ${bidRequest.requestId}`);
           
             // Conduct RTB bidding
             const biddingResult = await RTBService.initiateAuction(
@@ -1788,7 +1789,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               bidRequest
             );
           
-            console.log(`[Pool Webhook] Bidding result:`, biddingResult);
+            console.log(`\n📊 === AUCTION RESULTS ===`);
+            console.log(`🎯 Targets Contacted: ${biddingResult.totalTargetsPinged}`);
+            console.log(`✅ Successful Responses: ${biddingResult.successfulResponses}`);
+            console.log(`⏱️ Total Response Time: ${biddingResult.totalResponseTime}ms`);
             
             if (biddingResult.success && biddingResult.winningBid) {
               // RTB bidding successful - use winning bid
@@ -1820,33 +1824,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 responseTimeMs: biddingResult.totalResponseTime
               };
               
-              console.log(`[Pool Webhook] RTB SUCCESS - Winner: ${biddingResult.winningBid.targetName}, Bid: $${winningBidAmount}, Routing to EXTERNAL: ${biddingResult.winningBid.destinationNumber}`);
+              console.log(`🏆 AUCTION WINNER: ${biddingResult.winningBid.targetName || 'External Bidder'}`);
+              console.log(`💰 Winning Bid: $${winningBidAmount}`);
+              console.log(`📞 External Phone: ${biddingResult.winningBid.destinationNumber}`);
+              console.log(`⚡ Response Time: ${biddingResult.winningBid.responseTimeMs}ms`);
+              console.log(`🎯 CALL WILL BE TRANSFERRED TO EXTERNAL BUYER`);
+              
             } else {
-              console.log(`[Pool Webhook] RTB bidding failed or no winning bid: ${biddingResult.error || 'Unknown reason'}`);
+              console.log(`❌ AUCTION FAILED: ${biddingResult.error || 'No valid bids received'}`);
+              console.log(`🔄 Falling back to internal buyers...`);
               routingMethod = 'rtb_fallback';
             }
           } else {
-            console.log(`[Pool Webhook] No RTB targets assigned to campaign, falling back to traditional routing`);
+            console.log(`⚠️ NO RTB BIDDERS: No external buyers configured for this campaign`);
+            console.log(`🔄 Falling back to internal buyers...`);
             routingMethod = 'rtb_no_targets';
           }
         } catch (rtbError) {
-          console.error(`[Pool Webhook] RTB bidding error:`, rtbError);
+          console.error(`💥 RTB AUCTION ERROR:`, rtbError);
+          console.log(`🔄 Emergency fallback to internal buyers...`);
           routingMethod = 'rtb_error_fallback';
         }
       } else {
-        console.log(`[Pool Webhook] RTB not enabled for campaign, using traditional routing`);
+        console.log(`📍 RTB DISABLED: Using internal buyers only`);
         routingMethod = 'traditional';
       }
       
-      // Fallback to traditional routing if RTB failed or not enabled
+      console.log(`\n🎯 === RTB AUCTION COMPLETE ===`);
+      
+      // 📞 INTERNAL BUYER SELECTION (if RTB didn't select a winner)
       if (!selectedBuyer) {
-        console.log(`[Pool Webhook] Using traditional CallRouter for buyer selection (method: ${routingMethod})`);
+        console.log(`\n📞 === INTERNAL BUYER SELECTION ===`);
+        console.log(`🔄 RTB Result: ${routingMethod} - Using internal buyers`);
         
         const { CallRouter } = await import('./call-routing');
         const routingResult = await CallRouter.selectBuyer(campaign.id, fromNumber);
         
         if (!routingResult.selectedBuyer) {
-          console.log(`[Pool Webhook] No buyers available: ${routingResult.reason}`);
+          console.log(`❌ NO BUYERS AVAILABLE: ${routingResult.reason}`);
+          console.log(`🔚 CALL REJECTED - Playing busy message to caller`);
           return res.type('text/xml').send(`
             <Response>
               <Say>All representatives are currently busy. Please try again later.</Say>
@@ -1862,27 +1878,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
           routingReason: routingResult.reason,
           alternatives: routingResult.alternativeBuyers.length
         };
+        
+        console.log(`✅ INTERNAL BUYER SELECTED: ${selectedBuyer.companyName || selectedBuyer.name}`);
+        console.log(`📊 Strategy: ${routingResult.reason}`);
+        console.log(`🔄 Alternative buyers available: ${routingResult.alternativeBuyers.length}`);
       }
 
-      console.log(`[Pool Webhook] Final routing decision - Method: ${routingMethod}, Buyer: ${selectedBuyer.companyName || selectedBuyer.name}`);
+      console.log(`\n🎯 === FINAL ROUTING DECISION ===`);
+      console.log(`📋 Method: ${routingMethod.toUpperCase()}`);
+      console.log(`🏢 Selected Buyer: ${selectedBuyer.companyName || selectedBuyer.name}`);
 
-      // Get target phone number using intelligent routing
-      const { CallRouter } = await import('./call-routing');
-      const targetSelection = await CallRouter.selectTargetForBuyer(selectedBuyer.id, campaign.id, fromNumber);
+      // Get target phone number - RTB uses external number, internal uses target selection
+      let targetPhoneNumber: string;
+      let selectedTarget: any = null;
       
-      if (!targetSelection) {
-        console.log(`[Pool Webhook] No available targets for buyer: ${selectedBuyer.companyName || selectedBuyer.name}`);
-        return res.type('text/xml').send(`
-          <Response>
-            <Say>Configuration error. Please contact support.</Say>
-            <Hangup/>
-          </Response>
-        `);
-      }
+      if (routingMethod === 'rtb') {
+        // For RTB, use the external destination number from the winning bid
+        targetPhoneNumber = selectedBuyer.phoneNumber;
+        console.log(`🌐 RTB External Destination: ${targetPhoneNumber}`);
+      } else {
+        // For internal buyers, select target using intelligent routing
+        const { CallRouter } = await import('./call-routing');
+        const targetSelection = await CallRouter.selectTargetForBuyer(selectedBuyer.id, campaign.id, fromNumber);
+        
+        if (!targetSelection) {
+          console.log(`❌ NO TARGETS AVAILABLE for buyer: ${selectedBuyer.companyName || selectedBuyer.name}`);
+          console.log(`🔚 CALL REJECTED - Configuration error`);
+          return res.type('text/xml').send(`
+            <Response>
+              <Say>Configuration error. Please contact support.</Say>
+              <Hangup/>
+            </Response>
+          `);
+        }
 
-      const selectedTarget = targetSelection.target;
-      const targetPhoneNumber = selectedTarget.phoneNumber;
-      console.log(`[Pool Webhook] Selected target: ${selectedTarget.name} (${targetPhoneNumber}) using ${targetSelection.strategy} strategy`);
+        selectedTarget = targetSelection.target;
+        targetPhoneNumber = selectedTarget.phoneNumber;
+        console.log(`🎯 Internal Target Selected: ${selectedTarget.name}`);
+        console.log(`📞 Target Phone: ${targetPhoneNumber}`);
+        console.log(`📊 Selection Strategy: ${targetSelection.strategy}`);
+      }
 
       // Get phone number record for complete call tracking
       const phoneNumber = await storage.getPhoneNumberByNumber(toNumber);
@@ -2017,7 +2052,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('[Pool Webhook] Error firing tracking pixels:', pixelError);
       }
 
-      // Generate TwiML to forward the call with appropriate messaging
+      // 📞 CALL TRANSFER EXECUTION
+      console.log(`\n📞 === CALL TRANSFER STARTING ===`);
+      
       const connectMessage = routingMethod === 'rtb' 
         ? 'Connecting to our premium partner, please hold.'
         : 'Connecting your call, please hold.';
@@ -2033,7 +2070,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         </Response>
       `;
 
-      console.log(`[Pool Webhook] Generated TwiML for routing to ${targetPhoneNumber} via ${routingMethod}`);
+      console.log(`✅ CALL SUCCESSFULLY ROUTED:`);
+      console.log(`   📋 Method: ${routingMethod.toUpperCase()}`);
+      console.log(`   📞 From: ${fromNumber}`);
+      console.log(`   📞 To: ${targetPhoneNumber}`);
+      console.log(`   🏢 Buyer: ${selectedBuyer.companyName || selectedBuyer.name}`);
+      if (routingMethod === 'rtb') {
+        console.log(`   💰 Winning Bid: $${winningBidAmount}`);
+        console.log(`   🌐 External Transfer: YES`);
+      } else {
+        console.log(`   🏠 Internal Transfer: YES`);
+        console.log(`   🎯 Target: ${selectedTarget?.name || 'Direct'}`);
+      }
+      console.log(`   🔊 Message: "${connectMessage}"`);
+      console.log(`   📹 Recording: ENABLED`);
+      console.log(`\n🎯 === CALL ROUTING COMPLETE ===`);
+      
       res.type('text/xml').send(twiml);
     } catch (error) {
       console.error('[Pool Webhook] Error processing call:', error);

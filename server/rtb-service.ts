@@ -591,33 +591,27 @@ export class RTBService {
         }
       }
 
-      // Select winning bid (highest valid bid)
+      // 🏆 WINNER SELECTION - Choose the best bid
       let winningBid: RtbBidResponse | undefined;
       if (validBids.length > 0) {
-        winningBid = validBids.reduce((highest, current) => {
-          // Convert bid amounts to numbers for proper comparison
-          const currentBid = parseFloat(current.bidAmount.toString());
-          const highestBid = parseFloat(highest.bidAmount.toString());
-          
-          console.log(`[RTB Auction] Comparing bids: Target ${current.rtbTargetId} ($${currentBid}) vs Target ${highest.rtbTargetId} ($${highestBid})`);
-          
-          // Higher bid amount wins
-          if (currentBid > highestBid) {
-            console.log(`[RTB Auction] New highest bid: $${currentBid} from target ${current.rtbTargetId} (${current.responseTimeMs}ms)`);
-            return current;
-          }
-          
-          // If bid amounts are equal, fastest response time wins
-          if (currentBid === highestBid) {
-            const winner = current.responseTimeMs < highest.responseTimeMs ? current : highest;
-            if (winner.id === current.id) {
-              console.log(`[RTB Auction] Tie-breaker: $${currentBid} tie, target ${current.rtbTargetId} wins with ${current.responseTimeMs}ms vs ${highest.responseTimeMs}ms`);
-            }
-            return winner;
-          }
-          
-          return highest;
+        console.log(`\n🏆 === SELECTING AUCTION WINNER ===`);
+        console.log(`📊 Valid bids received: ${validBids.length}`);
+        
+        // Sort all bids for clear display
+        const sortedBids = validBids.sort((a, b) => {
+          const bidA = parseFloat(a.bidAmount.toString());
+          const bidB = parseFloat(b.bidAmount.toString());
+          if (bidA !== bidB) return bidB - bidA; // Highest bid first
+          return a.responseTimeMs - b.responseTimeMs; // Fastest response wins ties
         });
+        
+        console.log(`💰 All bids ranked:`);
+        sortedBids.forEach((bid, index) => {
+          const bidAmount = parseFloat(bid.bidAmount.toString());
+          console.log(`   ${index + 1}. ${bid.targetName || `Target ${bid.rtbTargetId}`}: $${bidAmount} (${bid.responseTimeMs}ms)`);
+        });
+        
+        winningBid = sortedBids[0];
 
         // Mark winner and update bid request
         await storage.updateRtbBidResponse(winningBid.id, { isWinningBid: true });
@@ -645,15 +639,25 @@ export class RTBService {
           );
         }
 
-        // Log final winner selection
-        console.log(`[RTB Auction] Winner selected: Target ${winningBid.rtbTargetId} with $${winningBid.bidAmount} bid (${winningBid.responseTimeMs}ms response time)`);
+        console.log(`\n🎯 AUCTION WINNER CONFIRMED:`);
+        console.log(`   🏢 Winner: ${winningBid.targetName || `Target ${winningBid.rtbTargetId}`}`);
+        console.log(`   💰 Bid Amount: $${parseFloat(winningBid.bidAmount.toString())}`);
+        console.log(`   📞 Destination: ${winningBid.destinationNumber}`);
+        console.log(`   ⚡ Response Time: ${winningBid.responseTimeMs}ms`);
         
         // Check if there were any ties
-        const sameBidAmount = validBids.filter(bid => bid.bidAmount === winningBid.bidAmount);
+        const sameBidAmount = validBids.filter(bid => 
+          parseFloat(bid.bidAmount.toString()) === parseFloat(winningBid.bidAmount.toString())
+        );
         if (sameBidAmount.length > 1) {
-          console.log(`[RTB Auction] ${sameBidAmount.length} targets tied at $${winningBid.bidAmount} - winner selected by fastest response time`);
+          console.log(`   🤝 Tied with ${sameBidAmount.length - 1} other bidder(s) - won by fastest response`);
         }
+        
       } else {
+        console.log(`\n❌ === NO VALID BIDS ===`);
+        console.log(`💔 No external buyers responded with valid bids`);
+        console.log(`🔄 System will fall back to internal buyers`);
+        
         // No valid bids received
         await storage.updateRtbBidRequest(bidRequest.requestId, {
           successfulResponses: 0,
