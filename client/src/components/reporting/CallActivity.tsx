@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded, Ban, Tag, Edit3, MoreVertical, ChevronRight, ChevronDown, Activity } from "lucide-react";
+import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded, Ban, Tag, Edit3, MoreVertical, ChevronRight, ChevronDown, Activity, Info, FileText, Settings, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ColumnCustomizer } from "./ColumnCustomizer";
@@ -82,167 +83,334 @@ interface CallDetailsExpandedProps {
 }
 
 function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpandedProps) {
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const formatDuration = (seconds: number) => {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  };
+
+  const formatCurrency = (amount: string | number) => {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-US', { 
+      style: 'currency', 
+      currency: 'USD',
+      minimumFractionDigits: 4 
+    }).format(num || 0);
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed': return <div className="h-4 w-4 bg-green-500 rounded-full flex items-center justify-center"><div className="h-2 w-2 bg-white rounded-full"></div></div>;
+      case 'failed': return <div className="h-4 w-4 bg-red-500 rounded-full flex items-center justify-center"><div className="h-1 w-1 bg-white rounded-full"></div></div>;
+      case 'busy': return <div className="h-4 w-4 bg-yellow-500 rounded-full flex items-center justify-center"><div className="h-1 w-1 bg-white rounded-full"></div></div>;
+      case 'no-answer': return <PhoneCall className="h-4 w-4 text-gray-500" />;
+      default: return <Activity className="h-4 w-4 text-blue-500" />;
+    }
+  };
+
   return (
-    <div className="space-y-2">
-      {/* Basic Info Cards - Start directly without header */}
-      <div className="grid grid-cols-3 gap-2">
-        <Card>
-          <CardContent className="p-2">
-            <div className="text-xs text-gray-600">Call ID</div>
-            <div className="font-mono text-xs">{call.callSid}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-2">
-            <div className="text-xs text-gray-600">Campaign</div>
-            <div className="text-xs">{campaign?.name || 'Unknown'}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-2">
-            <div className="text-xs text-gray-600">Location</div>
-            <div className="text-xs">{call.geoLocation || 'Unknown'}</div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="bg-white border rounded-lg overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4 bg-gray-50 rounded-none border-b">
+          <TabsTrigger value="overview" className="text-xs py-2">
+            <Info className="h-3 w-3 mr-1" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="details" className="text-xs py-2">
+            <FileText className="h-3 w-3 mr-1" />
+            Details
+          </TabsTrigger>
+          <TabsTrigger value="routing" className="text-xs py-2">
+            <PhoneForwarded className="h-3 w-3 mr-1" />
+            Routing
+          </TabsTrigger>
+          <TabsTrigger value="events" className="text-xs py-2">
+            <Activity className="h-3 w-3 mr-1" />
+            Events
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Three Basic Sections */}
-      <div className="space-y-2">
-        {/* IVR & Call Flow */}
-        <div>
-          <h4 className="flex items-center gap-2 text-sm font-medium mb-1">
-            <Phone className="h-4 w-4" />
-            IVR & Call Flow
-          </h4>
-          <div className="bg-gray-50 p-2 rounded">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-gray-600">From:</span> {call.fromNumber}
+        <TabsContent value="overview" className="p-4 space-y-4 m-0">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="space-y-1">
+              <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Call ID</div>
+              <div className="font-mono text-sm">{call.callSid.slice(-8)}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Status</div>
+              <div className="flex items-center gap-2">
+                {getStatusIcon(call.status)}
+                <span className="text-sm capitalize">{call.status}</span>
               </div>
-              <div>
-                <span className="text-gray-600">To:</span> {call.toNumber}
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Duration</div>
+              <div className="text-sm font-medium">{formatDuration(call.duration)}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Started</div>
+              <div className="text-sm">{formatDistanceToNow(new Date(call.createdAt), { addSuffix: true })}</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 pt-4 border-t">
+            <div className="space-y-3">
+              <div className="text-sm font-semibold text-gray-700">Call Information</div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">From:</span>
+                  <span className="font-mono">{call.fromNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">To:</span>
+                  <span className="font-mono">{call.toNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Quality:</span>
+                  <span>{call.callQuality || 'Not rated'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Location:</span>
+                  <span>{call.geoLocation || 'Unknown'}</span>
+                </div>
               </div>
-              <div>
-                <span className="text-gray-600">Duration:</span> {call.duration}s
-              </div>
-              <div>
-                <span className="text-gray-600">Status:</span> 
-                <Badge className={`ml-2 ${getStatusColor(call.status)}`}>
-                  {call.status}
-                </Badge>
+            </div>
+            <div className="space-y-3">
+              <div className="text-sm font-semibold text-gray-700">Financial</div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Cost:</span>
+                  <span className="text-red-600 font-medium">{formatCurrency(call.cost)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Revenue:</span>
+                  <span className="text-green-600 font-medium">{formatCurrency(call.revenue)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Profit:</span>
+                  <span className="font-medium">{formatCurrency(parseFloat(call.revenue) - parseFloat(call.cost))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Margin:</span>
+                  <span className="font-medium">{((parseFloat(call.revenue) - parseFloat(call.cost)) / parseFloat(call.revenue) * 100).toFixed(2)}%</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </TabsContent>
 
-        {/* Technical Details */}
-        <div>
-          <h4 className="flex items-center gap-2 text-sm font-medium mb-1">
-            <Activity className="h-4 w-4" />
-            Technical Details
-          </h4>
-          <div className="bg-gray-50 p-2 rounded">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="col-span-2">
-                <span className="text-gray-600">Recording:</span> 
-                {call.recordingUrl && call.recordingSid ? (
-                  <div className="mt-1">
-                    <audio controls className="w-full max-w-md">
-                      <source src={`/api/recordings/${call.recordingSid}`} type="audio/wav" />
-                      <source src={`/api/recordings/${call.recordingSid}`} type="audio/mpeg" />
-                      Your browser does not support the audio element.
-                    </audio>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Duration: {call.recordingDuration ? `${call.recordingDuration}s` : 'Unknown'} | 
-                      Status: {call.recordingStatus || 'completed'}
-                    </div>
-                  </div>
-                ) : (
-                  <span className="ml-2">Not available</span>
-                )}
+        <TabsContent value="details" className="p-4 space-y-4 m-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="text-sm font-semibold text-gray-700">Technical Information</div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Call SID:</span>
+                  <span className="font-mono">{call.callSid}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Ring Time:</span>
+                  <span>{(call as any).ringTime || 0}s</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Talk Time:</span>
+                  <span>{(call as any).talkTime || 0}s</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Recording SID:</span>
+                  <span className="font-mono">{call.recordingSid || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Recording Status:</span>
+                  <span>{call.recordingStatus || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Transcription:</span>
+                  <span>{call.transcriptionStatus || 'N/A'}</span>
+                </div>
               </div>
-              <div>
-                <span className="text-gray-600">Transcription:</span> {call.transcription ? 'Available' : 'Not available'}
-              </div>
-              <div>
-                <span className="text-gray-600">Quality:</span> {call.callQuality || 'Not rated'}
-              </div>
-              <div>
-                <span className="text-gray-600">User Agent:</span> {call.userAgent ? 'Available' : 'Not available'}
+            </div>
+            
+            <div className="space-y-3">
+              <div className="text-sm font-semibold text-gray-700">Tracking & Attribution</div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">UTM Source:</span>
+                  <span>{(call as any).utmSource || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">UTM Medium:</span>
+                  <span>{(call as any).utmMedium || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">UTM Campaign:</span>
+                  <span>{(call as any).utmCampaign || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Referrer:</span>
+                  <span className="truncate max-w-32">{(call as any).referrer || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">IP Address:</span>
+                  <span className="font-mono">{(call as any).ipAddress || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">User Agent:</span>
+                  <span className="truncate max-w-32">{call.userAgent ? 'Available' : 'N/A'}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Routing Journey */}
-        <div>
-          <h4 className="flex items-center gap-2 text-sm font-medium mb-1">
-            <Users className="h-4 w-4" />
-            Routing Journey
-          </h4>
-          <div className="bg-gray-50 p-2 rounded">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-gray-600">Campaign:</span> {campaign?.name || 'Unknown'}
-              </div>
-              <div>
-                <span className="text-gray-600">Buyer:</span> {(buyer as any)?.companyName || buyer?.name || 'No buyer assigned'}
-              </div>
-              <div>
-                <span className="text-gray-600">Target:</span> {(targets?.find((t: any) => t.id === (call as any).targetId))?.name || 'No target assigned'}
-              </div>
-              <div>
-                <span className="text-gray-600">Revenue:</span> ${call.revenue}
-              </div>
-              <div>
-                <span className="text-gray-600">Cost:</span> ${call.cost}
+          {call.recordingUrl && (
+            <div className="border-t pt-4">
+              <div className="text-sm font-semibold text-gray-700 mb-3">Call Recording</div>
+              <audio controls className="w-full max-w-md">
+                <source src={`/api/recordings/${call.recordingSid}`} type="audio/wav" />
+                <source src={`/api/recordings/${call.recordingSid}`} type="audio/mpeg" />
+                Your browser does not support the audio element.
+              </audio>
+              <div className="text-xs text-gray-500 mt-2">
+                Duration: {call.recordingDuration ? `${call.recordingDuration}s` : 'Unknown'} • 
+                Status: {call.recordingStatus || 'Available'}
               </div>
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Pixel Fire Details */}
-        {call.id === 85 && (
-          <div>
-            <h4 className="flex items-center gap-2 text-sm font-medium mb-1">
-              <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full" />
+          {call.transcription && (
+            <div className="border-t pt-4">
+              <div className="text-sm font-semibold text-gray-700 mb-2">Call Transcription</div>
+              <div className="bg-gray-50 p-3 rounded text-sm leading-relaxed">
+                {call.transcription}
               </div>
-              Pixel Fire
-            </h4>
-            <div className="bg-gray-50 p-2 rounded">
-              <div className="bg-white p-2 rounded border text-xs space-y-1">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <span className="text-gray-600">Timestamp:</span>
-                    <div className="font-mono">Jul 29 04:40:40 PM</div>
+              <div className="text-xs text-gray-500 mt-1">
+                Status: {call.transcriptionStatus || 'Available'}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="routing" className="p-4 space-y-4 m-0">
+          <div className="space-y-4">
+            <div className="text-sm font-semibold text-gray-700">Campaign & Routing Information</div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">Campaign Details</div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Campaign:</span>
+                    <span className="font-medium">{campaign?.name || 'Unknown'}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-600">Field:</span>
-                    <div>Tag Fire: User - Vertical (empty)</div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Campaign ID:</span>
+                    <span className="font-mono text-xs">{call.campaignId?.slice(-8) || 'N/A'}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-600">Setting Id:</span>
-                    <div className="font-mono">6888c6c36a77d44662342c40</div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Pool ID:</span>
+                    <span>{(call as any).numberPoolId || 'N/A'}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-600">Setting Name:</span>
-                    <div>RedTrack New Test - INCOMING</div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Phone Number ID:</span>
+                    <span>{(call as any).phoneNumberId || 'N/A'}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-600">Trigger On:</span>
-                    <div className="capitalize">incoming</div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">Routing Details</div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Buyer:</span>
+                    <span>{buyer ? (buyer.name || 'Unnamed Buyer') : 'No buyer assigned'}</span>
                   </div>
-                  <div className="col-span-2">
-                    <span className="text-gray-600">URL:</span>
-                    <div className="font-mono text-blue-600 break-all">http://cy9n0.rdtk.io/postback?clickid=6888c6c36a77d44662342c40&type=CTC</div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Target:</span>
+                    <span>{(targets?.find((t: any) => t.id === (call as any).targetId))?.name || 'No target assigned'}</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Routing Attempts:</span>
+                    <span>{(call as any).routingAttempts || 0}</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Dialed Number:</span>
+                    <span className="font-mono">{(call as any).dialedNumber || call.toNumber}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="events" className="p-4 space-y-4 m-0">
+          <div className="text-sm font-semibold text-gray-700">Call Timeline</div>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 text-sm">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="flex-1">
+                <div className="font-medium">Call Initiated</div>
+                <div className="text-gray-500 text-xs">
+                  {new Date(call.createdAt).toLocaleString()}
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  From {call.fromNumber} to {call.toNumber}
+                </div>
+              </div>
+            </div>
+            
+            {(call as any).routingAttempts > 0 && (
+              <div className="flex items-start gap-3 text-sm">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="flex-1">
+                  <div className="font-medium">Routing Processing</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    {(call as any).routingAttempts} routing attempt(s) made
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex items-start gap-3 text-sm">
+              <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                call.status === 'completed' ? 'bg-green-500' : 
+                call.status === 'failed' ? 'bg-red-500' : 'bg-gray-500'
+              }`}></div>
+              <div className="flex-1">
+                <div className="font-medium">Call {call.status.charAt(0).toUpperCase() + call.status.slice(1)}</div>
+                <div className="text-gray-500 text-xs">
+                  {new Date(call.updatedAt).toLocaleString()}
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  Duration: {formatDuration(call.duration)} • Cost: {formatCurrency(call.cost)} • Revenue: {formatCurrency(call.revenue)}
+                </div>
+              </div>
+            </div>
+
+            {/* Pixel Fire Event (if applicable) */}
+            {call.id === 85 && (
+              <div className="flex items-start gap-3 text-sm border-t pt-4">
+                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="flex-1">
+                  <div className="font-medium">Tracking Pixel Fired</div>
+                  <div className="text-gray-500 text-xs">
+                    Jul 29, 2024 04:40:40 PM
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded mt-2">
+                    <div className="text-xs space-y-1">
+                      <div><span className="font-medium">Setting:</span> RedTrack New Test - INCOMING</div>
+                      <div><span className="font-medium">Trigger:</span> incoming</div>
+                      <div><span className="font-medium">URL:</span> <span className="font-mono text-blue-600 break-all">http://cy9n0.rdtk.io/postback?clickid=6888c6c36a77d44662342c40&type=CTC</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
