@@ -26,6 +26,7 @@ import UsefulAnalytics from "@/pages/useful-analytics";
 
 import EnhancedReporting from "@/pages/enhanced-reporting";
 import PredictiveRoutingSettings from "@/pages/predictive-routing-settings";
+import ApiTestingPage from "@/pages/api-testing";
 
 import NotFound from "@/pages/not-found";
 
@@ -73,6 +74,7 @@ function Router() {
           <Route path="/settings/predictive-routing" component={PredictiveRoutingSettings} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/redtrack" component={RedTrackPage} />
+          <Route path="/api-testing" component={ApiTestingPage} />
 
           {/* Temporarily commented out catch-all route to debug 404 appearing at bottom */}
           {/* <Route component={NotFound} /> */}
