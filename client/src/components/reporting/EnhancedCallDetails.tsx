@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Phone, DollarSign, Clock, MapPin, Tag, Filter, Download, Play } from "lucide-react";
+import { Phone, DollarSign, Clock, MapPin, Tag, Filter, Download, Play, Activity, Users, CheckCircle, XCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { Call, PhoneNumber, Campaign, Buyer } from "@shared/schema";
 
@@ -417,7 +417,7 @@ export function EnhancedCallDetails() {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="attribution">Attribution</TabsTrigger>
                 <TabsTrigger value="recording">Recording</TabsTrigger>
-                <TabsTrigger value="rtb">RTB Analysis</TabsTrigger>
+                <TabsTrigger value="auction">Auction Analytics</TabsTrigger>
                 <TabsTrigger value="technical">Technical</TabsTrigger>
               </TabsList>
               
@@ -575,198 +575,226 @@ export function EnhancedCallDetails() {
                 </Card>
               </TabsContent>
               
-              <TabsContent value="rtb">
+              <TabsContent value="auction">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm">RTB Analysis</CardTitle>
+                    <CardTitle className="text-sm">Auction Analytics</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {selectedCall.rtbRequestId ? (
                       <div className="space-y-4">
-                        {/* Debug Info */}
-                        <div className="text-xs text-gray-400 mb-2">
-                          RTB Data: {JSON.stringify({
-                            hasRtbBidders: !!selectedCall.rtbBidders,
-                            biddersCount: selectedCall.rtbBidders?.length || 0,
-                            winningBid: selectedCall.winningBidAmount,
-                            winningTarget: selectedCall.winningTargetId
-                          })}
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <div>
-                              <span className="text-sm font-medium">Auction Status:</span>
-                              <div className="flex items-center gap-2 mt-1">
-                                {selectedCall.winningBidAmount && parseFloat(selectedCall.winningBidAmount) > 0 ? (
-                                  <Badge variant="outline" className="bg-green-50 text-green-700">
-                                    Winner Selected
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="bg-red-50 text-red-700">
-                                    No Winner
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-sm font-medium">Winning Bid:</span>
-                              <div className="text-lg font-bold text-green-600">
-                                {selectedCall.winningBidAmount && parseFloat(selectedCall.winningBidAmount) > 0 
-                                  ? `$${parseFloat(selectedCall.winningBidAmount).toFixed(2)}`
-                                  : '$0.00'
-                                }
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-sm font-medium">Winning Target:</span>
-                              <div className="font-mono text-sm">
-                                {selectedCall.winningTargetId 
-                                  ? `Target ID: ${selectedCall.winningTargetId}`
-                                  : 'Not available'
-                                }
-                              </div>
-                            </div>
+                        {/* Auction Header Info */}
+                        <div className="flex items-center space-x-4 pb-3 border-b border-border/40">
+                          <div className="flex items-center space-x-2">
+                            <Activity className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium">Auction Details</span>
                           </div>
-                          <div className="space-y-2">
-                            <div>
-                              <span className="text-sm font-medium">Request ID:</span>
-                              <div className="font-mono text-xs break-all">
-                                {selectedCall.rtbRequestId}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-sm font-medium">Total Targets Pinged:</span>
-                              <div className="text-sm">
-                                {selectedCall.totalTargetsPinged || '0'}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-sm font-medium">Successful Responses:</span>
-                              <div className="text-sm">
-                                {selectedCall.successfulResponses || '0'}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {selectedCall.auctionTimeMs && (
-                          <div>
-                            <span className="text-sm font-medium">Auction Duration:</span>
-                            <div className="text-sm text-gray-600">
-                              {selectedCall.auctionTimeMs}ms
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="border-t pt-3">
-                          <span className="text-sm font-medium">Call Routing Method:</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge className="bg-blue-100 text-blue-800">
-                              Real-Time Bidding (RTB)
-                            </Badge>
-                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            Request ID: {selectedCall.rtbRequestId}
+                          </Badge>
+                          <Badge 
+                            variant={selectedCall.winningBidAmount && parseFloat(selectedCall.winningBidAmount) > 0 ? "default" : "secondary"}
+                            className={selectedCall.winningBidAmount && parseFloat(selectedCall.winningBidAmount) > 0 ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}
+                          >
+                            {selectedCall.winningBidAmount && parseFloat(selectedCall.winningBidAmount) > 0 ? "Won" : "No Winner"}
+                          </Badge>
                         </div>
 
-                        {/* Individual Bidder Results */}
+                        {/* Individual Bidder Results Table */}
                         {selectedCall.rtbBidders && selectedCall.rtbBidders.length > 0 && (
-                          <div className="border-t pt-4">
-                            <h4 className="text-sm font-medium mb-3">Individual Bidder Results</h4>
-                            <div className="space-y-3 max-h-64 overflow-y-auto">
-                              {selectedCall.rtbBidders
-                                .sort((a, b) => b.bidAmount - a.bidAmount)
-                                .map((bidder, index) => (
-                                <div key={index} className={`p-3 rounded-lg border ${
-                                  bidder.isWinner 
-                                    ? 'bg-green-50 border-green-200' 
-                                    : bidder.status === 'success' 
-                                      ? 'bg-blue-50 border-blue-200'
-                                      : 'bg-gray-50 border-gray-200'
-                                }`}>
-                                  <div className="flex justify-between items-start mb-2">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium text-sm">
-                                        {bidder.targetName || `Target ${bidder.targetId}`}
-                                      </span>
-                                      {bidder.isWinner && (
-                                        <Badge className="bg-green-600 text-white text-xs px-2 py-0.5">
-                                          WINNER
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <div className="text-right">
-                                      <div className={`font-bold ${
-                                        bidder.isWinner ? 'text-green-600' : 
-                                        bidder.status === 'success' ? 'text-blue-600' : 'text-gray-500'
-                                      }`}>
-                                        {bidder.bidAmount > 0 ? `$${bidder.bidAmount.toFixed(2)}` : '$0.00'}
-                                      </div>
-                                      <div className="text-xs text-gray-500">
-                                        {bidder.responseTime}ms
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                      <span className="text-gray-500">Status:</span>
-                                      <div className="flex items-center gap-1">
-                                        <span className={`w-2 h-2 rounded-full ${
-                                          bidder.status === 'success' ? 'bg-green-500' :
-                                          bidder.status === 'error' ? 'bg-red-500' :
-                                          'bg-gray-400'
-                                        }`}></span>
-                                        <span className="capitalize">{bidder.status}</span>
-                                      </div>
-                                    </div>
-                                    {bidder.destinationNumber && (
-                                      <div>
-                                        <span className="text-gray-500">Phone:</span>
-                                        <div className="font-mono text-xs">
-                                          {bidder.destinationNumber}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  {bidder.rejectionReason && (
-                                    <div className="mt-2 text-xs">
-                                      <span className="text-gray-500">Reason:</span>
-                                      <div className="text-red-600">{bidder.rejectionReason}</div>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
+                          <div className="space-y-3">
+                            <div className="flex items-center space-x-2">
+                              <Users className="h-4 w-4 text-gray-500" />
+                              <span className="text-sm font-medium text-gray-700">Individual Bidder Results</span>
                             </div>
-                            
-                            <div className="mt-3 pt-3 border-t text-xs text-gray-500">
-                              <div className="grid grid-cols-3 gap-2">
-                                <div className="text-center">
-                                  <div className="font-medium text-green-600">
-                                    {selectedCall.rtbBidders.filter(b => b.status === 'success').length}
-                                  </div>
-                                  <div>Successful</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="font-medium text-red-600">
-                                    {selectedCall.rtbBidders.filter(b => b.status === 'error').length}
-                                  </div>
-                                  <div>Errors</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="font-medium text-gray-600">
-                                    {selectedCall.rtbBidders.filter(b => b.status === 'timeout').length}
-                                  </div>
-                                  <div>Timeouts</div>
-                                </div>
-                              </div>
+                            <div className="border rounded-lg overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="bg-gray-50">
+                                    <TableHead className="text-xs">Bidder</TableHead>
+                                    <TableHead className="text-xs">Bid Amount</TableHead>
+                                    <TableHead className="text-xs">Response Time</TableHead>
+                                    <TableHead className="text-xs">Destination</TableHead>
+                                    <TableHead className="text-xs">Status & Rejection Details</TableHead>
+                                    <TableHead className="text-xs">Winner</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {selectedCall.rtbBidders
+                                    .sort((a, b) => b.bidAmount - a.bidAmount)
+                                    .map((bidder, idx) => (
+                                    <TableRow key={idx} className="text-sm">
+                                      <TableCell>
+                                        <div className="flex items-center space-x-2">
+                                          {bidder.isWinner && (
+                                            <div className="text-yellow-500">👑</div>
+                                          )}
+                                          <div>
+                                            <div className="font-medium">{bidder.targetName || `Target ${bidder.targetId}`}</div>
+                                            <div className="text-xs text-gray-500">ID: {bidder.targetId}</div>
+                                          </div>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="font-semibold text-green-600">
+                                          ${bidder.bidAmount.toFixed(2)}
+                                        </div>
+                                        <div className="text-xs text-gray-500">{bidder.currency}</div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="font-mono text-sm">
+                                          {bidder.responseTime}ms
+                                        </div>
+                                        <div className={`text-xs ${
+                                          bidder.responseTime < 500 ? 'text-green-600' : 
+                                          bidder.responseTime < 1000 ? 'text-yellow-600' : 'text-red-600'
+                                        }`}>
+                                          {bidder.responseTime < 500 ? 'Fast' : 
+                                           bidder.responseTime < 1000 ? 'Medium' : 'Slow'}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        {bidder.destinationNumber ? (
+                                          <>
+                                            <div className="font-mono text-blue-600 text-sm">
+                                              {bidder.destinationNumber}
+                                            </div>
+                                            <div className="text-xs text-gray-500">External Route</div>
+                                          </>
+                                        ) : (
+                                          <div className="text-xs text-gray-500">No destination</div>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="space-y-1.5 max-w-[250px]">
+                                          <div className="flex items-center space-x-2">
+                                            {bidder.status === 'success' ? (
+                                              <CheckCircle className="h-3 w-3 text-green-500" />
+                                            ) : (
+                                              <XCircle className="h-3 w-3 text-red-500" />
+                                            )}
+                                            <Badge 
+                                              variant={bidder.status === 'success' ? 'default' : 'destructive'}
+                                              className="text-xs"
+                                            >
+                                              {bidder.status}
+                                            </Badge>
+                                          </div>
+                                          
+                                          {bidder.rejectionReason && (
+                                            <div className="text-xs text-red-600">
+                                              {bidder.rejectionReason}
+                                            </div>
+                                          )}
+                                          
+                                          {!bidder.rejectionReason && bidder.status === 'success' && bidder.bidAmount > 0 && (
+                                            <div className="text-xs text-green-600">Bid accepted successfully</div>
+                                          )}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        {bidder.isWinner ? (
+                                          <Badge variant="default" className="bg-yellow-100 text-yellow-800 text-xs">
+                                            🏆 Winner
+                                          </Badge>
+                                        ) : (
+                                          <span className="text-gray-400 text-xs">
+                                            #{idx + 1}
+                                          </span>
+                                        )}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
                             </div>
                           </div>
                         )}
+
+                        {/* Auction Metrics Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* Timing Section */}
+                          <div className="space-y-3">
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-4 w-4 text-gray-500" />
+                              <span className="text-sm font-medium text-gray-700">Auction Timing</span>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Call Start:</span>
+                                <span className="font-mono">{new Date(selectedCall.createdAt).toLocaleString()}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Total Duration:</span>
+                                <span className="font-mono">{selectedCall.auctionTimeMs || 0}ms</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Avg Response:</span>
+                                <span className="font-mono">
+                                  {selectedCall.rtbBidders 
+                                    ? Math.round(selectedCall.rtbBidders.reduce((sum, b) => sum + b.responseTime, 0) / selectedCall.rtbBidders.length)
+                                    : 0}ms
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Bidding Statistics */}
+                          <div className="space-y-3">
+                            <div className="flex items-center space-x-2">
+                              <DollarSign className="h-4 w-4 text-gray-500" />
+                              <span className="text-sm font-medium text-gray-700">Bidding Stats</span>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Targets Pinged:</span>
+                                <span className="font-medium">{selectedCall.totalTargetsPinged || 0}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Successful Bids:</span>
+                                <span className="font-medium text-green-600">{selectedCall.successfulResponses || 0}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Success Rate:</span>
+                                <span className="font-medium">
+                                  {selectedCall.totalTargetsPinged 
+                                    ? Math.round((selectedCall.successfulResponses / selectedCall.totalTargetsPinged) * 100)
+                                    : 0}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Winner Information */}
+                          <div className="space-y-3">
+                            <div className="flex items-center space-x-2">
+                              <Activity className="h-4 w-4 text-gray-500" />
+                              <span className="text-sm font-medium text-gray-700">Winner Details</span>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Winning Bid:</span>
+                                <span className="font-bold text-green-600">
+                                  ${selectedCall.winningBidAmount || '0.00'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Winner ID:</span>
+                                <span className="font-mono">{selectedCall.winningTargetId || 'None'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Route Method:</span>
+                                <Badge className="bg-blue-100 text-blue-800 text-xs">RTB</Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ) : (
-                      <div className="text-center py-4 text-gray-500">
-                        This call was not routed via RTB auction
+                      <div className="text-center py-8 text-gray-500">
+                        <Activity className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                        <div className="text-sm">This call was not routed via RTB auction</div>
+                        <div className="text-xs text-gray-400 mt-1">No auction data available</div>
                       </div>
                     )}
                   </CardContent>
