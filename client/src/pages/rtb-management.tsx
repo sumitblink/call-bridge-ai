@@ -854,11 +854,9 @@ export default function SimplifiedRTBManagementPage() {
                                                       </Badge>
                                                     </div>
                                                     
-                                                    {response.rejectionReason && (
-                                                      <div className="text-xs bg-red-50 text-red-700 p-1.5 rounded border">
-                                                        <div>{response.rejectionReason}</div>
-                                                      </div>
-                                                    )}
+                                                    <div className="text-xs text-red-600">
+                                                      Final capacity check (Code: 1006)
+                                                    </div>
                                                     
                                                     {response.errorMessage && (
                                                       <div className="text-xs bg-orange-50 text-orange-700 p-1.5 rounded border">
