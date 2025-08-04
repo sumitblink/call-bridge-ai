@@ -23,82 +23,177 @@ function DocumentationPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-96 w-full">
-                <div className="prose prose-sm max-w-none">
-                  <h2>Platform Overview</h2>
-                  <p>CallCenter Pro is a comprehensive call center management platform designed to streamline inbound call campaigns, intelligent call routing, and performance tracking across diverse industries and verticals.</p>
+              <ScrollArea className="h-[800px] w-full">
+                <div className="prose prose-sm max-w-none space-y-6">
+                  <h2>System Overview</h2>
+                  <p>CallCenter Pro is a comprehensive call center management platform designed as a Ringba alternative. It provides intelligent call routing, real-time bidding (RTB), campaign management, and advanced analytics for businesses managing inbound call operations.</p>
                   
-                  <h3>Key Features</h3>
+                  <h3>Core Capabilities</h3>
                   <ul>
-                    <li><strong>Campaign Management:</strong> Create and manage multi-industry campaigns</li>
-                    <li><strong>Intelligent Call Routing:</strong> Priority, round-robin, and pool-based routing</li>
-                    <li><strong>Real-Time Bidding (RTB):</strong> Direct campaign-to-RTB target assignments</li>
-                    <li><strong>Dynamic Number Insertion (DNI):</strong> Ultra-fast DNI service with caching</li>
-                    <li><strong>Advanced Analytics:</strong> Detailed call logs and performance metrics</li>
-                    <li><strong>IVR System:</strong> Advanced call flow capabilities</li>
+                    <li><strong>Multi-tenancy:</strong> Complete user isolation with secure data access</li>
+                    <li><strong>Real-time bidding:</strong> Auction-based call distribution with 33+ bidder support</li>
+                    <li><strong>Dynamic Number Insertion:</strong> Campaign attribution through dynamic phone numbers</li>
+                    <li><strong>Advanced call flows:</strong> Visual IVR builder with complex routing logic</li>
+                    <li><strong>Campaign management:</strong> Complete lifecycle from creation to analytics</li>
+                    <li><strong>Twilio integration:</strong> Full voice communication capabilities</li>
+                    <li><strong>Enhanced reporting:</strong> Detailed analytics with RTB rejection reasons</li>
+                    <li><strong>AI-powered help:</strong> Claude-based chatbot with project knowledge</li>
                   </ul>
 
-                  <h3>Getting Started</h3>
+                  <h2>Complete Website Flow</h2>
+                  
+                  <h3>Entry Points</h3>
+                  <p><strong>Login Page:</strong> User authentication entry point with username/password login, session management, and redirect to dashboard after login.</p>
+                  <p><strong>Demo Credentials:</strong> email: sumit@blinkdigital.in, password: demo1234</p>
+
+                  <h3>Main Navigation Structure</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <pre className="text-xs">{`├── Dashboard (/)
+├── Campaigns (/campaigns)
+├── Buyers (/buyers)
+├── Targets (/targets)
+├── Publishers (/publishers)
+├── Agents (/agents)
+├── Phone Numbers (/phone-numbers)
+├── RTB Management (/rtb-management)
+├── Call Flows (/call-flows)
+├── Enhanced Reporting (/enhanced-reporting)
+├── Integrations (/integrations)
+└── Settings (/settings)`}</pre>
+                  </div>
+
+                  <h3>User Journey Flows</h3>
+                  <p><strong>Campaign Creation:</strong> Dashboard → Campaigns → Create Campaign → Configure Routing → Add Buyers → Set Numbers → Save</p>
+                  <p><strong>RTB Setup:</strong> RTB Management → Add RTB Target → Configure Endpoint → Test Bidding → Assign to Campaign → Monitor Analytics</p>
+                  <p><strong>Call Analytics:</strong> Enhanced Reporting → Filter Calls → Select Call → Expand Details → View RTB Analytics → See Rejection Reasons</p>
+
+                  <h2>Authentication System</h2>
+                  <h3>Login Process</h3>
                   <ol>
-                    <li><strong>Create a Campaign:</strong> Navigate to Campaigns → New Campaign</li>
-                    <li><strong>Set up Phone Numbers:</strong> Add numbers via Phone Numbers section</li>
-                    <li><strong>Configure Buyers:</strong> Add buyer endpoints for call routing</li>
-                    <li><strong>Enable RTB:</strong> Configure real-time bidding targets</li>
-                    <li><strong>Monitor Performance:</strong> Use Enhanced Reporting for analytics</li>
+                    <li><strong>Access:</strong> Navigate to `/` or login page</li>
+                    <li><strong>Credentials:</strong> Enter email and password</li>
+                    <li><strong>Validation:</strong> Server validates against user database</li>
+                    <li><strong>Session:</strong> Express session created with PostgreSQL storage</li>
+                    <li><strong>Redirect:</strong> Automatic redirect to `/dashboard`</li>
                   </ol>
 
-                  <h3>Campaign Types</h3>
-                  <p>The platform supports campaigns across multiple verticals:</p>
+                  <h3>Session Management</h3>
                   <ul>
-                    <li>Healthcare & Medical</li>
+                    <li><strong>Storage:</strong> PostgreSQL-backed session store</li>
+                    <li><strong>Security:</strong> Secure cookies with HTTP-only flags</li>
+                    <li><strong>Multi-tenancy:</strong> User ID scoped to all data operations</li>
+                  </ul>
+
+                  <h2>Campaign Management</h2>
+                  <h3>Campaign Creation Process</h3>
+                  <ol>
+                    <li><strong>Navigate:</strong> Dashboard → Campaigns → "Create Campaign"</li>
+                    <li><strong>Basic Info:</strong> Campaign name, description, industry vertical</li>
+                    <li><strong>Phone Numbers:</strong> Assign tracking numbers from pools</li>
+                    <li><strong>Routing Setup:</strong> Choose routing method (Priority, Round Robin, Pool-based)</li>
+                    <li><strong>Buyer Assignment:</strong> Add buyers with priority scores and caps</li>
+                    <li><strong>RTB Configuration:</strong> Enable RTB, set bidding parameters</li>
+                    <li><strong>Call Flows:</strong> Design IVR and routing logic</li>
+                    <li><strong>Testing:</strong> Test routing with sample calls</li>
+                    <li><strong>Activation:</strong> Go live with monitoring</li>
+                  </ol>
+
+                  <h3>Campaign Types & Verticals</h3>
+                  <ul>
+                    <li>Healthcare & Medical Services</li>
                     <li>Insurance & Financial Services</li>
-                    <li>Legal Services</li>
+                    <li>Legal Services & Law Firms</li>
                     <li>Home Services & Contractors</li>
-                    <li>Education & Training</li>
-                    <li>Real Estate</li>
+                    <li>Education & Training Programs</li>
+                    <li>Real Estate & Property</li>
+                    <li>Automotive Services</li>
+                    <li>Travel & Hospitality</li>
                   </ul>
 
-                  <h3>Call Routing Methods</h3>
-                  <p><strong>Priority Routing:</strong> Calls routed to buyers based on priority scores</p>
-                  <p><strong>Round Robin:</strong> Equal distribution across available buyers</p>
-                  <p><strong>Pool-Based:</strong> Calls distributed within specific buyer pools</p>
-
-                  <h3>Real-Time Bidding (RTB)</h3>
-                  <p>Advanced RTB system supporting:</p>
+                  <h2>Real-Time Bidding (RTB)</h2>
+                  <h3>RTB System Features</h3>
                   <ul>
-                    <li>External bidder integration</li>
-                    <li>Rate limiting and bid expiration</li>
-                    <li>Comprehensive audit trails</li>
-                    <li>Phone number obfuscation for security</li>
-                    <li>Health monitoring and uptime tracking</li>
+                    <li><strong>33+ Bidder Support:</strong> Comprehensive rejection reason analysis</li>
+                    <li><strong>Auction Management:</strong> Real-time bid processing with timeout protection</li>
+                    <li><strong>Security Features:</strong> Phone number obfuscation (555***1234 format)</li>
+                    <li><strong>Health Monitoring:</strong> Uptime tracking and error alerting</li>
+                    <li><strong>Comprehensive Logging:</strong> All requests/responses/failures logged</li>
+                    <li><strong>Rate Limiting:</strong> Per minute/hour/day limits</li>
+                    <li><strong>Bid Expiration:</strong> Timeout handling with retry limits</li>
                   </ul>
 
-                  <h3>Security Features</h3>
+                  <h3>RTB Configuration</h3>
+                  <ol>
+                    <li><strong>Target Creation:</strong> Add RTB endpoint URLs and authentication</li>
+                    <li><strong>Bid Parameters:</strong> Set min/max bid amounts and currencies</li>
+                    <li><strong>Geographic Targeting:</strong> Configure states and zip codes</li>
+                    <li><strong>Response Mapping:</strong> Define JSON paths for bid parsing</li>
+                    <li><strong>Campaign Assignment:</strong> Link targets to specific campaigns</li>
+                    <li><strong>Testing & Validation:</strong> Health checks and bid testing</li>
+                  </ol>
+
+                  <h2>Enhanced Reporting & Analytics</h2>
+                  <h3>RTB Analytics Features</h3>
                   <ul>
-                    <li>Multi-tenancy with user-scoped data filtering</li>
-                    <li>Phone number obfuscation (555***1234 format)</li>
-                    <li>Timeout protection for external requests</li>
-                    <li>Comprehensive bid logging</li>
-                    <li>Session-based authentication</li>
+                    <li><strong>Bid Request Tracking:</strong> Complete auction details with 33 bidders</li>
+                    <li><strong>Rejection Analysis:</strong> Detailed rejection reasons per bidder</li>
+                    <li><strong>Performance Metrics:</strong> Response times, success rates, revenue</li>
+                    <li><strong>Geographic Analysis:</strong> State and zip code performance</li>
+                    <li><strong>Time-based Reports:</strong> Hourly, daily, weekly analytics</li>
+                    <li><strong>Campaign Comparison:</strong> Multi-campaign performance analysis</li>
                   </ul>
 
-                  <h3>Integration Capabilities</h3>
-                  <p>The platform integrates with:</p>
+                  <h2>Phone Number Management</h2>
+                  <h3>Number Pool System</h3>
                   <ul>
-                    <li><strong>Twilio:</strong> Voice communication and number provisioning</li>
+                    <li><strong>Pool Creation:</strong> Organize numbers by campaign or geography</li>
+                    <li><strong>Dynamic Assignment:</strong> Automatic number rotation</li>
+                    <li><strong>Twilio Integration:</strong> Direct number provisioning</li>
+                    <li><strong>Usage Tracking:</strong> Monitor number utilization</li>
+                    <li><strong>Geographic Targeting:</strong> Local numbers for better conversion</li>
+                  </ul>
+
+                  <h2>Call Flow System</h2>
+                  <h3>IVR Builder Features</h3>
+                  <ul>
+                    <li><strong>Visual Flow Builder:</strong> Drag-and-drop interface</li>
+                    <li><strong>Node Types:</strong> Menu, Gather, Play, Business Hours, Router, Splitter</li>
+                    <li><strong>Complex Logic:</strong> Conditional routing and A/B testing</li>
+                    <li><strong>Custom Scripts:</strong> JavaScript-based custom logic</li>
+                    <li><strong>Call Recording:</strong> Automatic recording with storage</li>
+                  </ul>
+
+                  <h2>Integration Capabilities</h2>
+                  <h3>Supported Integrations</h3>
+                  <ul>
+                    <li><strong>Twilio:</strong> Voice communication and SMS</li>
                     <li><strong>RedTrack:</strong> Advanced tracking and attribution</li>
                     <li><strong>External RTB Systems:</strong> Real-time bidding integration</li>
                     <li><strong>CRM Systems:</strong> Lead management and customer data</li>
+                    <li><strong>Analytics Platforms:</strong> Google Analytics, Facebook Pixel</li>
+                    <li><strong>Webhooks:</strong> Custom event notifications</li>
                   </ul>
 
-                  <h3>Analytics & Reporting</h3>
-                  <p>Comprehensive reporting includes:</p>
+                  <h2>Security & Compliance</h2>
+                  <h3>Security Features</h3>
                   <ul>
-                    <li>Call volume and duration metrics</li>
-                    <li>Campaign performance analytics</li>
-                    <li>RTB auction details and bid responses</li>
-                    <li>Revenue tracking and ROI analysis</li>
-                    <li>Geographic performance data</li>
+                    <li><strong>Multi-tenancy:</strong> Complete data isolation between users</li>
+                    <li><strong>Phone Obfuscation:</strong> All logs use 555***1234 format</li>
+                    <li><strong>Session Security:</strong> Secure cookies and CSRF protection</li>
+                    <li><strong>API Security:</strong> Rate limiting and authentication</li>
+                    <li><strong>Audit Trails:</strong> Complete activity logging</li>
+                    <li><strong>Data Encryption:</strong> Encrypted data storage and transmission</li>
+                  </ul>
+
+                  <h2>Technical Architecture</h2>
+                  <h3>Technology Stack</h3>
+                  <ul>
+                    <li><strong>Frontend:</strong> React + TypeScript + Tailwind CSS</li>
+                    <li><strong>Backend:</strong> Node.js + Express + TypeScript</li>
+                    <li><strong>Database:</strong> PostgreSQL with Drizzle ORM</li>
+                    <li><strong>Voice:</strong> Twilio SDK integration</li>
+                    <li><strong>Deployment:</strong> Replit with Node.js 20</li>
+                    <li><strong>State Management:</strong> TanStack React Query</li>
                   </ul>
                 </div>
               </ScrollArea>

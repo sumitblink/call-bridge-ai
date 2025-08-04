@@ -35,7 +35,7 @@ function ApiDocumentationPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-96 w-full">
+              <ScrollArea className="h-[800px] w-full">
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Base URL</h3>
@@ -67,6 +67,21 @@ function ApiDocumentationPage() {
                       </div>
 
                       <div>
+                        <h4 className="font-medium">Response</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <pre className="text-xs overflow-x-auto">{`{
+  "message": "Login successful",
+  "user": {
+    "id": 2,
+    "email": "sumit@blinkdigital.in",
+    "firstName": null,
+    "lastName": null
+  }
+}`}</pre>
+                        </div>
+                      </div>
+
+                      <div>
                         <h4 className="font-medium">cURL Example</h4>
                         <div className="bg-muted p-3 rounded-lg relative">
                           <Button
@@ -90,68 +105,342 @@ function ApiDocumentationPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Core Endpoints</h3>
+                    <h3 className="text-lg font-semibold mb-2">Campaign Management</h3>
                     <div className="space-y-4">
                       <div>
-                        <h4 className="font-medium">Campaign Management</h4>
-                        <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
-                          <div><span className="font-mono">GET /api/campaigns</span> - List all campaigns</div>
-                          <div><span className="font-mono">POST /api/campaigns</span> - Create campaign</div>
-                          <div><span className="font-mono">PUT /api/campaigns/:id</span> - Update campaign</div>
-                          <div><span className="font-mono">DELETE /api/campaigns/:id</span> - Delete campaign</div>
+                        <h4 className="font-medium">List Campaigns</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">GET /api/campaigns</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="mb-2"
+                            onClick={() => copyToClipboard(`curl -X GET https://call-center-ringba.replit.app/api/campaigns -b cookies.txt`)}
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copy cURL
+                          </Button>
+                          <pre className="text-xs overflow-x-auto">{`[
+  {
+    "id": "campaign_uuid",
+    "name": "Summer Campaign",
+    "description": "Q2 lead generation",
+    "phoneNumber": "+1234567890",
+    "routingType": "priority",
+    "status": "active",
+    "enableRtb": true,
+    "rtbId": "abc123def456",
+    "minBiddersRequired": 2,
+    "biddingTimeoutMs": 3000,
+    "callerIdRequired": true,
+    "createdAt": "2025-01-01T00:00:00Z"
+  }
+]`}</pre>
                         </div>
                       </div>
 
                       <div>
-                        <h4 className="font-medium">RTB Management</h4>
-                        <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
-                          <div><span className="font-mono">GET /api/rtb/targets</span> - List RTB targets</div>
-                          <div><span className="font-mono">POST /api/rtb/targets</span> - Create RTB target</div>
-                          <div><span className="font-mono">GET /api/rtb/health-checks</span> - Health monitoring</div>
-                          <div><span className="font-mono">GET /api/rtb/bid-requests</span> - Bid request logs</div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium">Call Management</h4>
-                        <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
-                          <div><span className="font-mono">GET /api/calls</span> - List calls</div>
-                          <div><span className="font-mono">GET /api/campaigns/:id/calls</span> - Campaign calls</div>
-                          <div><span className="font-mono">POST /api/calls/:callSid/transfer</span> - Transfer call</div>
-                          <div><span className="font-mono">POST /api/calls/:callSid/hold</span> - Hold call</div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium">Phone Numbers</h4>
-                        <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
-                          <div><span className="font-mono">GET /api/phone-numbers</span> - List numbers</div>
-                          <div><span className="font-mono">POST /api/phone-numbers/search</span> - Search available</div>
-                          <div><span className="font-mono">POST /api/phone-numbers/purchase</span> - Purchase number</div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium">Tracking & Analytics</h4>
-                        <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
-                          <div><span className="font-mono">POST /api/tracking/redtrack/session</span> - Track session</div>
-                          <div><span className="font-mono">POST /api/tracking/redtrack/conversion</span> - Track conversion</div>
-                          <div><span className="font-mono">GET /api/stats</span> - Platform statistics</div>
-                          <div><span className="font-mono">GET /api/stats/historical</span> - Historical data</div>
+                        <h4 className="font-medium">Create Campaign</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">POST /api/campaigns</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="mb-2"
+                            onClick={() => copyToClipboard(`curl -X POST https://call-center-ringba.replit.app/api/campaigns \\
+  -H "Content-Type: application/json" \\
+  -b cookies.txt \\
+  -d '{
+    "name": "New Campaign",
+    "description": "Campaign description",
+    "phoneNumber": "+1234567890",
+    "routingType": "priority",
+    "status": "active",
+    "enableRtb": true,
+    "minBiddersRequired": 2,
+    "biddingTimeoutMs": 3000,
+    "callerIdRequired": false
+  }'`)}
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copy cURL
+                          </Button>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Security Features</h3>
+                    <h3 className="text-lg font-semibold mb-2">RTB Management</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium">List RTB Targets</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">GET /api/rtb/targets</div>
+                          <pre className="text-xs overflow-x-auto">{`[
+  {
+    "id": 1,
+    "name": "Premium Buyer Network",
+    "endpointUrl": "https://buyer.example.com/rtb/bid",
+    "httpMethod": "POST",
+    "contentType": "application/json",
+    "authMethod": "bearer",
+    "minBidAmount": 5.00,
+    "maxBidAmount": 50.00,
+    "currency": "USD",
+    "timeoutMs": 3000,
+    "isActive": true,
+    "states": ["CA", "NY", "TX"],
+    "excludedStates": ["AL"],
+    "zipCodes": ["90210", "10001"],
+    "excludedZipCodes": ["12345"]
+  }
+]`}</pre>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium">RTB Health Checks</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">GET /api/rtb/health-checks</div>
+                          <pre className="text-xs overflow-x-auto">{`{
+  "healthChecks": [
+    {
+      "targetId": 1,
+      "targetName": "Premium Buyer Network",
+      "endpointUrl": "https://buyer.example.com/rtb/bid",
+      "status": "healthy",
+      "lastCheckAt": "2025-08-04T12:00:00Z",
+      "responseTimeMs": 234,
+      "uptime": 99.5,
+      "totalChecks": 144
+    }
+  ],
+  "summary": {
+    "totalTargets": 5,
+    "healthyTargets": 4,
+    "unhealthyTargets": 1,
+    "averageResponseTime": 287,
+    "overallUptime": 98.2
+  }
+}`}</pre>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium">RTB Bid Requests</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">GET /api/rtb/bid-requests?page=1&limit=50</div>
+                          <pre className="text-xs overflow-x-auto">{`{
+  "bidRequests": [
+    {
+      "id": 1,
+      "requestId": "req_12345",
+      "campaignId": "campaign_uuid",
+      "callerId": "555***1234",
+      "callerState": "CA",
+      "callerZip": "90210",
+      "callStartTime": "2025-08-04T12:00:00Z",
+      "totalTargetsPinged": 3,
+      "successfulResponses": 2,
+      "winningBidAmount": 25.50,
+      "winningTargetId": 1,
+      "biddingCompletedAt": "2025-08-04T12:00:03Z",
+      "totalResponseTimeMs": 1247
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 150,
+    "totalPages": 3
+  }
+}`}</pre>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium">RTB Auction Details</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">GET /api/rtb/auction-details?callId=123</div>
+                          <pre className="text-xs overflow-x-auto">{`[
+  {
+    "id": 1,
+    "callId": 123,
+    "auctionId": "auction_1754290000_abc123",
+    "rtbTargetId": 1,
+    "targetName": "Premium Buyer Network",
+    "bidAmount": "25.50",
+    "auctionStatus": "won",
+    "responseTimeMs": 456,
+    "destinationNumber": "555***9876",
+    "isWinner": true,
+    "rejectionReason": null,
+    "createdAt": "2025-08-04T12:00:00Z"
+  }
+]`}</pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Call Management</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium">List Calls</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">GET /api/calls?page=1&limit=25</div>
+                          <pre className="text-xs overflow-x-auto">{`{
+  "calls": [
+    {
+      "id": 1,
+      "callSid": "CA1234567890abcdef",
+      "campaignId": "campaign_uuid",
+      "from": "555***1234",
+      "to": "555***5678",
+      "status": "completed",
+      "direction": "inbound",
+      "duration": 120,
+      "startTime": "2025-08-04T12:00:00Z",
+      "endTime": "2025-08-04T12:02:00Z",
+      "recordingUrl": "https://recordings.example.com/call1.mp3"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 25,
+    "total": 500,
+    "totalPages": 20
+  }
+}`}</pre>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium">Call Control Actions</h4>
+                        <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
+                          <div><span className="font-mono">POST /api/calls/:callSid/transfer</span> - Transfer call to another number</div>
+                          <div><span className="font-mono">POST /api/calls/:callSid/hold</span> - Put call on hold</div>
+                          <div><span className="font-mono">POST /api/calls/:callSid/resume</span> - Resume held call</div>
+                          <div><span className="font-mono">POST /api/calls/:callSid/mute</span> - Mute participant</div>
+                          <div><span className="font-mono">POST /api/calls/:callSid/unmute</span> - Unmute participant</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Phone Number Management</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium">List Phone Numbers</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">GET /api/phone-numbers</div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium">Search Available Numbers</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">POST /api/phone-numbers/search</div>
+                          <pre className="text-xs overflow-x-auto">{`{
+  "country": "US",
+  "numberType": "local",
+  "areaCode": "555",
+  "limit": 10
+}`}</pre>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium">Purchase Number</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">POST /api/phone-numbers/purchase</div>
+                          <pre className="text-xs overflow-x-auto">{`{
+  "phoneNumber": "+15551234567",
+  "friendlyName": "Campaign Main Line"
+}`}</pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Tracking & Analytics</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium">RedTrack Session Tracking</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">POST /api/tracking/redtrack/session</div>
+                          <pre className="text-xs overflow-x-auto">{`{
+  "clickid": "rt_click_12345",
+  "campaign_id": "campaign_123",
+  "source": "google",
+  "medium": "cpc",
+  "timestamp": "2025-08-04T12:00:00Z"
+}`}</pre>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium">RedTrack Conversion Tracking</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">POST /api/tracking/redtrack/conversion</div>
+                          <pre className="text-xs overflow-x-auto">{`{
+  "clickid": "rt_click_12345",
+  "eventType": "phone_click",
+  "phoneNumber": "+1234567890",
+  "conversionValue": 25.00
+}`}</pre>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium">Platform Statistics</h4>
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="font-mono text-sm mb-2">GET /api/stats/historical</div>
+                          <pre className="text-xs overflow-x-auto">{`{
+  "activeCampaigns": 15,
+  "totalCalls": 1250,
+  "avgCallDuration": 180,
+  "conversionRate": 23.5,
+  "totalRevenue": 15750.00,
+  "rtbAuctionVolume": 850,
+  "avgBidAmount": 18.50
+}`}</pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Security & Rate Limiting</h3>
                     <div className="bg-muted p-3 rounded-lg text-sm">
                       <ul className="space-y-1">
-                        <li>• Session-based authentication with cookies</li>
-                        <li>• Phone number obfuscation (555***1234 format)</li>
-                        <li>• Rate limiting (100 req/min general, 1000 req/min webhooks)</li>
-                        <li>• Request timeout protection (5-second max with retries)</li>
-                        <li>• Comprehensive audit trails for all RTB requests</li>
+                        <li>• <strong>Authentication:</strong> Session-based with secure cookies</li>
+                        <li>• <strong>Rate Limiting:</strong> 100 req/min general, 1000 req/min webhooks</li>
+                        <li>• <strong>Phone Obfuscation:</strong> All logs use 555***1234 format</li>
+                        <li>• <strong>Timeout Protection:</strong> 5-second max with retry logic</li>
+                        <li>• <strong>Audit Trails:</strong> Complete request/response logging</li>
+                        <li>• <strong>Data Validation:</strong> Zod schema validation on all inputs</li>
+                        <li>• <strong>Error Handling:</strong> Standardized error responses with timestamps</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Response Codes & Error Handling</h3>
+                    <div className="bg-muted p-3 rounded-lg text-sm">
+                      <ul className="space-y-1">
+                        <li>• <strong>200 OK:</strong> Successful request with data</li>
+                        <li>• <strong>201 Created:</strong> Resource successfully created</li>
+                        <li>• <strong>400 Bad Request:</strong> Validation errors or malformed request</li>
+                        <li>• <strong>401 Unauthorized:</strong> Authentication required or failed</li>
+                        <li>• <strong>403 Forbidden:</strong> Insufficient permissions</li>
+                        <li>• <strong>404 Not Found:</strong> Resource not found</li>
+                        <li>• <strong>429 Too Many Requests:</strong> Rate limit exceeded</li>
+                        <li>• <strong>500 Internal Server Error:</strong> Server-side error</li>
                       </ul>
                     </div>
                   </div>
