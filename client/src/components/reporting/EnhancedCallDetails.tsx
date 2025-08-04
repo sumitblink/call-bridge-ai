@@ -12,10 +12,30 @@ import { Phone, DollarSign, Clock, MapPin, Tag, Filter, Download, Play } from "l
 import { formatDistanceToNow } from "date-fns";
 import type { Call, PhoneNumber, Campaign, Buyer } from "@shared/schema";
 
+interface RTBBidder {
+  targetId: number;
+  bidAmount: number;
+  currency: string;
+  destinationNumber: string | null;
+  responseTime: number;
+  status: 'success' | 'error' | 'timeout';
+  isWinner: boolean;
+  targetName?: string;
+  rejectionReason?: string;
+}
+
 interface CallWithDetails extends Call {
   campaign?: Campaign;
   buyer?: Buyer;
   phoneNumber?: PhoneNumber;
+  // RTB fields
+  rtbRequestId?: string | null;
+  winningBidAmount?: string | null;
+  winningTargetId?: number | null;
+  totalTargetsPinged?: number | null;
+  successfulResponses?: number | null;
+  auctionTimeMs?: number | null;
+  rtbBidders?: RTBBidder[] | null;
 }
 
 export function EnhancedCallDetails() {
