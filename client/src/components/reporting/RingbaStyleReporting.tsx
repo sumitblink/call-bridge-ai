@@ -8,10 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Phone, Calendar, DollarSign, TrendingUp, Filter, Download, Settings, Search, RefreshCw, ChevronDown, ChevronUp, Play, Pause, ExternalLink, Clock, MapPin, User, Tag, MoreHorizontal, Eye, Trash2 } from "lucide-react";
 import { ColumnCustomizer } from "./ColumnCustomizer";
 import BulkCallActions from "./BulkCallActions";
-import { format } from "date-fns";
+import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { 
   BarChart, 
   Bar, 
@@ -72,6 +74,11 @@ export default function RingbaStyleReporting() {
   const [activeFilters, setActiveFilters] = useState<FilterRule[]>([]);
   const [showFilterDialog, setShowFilterDialog] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState("today");
+  const [customDateRange, setCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined,
+  });
+  const [showCalendar, setShowCalendar] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [selectedCalls, setSelectedCalls] = useState<any[]>([]);
@@ -84,15 +91,37 @@ export default function RingbaStyleReporting() {
     visibleColumns: {}
   });
 
+  // Get actual date range for API calls
+  const getApiDateRange = (): { type: string } | { type: "custom"; from: string; to: string } => {
+    if (dateRange === "custom" && customDateRange.from && customDateRange.to) {
+      return {
+        type: "custom",
+        from: format(customDateRange.from, "yyyy-MM-dd"),
+        to: format(customDateRange.to, "yyyy-MM-dd")
+      };
+    }
+    return { type: dateRange };
+  };
+
   // Fetch real summary data from API
   const { data: summaryResponse, isLoading: isSummaryLoading } = useQuery({
-    queryKey: ['/api/reporting/summary', { groupBy: 'campaign', filters: activeFilters, dateRange: 'today' }],
+    queryKey: ['/api/reporting/summary', { groupBy: 'campaign', filters: activeFilters, dateRange: getApiDateRange() }],
     queryFn: async () => {
+      const apiDateRange = getApiDateRange();
       const params = new URLSearchParams({
         groupBy: 'campaign',
-        dateRange: 'today',
         filters: JSON.stringify(activeFilters)
       });
+      
+      if (apiDateRange.type === "custom") {
+        const customRange = apiDateRange as { type: "custom"; from: string; to: string };
+        params.append('dateFrom', customRange.from);
+        params.append('dateTo', customRange.to);
+        params.append('dateRange', 'custom');
+      } else {
+        params.append('dateRange', apiDateRange.type);
+      }
+      
       const response = await fetch(`/api/reporting/summary?${params}`);
       return response.json();
     }
@@ -102,12 +131,22 @@ export default function RingbaStyleReporting() {
 
   // Fetch real timeline data from API
   const { data: timelineResponse, isLoading: isTimelineLoading } = useQuery({
-    queryKey: ['/api/reporting/timeline', { groupBy: 'hour', dateRange: 'today' }],
+    queryKey: ['/api/reporting/timeline', { groupBy: 'hour', dateRange: getApiDateRange() }],
     queryFn: async () => {
+      const apiDateRange = getApiDateRange();
       const params = new URLSearchParams({
-        groupBy: 'hour',
-        dateRange: 'today'
+        groupBy: 'hour'
       });
+      
+      if (apiDateRange.type === "custom") {
+        const customRange = apiDateRange as { type: "custom"; from: string; to: string };
+        params.append('dateFrom', customRange.from);
+        params.append('dateTo', customRange.to);
+        params.append('dateRange', 'custom');
+      } else {
+        params.append('dateRange', apiDateRange.type);
+      }
+      
       const response = await fetch(`/api/reporting/timeline?${params}`);
       return response.json();
     }
@@ -279,6 +318,52 @@ export default function RingbaStyleReporting() {
     handleClearSelection();
   };
 
+  // Handle date range selection
+  const handleDateRangeChange = (value: string) => {
+    setDateRange(value);
+    
+    // If custom is selected, don't set predefined dates
+    if (value === "custom") {
+      setShowCalendar(true);
+      return;
+    }
+    
+    // Clear custom dates when switching to predefined ranges
+    setCustomDateRange({ from: undefined, to: undefined });
+    setShowCalendar(false);
+  };
+
+  // Handle custom date range selection
+  const handleCustomDateSelect = (range: { from: Date | undefined; to: Date | undefined }) => {
+    setCustomDateRange(range);
+    if (range.from && range.to) {
+      setDateRange("custom");
+      setShowCalendar(false);
+    }
+  };
+
+  // Get formatted date range display
+  const getDateRangeDisplay = () => {
+    if (dateRange === "custom" && customDateRange.from) {
+      if (customDateRange.to) {
+        return `${format(customDateRange.from, "MMM d")} - ${format(customDateRange.to, "MMM d, yyyy")}`;
+      }
+      return format(customDateRange.from, "MMM d, yyyy");
+    }
+
+    const displays: Record<string, string> = {
+      today: "Today",
+      yesterday: "Yesterday", 
+      week: "This Week",
+      month: "This Month",
+      last7days: "Last 7 Days",
+      last30days: "Last 30 Days",
+      custom: "Custom Range"
+    };
+
+    return displays[dateRange] || "Today";
+  };
+
   return (
     <div className="space-y-1">
       {/* Comprehensive Four-Panel Header */}
@@ -295,19 +380,58 @@ export default function RingbaStyleReporting() {
 
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-600">Updated a few seconds ago</span>
-            <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="h-7 w-48 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="yesterday">Yesterday</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="last7days">Last 7 Days</SelectItem>
-                <SelectItem value="last30days">Last 30 Days</SelectItem>
-              </SelectContent>
-            </Select>
+            
+            {/* Date Range Selector with Calendar */}
+            <div className="flex items-center gap-1">
+              <Select value={dateRange} onValueChange={handleDateRangeChange}>
+                <SelectTrigger className="h-7 w-36 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="yesterday">Yesterday</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="last7days">Last 7 Days</SelectItem>
+                  <SelectItem value="last30days">Last 30 Days</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Popover open={showCalendar} onOpenChange={setShowCalendar}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs flex items-center gap-1"
+                    onClick={() => setShowCalendar(true)}
+                  >
+                    <Calendar className="h-3 w-3" />
+                    {getDateRangeDisplay()}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="range"
+                    defaultMonth={customDateRange.from}
+                    selected={{
+                      from: customDateRange.from,
+                      to: customDateRange.to,
+                    }}
+                    onSelect={(range) => {
+                      if (range) {
+                        handleCustomDateSelect({
+                          from: range.from,
+                          to: range.to,
+                        });
+                      }
+                    }}
+                    numberOfMonths={2}
+                    className="rounded-md border"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
             <Button
               size="sm"
               variant="outline"
@@ -353,6 +477,7 @@ export default function RingbaStyleReporting() {
         <SummaryReport
           filters={activeFilters}
           dateRange={dateRange}
+          customDateRange={customDateRange}
           onFilterClick={handleFilterClick}
           onRemoveFilter={(index) => setActiveFilters(prev => prev.filter((_, i) => i !== index))}
           onClearAllFilters={() => setActiveFilters([])}

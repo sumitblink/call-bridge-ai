@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 
 interface SummaryData {
   groupBy: string;
@@ -32,24 +33,34 @@ interface SummaryData {
 interface SummaryReportProps {
   filters: any[];
   dateRange: string;
+  customDateRange?: { from: Date | undefined; to: Date | undefined };
   onFilterClick: (field: string, value: string) => void;
   onRemoveFilter: (index: number) => void;
   onClearAllFilters: () => void;
 }
 
-export default function SummaryReport({ filters, dateRange, onFilterClick, onRemoveFilter, onClearAllFilters }: SummaryReportProps) {
+export default function SummaryReport({ filters, dateRange, customDateRange, onFilterClick, onRemoveFilter, onClearAllFilters }: SummaryReportProps) {
   const [activeTab, setActiveTab] = useState("campaign");
   const [selectedTag, setSelectedTag] = useState("");
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['/api/reporting/summary', { groupBy: activeTab, filters, dateRange, tag: selectedTag }],
+    queryKey: ['/api/reporting/summary', { groupBy: activeTab, filters, dateRange, customDateRange, tag: selectedTag }],
     queryFn: async () => {
       const params = new URLSearchParams({
         groupBy: activeTab,
-        dateRange,
         ...(selectedTag && selectedTag !== 'all' && { tag: selectedTag }),
         filters: JSON.stringify(filters)
       });
+      
+      // Handle custom date range
+      if (dateRange === "custom" && customDateRange?.from && customDateRange?.to) {
+        params.append('dateFrom', format(customDateRange.from, "yyyy-MM-dd"));
+        params.append('dateTo', format(customDateRange.to, "yyyy-MM-dd"));
+        params.append('dateRange', 'custom');
+      } else {
+        params.append('dateRange', dateRange);
+      }
+      
       const response = await fetch(`/api/reporting/summary?${params}`);
       return response.json();
     }
