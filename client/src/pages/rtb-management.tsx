@@ -856,7 +856,6 @@ export default function SimplifiedRTBManagementPage() {
                                                     
                                                     {response.rejectionReason && (
                                                       <div className="text-xs bg-red-50 text-red-700 p-1.5 rounded border">
-                                                        <div className="font-medium">Rejection:</div>
                                                         <div>{response.rejectionReason}</div>
                                                       </div>
                                                     )}
