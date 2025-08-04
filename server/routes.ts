@@ -1603,45 +1603,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...call,
             rtbRequestId: 'pool_16_CA8cd4f81ddafdb4b53b8f894adf486b96',
             winningBidAmount: '11.04',
-            winningTargetId: 10,
+            winningTargetId: 26,
             totalTargetsPinged: 33,
             successfulResponses: 3,
             auctionTimeMs: 3975,
             rtbBidders: [
-              // Winner - Top 3 successful bids
+              // Winner - Top 3 successful bids (using real RTB target IDs and names)
               {
-                targetId: 10,
+                targetId: 26,
                 bidAmount: 11.04,
                 currency: 'USD',
                 destinationNumber: '+18583412401',
                 responseTime: 1463,
                 status: 'success',
                 isWinner: true,
-                targetName: 'MEDI - Winner Bidder'
+                targetName: 'Medi - ADSparkX - RTB'
               },
               {
-                targetId: 26,
+                targetId: 15,
                 bidAmount: 9.60,
                 currency: 'USD',
                 destinationNumber: '+17087870290',
                 responseTime: 1933,
                 status: 'success',
                 isWinner: false,
-                targetName: 'Healthcare Partner B'
+                targetName: 'Medi - PM - RTB'
               },
               {
-                targetId: 15,
+                targetId: 8,
                 bidAmount: 8.40,
                 currency: 'USD',
                 destinationNumber: '+17602738668',
                 responseTime: 3975,
                 status: 'success',
                 isWinner: false,
-                targetName: 'Healthcare Partner A'
+                targetName: 'Medi - Naked - RTB'
               },
-              // Failed/rejected bidders (remaining 30 targets)
-              ...Array.from({ length: 30 }, (_, i) => {
-                const targetId = i + 20; // Start from ID 20 to avoid conflicts
+              // Failed/rejected bidders (remaining 30 targets using real RTB target IDs and names)
+              ...(() => {
+                const realTargetIds = [16, 18, 12, 31, 9, 30, 37, 11, 10, 14, 28, 36, 6, 5, 21, 24, 25, 23, 19, 29, 35, 34, 33, 32, 27, 22, 17, 13, 7, 38];
+                const realTargetNames = [
+                  'Medi - PM - RTB T1',
+                  'Medicare - M05L -Catch All',
+                  'Medi - WeGenerate - Internal',
+                  'Medi - VIP Response - RTB',
+                  'Medi - WeGenerate - T1 - Medi - Tier 2',
+                  'Medi - Leadnomics - RTB',
+                  'MEDI - United - RTB',
+                  'Medi - WeGenerate - T2 RTB',
+                  'Medi - WeGenerate - T2',
+                  'Medi - WeGenerate - MCC T2',
+                  'Medi - Leadnomics - RTB $18 Min',
+                  'Medi - United - RTB 2',
+                  'Medi - Naked - RTB - Medi - Tier 1',
+                  'Medi - Naked - RTB T3',
+                  'Medi - WeCall - RTB',
+                  'Medi - Jet - RTB',
+                  'Medi - ADSparkX - RTB - Medi - Tier 2',
+                  'Medi - Jet - $10/20',
+                  'Medi - Policy Bind - RTB',
+                  'Medi - Leadnomics - RTB - Medi - Tier 3',
+                  'Medi - WeGenerate - MCC T2',
+                  'Medi - WeGenerate - T1',
+                  'Medi - WeGenerate - Internal T2',
+                  'Medi - WeGenerate - Internal - Medi - Tier 1',
+                  'Medicare - H10S - RTB',
+                  'Medicare - W07L- Webhook',
+                  'Medi - MHA - RTB - Medi - Tier 1',
+                  'Medi - WeGenerate - T1 - Medi - Tier 2',
+                  'Medi - Naked - RTB T2',
+                  'MEDI - United - RTB - Medi - Tier 1'
+                ];
                 const rejectionReasons = [
                   'Final capacity check (Code: 1006)',
                   'Daily cap exceeded (Code: 1002)',
@@ -1654,41 +1686,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   'Campaign paused (Code: 1010)',
                   'No response timeout'
                 ];
-                const targetNames = [
-                  'Medi - Naked - RTB T3',
-                  'Medi - RTB - Medi - Tier 1', 
-                  'Medi - Naked - RTB T2',
-                  'Medi - Naked - RTB',
-                  'Medi - WeGenerate - T1 - Medi - Tier 2',
-                  'Medi - WeGenerate - T2',
-                  'Health Direct - Tier 1',
-                  'Health Connect - Premium',
-                  'MediLeads - Standard',
-                  'QuickConnect - Health',
-                  'DirectHealth - T1',
-                  'HealthBridge - Premium',
-                  'MediRoute - Standard',
-                  'HealthLink - Direct',
-                  'MediConnect - T2',
-                  'HealthPro - Target',
-                  'MediFlow - Partner',
-                  'HealthNet - Direct',
-                  'QuickMedi - Route',
-                  'DirectCare - Link',
-                  'HealthCore - Target',
-                  'MediCore - Partner',
-                  'HealthSync - Direct',
-                  'MediSync - Route',
-                  'HealthMax - Link',
-                  'MediMax - Target',
-                  'HealthPlus - Partner',
-                  'MediPlus - Direct',
-                  'HealthTop - Route',
-                  'MediTop - Link'
-                ];
                 const responseTimes = [397, 644, 825, 5000, 533, 487, 612, 723, 456, 890, 1200, 445, 667, 1500, 2000, 3500, 4200, 750, 980, 1100, 2200, 3000, 650, 450, 1800, 2500, 4000, 550, 870, 1350];
                 
-                return {
+                return realTargetIds.map((targetId, i) => ({
                   targetId,
                   bidAmount: 0.00,
                   currency: 'USD',
@@ -1696,10 +1696,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   responseTime: responseTimes[i % responseTimes.length],
                   status: responseTimes[i % responseTimes.length] >= 5000 ? 'timeout' : 'error',
                   isWinner: false,
-                  targetName: targetNames[i % targetNames.length],
+                  targetName: realTargetNames[i],
                   rejectionReason: responseTimes[i % responseTimes.length] >= 5000 ? 'No response timeout' : rejectionReasons[i % rejectionReasons.length]
-                };
-              })
+                }));
+              })()
             ]
           };
         }
