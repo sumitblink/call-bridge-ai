@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded, Ban, Tag, Edit3, MoreVertical, ChevronRight, ChevronDown, Activity, Info, FileText, Settings, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Phone, Clock, DollarSign, Users, Filter, Download, Play, Pause, Square, PhoneCall, Mic, MicOff, PhoneForwarded, Ban, Tag, Edit3, MoreVertical, ChevronRight, ChevronDown, Activity, Info, FileText, Settings, CheckCircle, XCircle, AlertCircle, TrendingUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -350,40 +350,219 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
         </TabsContent>
 
         <TabsContent value="rtb" className="p-4 space-y-4 m-0">
-          <div className="bg-red-50 p-4 rounded-lg border-2 border-red-200">
-            <div className="flex items-center gap-2 mb-3">
-              <Activity className="h-5 w-5 text-red-600" />
-              <span className="font-bold text-lg text-red-800">RTB Analytics</span>
+          <div className="space-y-4">
+            {/* Auction Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Activity className="h-4 w-4 text-gray-500" />
+                <span className="font-medium">Auction Details</span>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                Request ID: pool_16_CA207902
+              </Badge>
             </div>
-            
+
+            {/* Individual Bidder Results Table */}
             <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <span className="text-gray-700 font-medium">Targets Pinged:</span>
-                  <span className="ml-2 text-blue-600 font-bold text-lg">33</span>
+              <div className="flex items-center space-x-2">
+                <Users className="h-4 w-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Individual Bidder Results</span>
+              </div>
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="text-xs">Bidder</TableHead>
+                      <TableHead className="text-xs">Bid Amount</TableHead>
+                      <TableHead className="text-xs">Response Time</TableHead>
+                      <TableHead className="text-xs">Destination</TableHead>
+                      <TableHead className="text-xs">Status & Rejection Details</TableHead>
+                      <TableHead className="text-xs">Winner</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* Sample RTB bidder responses */}
+                    <TableRow className="text-sm">
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <div>
+                            <div className="font-medium">Medi - Naked - RTB T3</div>
+                            <div className="text-xs text-gray-500">ID: 5</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-semibold text-green-600">$0.00</div>
+                        <div className="text-xs text-gray-500">USD</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-sm">459ms</div>
+                        <div className="text-xs text-green-600">Fast</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-blue-600 text-sm">External Route</div>
+                        <div className="text-xs text-gray-500">External Route</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1.5 max-w-[250px]">
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                            <Badge variant="default" className="text-xs">success</Badge>
+                          </div>
+                          <div className="text-xs text-red-600">
+                            Final capacity check (Code: 1006)
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-gray-400 text-xs">#1</span>
+                      </TableCell>
+                    </TableRow>
+
+                    <TableRow className="text-sm">
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <div>
+                            <div className="font-medium">Medi - RTB - Medi - Tier 1</div>
+                            <div className="text-xs text-gray-500">ID: 6</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-semibold text-green-600">$0.00</div>
+                        <div className="text-xs text-gray-500">USD</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-sm">644ms</div>
+                        <div className="text-xs text-yellow-600">Medium</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-blue-600 text-sm">External Route</div>
+                        <div className="text-xs text-gray-500">External Route</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1.5 max-w-[250px]">
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                            <Badge variant="default" className="text-xs">success</Badge>
+                          </div>
+                          <div className="text-xs text-red-600">
+                            Final capacity check (Code: 1006)
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-gray-400 text-xs">#2</span>
+                      </TableCell>
+                    </TableRow>
+
+                    <TableRow className="text-sm">
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <div>
+                            <div className="font-medium">Medi - Naked - RTB</div>
+                            <div className="text-xs text-gray-500">ID: 8</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-semibold text-green-600">$0.00</div>
+                        <div className="text-xs text-gray-500">USD</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-sm">5000ms</div>
+                        <div className="text-xs text-red-600">Timeout</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-blue-600 text-sm">External Route</div>
+                        <div className="text-xs text-gray-500">External Route</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1.5 max-w-[250px]">
+                          <div className="flex items-center space-x-2">
+                            <XCircle className="h-3 w-3 text-red-500" />
+                            <Badge variant="destructive" className="text-xs">timeout</Badge>
+                          </div>
+                          <div className="text-xs bg-orange-50 text-orange-700 p-1.5 rounded border">
+                            <div className="font-medium">Error Details:</div>
+                            <div className="break-words">ReferenceError: target is not defined</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-gray-400 text-xs">#3</span>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Auction metrics grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Timing section */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Auction Timing</span>
                 </div>
-                <div>
-                  <span className="text-gray-700 font-medium">Successful Bids:</span>
-                  <span className="ml-2 text-green-600 font-bold text-lg">0</span>
-                </div>
-                <div>
-                  <span className="text-gray-700 font-medium">Failed Bids:</span>
-                  <span className="ml-2 text-red-600 font-bold text-lg">33</span>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Call Start:</span>
+                    <span className="font-mono">{new Date(call.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Duration:</span>
+                    <span className="font-mono">3970ms</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Avg Response:</span>
+                    <span className="font-mono">1367ms</span>
+                  </div>
                 </div>
               </div>
-              
-              <div className="text-sm text-red-800 bg-red-200 p-3 rounded border border-red-400 font-bold">
-                REJECTION REASON: Final capacity check (Code: 1006)
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-700 font-medium">Auction Duration:</span>
-                  <span className="ml-2 font-mono font-bold">3970ms</span>
+
+              {/* Bidding statistics */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Bid Statistics</span>
                 </div>
-                <div>
-                  <span className="text-gray-700 font-medium">Winner:</span>
-                  <span className="ml-2 font-bold">No winner</span>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Targets Pinged:</span>
+                    <span className="font-semibold text-blue-600">33</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Successful Bids:</span>
+                    <span className="font-semibold text-green-600">0</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Failed Bids:</span>
+                    <span className="font-semibold text-red-600">33</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Winner section */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Auction Result</span>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Winning Bid:</span>
+                    <span className="font-semibold">$0.00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Winner:</span>
+                    <span className="text-gray-500">No winner</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Destination:</span>
+                    <span className="font-mono text-blue-600">Not available</span>
+                  </div>
                 </div>
               </div>
             </div>
