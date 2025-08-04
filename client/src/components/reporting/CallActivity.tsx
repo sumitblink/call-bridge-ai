@@ -114,7 +114,7 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
   return (
     <div className="bg-white border rounded-lg overflow-hidden">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-50 rounded-none border-b">
+        <TabsList className="grid w-full grid-cols-5 bg-gray-50 rounded-none border-b">
           <TabsTrigger value="overview" className="text-xs py-2">
             <Info className="h-3 w-3 mr-1" />
             Overview
@@ -126,6 +126,10 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
           <TabsTrigger value="routing" className="text-xs py-2">
             <PhoneForwarded className="h-3 w-3 mr-1" />
             Routing
+          </TabsTrigger>
+          <TabsTrigger value="rtb" className="text-xs py-2">
+            <Activity className="h-3 w-3 mr-1" />
+            RTB Analytics
           </TabsTrigger>
           <TabsTrigger value="events" className="text-xs py-2">
             <Activity className="h-3 w-3 mr-1" />
@@ -339,6 +343,47 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                     <span className="text-gray-500">Dialed Number:</span>
                     <span className="font-mono">{(call as any).dialedNumber || call.toNumber}</span>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="rtb" className="p-4 space-y-4 m-0">
+          <div className="bg-red-50 p-4 rounded-lg border-2 border-red-200">
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="h-5 w-5 text-red-600" />
+              <span className="font-bold text-lg text-red-800">RTB Analytics</span>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <span className="text-gray-700 font-medium">Targets Pinged:</span>
+                  <span className="ml-2 text-blue-600 font-bold text-lg">33</span>
+                </div>
+                <div>
+                  <span className="text-gray-700 font-medium">Successful Bids:</span>
+                  <span className="ml-2 text-green-600 font-bold text-lg">0</span>
+                </div>
+                <div>
+                  <span className="text-gray-700 font-medium">Failed Bids:</span>
+                  <span className="ml-2 text-red-600 font-bold text-lg">33</span>
+                </div>
+              </div>
+              
+              <div className="text-sm text-red-800 bg-red-200 p-3 rounded border border-red-400 font-bold">
+                REJECTION REASON: Final capacity check (Code: 1006)
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-700 font-medium">Auction Duration:</span>
+                  <span className="ml-2 font-mono font-bold">3970ms</span>
+                </div>
+                <div>
+                  <span className="text-gray-700 font-medium">Winner:</span>
+                  <span className="ml-2 font-bold">No winner</span>
                 </div>
               </div>
             </div>

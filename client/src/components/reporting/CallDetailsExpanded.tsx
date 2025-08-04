@@ -180,45 +180,7 @@ export function CallDetailsExpanded({ call }: CallDetailsExpandedProps) {
           </div>
         </div>
 
-        {/* RTB Analytics - Show for all calls */}
-        <div className="bg-red-50 p-4 rounded-lg border-2 border-red-200 mt-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Activity className="h-5 w-5 text-red-600" />
-            <span className="font-bold text-lg text-red-800">RTB Analytics</span>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <span className="text-gray-700 font-medium">Targets Pinged:</span>
-                <span className="ml-2 text-blue-600 font-bold text-lg">33</span>
-              </div>
-              <div>
-                <span className="text-gray-700 font-medium">Successful Bids:</span>
-                <span className="ml-2 text-green-600 font-bold text-lg">0</span>
-              </div>
-              <div>
-                <span className="text-gray-700 font-medium">Failed Bids:</span>
-                <span className="ml-2 text-red-600 font-bold text-lg">33</span>
-              </div>
-            </div>
-            
-            <div className="text-sm text-red-800 bg-red-200 p-3 rounded border border-red-400 font-bold">
-              REJECTION REASON: Final capacity check (Code: 1006)
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-700 font-medium">Auction Duration:</span>
-                <span className="ml-2 font-mono font-bold">3970ms</span>
-              </div>
-              <div>
-                <span className="text-gray-700 font-medium">Winner:</span>
-                <span className="ml-2 font-bold">No winner</span>
-              </div>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );
