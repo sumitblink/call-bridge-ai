@@ -870,8 +870,15 @@ export default function SimplifiedRTBManagementPage() {
                                                       </div>
                                                     )}
                                                     
-                                                    {!response.rejectionReason && !response.errorMessage && response.responseStatus === 'success' && (
+                                                    {!response.rejectionReason && !response.errorMessage && response.responseStatus === 'success' && parseFloat(response.bidAmount) > 0 && (
                                                       <div className="text-xs text-green-600">Bid accepted successfully</div>
+                                                    )}
+                                                    
+                                                    {!response.rejectionReason && !response.errorMessage && response.responseStatus === 'success' && parseFloat(response.bidAmount) === 0 && (
+                                                      <div className="text-xs bg-yellow-50 text-yellow-700 p-1.5 rounded border">
+                                                        <div className="font-medium">No Bid:</div>
+                                                        <div>$0.00 bid (likely no capacity or rejection)</div>
+                                                      </div>
                                                     )}
                                                   </div>
                                                 </TableCell>
