@@ -15,8 +15,9 @@ import { insertCampaignSchema, type Campaign, type InsertCampaign } from "@share
 import { apiRequest } from "@/lib/queryClient";
 import { useCampaignValidation } from "@/hooks/useCampaignValidation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Info } from "lucide-react";
+import { AlertTriangle, Info, Mic, FileText } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
 import { z } from "zod";
 import RingbaPayoutSettings from './RingbaPayoutSettings';
 
@@ -53,6 +54,8 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
       defaultPayout: campaign?.defaultPayout || "0.00",
       payoutModel: campaign?.payoutModel || "per_call",
       revenueModel: campaign?.revenueModel || "per_call",
+      enableCallRecording: campaign?.enableCallRecording ?? true,
+      enableCallTranscription: campaign?.enableCallTranscription ?? false,
     },
   });
 
@@ -115,6 +118,8 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
         defaultPayout: campaign.defaultPayout || "0.00",
         payoutModel: campaign.payoutModel || "per_call",
         revenueModel: campaign.revenueModel || "per_call",
+        enableCallRecording: campaign.enableCallRecording ?? true,
+        enableCallTranscription: campaign.enableCallTranscription ?? false,
       };
       form.reset(formData);
     }
@@ -516,6 +521,77 @@ export default function CampaignSettings({ campaignId, campaign }: CampaignSetti
                   </FormItem>
                 )}
               />
+
+              {/* Call Recording & Transcription Settings */}
+              <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2 mb-4">
+                  <Mic className="h-5 w-5 text-blue-500" />
+                  <h3 className="text-lg font-medium">Call Recording & Transcription</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="enableCallRecording"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <Mic className="h-4 w-4 text-red-500" />
+                            <FormLabel className="text-base">Call Recording</FormLabel>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Automatically record all incoming calls for this campaign. 
+                            Recordings are stored securely in Twilio cloud storage.
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="enableCallTranscription"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-blue-500" />
+                            <FormLabel className="text-base">Call Transcription</FormLabel>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Generate automatic text transcriptions of recorded calls.
+                            Helps with call analysis and quality monitoring.
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 text-blue-500 mt-0.5" />
+                    <div className="text-sm text-blue-700 dark:text-blue-300">
+                      <p className="font-medium mb-1">Recording Access:</p>
+                      <p>View and play call recordings in the <strong>Enhanced Reporting</strong> section. 
+                      Click on any call to expand details and access the audio player.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Ringba-Style Payout Settings */}
               <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
