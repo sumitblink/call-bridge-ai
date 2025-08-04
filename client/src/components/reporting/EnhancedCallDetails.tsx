@@ -629,6 +629,102 @@ export function EnhancedCallDetails() {
                             </Badge>
                           </div>
                         </div>
+
+                        {/* Individual Bidder Results */}
+                        {selectedCall.rtbBidders && selectedCall.rtbBidders.length > 0 && (
+                          <div className="border-t pt-4">
+                            <h4 className="text-sm font-medium mb-3">Individual Bidder Results</h4>
+                            <div className="space-y-3 max-h-64 overflow-y-auto">
+                              {selectedCall.rtbBidders
+                                .sort((a, b) => b.bidAmount - a.bidAmount)
+                                .map((bidder, index) => (
+                                <div key={index} className={`p-3 rounded-lg border ${
+                                  bidder.isWinner 
+                                    ? 'bg-green-50 border-green-200' 
+                                    : bidder.status === 'success' 
+                                      ? 'bg-blue-50 border-blue-200'
+                                      : 'bg-gray-50 border-gray-200'
+                                }`}>
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-sm">
+                                        {bidder.targetName || `Target ${bidder.targetId}`}
+                                      </span>
+                                      {bidder.isWinner && (
+                                        <Badge className="bg-green-600 text-white text-xs px-2 py-0.5">
+                                          WINNER
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="text-right">
+                                      <div className={`font-bold ${
+                                        bidder.isWinner ? 'text-green-600' : 
+                                        bidder.status === 'success' ? 'text-blue-600' : 'text-gray-500'
+                                      }`}>
+                                        {bidder.bidAmount > 0 ? `$${bidder.bidAmount.toFixed(2)}` : '$0.00'}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {bidder.responseTime}ms
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                      <span className="text-gray-500">Status:</span>
+                                      <div className="flex items-center gap-1">
+                                        <span className={`w-2 h-2 rounded-full ${
+                                          bidder.status === 'success' ? 'bg-green-500' :
+                                          bidder.status === 'error' ? 'bg-red-500' :
+                                          'bg-gray-400'
+                                        }`}></span>
+                                        <span className="capitalize">{bidder.status}</span>
+                                      </div>
+                                    </div>
+                                    {bidder.destinationNumber && (
+                                      <div>
+                                        <span className="text-gray-500">Phone:</span>
+                                        <div className="font-mono text-xs">
+                                          {bidder.destinationNumber}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {bidder.rejectionReason && (
+                                    <div className="mt-2 text-xs">
+                                      <span className="text-gray-500">Reason:</span>
+                                      <div className="text-red-600">{bidder.rejectionReason}</div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            
+                            <div className="mt-3 pt-3 border-t text-xs text-gray-500">
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className="text-center">
+                                  <div className="font-medium text-green-600">
+                                    {selectedCall.rtbBidders.filter(b => b.status === 'success').length}
+                                  </div>
+                                  <div>Successful</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-medium text-red-600">
+                                    {selectedCall.rtbBidders.filter(b => b.status === 'error').length}
+                                  </div>
+                                  <div>Errors</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-medium text-gray-600">
+                                    {selectedCall.rtbBidders.filter(b => b.status === 'timeout').length}
+                                  </div>
+                                  <div>Timeouts</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="text-center py-4 text-gray-500">

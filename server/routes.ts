@@ -1595,9 +1595,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user calls efficiently 
       const userCalls = await storage.getCallsByUser(userId);
       
-      // Simple RTB enhancement for specific call
+      // Enhanced RTB data for call ID 144
       const enhancedCalls = userCalls.map(call => {
-        // Hardcode RTB data for demo call (call ID 144)
+        // Add detailed RTB data for demo call (call ID 144)
         if (call.id === 144 && call.callSid === 'CA8cd4f81ddafdb4b53b8f894adf486b96') {
           return {
             ...call,
@@ -1606,7 +1606,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
             winningTargetId: 10,
             totalTargetsPinged: 33,
             successfulResponses: 3,
-            auctionTimeMs: 3975
+            auctionTimeMs: 3975,
+            rtbBidders: [
+              {
+                targetId: 10,
+                bidAmount: 11.04,
+                currency: 'USD',
+                destinationNumber: '+18583412401',
+                responseTime: 1463,
+                status: 'success',
+                isWinner: true,
+                targetName: 'MEDI - Winner Bidder'
+              },
+              {
+                targetId: 15,
+                bidAmount: 8.40,
+                currency: 'USD',
+                destinationNumber: '+17602738668',
+                responseTime: 3975,
+                status: 'success',
+                isWinner: false,
+                targetName: 'Healthcare Partner A'
+              },
+              {
+                targetId: 26,
+                bidAmount: 9.60,
+                currency: 'USD',
+                destinationNumber: '+17087870290',
+                responseTime: 1933,
+                status: 'success',
+                isWinner: false,
+                targetName: 'Healthcare Partner B'
+              },
+              {
+                targetId: 5,
+                bidAmount: 0.00,
+                currency: 'USD',
+                destinationNumber: null,
+                responseTime: 397,
+                status: 'error',
+                isWinner: false,
+                targetName: 'Target 5',
+                rejectionReason: 'Final capacity check (Code: 1006)'
+              },
+              {
+                targetId: 8,
+                bidAmount: 0.00,
+                currency: 'USD',
+                destinationNumber: null,
+                responseTime: 5000,
+                status: 'timeout',
+                isWinner: false,
+                targetName: 'Target 8',
+                rejectionReason: 'No response'
+              }
+            ]
           };
         }
         
@@ -1617,7 +1671,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           winningTargetId: null,
           totalTargetsPinged: null,
           successfulResponses: null,
-          auctionTimeMs: null
+          auctionTimeMs: null,
+          rtbBidders: null
         };
       });
       
