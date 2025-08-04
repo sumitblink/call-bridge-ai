@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Phone, BarChart3, BellRing, Users, PhoneCall, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut, Menu, X, Database, Target, GitBranch, Activity, TrendingUp, ChevronDown, ChevronRight, ExternalLink, Settings } from "lucide-react";
+import { Phone, BarChart3, BellRing, Users, PhoneCall, DollarSign, PhoneForwarded, Mic, Zap, UserCheck, LogOut, Menu, X, Database, Target, GitBranch, Activity, TrendingUp, ChevronDown, ChevronRight, ExternalLink, Settings, BookOpen } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -32,6 +32,11 @@ const settingsNavigation = [
   { name: "Predictive Routing", href: "/settings/predictive-routing", icon: Settings, current: false },
 ];
 
+const docsNavigation = [
+  { name: "Platform Documentation", href: "/documentation", icon: BookOpen, current: false },
+  { name: "API Documentation", href: "/api-documentation", icon: Database, current: false },
+];
+
 export default function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
@@ -40,6 +45,7 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isReportingExpanded, setIsReportingExpanded] = useState(true);
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(true);
+  const [isDocsExpanded, setIsDocsExpanded] = useState(true);
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -251,6 +257,72 @@ export default function Sidebar() {
 
           {/* Expanded sidebar - show collapsible reporting items */}
           {!isCollapsed && isReportingExpanded && reportingNavigation.map((item) => {
+            const isActive = location === item.href;
+            const Icon = item.icon;
+            
+            return (
+              <Link 
+                key={item.name} 
+                href={item.href}
+                className={`
+                  flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer relative group ml-3
+                  ${isActive
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }
+                `}
+              >
+                <Icon className="w-5 h-5 mr-3" />
+                {item.name}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Docs Section */}
+        <div className="pt-3 border-t border-gray-100">
+          {!isCollapsed && (
+            <button
+              onClick={() => setIsDocsExpanded(!isDocsExpanded)}
+              className="w-full flex items-center justify-between px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <span>Docs</span>
+              {isDocsExpanded ? 
+                <ChevronDown className="h-4 w-4" /> : 
+                <ChevronRight className="h-4 w-4" />
+              }
+            </button>
+          )}
+          
+          {/* Collapsed sidebar - show docs items without grouping */}
+          {isCollapsed && docsNavigation.map((item) => {
+            const isActive = location === item.href;
+            const Icon = item.icon;
+            
+            return (
+              <Link 
+                key={item.name} 
+                href={item.href}
+                className={`
+                  flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer relative group
+                  ${isActive
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }
+                  justify-center
+                `}
+                title={item.name}
+              >
+                <Icon className="w-6 h-6" />
+                <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  {item.name}
+                </div>
+              </Link>
+            );
+          })}
+
+          {/* Expanded sidebar - show collapsible docs items */}
+          {!isCollapsed && isDocsExpanded && docsNavigation.map((item) => {
             const isActive = location === item.href;
             const Icon = item.icon;
             

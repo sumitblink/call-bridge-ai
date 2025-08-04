@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Phone, Mail, Lock, User, Chrome, BookOpen, Building2, Shield, BarChart3, Zap, ArrowRight, CheckCircle, Users, Target, Globe } from "lucide-react";
+import { Phone, Mail, Lock, User, Chrome, BookOpen, Building2, Shield, BarChart3, Zap, ArrowRight, CheckCircle, Users, Target, Globe, Code, Database } from "lucide-react";
 import { FaFacebook } from "react-icons/fa";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -536,12 +536,20 @@ export default function Auth() {
 
           {/* Documentation and Terms */}
           <div className="space-y-4 text-center">
-            <Button variant="outline" className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300" asChild>
-              <a href="/documentation">
-                <BookOpen className="h-4 w-4 mr-2" />
-                View Documentation
-              </a>
-            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="outline" className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300" asChild>
+                <a href="/documentation">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Platform Docs
+                </a>
+              </Button>
+              <Button variant="outline" className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300" asChild>
+                <a href="/api-documentation">
+                  <Code className="h-4 w-4 mr-2" />
+                  API Docs
+                </a>
+              </Button>
+            </div>
 
             <p className="text-xs text-gray-500">
               By continuing, you agree to our{" "}
