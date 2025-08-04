@@ -129,7 +129,7 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
           </TabsTrigger>
           <TabsTrigger value="rtb" className="text-xs py-2">
             <Activity className="h-3 w-3 mr-1" />
-            Auction Analytics
+            RTB Analytics
           </TabsTrigger>
           <TabsTrigger value="events" className="text-xs py-2">
             <Activity className="h-3 w-3 mr-1" />
@@ -356,7 +356,7 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
               <div className="flex items-center space-x-4 pb-3 border-b border-border/40">
                 <div className="flex items-center space-x-2">
                   <Activity className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium">Auction Details</span>
+                  <span className="font-medium">RTB Details</span>
                 </div>
                 <Badge variant="outline" className="text-xs">
                   Request ID: {(call as any).rtbRequestId}
@@ -480,13 +480,13 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                 </div>
               )}
 
-              {/* Auction Metrics Grid */}
+              {/* RTB Metrics Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Timing Section */}
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <Clock className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">Auction Timing</span>
+                    <span className="text-sm font-medium text-gray-700">RTB Timing</span>
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -562,8 +562,8 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
           ) : (
             <div className="text-center py-8 text-gray-500">
               <Activity className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-              <div className="text-sm">This call was not routed via RTB auction</div>
-              <div className="text-xs text-gray-400 mt-1">No auction data available</div>
+              <div className="text-sm">This call was not routed via RTB</div>
+              <div className="text-xs text-gray-400 mt-1">No RTB data available</div>
             </div>
           )}
         </TabsContent>
