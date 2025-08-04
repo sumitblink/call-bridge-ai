@@ -49,6 +49,7 @@ export interface BidResponse {
   responseTimeMs: number;
   isValid: boolean;
   errorMessage?: string;
+  rejectReason?: string;
 }
 
 export interface AuctionResult {
@@ -532,9 +533,10 @@ export class RTBService {
             destinationNumber: result.value.destinationNumber,
             requiredDuration: result.value.requiredDuration,
             responseTimeMs: result.value.responseTimeMs,
-            responseStatus: 'success',
+            responseStatus: result.value.isValid ? 'success' : 'error',
             isValid: result.value.isValid,
-            isWinningBid: false
+            isWinningBid: false,
+            rejectionReason: result.value.rejectReason || null
           };
 
           const storedResponse = await storage.createRtbBidResponse(response);
@@ -555,6 +557,22 @@ export class RTBService {
                 result.value.responseTimeMs,
                 result.value.destinationNumber,
                 false // Will be updated to true for winner
+              );
+            }
+          } else {
+            // Phase 3: Log rejected bid details with rejection reason
+            if (callId) {
+              await this.logRtbAuctionDetails(
+                callId,
+                auctionId,
+                targetId,
+                targetName,
+                result.value.bidAmount.toString(),
+                'rejected',
+                result.value.responseTimeMs,
+                result.value.destinationNumber,
+                false,
+                result.value.rejectReason || 'Bid rejected'
               );
             }
           }
@@ -608,7 +626,7 @@ export class RTBService {
         console.log(`💰 All bids ranked:`);
         sortedBids.forEach((bid, index) => {
           const bidAmount = parseFloat(bid.bidAmount.toString());
-          console.log(`   ${index + 1}. ${bid.targetName || `Target ${bid.rtbTargetId}`}: $${bidAmount} (${bid.responseTimeMs}ms)`);
+          console.log(`   ${index + 1}. Target ${bid.rtbTargetId}: $${bidAmount} (${bid.responseTimeMs}ms)`);
         });
         
         winningBid = sortedBids[0];
@@ -640,9 +658,9 @@ export class RTBService {
         }
 
         console.log(`\n🎯 AUCTION WINNER CONFIRMED:`);
-        console.log(`   🏢 Winner: ${winningBid.targetName || `Target ${winningBid.rtbTargetId}`}`);
+        console.log(`   🏢 Winner: Target ${winningBid.rtbTargetId}`);
         console.log(`   💰 Bid Amount: $${parseFloat(winningBid.bidAmount.toString())}`);
-        console.log(`   📞 Destination: ${winningBid.destinationNumber}`);
+        console.log(`   📞 Destination: ${winningBid.destinationNumber || 'Not provided'}`);
         console.log(`   ⚡ Response Time: ${winningBid.responseTimeMs}ms`);
         
         // Check if there were any ties
@@ -826,6 +844,9 @@ export class RTBService {
       const acceptance = this.extractResponseValue(responseData, target.acceptancePath) || 
                         responseData.accepted || responseData.accept || true;
 
+      // Extract rejection reason from response - support both naming conventions
+      const rejectReason = responseData.rejectReason || responseData.rejectionReason || responseData.rejection_reason;
+
       // Validate response format
       const responseToValidate = { bidAmount, destinationNumber, currency };
       console.log(`[RTB] Validating response for ${target.name}:`, responseToValidate);
@@ -843,6 +864,9 @@ export class RTBService {
       }
       
       console.log(`[RTB] Response validation PASSED for ${target.name}`);
+      if (rejectReason) {
+        console.log(`[RTB] Rejection reason from ${target.name}: ${rejectReason}`);
+      }
 
       const isValid = this.isBidValid({ bidAmount, destinationNumber, currency, accepted: acceptance }, target);
       
@@ -853,7 +877,8 @@ export class RTBService {
         destinationNumber: destinationNumber,
         requiredDuration: requiredDuration ? parseInt(requiredDuration.toString()) : undefined,
         responseTimeMs: responseTime,
-        isValid
+        isValid,
+        rejectReason: rejectReason || undefined
       };
 
     } catch (error) {
