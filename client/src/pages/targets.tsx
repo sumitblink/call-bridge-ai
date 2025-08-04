@@ -451,6 +451,7 @@ export default function Targets() {
   const handleEdit = (target: Target) => {
     setEditingTarget(target);
     form.reset({
+      userId: 2,
       name: target.name || "",
       buyerId: target.buyerId || (buyers.length > 0 ? buyers[0].id : 1),
       phoneNumber: target.phoneNumber || "",
@@ -517,6 +518,18 @@ export default function Targets() {
               <TooltipProvider>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 pb-2">
+                    {/* Hidden userId field */}
+                    <FormField
+                      control={form.control}
+                      name="userId"
+                      render={({ field }) => (
+                        <FormItem style={{ display: 'none' }}>
+                          <FormControl>
+                            <Input {...field} type="hidden" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                     <Tabs defaultValue="basic" className="w-full">
                       <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="basic">Basic</TabsTrigger>
