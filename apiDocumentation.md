@@ -24,6 +24,14 @@ Content-Type: application/json
 }
 ```
 
+**cURL:**
+```bash
+curl -X POST https://your-domain.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "password"}' \
+  -c cookies.txt
+```
+
 **Response:**
 ```json
 {
@@ -38,9 +46,21 @@ Content-Type: application/json
 GET /api/auth/user
 ```
 
+**cURL:**
+```bash
+curl -X GET https://your-domain.com/api/auth/user \
+  -b cookies.txt
+```
+
 ### Logout
 ```http
 POST /api/auth/logout
+```
+
+**cURL:**
+```bash
+curl -X POST https://your-domain.com/api/auth/logout \
+  -b cookies.txt
 ```
 
 ## Campaign Management
@@ -48,6 +68,12 @@ POST /api/auth/logout
 ### List Campaigns
 ```http
 GET /api/campaigns
+```
+
+**cURL:**
+```bash
+curl -X GET https://your-domain.com/api/campaigns \
+  -b cookies.txt
 ```
 
 **Response:**
@@ -88,6 +114,24 @@ Content-Type: application/json
 }
 ```
 
+**cURL:**
+```bash
+curl -X POST https://your-domain.com/api/campaigns \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "name": "New Campaign",
+    "description": "Campaign description",
+    "phoneNumber": "+1234567890",
+    "routingType": "priority",
+    "status": "active",
+    "enableRtb": true,
+    "minBiddersRequired": 2,
+    "biddingTimeoutMs": 3000,
+    "callerIdRequired": false
+  }'
+```
+
 ### Update Campaign
 ```http
 PUT /api/campaigns/{id}
@@ -123,6 +167,12 @@ Content-Type: application/json
 ### List RTB Targets
 ```http
 GET /api/rtb/targets
+```
+
+**cURL:**
+```bash
+curl -X GET https://your-domain.com/api/rtb/targets \
+  -b cookies.txt
 ```
 
 **Response:**
@@ -178,6 +228,35 @@ Content-Type: application/json
 }
 ```
 
+**cURL:**
+```bash
+curl -X POST https://your-domain.com/api/rtb/targets \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "name": "New RTB Target",
+    "endpointUrl": "https://buyer.example.com/rtb/bid",
+    "httpMethod": "POST",
+    "contentType": "application/json",
+    "authMethod": "bearer",
+    "authToken": "bearer_token_here",
+    "minBidAmount": 10.00,
+    "maxBidAmount": 100.00,
+    "currency": "USD",
+    "timeoutMs": 5000,
+    "isActive": true,
+    "states": ["CA", "NY"],
+    "excludedStates": [],
+    "zipCodes": [],
+    "excludedZipCodes": [],
+    "bidAmountPath": "$.bid.amount",
+    "destinationNumberPath": "$.destination.phone",
+    "currencyPath": "$.bid.currency",
+    "durationPath": "$.requirements.duration",
+    "acceptancePath": "$.accepted"
+  }'
+```
+
 ### Update RTB Target
 ```http
 PUT /api/rtb/targets/{id}
@@ -200,6 +279,12 @@ DELETE /api/rtb/targets/{id}
 ### Perform Health Checks
 ```http
 GET /api/rtb/health-checks
+```
+
+**cURL:**
+```bash
+curl -X GET https://your-domain.com/api/rtb/health-checks \
+  -b cookies.txt
 ```
 
 **Response:**
@@ -236,6 +321,12 @@ GET /api/rtb/health-checks
 ### Get Target Uptime Statistics
 ```http
 GET /api/rtb/targets/{targetId}/uptime?hours=24
+```
+
+**cURL:**
+```bash
+curl -X GET "https://your-domain.com/api/rtb/targets/1/uptime?hours=24" \
+  -b cookies.txt
 ```
 
 **Response:**
@@ -296,6 +387,12 @@ Content-Type: application/json
 ### Get RTB Bid Requests
 ```http
 GET /api/rtb/bid-requests?page=1&limit=50&campaignId=campaign_uuid
+```
+
+**cURL:**
+```bash
+curl -X GET "https://your-domain.com/api/rtb/bid-requests?page=1&limit=50&campaignId=campaign_uuid" \
+  -b cookies.txt
 ```
 
 **Response:**
@@ -464,6 +561,12 @@ GET /api/buyers/stats
 GET /api/calls?page=1&limit=25
 ```
 
+**cURL:**
+```bash
+curl -X GET "https://your-domain.com/api/calls?page=1&limit=25" \
+  -b cookies.txt
+```
+
 **Response:**
 ```json
 {
@@ -545,6 +648,12 @@ GET /api/phone-numbers
 GET /api/phone-numbers/search?country=US&numberType=local&areaCode=555&limit=10
 ```
 
+**cURL:**
+```bash
+curl -X GET "https://your-domain.com/api/phone-numbers/search?country=US&numberType=local&areaCode=555&limit=10" \
+  -b cookies.txt
+```
+
 **Response:**
 ```json
 {
@@ -581,6 +690,18 @@ Content-Type: application/json
   "friendlyName": "New Campaign Line",
   "campaignId": "campaign_uuid"
 }
+```
+
+**cURL:**
+```bash
+curl -X POST https://your-domain.com/api/phone-numbers/purchase \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "phoneNumber": "+15551234567",
+    "friendlyName": "New Campaign Line",
+    "campaignId": "campaign_uuid"
+  }'
 ```
 
 ### Assign Number to Campaign
@@ -1036,6 +1157,174 @@ Version information is included in response headers:
 ```
 X-API-Version: v1
 X-Service-Version: 1.0.0
+```
+
+## Complete cURL Testing Guide
+
+### Authentication Flow
+```bash
+# 1. Login and save session cookies
+curl -X POST https://call-center-ringba.replit.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "password"}' \
+  -c cookies.txt
+
+# 2. Verify authentication
+curl -X GET https://call-center-ringba.replit.app/api/auth/user \
+  -b cookies.txt
+
+# 3. Logout when done
+curl -X POST https://call-center-ringba.replit.app/api/auth/logout \
+  -b cookies.txt
+```
+
+### Campaign Management
+```bash
+# List all campaigns
+curl -X GET https://call-center-ringba.replit.app/api/campaigns \
+  -b cookies.txt
+
+# Create new campaign
+curl -X POST https://call-center-ringba.replit.app/api/campaigns \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "name": "Test Campaign",
+    "description": "API test campaign",
+    "phoneNumber": "+1234567890",
+    "routingType": "priority",
+    "status": "active",
+    "enableRtb": true
+  }'
+
+# Update campaign
+curl -X PUT https://call-center-ringba.replit.app/api/campaigns/CAMPAIGN_ID \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"status": "paused"}'
+```
+
+### RTB Management
+```bash
+# List RTB targets
+curl -X GET https://call-center-ringba.replit.app/api/rtb/targets \
+  -b cookies.txt
+
+# Create RTB target
+curl -X POST https://call-center-ringba.replit.app/api/rtb/targets \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "name": "Test RTB Target",
+    "endpointUrl": "https://buyer.example.com/rtb/bid",
+    "httpMethod": "POST",
+    "minBidAmount": 10.00,
+    "maxBidAmount": 100.00,
+    "currency": "USD",
+    "timeoutMs": 5000,
+    "isActive": true
+  }'
+
+# Check RTB health
+curl -X GET https://call-center-ringba.replit.app/api/rtb/health-checks \
+  -b cookies.txt
+
+# Get target uptime
+curl -X GET "https://call-center-ringba.replit.app/api/rtb/targets/1/uptime?hours=24" \
+  -b cookies.txt
+```
+
+### Call Analytics
+```bash
+# List calls with pagination
+curl -X GET "https://call-center-ringba.replit.app/api/calls?page=1&limit=25" \
+  -b cookies.txt
+
+# Get RTB bid requests
+curl -X GET "https://call-center-ringba.replit.app/api/rtb/bid-requests?page=1&limit=50" \
+  -b cookies.txt
+
+# Get RTB auction details
+curl -X GET "https://call-center-ringba.replit.app/api/rtb/auction-details?callId=123" \
+  -b cookies.txt
+```
+
+### Phone Number Management
+```bash
+# List phone numbers
+curl -X GET https://call-center-ringba.replit.app/api/phone-numbers \
+  -b cookies.txt
+
+# Search available numbers
+curl -X GET "https://call-center-ringba.replit.app/api/phone-numbers/search?country=US&numberType=local&areaCode=555&limit=10" \
+  -b cookies.txt
+
+# Purchase phone number
+curl -X POST https://call-center-ringba.replit.app/api/phone-numbers/purchase \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "phoneNumber": "+15551234567",
+    "friendlyName": "Test Line",
+    "campaignId": "CAMPAIGN_ID"
+  }'
+```
+
+### RedTrack Integration
+```bash
+# Track session (no authentication required)
+curl -X POST https://call-center-ringba.replit.app/api/tracking/redtrack/session \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clickid": "rt_click_12345",
+    "campaign_id": "campaign_123",
+    "source": "google",
+    "medium": "cpc",
+    "timestamp": "2025-08-04T12:00:00Z"
+  }'
+
+# Track conversion
+curl -X POST https://call-center-ringba.replit.app/api/tracking/redtrack/conversion \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clickid": "rt_click_12345",
+    "eventType": "phone_click",
+    "phoneNumber": "+1234567890",
+    "conversionValue": 25.00
+  }'
+```
+
+### Testing DNI (Dynamic Number Insertion)
+```bash
+# Ultra-fast DNI request
+curl -X POST https://call-center-ringba.replit.app/api/dni/ultra-fast \
+  -H "Content-Type: application/json" \
+  -d '{
+    "campaignId": "VALID_CAMPAIGN_ID",
+    "sessionId": "test_session_123",
+    "userAgent": "curl/7.68.0",
+    "utmSource": "google",
+    "utmMedium": "cpc"
+  }'
+```
+
+### Error Testing
+```bash
+# Test authentication required
+curl -X GET https://call-center-ringba.replit.app/api/campaigns
+# Should return 401 Unauthorized
+
+# Test invalid campaign ID
+curl -X GET https://call-center-ringba.replit.app/api/campaigns/invalid-id \
+  -b cookies.txt
+# Should return 404 Not Found
+
+# Test validation error
+curl -X POST https://call-center-ringba.replit.app/api/campaigns \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"name": ""}'
+# Should return 400 Validation Error
 ```
 
 ## Support
