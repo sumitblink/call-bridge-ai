@@ -397,6 +397,7 @@ export function EnhancedCallDetails() {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="attribution">Attribution</TabsTrigger>
                 <TabsTrigger value="recording">Recording</TabsTrigger>
+                <TabsTrigger value="rtb">RTB Analysis</TabsTrigger>
                 <TabsTrigger value="technical">Technical</TabsTrigger>
               </TabsList>
               
@@ -548,6 +549,90 @@ export function EnhancedCallDetails() {
                     ) : (
                       <div className="text-center py-4 text-gray-500">
                         No recording available for this call
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="rtb">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">RTB Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedCall.rtbRequestId ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <div>
+                              <span className="text-sm font-medium">Auction Status:</span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="bg-green-50 text-green-700">
+                                  Winner Selected
+                                </Badge>
+                              </div>
+                            </div>
+                            {selectedCall.winningBidAmount && (
+                              <div>
+                                <span className="text-sm font-medium">Winning Bid:</span>
+                                <div className="text-lg font-bold text-green-600">
+                                  ${parseFloat(selectedCall.winningBidAmount).toFixed(2)}
+                                </div>
+                              </div>
+                            )}
+                            {selectedCall.winningTargetId && (
+                              <div>
+                                <span className="text-sm font-medium">Winning Target:</span>
+                                <div className="font-mono text-sm">
+                                  Target ID: {selectedCall.winningTargetId}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <div>
+                              <span className="text-sm font-medium">Request ID:</span>
+                              <div className="font-mono text-xs break-all">
+                                {selectedCall.rtbRequestId}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Total Targets Pinged:</span>
+                              <div className="text-sm">
+                                {selectedCall.totalTargetsPinged || '-'}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Successful Responses:</span>
+                              <div className="text-sm">
+                                {selectedCall.successfulResponses || '-'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {selectedCall.auctionTimeMs && (
+                          <div>
+                            <span className="text-sm font-medium">Auction Duration:</span>
+                            <div className="text-sm text-gray-600">
+                              {selectedCall.auctionTimeMs}ms
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="border-t pt-3">
+                          <span className="text-sm font-medium">Call Routing Method:</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className="bg-blue-100 text-blue-800">
+                              Real-Time Bidding (RTB)
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500">
+                        This call was not routed via RTB auction
                       </div>
                     )}
                   </CardContent>
