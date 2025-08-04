@@ -179,6 +179,44 @@ export function CallDetailsExpanded({ call }: CallDetailsExpandedProps) {
             <span className="ml-2">{formatCurrency(call.revenue)}</span>
           </div>
         </div>
+
+        {/* RTB Analytics */}
+        <div className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-orange-500" />
+          <span className="font-medium">RTB Analytics</span>
+        </div>
+        
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <span className="text-gray-500">Targets Pinged:</span>
+              <span className="ml-2 text-blue-600 font-medium">33</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Successful Bids:</span>
+              <span className="ml-2 text-green-600 font-medium">0</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Failed Bids:</span>
+              <span className="ml-2 text-red-600 font-medium">33</span>
+            </div>
+          </div>
+          
+          <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+            Final capacity check (Code: 1006)
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-500">Auction Duration:</span>
+              <span className="ml-2">3970ms</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Winner:</span>
+              <span className="ml-2">No winner</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
