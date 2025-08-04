@@ -381,118 +381,108 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {/* Sample RTB bidder responses */}
-                    <TableRow className="text-sm">
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <div>
-                            <div className="font-medium">Medi - Naked - RTB T3</div>
-                            <div className="text-xs text-gray-500">ID: 5</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-semibold text-green-600">$0.00</div>
-                        <div className="text-xs text-gray-500">USD</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-mono text-sm">459ms</div>
-                        <div className="text-xs text-green-600">Fast</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-mono text-blue-600 text-sm">External Route</div>
-                        <div className="text-xs text-gray-500">External Route</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1.5 max-w-[250px]">
-                          <div className="flex items-center space-x-2">
-                            <CheckCircle className="h-3 w-3 text-green-500" />
-                            <Badge variant="default" className="text-xs">success</Badge>
-                          </div>
-                          <div className="text-xs text-red-600">
-                            Final capacity check (Code: 1006)
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-gray-400 text-xs">#1</span>
-                      </TableCell>
-                    </TableRow>
-
-                    <TableRow className="text-sm">
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <div>
-                            <div className="font-medium">Medi - RTB - Medi - Tier 1</div>
-                            <div className="text-xs text-gray-500">ID: 6</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-semibold text-green-600">$0.00</div>
-                        <div className="text-xs text-gray-500">USD</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-mono text-sm">644ms</div>
-                        <div className="text-xs text-yellow-600">Medium</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-mono text-blue-600 text-sm">External Route</div>
-                        <div className="text-xs text-gray-500">External Route</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1.5 max-w-[250px]">
-                          <div className="flex items-center space-x-2">
-                            <CheckCircle className="h-3 w-3 text-green-500" />
-                            <Badge variant="default" className="text-xs">success</Badge>
-                          </div>
-                          <div className="text-xs text-red-600">
-                            Final capacity check (Code: 1006)
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-gray-400 text-xs">#2</span>
-                      </TableCell>
-                    </TableRow>
-
-                    <TableRow className="text-sm">
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <div>
-                            <div className="font-medium">Medi - Naked - RTB</div>
-                            <div className="text-xs text-gray-500">ID: 8</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-semibold text-green-600">$0.00</div>
-                        <div className="text-xs text-gray-500">USD</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-mono text-sm">5000ms</div>
-                        <div className="text-xs text-red-600">Timeout</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-mono text-blue-600 text-sm">External Route</div>
-                        <div className="text-xs text-gray-500">External Route</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1.5 max-w-[250px]">
-                          <div className="flex items-center space-x-2">
-                            <XCircle className="h-3 w-3 text-red-500" />
-                            <Badge variant="destructive" className="text-xs">timeout</Badge>
-                          </div>
-                          <div className="text-xs bg-orange-50 text-orange-700 p-1.5 rounded border">
-                            <div className="font-medium">Error Details:</div>
-                            <div className="break-words">ReferenceError: target is not defined</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-gray-400 text-xs">#3</span>
-                      </TableCell>
-                    </TableRow>
+                    {/* Generate all 33 RTB bidder responses */}
+                    {Array.from({ length: 33 }, (_, i) => {
+                      const bidderNames = [
+                        'Medi - Naked - RTB T3',
+                        'Medi - RTB - Medi - Tier 1', 
+                        'Medi - Naked - RTB T2',
+                        'Medi - Naked - RTB',
+                        'Medi - WeGenerate - T1 - Medi - Tier 2',
+                        'Medi - WeGenerate - T2',
+                        'Health Direct - Tier 1',
+                        'Health Connect - Premium',
+                        'MediLeads - Standard',
+                        'QuickConnect - Health',
+                        'DirectHealth - T1',
+                        'HealthBridge - Premium',
+                        'MediRoute - Standard',
+                        'HealthLink - Direct',
+                        'MediConnect - T2'
+                      ];
+                      const responseTimes = [459, 644, 825, 5000, 533, 487, 612, 723, 456, 890, 1200, 445, 667, 1500, 2000];
+                      const rejectionReasons = [
+                        'Final capacity check (Code: 1006)',
+                        'Daily cap exceeded (Code: 1002)',
+                        'Geographic restriction (Code: 1003)',
+                        'Time-based filter (Code: 1004)',
+                        'Quality score too low (Code: 1005)',
+                        'Budget limit reached (Code: 1007)',
+                        'Duplicate caller detected (Code: 1008)',
+                        'Invalid caller state (Code: 1009)',
+                        'Campaign paused (Code: 1010)'
+                      ];
+                      
+                      const bidderName = bidderNames[i % bidderNames.length];
+                      const responseTime = responseTimes[i % responseTimes.length];
+                      const rejectionReason = rejectionReasons[i % rejectionReasons.length];
+                      const isTimeout = responseTime >= 5000;
+                      const isSuccess = !isTimeout;
+                      
+                      return (
+                        <TableRow key={i} className="text-sm">
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <div>
+                                <div className="font-medium">{bidderName}</div>
+                                <div className="text-xs text-gray-500">ID: {5 + i}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-semibold text-green-600">$0.00</div>
+                            <div className="text-xs text-gray-500">USD</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-mono text-sm">{responseTime}ms</div>
+                            <div className={`text-xs ${
+                              responseTime < 500 ? 'text-green-600' : 
+                              responseTime < 1000 ? 'text-yellow-600' : 
+                              responseTime >= 5000 ? 'text-red-600' : 'text-red-600'
+                            }`}>
+                              {responseTime < 500 ? 'Fast' : 
+                               responseTime < 1000 ? 'Medium' : 
+                               responseTime >= 5000 ? 'Timeout' : 'Slow'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-mono text-blue-600 text-sm">External Route</div>
+                            <div className="text-xs text-gray-500">External Route</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1.5 max-w-[250px]">
+                              <div className="flex items-center space-x-2">
+                                {isSuccess ? (
+                                  <CheckCircle className="h-3 w-3 text-green-500" />
+                                ) : (
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                )}
+                                <Badge 
+                                  variant={isSuccess ? 'default' : 'destructive'}
+                                  className="text-xs"
+                                >
+                                  {isSuccess ? 'success' : 'timeout'}
+                                </Badge>
+                              </div>
+                              
+                              {isSuccess ? (
+                                <div className="text-xs text-red-600">
+                                  {rejectionReason}
+                                </div>
+                              ) : (
+                                <div className="text-xs bg-orange-50 text-orange-700 p-1.5 rounded border">
+                                  <div className="font-medium">Error Details:</div>
+                                  <div className="break-words">Request timeout after {responseTime}ms</div>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-gray-400 text-xs">#{i + 1}</span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
