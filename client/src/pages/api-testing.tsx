@@ -93,6 +93,7 @@ function ApiTestingPage() {
             <div className="p-4 bg-muted rounded-lg">
               <p className="text-sm"><strong>Endpoint:</strong> GET /api/auth/user</p>
               <p className="text-sm"><strong>Expected:</strong> 401 Unauthorized (if not logged in)</p>
+              <p className="text-sm"><strong>Login Credentials:</strong> email: sumit@blinkdigital.in, password: demo1234</p>
             </div>
             
             <Button onClick={testAuthStatus} disabled={loading} className="w-full">

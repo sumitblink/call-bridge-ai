@@ -6,7 +6,13 @@ This document provides comprehensive API documentation for the CallCenter Pro sy
 
 ## Base URL
 ```
-https://your-domain.com/api
+https://call-center-ringba.replit.app/api
+```
+
+## Authentication Credentials
+```
+Email: sumit@blinkdigital.in
+Password: demo1234
 ```
 
 ## Authentication
@@ -15,29 +21,33 @@ All API requests require session-based authentication. Login to establish a sess
 
 ### Login
 ```http
-POST /api/auth/login
+POST /api/login
 Content-Type: application/json
 
 {
-  "username": "admin",
-  "password": "password"
+  "email": "sumit@blinkdigital.in",
+  "password": "demo1234"
 }
 ```
 
 **cURL:**
 ```bash
-curl -X POST https://your-domain.com/api/auth/login \
+curl -X POST https://call-center-ringba.replit.app/api/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "password"}' \
+  -d '{"email": "sumit@blinkdigital.in", "password": "demo1234"}' \
   -c cookies.txt
 ```
 
 **Response:**
 ```json
 {
-  "id": 1,
-  "username": "admin",
-  "email": "admin@example.com"
+  "message": "Login successful",
+  "user": {
+    "id": 2,
+    "email": "sumit@blinkdigital.in",
+    "firstName": null,
+    "lastName": null
+  }
 }
 ```
 
@@ -48,19 +58,45 @@ GET /api/auth/user
 
 **cURL:**
 ```bash
-curl -X GET https://your-domain.com/api/auth/user \
+curl -X GET https://call-center-ringba.replit.app/api/auth/user \
   -b cookies.txt
+```
+
+**Response (Authenticated):**
+```json
+{
+  "id": 2,
+  "username": "sumit",
+  "email": "sumit@blinkdigital.in",
+  "firstName": null,
+  "lastName": null,
+  "profileImageUrl": null
+}
+```
+
+**Response (Not Authenticated):**
+```json
+{
+  "message": "Unauthorized"
+}
 ```
 
 ### Logout
 ```http
-POST /api/auth/logout
+POST /api/logout
 ```
 
 **cURL:**
 ```bash
-curl -X POST https://your-domain.com/api/auth/logout \
+curl -X POST https://call-center-ringba.replit.app/api/logout \
   -b cookies.txt
+```
+
+**Response:**
+```json
+{
+  "message": "Logout successful"
+}
 ```
 
 ## Campaign Management
@@ -72,7 +108,7 @@ GET /api/campaigns
 
 **cURL:**
 ```bash
-curl -X GET https://your-domain.com/api/campaigns \
+curl -X GET https://call-center-ringba.replit.app/api/campaigns \
   -b cookies.txt
 ```
 
@@ -116,7 +152,7 @@ Content-Type: application/json
 
 **cURL:**
 ```bash
-curl -X POST https://your-domain.com/api/campaigns \
+curl -X POST https://call-center-ringba.replit.app/api/campaigns \
   -H "Content-Type: application/json" \
   -b cookies.txt \
   -d '{
@@ -171,7 +207,7 @@ GET /api/rtb/targets
 
 **cURL:**
 ```bash
-curl -X GET https://your-domain.com/api/rtb/targets \
+curl -X GET https://call-center-ringba.replit.app/api/rtb/targets \
   -b cookies.txt
 ```
 
@@ -230,7 +266,7 @@ Content-Type: application/json
 
 **cURL:**
 ```bash
-curl -X POST https://your-domain.com/api/rtb/targets \
+curl -X POST https://call-center-ringba.replit.app/api/rtb/targets \
   -H "Content-Type: application/json" \
   -b cookies.txt \
   -d '{
@@ -283,7 +319,7 @@ GET /api/rtb/health-checks
 
 **cURL:**
 ```bash
-curl -X GET https://your-domain.com/api/rtb/health-checks \
+curl -X GET https://call-center-ringba.replit.app/api/rtb/health-checks \
   -b cookies.txt
 ```
 
@@ -325,7 +361,7 @@ GET /api/rtb/targets/{targetId}/uptime?hours=24
 
 **cURL:**
 ```bash
-curl -X GET "https://your-domain.com/api/rtb/targets/1/uptime?hours=24" \
+curl -X GET "https://call-center-ringba.replit.app/api/rtb/targets/1/uptime?hours=24" \
   -b cookies.txt
 ```
 
@@ -391,7 +427,7 @@ GET /api/rtb/bid-requests?page=1&limit=50&campaignId=campaign_uuid
 
 **cURL:**
 ```bash
-curl -X GET "https://your-domain.com/api/rtb/bid-requests?page=1&limit=50&campaignId=campaign_uuid" \
+curl -X GET "https://call-center-ringba.replit.app/api/rtb/bid-requests?page=1&limit=50&campaignId=campaign_uuid" \
   -b cookies.txt
 ```
 
@@ -563,7 +599,7 @@ GET /api/calls?page=1&limit=25
 
 **cURL:**
 ```bash
-curl -X GET "https://your-domain.com/api/calls?page=1&limit=25" \
+curl -X GET "https://call-center-ringba.replit.app/api/calls?page=1&limit=25" \
   -b cookies.txt
 ```
 
@@ -650,7 +686,7 @@ GET /api/phone-numbers/search?country=US&numberType=local&areaCode=555&limit=10
 
 **cURL:**
 ```bash
-curl -X GET "https://your-domain.com/api/phone-numbers/search?country=US&numberType=local&areaCode=555&limit=10" \
+curl -X GET "https://call-center-ringba.replit.app/api/phone-numbers/search?country=US&numberType=local&areaCode=555&limit=10" \
   -b cookies.txt
 ```
 
@@ -694,7 +730,7 @@ Content-Type: application/json
 
 **cURL:**
 ```bash
-curl -X POST https://your-domain.com/api/phone-numbers/purchase \
+curl -X POST https://call-center-ringba.replit.app/api/phone-numbers/purchase \
   -H "Content-Type: application/json" \
   -b cookies.txt \
   -d '{
