@@ -377,7 +377,7 @@ export default function Targets() {
     defaultValues: {
       userId: 2,
       name: "",
-      buyerId: 0,
+      buyerId: 1, // Will be updated when buyers load
       phoneNumber: "",
       endpoint: "",
       timeZone: "(UTC-05:00) Eastern Time (US & Canada)",
@@ -385,6 +385,13 @@ export default function Targets() {
       status: "active",
     },
   });
+
+  // Update buyerId default when buyers are loaded
+  useEffect(() => {
+    if (buyers.length > 0 && !editingTarget) {
+      form.setValue('buyerId', buyers[0].id);
+    }
+  }, [buyers, editingTarget, form]);
 
   // Mutations
   const createTargetMutation = useMutation({
@@ -408,8 +415,13 @@ export default function Targets() {
       setEditingTarget(null);
       toast({ title: "Target updated successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to update target", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Update target error:", error);
+      toast({ 
+        title: "Failed to update target", 
+        description: error?.message || "Please check the form fields and try again",
+        variant: "destructive" 
+      });
     },
   });
 
@@ -426,6 +438,9 @@ export default function Targets() {
 
   // Event handlers
   const onSubmit = (data: z.infer<typeof insertTargetSchema>) => {
+    console.log("Form submission data:", data);
+    console.log("Form validation errors:", form.formState.errors);
+    
     if (editingTarget) {
       updateTargetMutation.mutate({ id: editingTarget.id, ...data });
     } else {
@@ -437,7 +452,7 @@ export default function Targets() {
     setEditingTarget(target);
     form.reset({
       name: target.name || "",
-      buyerId: target.buyerId || 0,
+      buyerId: target.buyerId || (buyers.length > 0 ? buyers[0].id : 1),
       phoneNumber: target.phoneNumber || "",
       endpoint: target.endpoint || "",
       timeZone: target.timeZone || "EST",
@@ -1055,6 +1070,11 @@ export default function Targets() {
                       <Button 
                         type="submit"
                         disabled={createTargetMutation.isPending || updateTargetMutation.isPending}
+                        onClick={() => {
+                          console.log("Submit button clicked");
+                          console.log("Form valid:", form.formState.isValid);
+                          console.log("Form errors:", form.formState.errors);
+                        }}
                       >
                         {editingTarget ? "Update Target" : "Create Target"}
                       </Button>
