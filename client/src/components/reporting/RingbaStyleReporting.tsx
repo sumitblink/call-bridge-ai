@@ -354,38 +354,15 @@ export default function RingbaStyleReporting() {
           filters={activeFilters}
           dateRange={dateRange}
           onFilterClick={handleFilterClick}
+          onRemoveFilter={(index) => setActiveFilters(prev => prev.filter((_, i) => i !== index))}
+          onClearAllFilters={() => setActiveFilters([])}
         />
 
         {/* Call Details below Summary */}
         <CallActivity />
       </div>
 
-      {/* Active Filters Display */}
-      {activeFilters.length > 0 && (
-        <div className="bg-white border-b px-4 py-2">
-          <div className="flex flex-wrap gap-2">
-            {activeFilters.map((filter, index) => (
-              <Badge key={index} variant="secondary" className="text-xs bg-blue-100 text-blue-800 border border-blue-200">
-                {filter.field}: {filter.operator} "{filter.value}"
-                <button 
-                  onClick={() => setActiveFilters(prev => prev.filter((_, i) => i !== index))}
-                  className="ml-2 text-blue-600 hover:text-blue-800 font-bold"
-                >
-                  ×
-                </button>
-              </Badge>
-            ))}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setActiveFilters([])}
-              className="h-6 px-2 text-xs border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-            >
-              Clear All Filters
-            </Button>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

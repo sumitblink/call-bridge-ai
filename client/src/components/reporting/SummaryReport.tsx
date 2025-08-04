@@ -33,9 +33,11 @@ interface SummaryReportProps {
   filters: any[];
   dateRange: string;
   onFilterClick: (field: string, value: string) => void;
+  onRemoveFilter: (index: number) => void;
+  onClearAllFilters: () => void;
 }
 
-export default function SummaryReport({ filters, dateRange, onFilterClick }: SummaryReportProps) {
+export default function SummaryReport({ filters, dateRange, onFilterClick, onRemoveFilter, onClearAllFilters }: SummaryReportProps) {
   const [activeTab, setActiveTab] = useState("campaign");
   const [selectedTag, setSelectedTag] = useState("");
 
@@ -153,6 +155,33 @@ export default function SummaryReport({ filters, dateRange, onFilterClick }: Sum
         </div>
       </CardHeader>
       <CardContent>
+        {/* Active Filters Display inside Summary Report */}
+        {filters.length > 0 && (
+          <div className="bg-gray-50 border rounded-lg px-3 py-2 mb-4">
+            <div className="flex flex-wrap gap-2">
+              <span className="text-xs font-medium text-gray-600 mr-2">Active Filters:</span>
+              {filters.map((filter, index) => (
+                <Badge key={index} variant="secondary" className="text-xs bg-blue-100 text-blue-800 border border-blue-200">
+                  {filter.field}: {filter.operator} "{filter.value}"
+                  <button 
+                    onClick={() => onRemoveFilter(index)}
+                    className="ml-2 text-blue-600 hover:text-blue-800 font-bold"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onClearAllFilters}
+                className="h-6 px-2 text-xs border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+              >
+                Clear All Filters
+              </Button>
+            </div>
+          </div>
+        )}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex items-center justify-between mb-4">
             <TabsList className="grid w-full grid-cols-9">
