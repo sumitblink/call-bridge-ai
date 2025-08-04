@@ -933,7 +933,11 @@ export default function Targets() {
                                   <div className="space-y-3 p-4 bg-gray-50 rounded-lg border">
                                     <div className="flex items-center gap-2">
                                       <h4 className="text-sm font-medium">Predictive Routing Configuration</h4>
-                                      <span className="text-xs text-red-500 font-medium">Required</span>
+                                      {Array.isArray(predictiveRoutingConfigs) && predictiveRoutingConfigs.length > 0 ? (
+                                        <span className="text-xs text-blue-500 font-medium">Optional</span>
+                                      ) : (
+                                        <span className="text-xs text-gray-500 font-medium">None Available</span>
+                                      )}
                                       {!loadingConfigs && Array.isArray(predictiveRoutingConfigs) && (
                                         <span className="text-xs text-muted-foreground">
                                           ({predictiveRoutingConfigs.length} available)
@@ -956,11 +960,16 @@ export default function Targets() {
                                               </SelectItem>
                                             ))
                                           ) : (
-                                            <SelectItem value="notfound" disabled>No configurations found</SelectItem>
+                                            <SelectItem value="notfound" disabled>No configurations found - Create one in Settings</SelectItem>
                                           )}
                                         </SelectContent>
                                       </Select>
                                     </div>
+                                    {!loadingConfigs && (!Array.isArray(predictiveRoutingConfigs) || predictiveRoutingConfigs.length === 0) && (
+                                      <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border">
+                                        💡 No predictive routing configurations available. The target will use standard routing until configurations are created.
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                                 
