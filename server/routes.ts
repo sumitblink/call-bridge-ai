@@ -2062,7 +2062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const twiml = `
         <Response>
           <Say>${connectMessage}</Say>
-          <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="/api/webhooks/pool/${poolId}/status" action="/api/webhooks/pool/${poolId}/status" method="POST">
+          <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="https://${req.hostname}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="/api/webhooks/pool/${poolId}/status" method="POST">
             <Number>${targetPhoneNumber}</Number>
           </Dial>
           <Say>The call has ended. Thank you for calling.</Say>
@@ -2479,11 +2479,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const connectMessage = routingMethod === 'rtb' 
         ? 'Connecting to our premium partner, please hold.'
         : 'Connecting your call, please hold.';
+      
+      // Check if call recording is enabled for this campaign
+      const recordingAttribute = campaign.enableCallRecording ? 'record="true"' : '';
+      const recordingCallback = campaign.enableCallRecording 
+        ? `recordingStatusCallback="https://${req.hostname}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST"`
+        : '';
         
       const twiml = `
         <Response>
           <Say>${connectMessage}</Say>
-          <Dial timeout="30" callerId="${fromNumber}" action="https://${req.hostname}/api/webhooks/dial-status" method="POST">
+          <Dial timeout="30" callerId="${fromNumber}" action="https://${req.hostname}/api/webhooks/dial-status" method="POST" ${recordingAttribute} ${recordingCallback}>
             <Number>${targetPhoneNumber}</Number>
           </Dial>
           <Say>The call has ended. Thank you for calling.</Say>
@@ -2571,6 +2577,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('[Webhook] Error processing dial status:', error);
       res.type('text/xml').send('<Response></Response>');
+    }
+  });
+
+  // Recording status webhook handler
+  app.post('/api/webhooks/recording-status', async (req, res) => {
+    try {
+      const { RecordingSid, CallSid, RecordingStatus, RecordingDuration, RecordingUrl } = req.body;
+      
+      console.log(`[Recording] Status update: ${RecordingSid} - ${RecordingStatus}`);
+      
+      // Find the call by CallSid and update recording information
+      const calls = await storage.getCalls();
+      const call = calls.find(c => c.callSid === CallSid);
+      
+      if (call) {
+        const updateData: any = {
+          recordingSid: RecordingSid,
+          recordingStatus: RecordingStatus
+        };
+        
+        if (RecordingDuration) {
+          updateData.recordingDuration = parseInt(RecordingDuration);
+        }
+        
+        if (RecordingUrl) {
+          updateData.recordingUrl = RecordingUrl;
+        }
+        
+        await storage.updateCall(call.id, updateData);
+        console.log(`[Recording] Updated call ${call.id} with recording info: ${RecordingStatus} - ${RecordingUrl}`);
+        
+        // Fire tracking pixels for recording completion
+        if (RecordingStatus === 'completed') {
+          await fireTrackingPixelsForEvent(call, 'recording', RecordingDuration);
+        }
+      } else {
+        console.log(`[Recording] No call found for CallSid: ${CallSid}`);
+      }
+      
+      res.status(200).send('OK');
+      
+    } catch (error) {
+      console.error('[Recording] Error processing recording status:', error);
+      res.status(500).send('Error');
     }
   });
 
