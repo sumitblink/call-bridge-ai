@@ -30,8 +30,8 @@ export function EnhancedCallDetails() {
   });
 
   // Fetch calls with enhanced details
-  const { data: calls = [], isLoading } = useQuery<CallWithDetails[]>({
-    queryKey: ["/api/calls/enhanced", filters],
+  const { data: callsData = { calls: [] }, isLoading } = useQuery<{ calls: CallWithDetails[] }>({
+    queryKey: ["/api/calls", filters],
     queryFn: async () => {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
@@ -40,11 +40,13 @@ export function EnhancedCallDetails() {
         }
       });
       
-      const response = await fetch(`/api/calls/enhanced?${params}`);
+      const response = await fetch(`/api/calls?${params}`);
       if (!response.ok) throw new Error("Failed to fetch calls");
       return response.json();
     },
   });
+
+  const calls = callsData.calls || [];
 
   // Fetch campaigns for filter dropdown
   const { data: campaigns = [] } = useQuery<Campaign[]>({
@@ -363,9 +365,14 @@ export function EnhancedCallDetails() {
                           Details
                         </Button>
                         {call.recordingUrl && (
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" title="Play Recording">
                             <Play className="h-3 w-3" />
                           </Button>
+                        )}
+                        {call.recordingStatus && (
+                          <Badge variant="outline" className="text-xs">
+                            {call.recordingStatus}
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
@@ -507,10 +514,28 @@ export function EnhancedCallDetails() {
                   <CardContent>
                     {selectedCall.recordingUrl ? (
                       <div className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Recording Status:</span>
+                            <Badge variant="outline" className="text-xs">
+                              {selectedCall.recordingStatus || 'completed'}
+                            </Badge>
+                          </div>
+                          {selectedCall.recordingDuration && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Duration:</span>
+                              <span className="text-sm">{selectedCall.recordingDuration} seconds</span>
+                            </div>
+                          )}
+                        </div>
                         <audio controls className="w-full">
                           <source src={selectedCall.recordingUrl} type="audio/wav" />
+                          <source src={selectedCall.recordingUrl} type="audio/mpeg" />
                           Your browser does not support audio playback.
                         </audio>
+                        <div className="text-xs text-gray-500">
+                          Recording ID: {selectedCall.recordingSid}
+                        </div>
                         {selectedCall.transcription && (
                           <div>
                             <h4 className="text-sm font-medium mb-2">Transcription:</h4>
