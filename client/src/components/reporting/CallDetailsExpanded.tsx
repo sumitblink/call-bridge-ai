@@ -181,39 +181,41 @@ export function CallDetailsExpanded({ call }: CallDetailsExpandedProps) {
         </div>
 
         {/* RTB Analytics */}
-        <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-orange-500" />
-          <span className="font-medium">RTB Analytics</span>
-        </div>
-        
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <span className="text-gray-500">Targets Pinged:</span>
-              <span className="ml-2 text-blue-600 font-medium">33</span>
-            </div>
-            <div>
-              <span className="text-gray-500">Successful Bids:</span>
-              <span className="ml-2 text-green-600 font-medium">0</span>
-            </div>
-            <div>
-              <span className="text-gray-500">Failed Bids:</span>
-              <span className="ml-2 text-red-600 font-medium">33</span>
-            </div>
+        <div className="bg-orange-100 p-4 rounded-lg border-2 border-orange-300">
+          <div className="flex items-center gap-2 mb-3">
+            <Activity className="h-5 w-5 text-orange-600" />
+            <span className="font-bold text-lg text-orange-800">RTB Analytics</span>
           </div>
           
-          <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-            Final capacity check (Code: 1006)
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-500">Auction Duration:</span>
-              <span className="ml-2">3970ms</span>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <span className="text-gray-700 font-medium">Targets Pinged:</span>
+                <span className="ml-2 text-blue-600 font-bold text-lg">33</span>
+              </div>
+              <div>
+                <span className="text-gray-700 font-medium">Successful Bids:</span>
+                <span className="ml-2 text-green-600 font-bold text-lg">0</span>
+              </div>
+              <div>
+                <span className="text-gray-700 font-medium">Failed Bids:</span>
+                <span className="ml-2 text-red-600 font-bold text-lg">33</span>
+              </div>
             </div>
-            <div>
-              <span className="text-gray-500">Winner:</span>
-              <span className="ml-2">No winner</span>
+            
+            <div className="text-sm text-red-700 bg-red-100 p-3 rounded border border-red-300 font-medium">
+              Final capacity check (Code: 1006)
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-700 font-medium">Auction Duration:</span>
+                <span className="ml-2 font-mono">3970ms</span>
+              </div>
+              <div>
+                <span className="text-gray-700 font-medium">Winner:</span>
+                <span className="ml-2">No winner</span>
+              </div>
             </div>
           </div>
         </div>
