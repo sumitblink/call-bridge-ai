@@ -583,32 +583,50 @@ export function EnhancedCallDetails() {
                   <CardContent>
                     {selectedCall.rtbRequestId ? (
                       <div className="space-y-4">
+                        {/* Debug Info */}
+                        <div className="text-xs text-gray-400 mb-2">
+                          RTB Data: {JSON.stringify({
+                            hasRtbBidders: !!selectedCall.rtbBidders,
+                            biddersCount: selectedCall.rtbBidders?.length || 0,
+                            winningBid: selectedCall.winningBidAmount,
+                            winningTarget: selectedCall.winningTargetId
+                          })}
+                        </div>
+                        
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <div>
                               <span className="text-sm font-medium">Auction Status:</span>
                               <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="outline" className="bg-green-50 text-green-700">
-                                  Winner Selected
-                                </Badge>
+                                {selectedCall.winningBidAmount && parseFloat(selectedCall.winningBidAmount) > 0 ? (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700">
+                                    Winner Selected
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-red-50 text-red-700">
+                                    No Winner
+                                  </Badge>
+                                )}
                               </div>
                             </div>
-                            {selectedCall.winningBidAmount && (
-                              <div>
-                                <span className="text-sm font-medium">Winning Bid:</span>
-                                <div className="text-lg font-bold text-green-600">
-                                  ${parseFloat(selectedCall.winningBidAmount).toFixed(2)}
-                                </div>
+                            <div>
+                              <span className="text-sm font-medium">Winning Bid:</span>
+                              <div className="text-lg font-bold text-green-600">
+                                {selectedCall.winningBidAmount && parseFloat(selectedCall.winningBidAmount) > 0 
+                                  ? `$${parseFloat(selectedCall.winningBidAmount).toFixed(2)}`
+                                  : '$0.00'
+                                }
                               </div>
-                            )}
-                            {selectedCall.winningTargetId && (
-                              <div>
-                                <span className="text-sm font-medium">Winning Target:</span>
-                                <div className="font-mono text-sm">
-                                  Target ID: {selectedCall.winningTargetId}
-                                </div>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">Winning Target:</span>
+                              <div className="font-mono text-sm">
+                                {selectedCall.winningTargetId 
+                                  ? `Target ID: ${selectedCall.winningTargetId}`
+                                  : 'Not available'
+                                }
                               </div>
-                            )}
+                            </div>
                           </div>
                           <div className="space-y-2">
                             <div>
@@ -620,13 +638,13 @@ export function EnhancedCallDetails() {
                             <div>
                               <span className="text-sm font-medium">Total Targets Pinged:</span>
                               <div className="text-sm">
-                                {selectedCall.totalTargetsPinged || '-'}
+                                {selectedCall.totalTargetsPinged || '0'}
                               </div>
                             </div>
                             <div>
                               <span className="text-sm font-medium">Successful Responses:</span>
                               <div className="text-sm">
-                                {selectedCall.successfulResponses || '-'}
+                                {selectedCall.successfulResponses || '0'}
                               </div>
                             </div>
                           </div>
