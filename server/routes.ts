@@ -1608,6 +1608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             successfulResponses: 3,
             auctionTimeMs: 3975,
             rtbBidders: [
+              // Winner - Top 3 successful bids
               {
                 targetId: 10,
                 bidAmount: 11.04,
@@ -1617,16 +1618,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: 'success',
                 isWinner: true,
                 targetName: 'MEDI - Winner Bidder'
-              },
-              {
-                targetId: 15,
-                bidAmount: 8.40,
-                currency: 'USD',
-                destinationNumber: '+17602738668',
-                responseTime: 3975,
-                status: 'success',
-                isWinner: false,
-                targetName: 'Healthcare Partner A'
               },
               {
                 targetId: 26,
@@ -1639,27 +1630,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 targetName: 'Healthcare Partner B'
               },
               {
-                targetId: 5,
-                bidAmount: 0.00,
+                targetId: 15,
+                bidAmount: 8.40,
                 currency: 'USD',
-                destinationNumber: null,
-                responseTime: 397,
-                status: 'error',
+                destinationNumber: '+17602738668',
+                responseTime: 3975,
+                status: 'success',
                 isWinner: false,
-                targetName: 'Target 5',
-                rejectionReason: 'Final capacity check (Code: 1006)'
+                targetName: 'Healthcare Partner A'
               },
-              {
-                targetId: 8,
-                bidAmount: 0.00,
-                currency: 'USD',
-                destinationNumber: null,
-                responseTime: 5000,
-                status: 'timeout',
-                isWinner: false,
-                targetName: 'Target 8',
-                rejectionReason: 'No response'
-              }
+              // Failed/rejected bidders (remaining 30 targets)
+              ...Array.from({ length: 30 }, (_, i) => {
+                const targetId = i + 20; // Start from ID 20 to avoid conflicts
+                const rejectionReasons = [
+                  'Final capacity check (Code: 1006)',
+                  'Daily cap exceeded (Code: 1002)',
+                  'Geographic restriction (Code: 1003)',
+                  'Time-based filter (Code: 1004)',
+                  'Quality score too low (Code: 1005)',
+                  'Budget limit reached (Code: 1007)',
+                  'Duplicate caller detected (Code: 1008)',
+                  'Invalid caller state (Code: 1009)',
+                  'Campaign paused (Code: 1010)',
+                  'No response timeout'
+                ];
+                const targetNames = [
+                  'Medi - Naked - RTB T3',
+                  'Medi - RTB - Medi - Tier 1', 
+                  'Medi - Naked - RTB T2',
+                  'Medi - Naked - RTB',
+                  'Medi - WeGenerate - T1 - Medi - Tier 2',
+                  'Medi - WeGenerate - T2',
+                  'Health Direct - Tier 1',
+                  'Health Connect - Premium',
+                  'MediLeads - Standard',
+                  'QuickConnect - Health',
+                  'DirectHealth - T1',
+                  'HealthBridge - Premium',
+                  'MediRoute - Standard',
+                  'HealthLink - Direct',
+                  'MediConnect - T2',
+                  'HealthPro - Target',
+                  'MediFlow - Partner',
+                  'HealthNet - Direct',
+                  'QuickMedi - Route',
+                  'DirectCare - Link',
+                  'HealthCore - Target',
+                  'MediCore - Partner',
+                  'HealthSync - Direct',
+                  'MediSync - Route',
+                  'HealthMax - Link',
+                  'MediMax - Target',
+                  'HealthPlus - Partner',
+                  'MediPlus - Direct',
+                  'HealthTop - Route',
+                  'MediTop - Link'
+                ];
+                const responseTimes = [397, 644, 825, 5000, 533, 487, 612, 723, 456, 890, 1200, 445, 667, 1500, 2000, 3500, 4200, 750, 980, 1100, 2200, 3000, 650, 450, 1800, 2500, 4000, 550, 870, 1350];
+                
+                return {
+                  targetId,
+                  bidAmount: 0.00,
+                  currency: 'USD',
+                  destinationNumber: null,
+                  responseTime: responseTimes[i % responseTimes.length],
+                  status: responseTimes[i % responseTimes.length] >= 5000 ? 'timeout' : 'error',
+                  isWinner: false,
+                  targetName: targetNames[i % targetNames.length],
+                  rejectionReason: responseTimes[i % responseTimes.length] >= 5000 ? 'No response timeout' : rejectionReasons[i % rejectionReasons.length]
+                };
+              })
             ]
           };
         }
