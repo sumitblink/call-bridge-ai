@@ -446,7 +446,7 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                                     variant={bidder.status === 'success' ? 'default' : 'destructive'}
                                     className="text-xs"
                                   >
-                                    {bidder.status}
+                                    {bidder.status === 'error' ? 'rejected' : bidder.status}
                                   </Badge>
                                 </div>
                                 

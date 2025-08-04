@@ -1694,7 +1694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   currency: 'USD',
                   destinationNumber: null,
                   responseTime: responseTimes[i % responseTimes.length],
-                  status: responseTimes[i % responseTimes.length] >= 5000 ? 'timeout' : 'error',
+                  status: responseTimes[i % responseTimes.length] >= 5000 ? 'timeout' : 'rejected',
                   isWinner: false,
                   targetName: realTargetNames[i],
                   rejectionReason: responseTimes[i % responseTimes.length] >= 5000 ? 'No response timeout' : rejectionReasons[i % rejectionReasons.length]
