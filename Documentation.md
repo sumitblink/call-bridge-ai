@@ -1,295 +1,829 @@
-# CallCenter Pro - Complete Documentation
+# CallCenter Pro - Complete Documentation & Website Flow Guide
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [System Architecture](#system-architecture)
-3. [Core Features](#core-features)
-4. [Campaign Management](#campaign-management)
-5. [Call Routing System](#call-routing-system)
-6. [Number Pool Management](#number-pool-management)
-7. [Dynamic Number Insertion (DNI)](#dynamic-number-insertion-dni)
-8. [Real-Time Bidding (RTB) System](#real-time-bidding-rtb-system)
-9. [Advanced Call Flow System](#advanced-call-flow-system)
-10. [Twilio Integration](#twilio-integration)
-11. [API Documentation](#api-documentation)
-12. [Database Schema](#database-schema)
-13. [AI Help System](#ai-help-system)
-14. [Security and Multi-Tenancy](#security-and-multi-tenancy)
-15. [Setup and Configuration](#setup-and-configuration)
-16. [Testing Guide](#testing-guide)
-17. [Troubleshooting](#troubleshooting)
-18. [Recent Updates](#recent-updates)
+1. [System Overview](#system-overview)
+2. [Complete Website Flow](#complete-website-flow)
+3. [Authentication System](#authentication-system)
+4. [Dashboard Overview](#dashboard-overview)
+5. [Campaign Management](#campaign-management)
+6. [Buyer/Target Management](#buyertarget-management)
+7. [Number Pool Management](#number-pool-management)
+8. [Call Flow System](#call-flow-system)
+9. [RTB Management](#rtb-management)
+10. [Enhanced Reporting](#enhanced-reporting)
+11. [Dynamic Number Insertion (DNI)](#dynamic-number-insertion-dni)
+12. [Integrations](#integrations)
+13. [Phone Number Management](#phone-number-management)
+14. [Settings & Configuration](#settings--configuration)
+15. [AI Help System](#ai-help-system)
+16. [Data Connections & Flow](#data-connections--flow)
+17. [Technical Architecture](#technical-architecture)
+18. [API Documentation](#api-documentation)
+19. [Database Schema](#database-schema)
+20. [Troubleshooting & Support](#troubleshooting--support)
 
 ---
 
-## Overview
+## System Overview
 
-CallCenter Pro is a production-ready, enterprise-grade call center management platform designed for businesses that need intelligent call routing, campaign management, and real-time bidding capabilities. The system combines modern web technologies with enterprise-grade telephony integration to provide a comprehensive solution for call center operations.
+CallCenter Pro is a comprehensive call center management platform designed as a Ringba alternative. It provides intelligent call routing, real-time bidding (RTB), campaign management, and advanced analytics for businesses managing inbound call operations.
 
-### Key Capabilities
-
-- **Intelligent Call Routing**: Priority-based, round-robin, and pool-based routing algorithms
-- **Campaign Management**: Create and manage call campaigns with multiple routing strategies
-- **Dynamic Number Insertion (DNI)**: Track campaign performance with dynamic phone number assignment
-- **Real-Time Bidding (RTB)**: Enterprise-level auction system for call distribution with live analytics
-- **Advanced Call Flow System**: Visual flow builder with IVR, business hours, and traffic splitting
-- **Number Pool Management**: Exclusive number assignment with conflict prevention
-- **Twilio Integration**: Full voice communication capabilities with webhooks
-- **Analytics & Reporting**: Comprehensive performance tracking with target name resolution
-- **Multi-Tenant Security**: Complete user isolation with secure data access controls
-- **AI-Powered Help System**: Claude-powered chatbot with project-specific knowledge and code search
-- **Enterprise Features**: Production-ready with comprehensive security testing
-
-### Target Users
-
-- **Call Center Managers**: Optimize call routing and agent productivity
-- **Marketing Teams**: Track campaign performance with DNI and attribution
-- **Lead Generation Companies**: Distribute calls to buyers through RTB auctions
-- **Insurance Companies**: Route calls to appropriate agents based on criteria
-- **Sales Organizations**: Manage inbound leads and call distribution
+### Core Capabilities
+- **Multi-tenancy**: Complete user isolation with secure data access
+- **Real-time bidding**: Auction-based call distribution with 33+ bidder support
+- **Dynamic Number Insertion**: Campaign attribution through dynamic phone numbers
+- **Advanced call flows**: Visual IVR builder with complex routing logic
+- **Campaign management**: Complete lifecycle from creation to analytics
+- **Twilio integration**: Full voice communication capabilities
+- **Enhanced reporting**: Detailed analytics with RTB rejection reasons
+- **AI-powered help**: Claude-based chatbot with project knowledge
 
 ---
 
-## System Architecture
+## Complete Website Flow
 
-### Technology Stack
+### 1. Entry Points
 
-**Frontend:**
-- React 18 with TypeScript
-- Tailwind CSS for styling
-- shadcn/ui component library
-- TanStack React Query for state management
-- Wouter for client-side routing
-- Vite for build and development
+**Login Page (`/login`)**
+- **Purpose**: User authentication entry point
+- **Features**: 
+  - Username/password login
+  - Session management
+  - Redirect to dashboard after login
+- **Flow**: Login → Dashboard (if authenticated) or Login page (if failed)
 
-**Backend:**
-- Express.js with TypeScript
-- PostgreSQL with Drizzle ORM
-- Express sessions with PostgreSQL storage
-- Custom authentication system
-- RESTful API architecture
+**Registration/Signup**
+- **Note**: Currently uses demo accounts (username: `sumit`, password: `demo123`)
+- **Flow**: Direct login → Dashboard
 
-**External Services:**
-- Twilio for voice communications
-- Supabase for PostgreSQL hosting
-- Neon Database support
+### 2. Main Navigation Structure
 
-### Project Structure
-
+**Sidebar Navigation Components:**
 ```
-├── client/                 # React frontend
-│   ├── src/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── pages/          # Page components
-│   │   ├── lib/            # Utility functions
-│   │   └── hooks/          # Custom React hooks
-├── server/                 # Express backend
-│   ├── routes.ts           # API route definitions
-│   ├── storage.ts          # Data access layer
-│   ├── rtb-service.ts      # RTB auction logic
-│   ├── dni-service.ts      # DNI functionality
-│   └── call-routing.ts     # Call routing algorithms
-├── shared/                 # Shared types and schemas
-│   └── schema.ts           # Database schema definitions
-└── migrations/             # Database migrations
+├── Dashboard (/)
+├── Campaigns (/campaigns)
+├── Buyers (/buyers)
+├── Number Pools (/pools)
+├── Call Flows (/call-flows)
+├── RTB Management (/rtb-management)
+├── Enhanced Reporting (/enhanced-reporting)
+├── DNI (/dni)
+├── Integrations (/integrations)
+├── Phone Numbers (/phone-numbers)
+├── Settings (/settings)
+└── Help (AI Chat overlay)
 ```
 
+### 3. User Journey Flows
+
+**A. Campaign Creation Flow:**
+```
+Dashboard → Campaigns → Create Campaign Button → Campaign Form → 
+Configure Routing → Add Buyers → Set Numbers → Save → Campaign Dashboard
+```
+
+**B. RTB Setup Flow:**
+```
+RTB Management → Add RTB Target → Configure Endpoint → 
+Test Bidding → Assign to Campaign → Monitor Analytics
+```
+
+**C. Call Analytics Flow:**
+```
+Enhanced Reporting → Filter Calls → Select Call → 
+Expand Details → View RTB Analytics → See Rejection Reasons
+```
+
+**D. Number Pool Management Flow:**
+```
+Number Pools → Create Pool → Add Numbers → 
+Assign to Campaign → Monitor Usage → Analytics
+```
+
 ---
 
-## Core Features
+## Authentication System
 
-### 1. Campaign Management
+### Login Process
+1. **Access**: Navigate to `/login` or root `/`
+2. **Credentials**: Enter username and password
+3. **Validation**: Server validates against user database
+4. **Session**: Express session created with PostgreSQL storage
+5. **Redirect**: Automatic redirect to `/dashboard`
 
-**Create and Configure Campaigns:**
-- Define campaign name, description, and routing strategy
-- Set phone numbers (direct or pool-based)
-- Configure buyer/agent assignments
-- Enable RTB for auction-based routing
-- Set campaign status (active, paused, completed)
+### Session Management
+- **Storage**: PostgreSQL-backed session store
+- **Duration**: Configurable session timeout
+- **Security**: Secure cookies with HTTP-only flags
+- **Multi-tenancy**: User ID scoped to all data operations
 
-**Routing Types:**
-- **Direct Routing**: Single phone number per campaign
-- **Pool-based Routing**: Dynamic number assignment from managed pools
-- **RTB Routing**: Real-time auction-based call distribution
+### Demo Accounts
+- **Username**: `sumit`
+- **Password**: `demo123`
+- **User ID**: 2 (for database queries)
 
-### 2. Buyer/Agent Management
+---
 
-**Buyer Configuration:**
-- Contact information and company details
-- Phone numbers and routing priorities
-- Capacity limits (concurrent calls, daily caps)
-- Schedule and availability settings
-- Performance tracking and metrics
+## Dashboard Overview
 
-**Agent Routing:**
-- Skills-based routing
-- Availability status management
-- Call assignment and tracking
-- Performance metrics and reporting
+### Location: `/` or `/dashboard`
 
-### 3. Call Tracking and Analytics
+### Key Components
 
-**Real-time Metrics:**
-- Active campaigns and call volume
-- Success rates and conversion tracking
-- Response times and routing efficiency
-- Revenue tracking and reporting
+**1. Quick Stats Cards**
+- **Active Campaigns**: Live campaign count
+- **Total Calls Today**: Daily call volume
+- **Success Rate**: Call routing success percentage  
+- **Revenue**: Total revenue tracked
 
-**Historical Analysis:**
-- Campaign performance over time
-- Buyer/agent productivity metrics
-- Call outcome analysis
-- ROI and cost-per-call calculations
+**2. Recent Activity Feed**
+- **Recent Calls**: Latest incoming calls with status
+- **Campaign Updates**: Recent campaign changes
+- **System Alerts**: Important notifications
+
+**3. Performance Charts**
+- **Call Volume**: Hourly/daily call trends
+- **Success Rates**: Routing performance over time
+- **Revenue Tracking**: Financial performance metrics
+
+**4. Quick Actions**
+- **Create Campaign**: Direct link to campaign creation
+- **View Reports**: Jump to enhanced reporting
+- **Manage Numbers**: Access phone number management
+
+### Data Sources
+- **Calls Table**: Recent call data with status
+- **Campaigns Table**: Active campaign statistics
+- **Buyers Table**: Routing performance metrics
+- **RTB Analytics**: Bidding performance data
 
 ---
 
 ## Campaign Management
 
-### Creating a Campaign
+### Location: `/campaigns`
 
-1. **Basic Information**
-   - Campaign name and description
-   - Select routing type (Direct, Pool, RTB)
-   - Set campaign status
+### Campaign List View
 
-2. **Phone Number Assignment**
-   - **Direct**: Assign a specific phone number
-   - **Pool**: Select from available number pools
-   - **RTB**: Configure auction parameters
+**Table Columns:**
+- **Campaign Name**: User-defined campaign identifier
+- **Type**: Direct, Pool, or RTB routing
+- **Status**: Active, Paused, Completed, Draft
+- **Phone Number**: Associated tracking number
+- **Buyers**: Count of assigned buyers/targets
+- **Calls**: Total calls received
+- **Success Rate**: Routing success percentage
+- **Revenue**: Total revenue generated
+- **Actions**: Edit, Delete, View Details
 
-3. **Buyer Configuration**
-   - Add buyers with contact information
-   - Set routing priorities (1-10)
-   - Configure capacity limits
-   - Set schedule restrictions
+**Filter Options:**
+- **Status Filter**: Active, Paused, All
+- **Type Filter**: Direct, Pool, RTB
+- **Date Range**: Custom date filtering
+- **Search**: Campaign name search
 
-4. **Advanced Settings**
-   - Enable/disable call recording
-   - Set timeout values
-   - Configure webhook URLs
-   - Enable tracking pixels
+### Campaign Creation/Edit Flow
 
-### Campaign Status Management
+**Step 1: Basic Information**
+- **Campaign Name**: Required, unique identifier
+- **Description**: Optional campaign description
+- **Status**: Active, Paused, Draft selection
+- **Routing Type**: Direct, Pool, or RTB selection
 
-- **Active**: Campaign accepts and routes calls
-- **Paused**: Campaign temporarily stopped
-- **Completed**: Campaign finished and archived
-- **Draft**: Campaign being configured
+**Step 2: Phone Number Configuration**
 
-### Campaign Validation
+**Direct Routing:**
+- **Phone Number**: Select from available numbers
+- **Webhook URL**: Automatic Twilio webhook setup
 
-The system automatically validates:
-- At least one active buyer is assigned
-- Phone numbers are properly configured
-- Webhook URLs are accessible
-- Capacity limits are reasonable
+**Pool Routing:**
+- **Number Pool**: Select from created pools
+- **Pool Strategy**: Round-robin or priority-based
+- **Exclusive Assignment**: Prevent number conflicts
+
+**RTB Routing:**
+- **RTB Targets**: Assign bidding endpoints
+- **Auction Settings**: Timeout, minimum bid
+- **Fallback Rules**: Default routing if no bids
+
+**Step 3: Buyer Assignment**
+- **Add Buyers**: Select from buyer database
+- **Set Priority**: 1-10 priority ranking
+- **Capacity Limits**: Concurrent call limits
+- **Schedule**: Time-based routing rules
+
+**Step 4: Advanced Settings**
+- **Call Recording**: Enable/disable recording
+- **Transcription**: Automatic transcription
+- **Webhooks**: Custom webhook URLs
+- **Tracking**: UTM and pixel tracking
+
+### Campaign Validation Rules
+- **At least one buyer**: Required for activation
+- **Valid phone number**: Must be assigned and available
+- **Webhook accessibility**: URLs must be reachable
+- **Capacity limits**: Must be reasonable and valid
+
+### Campaign Analytics Integration
+- **Call Tracking**: All calls linked to campaign
+- **Revenue Attribution**: Automatic revenue calculation
+- **Performance Metrics**: Success rates, response times
+- **RTB Analytics**: Bidding performance if applicable
 
 ---
 
-## Call Routing System
+## Buyer/Target Management
 
-### Routing Algorithms
+### Location: `/buyers`
 
-**1. Priority-Based Routing**
-- Routes calls to highest priority available buyer
-- Considers capacity limits and availability
-- Fallback to lower priority buyers when needed
+### Buyer List View
 
-**2. Round-Robin Routing**
-- Distributes calls evenly among available buyers
-- Tracks last assignment for fair distribution
-- Respects capacity limits and schedules
+**Table Display:**
+- **Buyer Name**: Contact name or company
+- **Company**: Business organization
+- **Phone Number**: Primary contact number
+- **Priority**: Routing priority (1-10)
+- **Status**: Active, Inactive, Paused
+- **Capacity**: Current/maximum concurrent calls
+- **Success Rate**: Call acceptance percentage
+- **Total Calls**: Historical call count
+- **Revenue**: Total revenue generated
 
-**3. Pool-Based Routing**
-- Assigns tracking numbers dynamically from pools
-- Prevents number conflicts between campaigns
-- Supports campaign-specific number assignment
+### Buyer Creation/Edit Process
 
-### Routing Decision Factors
+**Basic Information:**
+- **Name**: Buyer/agent name (required)
+- **Company**: Organization name
+- **Email**: Contact email address
+- **Phone**: Primary phone number for routing
 
-- **Buyer Priority**: Higher priority buyers receive calls first
-- **Availability**: Only route to available buyers
-- **Capacity Limits**: Respect concurrent call limits
-- **Schedule**: Honor time-based restrictions
-- **Geographic**: Route based on caller location (optional)
+**Routing Configuration:**
+- **Priority**: 1-10 ranking for routing order
+- **Phone Number**: Destination for routed calls
+- **Backup Number**: Fallback routing option
+- **Status**: Active/Inactive toggle
 
-### Routing Metrics
+**Capacity Management:**
+- **Max Concurrent Calls**: Simultaneous call limit
+- **Daily Call Cap**: Maximum calls per day
+- **Hourly Limit**: Calls per hour restriction
+- **Monthly Limit**: Monthly capacity setting
 
-- **Success Rate**: Percentage of successfully routed calls
-- **Average Response Time**: Time to connect calls
-- **Buyer Utilization**: Capacity usage per buyer
-- **Fallback Rate**: Calls routed to secondary buyers
+**Schedule Settings:**
+- **Business Hours**: Operating time windows
+- **Time Zone**: Local time zone setting
+- **Holiday Schedule**: Non-working days
+- **Break Times**: Unavailable periods
+
+**Performance Tracking:**
+- **Success Rate**: Call acceptance metrics
+- **Average Handle Time**: Call duration tracking
+- **Revenue Per Call**: Financial performance
+- **Quality Scores**: Call quality ratings
+
+### Buyer-Campaign Relationships
+- **Campaign Assignment**: Multiple campaign support
+- **Priority Per Campaign**: Campaign-specific priorities
+- **Capacity Sharing**: Cross-campaign capacity management
+- **Performance Isolation**: Campaign-specific metrics
 
 ---
 
 ## Number Pool Management
 
-### Pool Concepts
+### Location: `/pools`
 
-**Number Pools** are collections of phone numbers that can be dynamically assigned to campaigns for tracking purposes. Each pool ensures exclusive number assignment to prevent conflicts.
+### Pool Overview
 
-### Pool Features
+**Purpose**: Number pools provide dynamic phone number assignment for campaigns, ensuring exclusive number usage and preventing conflicts between campaigns.
 
-- **Exclusive Assignment**: Numbers can only belong to one pool
-- **Dynamic Allocation**: Numbers assigned on-demand
+### Pool List View
+
+**Table Columns:**
+- **Pool Name**: User-defined pool identifier
+- **Phone Numbers**: Count of numbers in pool
+- **Available**: Unassigned numbers count
+- **Assigned**: Currently assigned numbers
+- **Usage Rate**: Percentage utilization
+- **Status**: Active, Inactive
+- **Actions**: Edit, Delete, View Details
+
+### Pool Creation Process
+
+**Step 1: Basic Information**
+- **Pool Name**: Required, unique identifier
+- **Description**: Optional pool description
+- **Country**: Geographic region for numbers
+- **Status**: Active/Inactive toggle
+
+**Step 2: Number Assignment**
+- **Add Numbers**: Import phone numbers
+- **Bulk Import**: CSV file upload support
+- **Manual Entry**: Individual number addition
+- **Validation**: Number format verification
+
+**Step 3: Webhook Configuration**
+- **Webhook URL**: Automatic setup for all numbers
+- **Authentication**: Security token configuration
+- **Fallback URL**: Backup webhook endpoint
+- **Status Callbacks**: Call status tracking
+
+### Pool Management Features
+
+**Exclusive Assignment:**
+- Numbers can only belong to one pool
+- Automatic conflict detection
+- Assignment tracking and history
+- Release and reassignment support
+
+**Dynamic Allocation:**
+- Automatic number assignment to campaigns
+- Round-robin or priority-based selection
+- Real-time availability checking
+- Instant webhook configuration
+
+**Analytics and Tracking:**
+- Number utilization metrics
+- Performance per number
+- Assignment history logs
+- Revenue attribution per number
+
+### Pool-Campaign Integration
+- **Automatic Assignment**: Numbers assigned on campaign creation
+- **Webhook Management**: Automatic Twilio webhook updates
 - **Conflict Prevention**: System prevents duplicate assignments
-- **Webhook Management**: Automatic webhook configuration
+- **Performance Tracking**: Individual number analytics
 
-### Pool Management
+---
 
-**Creating Pools:**
-1. Define pool name (unique per user)
-2. Add phone numbers to the pool
-3. Configure webhook settings
-4. Set pool status (active/inactive)
+## Call Flow System
 
-**Number Assignment:**
-- Numbers automatically assigned from available pool
-- Exclusive assignment prevents conflicts
-- Webhook URLs updated automatically
-- Assignment tracking for analytics
+### Location: `/call-flows`
 
-**Pool Analytics:**
-- Number utilization rates
-- Assignment history
-- Performance metrics per number
-- Pool efficiency reporting
+### System Overview
+
+The Advanced Call Flow System provides a visual drag-and-drop interface for creating sophisticated Interactive Voice Response (IVR) systems and call routing logic.
+
+### Flow Builder Interface
+
+**Canvas Features:**
+- **Grid Layout**: Professional alignment system
+- **Zoom Controls**: Scale view for complex flows
+- **Pan Navigation**: Navigate large flow diagrams
+- **Connection Tools**: Visual connection editing
+- **Node Palette**: Drag-and-drop node library
+
+**Node Types Available:**
+
+**1. Menu Node**
+- **Purpose**: Present caller with options
+- **Configuration**: 
+  - Welcome message audio
+  - Menu options (1-9)
+  - Timeout handling
+  - Invalid input responses
+- **Connections**: Multiple outputs based on selections
+
+**2. Gather Node**
+- **Purpose**: Collect caller input (DTMF)
+- **Configuration**:
+  - Input prompt message
+  - Expected input length
+  - Timeout duration
+  - Retry attempts
+- **Outputs**: Success, timeout, invalid input
+
+**3. Play Node**
+- **Purpose**: Play audio message to caller
+- **Configuration**:
+  - Audio file or text-to-speech
+  - Language selection
+  - Voice settings
+  - Playback controls
+- **Flow**: Single output continuation
+
+**4. Business Hours Node**
+- **Purpose**: Route based on time/date
+- **Configuration**:
+  - Operating hours definition
+  - Time zone settings
+  - Holiday schedules
+  - Weekend handling
+- **Outputs**: Open, closed, holiday
+
+**5. Router Node**
+- **Purpose**: Conditional routing logic
+- **Configuration**:
+  - Routing conditions
+  - Percentage-based distribution
+  - Geographic routing
+  - Caller data evaluation
+- **Outputs**: Multiple conditional paths
+
+**6. Splitter Node**
+- **Purpose**: A/B testing and traffic distribution
+- **Configuration**:
+  - Traffic split percentages
+  - Test duration settings
+  - Conversion tracking
+  - Statistical significance
+- **Outputs**: Path A, Path B, Control
+
+**7. Tracking Pixel Node**
+- **Purpose**: External analytics integration
+- **Configuration**:
+  - Pixel URL configuration
+  - Data parameter mapping
+  - Authentication tokens
+  - Event tracking
+- **Flow**: Transparent pass-through
+
+**8. Custom Logic Node**
+- **Purpose**: Advanced conditional logic
+- **Configuration**:
+  - JavaScript code execution
+  - API integrations
+  - Database lookups
+  - Custom variables
+- **Outputs**: Dynamic based on logic
+
+### Flow Configuration Process
+
+**Step 1: Flow Creation**
+- **Flow Name**: Unique identifier
+- **Description**: Flow purpose description
+- **Entry Point**: Initial node selection
+- **Default Route**: Fallback routing
+
+**Step 2: Node Placement**
+- **Drag Nodes**: From palette to canvas
+- **Position Nodes**: Arrange logical flow
+- **Configure Properties**: Set node-specific options
+- **Add Connections**: Link nodes together
+
+**Step 3: Connection Management**
+- **Visual Connections**: Drag between node ports
+- **Connection Labels**: Descriptive path names
+- **Condition Setting**: Path activation rules
+- **Priority Orders**: Multiple path priorities
+
+**Step 4: Testing and Validation**
+- **Flow Simulation**: Test call paths
+- **Logic Validation**: Verify routing rules
+- **Audio Testing**: Verify message playback
+- **End-to-End Testing**: Complete flow testing
+
+### Flow Execution Engine
+
+**Runtime Processing:**
+- **Node Execution**: Sequential node processing
+- **State Management**: Call state persistence
+- **Variable Storage**: Dynamic data storage
+- **Error Handling**: Graceful failure management
+
+**Integration Points:**
+- **Twilio Integration**: TwiML generation
+- **Database Logging**: Call path tracking
+- **Analytics**: Performance metrics
+- **External APIs**: Third-party integrations
+
+### Flow Analytics
+- **Path Analytics**: Most/least used paths
+- **Conversion Tracking**: Goal completion rates
+- **Performance Metrics**: Response times per node
+- **A/B Test Results**: Split testing outcomes
+
+---
+
+## RTB Management
+
+### Location: `/rtb-management`
+
+### RTB System Overview
+
+The Real-Time Bidding system enables auction-based call distribution where multiple buyers bid in real-time for incoming calls.
+
+### RTB Target Management
+
+**RTB Target List View:**
+- **Target Name**: Buyer/bidder identifier
+- **Company**: Organization name
+- **Endpoint URL**: Bidding API endpoint
+- **Status**: Active, Inactive, Testing
+- **Response Time**: Average bid response time
+- **Success Rate**: Successful bid percentage
+- **Win Rate**: Auction win percentage
+- **Total Bids**: Historical bid count
+
+### RTB Target Configuration
+
+**Step 1: Basic Information**
+- **Target Name**: Required identifier
+- **Company Name**: Organization
+- **Contact Email**: Support contact
+- **Phone Number**: Contact information
+
+**Step 2: Endpoint Configuration**
+- **Endpoint URL**: HTTPS bidding endpoint
+- **HTTP Method**: POST, GET, PUT support
+- **Content Type**: JSON, XML, Form data
+- **Authentication**: API keys, tokens, headers
+- **Timeout**: Request timeout (default 5000ms)
+
+**Step 3: Request Template**
+- **Request Body**: JSON template with variables
+- **Variable Substitution**: Dynamic data insertion
+- **Custom Headers**: Authentication and metadata
+- **Parameter Mapping**: URL parameter configuration
+
+**Example Request Template:**
+```json
+{
+  "requestId": "{requestId}",
+  "campaignId": "{campaignId}",
+  "callerId": "{callerId}",
+  "callStartTime": "{callStartTime}",
+  "geoLocation": {
+    "state": "{callerState}",
+    "zip": "{callerZip}"
+  },
+  "bidParams": {
+    "minBid": "{minBid}",
+    "maxBid": "{maxBid}",
+    "currency": "USD"
+  }
+}
+```
+
+**Step 4: Response Parsing**
+- **Bid Amount Path**: JSONPath to bid amount
+- **Destination Path**: JSONPath to destination number
+- **Acceptance Path**: JSONPath to acceptance flag
+- **Currency Path**: JSONPath to currency code
+
+**Example Response Parsing:**
+```
+Bid Amount: $.bidAmount or $.data.bid.amount
+Destination: $.destinationNumber or $.routing.phone
+Acceptance: $.accepted or $.data.accepted
+Currency: $.currency or $.bid.currency
+```
+
+**Step 5: Capacity Management**
+- **Max Concurrent**: Simultaneous call limit
+- **Daily Cap**: Maximum daily calls
+- **Hourly Limit**: Calls per hour limit
+- **Bid Range**: Minimum/maximum bid amounts
+
+### RTB Campaign Assignment
+
+**Campaign-Target Linking:**
+- **Direct Assignment**: Assign targets to campaigns
+- **Priority Ordering**: Target bidding priority
+- **Capacity Sharing**: Cross-campaign limits
+- **Performance Tracking**: Campaign-specific metrics
+
+### RTB Auction Process
+
+**Auction Flow:**
+1. **Incoming Call**: Twilio webhook triggers auction
+2. **Campaign Lookup**: Identify RTB-enabled campaign
+3. **Target Selection**: Get assigned RTB targets
+4. **Parallel Bidding**: Send requests to all targets
+5. **Response Collection**: Gather responses within timeout
+6. **Bid Validation**: Verify amounts and acceptance
+7. **Winner Selection**: Highest valid bid wins
+8. **Call Routing**: Route to winning destination
+9. **Analytics Logging**: Record auction results
+
+**Auction Timeout Handling:**
+- **Default Timeout**: 5000ms per bidder
+- **Partial Results**: Accept available bids
+- **Fallback Routing**: Default routing if no bids
+- **Error Logging**: Track timeout and errors
+
+### RTB Analytics Dashboard
+
+**Auction Metrics:**
+- **Total Auctions**: Count of bid requests
+- **Success Rate**: Percentage with valid bids
+- **Average Response Time**: Bidder response speed
+- **Revenue Per Auction**: Average winning bid
+
+**Bidder Performance:**
+- **Individual Metrics**: Per-target statistics
+- **Response Times**: Speed analysis
+- **Win Rates**: Success percentages
+- **Bid Amounts**: Bidding patterns
+
+**Detailed Auction View:**
+```
+Auction Details:
+- Request ID: pool_16_CA207902
+- Campaign: Health Campaign
+- Targets Pinged: 33
+- Successful Bids: 0
+- Failed Bids: 33
+- Average Response Time: 1367ms
+- Winner: No winner
+- Fallback Route: Default buyer
+
+Individual Bidder Results:
+1. Medi - Naked - RTB T3 (ID: 5)
+   - Bid: $0.00 USD
+   - Response Time: 459ms (Fast)
+   - Status: Success
+   - Rejection: Final capacity check (Code: 1006)
+
+2. Medi - RTB - Medi - Tier 1 (ID: 6)
+   - Bid: $0.00 USD
+   - Response Time: 644ms (Medium)
+   - Status: Success
+   - Rejection: Final capacity check (Code: 1006)
+
+[... 31 more bidders with various rejection reasons ...]
+```
+
+**Rejection Reason Analysis:**
+- **Code 1002**: Daily cap exceeded
+- **Code 1003**: Geographic restriction
+- **Code 1004**: Time-based filter
+- **Code 1005**: Quality score too low
+- **Code 1006**: Final capacity check
+- **Code 1007**: Budget limit reached
+- **Code 1008**: Duplicate caller detected
+- **Code 1009**: Invalid caller state
+- **Code 1010**: Campaign paused
+
+---
+
+## Enhanced Reporting
+
+### Location: `/enhanced-reporting`
+
+### Reporting Dashboard Overview
+
+Enhanced Reporting provides comprehensive analytics for all call center operations with detailed drill-down capabilities.
+
+### Main Reporting Views
+
+**1. Call Activity Table**
+- **Real-time Data**: Live call information
+- **Filterable Columns**: All call attributes
+- **Expandable Rows**: Detailed call information
+- **Export Options**: CSV, PDF export capabilities
+
+**Call Table Columns:**
+- **Call ID**: Unique call identifier
+- **Campaign**: Associated campaign name
+- **Caller**: Phone number and location
+- **Destination**: Routed phone number
+- **Duration**: Call length in seconds
+- **Status**: Call completion status
+- **Revenue**: Associated revenue
+- **Timestamp**: Call start time
+
+**2. Advanced Filtering**
+- **Date Range**: Custom date selection
+- **Campaign Filter**: Specific campaign selection
+- **Status Filter**: Call status filtering
+- **Buyer Filter**: Destination buyer filtering
+- **Location Filter**: Geographic filtering
+- **Revenue Range**: Financial filtering
+
+**3. Call Detail Expansion**
+
+When expanding a call row, users see comprehensive tabs:
+
+**Overview Tab:**
+- **Call Information**: Basic call details
+- **Campaign Details**: Associated campaign data
+- **Routing Information**: How call was routed
+- **Financial Data**: Revenue and cost information
+- **Geographic Data**: Caller location details
+
+**RTB Analytics Tab** (New Feature):
+This tab shows detailed RTB auction analytics with:
+
+**Auction Header:**
+- **Request ID**: Unique auction identifier
+- **Campaign Information**: Related campaign details
+- **Timing Information**: Auction duration and timing
+
+**Individual Bidder Results Table:**
+```
+Bidder | Bid Amount | Response Time | Destination | Status & Rejection Details | Winner
+-------|------------|---------------|-------------|---------------------------|--------
+Medi - Naked - RTB T3 | $0.00 USD | 459ms (Fast) | External Route | ✓ success - Final capacity check (Code: 1006) | #1
+Medi - RTB - Medi - Tier 1 | $0.00 USD | 644ms (Medium) | External Route | ✓ success - Final capacity check (Code: 1006) | #2
+Health Direct - Tier 1 | $0.00 USD | 825ms (Slow) | External Route | ✓ success - Daily cap exceeded (Code: 1002) | #3
+[... 30 more bidders with various results ...]
+```
+
+**Auction Metrics Grid:**
+
+*Timing Section:*
+- **Call Start**: Timestamp of call initiation
+- **Total Duration**: Complete auction time (3970ms)
+- **Average Response**: Mean bidder response time (1367ms)
+
+*Bid Statistics:*
+- **Targets Pinged**: Total bidders contacted (33)
+- **Successful Bids**: Valid responses received (0)
+- **Failed Bids**: Rejected or failed responses (33)
+
+*Auction Result:*
+- **Winning Bid**: Highest accepted bid ($0.00)
+- **Winner**: Winning bidder (No winner)
+- **Destination**: Final routing destination (Not available)
+
+**Recordings Tab:**
+- **Audio Playback**: Integrated audio player
+- **Transcription**: Automatic speech-to-text
+- **Download Options**: Audio file downloads
+- **Quality Metrics**: Audio quality indicators
+
+**Technical Details Tab:**
+- **Call Flow Path**: Routing decisions made
+- **System Logs**: Technical call information
+- **API Calls**: External integrations triggered
+- **Performance Metrics**: Response times and latency
+
+### Reporting Analytics
+
+**Performance Metrics:**
+- **Success Rates**: Call routing success percentages
+- **Response Times**: Average routing speeds
+- **Conversion Rates**: Call-to-outcome ratios
+- **Revenue Analytics**: Financial performance tracking
+
+**Trend Analysis:**
+- **Hourly Patterns**: Call volume by hour
+- **Daily Trends**: Performance over days
+- **Campaign Comparison**: Cross-campaign analytics
+- **Buyer Performance**: Individual buyer metrics
+
+### Custom Report Generation
+
+**Report Builder:**
+- **Data Selection**: Choose metrics and dimensions
+- **Filter Configuration**: Set reporting criteria
+- **Visualization Options**: Charts and graphs
+- **Scheduling**: Automated report generation
+- **Export Formats**: PDF, CSV, Excel support
 
 ---
 
 ## Dynamic Number Insertion (DNI)
 
-### DNI Overview
+### Location: `/dni`
 
-Dynamic Number Insertion allows websites to display different phone numbers based on traffic source, enabling precise campaign attribution and tracking.
+### DNI System Overview
+
+Dynamic Number Insertion enables websites to display different tracking numbers based on traffic source, providing precise campaign attribution and ROI tracking.
 
 ### DNI Components
 
-**1. Tracking Tags**
-- Created for each campaign or traffic source
-- Generate unique JavaScript code
-- Track visitor sessions and attribution
+**1. Tracking Tags Management**
 
-**2. JavaScript SDK**
-- Lightweight client-side tracking
-- Automatic phone number replacement
-- Session management and persistence
+**Tag Creation Process:**
+- **Tag Name**: Unique identifier for tracking
+- **Campaign Association**: Link to specific campaigns
+- **JavaScript Generation**: Automatic SDK code creation
+- **Attribution Rules**: Source tracking configuration
 
-**3. Attribution Tracking**
-- UTM parameter capture
-- Referrer tracking
-- Session-based attribution
+**2. JavaScript SDK Integration**
 
-### DNI Implementation
-
-**Step 1: Create Tracking Tag**
+**Generated Tracking Code:**
 ```javascript
-// Generated tracking code
+<!-- CallCenter Pro DNI Tracking -->
 <script>
 (function() {
-  const tagCode = 'campaign_landing_page';
+  const tagCode = 'campaign_landing_page_v2';
   const apiUrl = 'https://your-domain.com/api/dni/track';
+  
+  // Generate or retrieve session ID
+  function generateSessionId() {
+    let sessionId = localStorage.getItem('dni_session_id');
+    if (!sessionId) {
+      sessionId = 'dni_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('dni_session_id', sessionId);
+    }
+    return sessionId;
+  }
+  
+  // Capture UTM parameters
+  function captureUTMParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return {
+      utm_source: urlParams.get('utm_source'),
+      utm_medium: urlParams.get('utm_medium'),
+      utm_campaign: urlParams.get('utm_campaign'),
+      utm_content: urlParams.get('utm_content'),
+      utm_term: urlParams.get('utm_term')
+    };
+  }
   
   // Track visitor and get phone number
   fetch(apiUrl, {
@@ -300,1681 +834,2149 @@ Dynamic Number Insertion allows websites to display different phone numbers base
       sessionId: generateSessionId(),
       referrer: document.referrer,
       userAgent: navigator.userAgent,
-      // UTM parameters automatically captured
+      url: window.location.href,
+      timestamp: new Date().toISOString(),
+      utmParams: captureUTMParams()
     })
   })
   .then(response => response.json())
   .then(data => {
-    if (data.success) {
+    if (data.success && data.phoneNumber) {
       // Replace phone numbers on page
-      document.querySelectorAll('.phone-number').forEach(el => {
+      document.querySelectorAll('.phone-number, [data-dni="phone"]').forEach(el => {
         el.textContent = data.formattedNumber;
+        el.href = 'tel:' + data.phoneNumber;
       });
+      
+      // Store for form submissions
+      window.dniPhoneNumber = data.phoneNumber;
     }
+  })
+  .catch(error => {
+    console.error('DNI tracking error:', error);
   });
 })();
 </script>
 ```
 
-**Step 2: HTML Integration**
+**3. HTML Implementation Examples**
+
+**Basic Phone Number Replacement:**
 ```html
-<!-- Phone number placeholder -->
+<!-- Static placeholder replaced dynamically -->
 <span class="phone-number">+1-800-DEFAULT</span>
 
-<!-- Or direct integration -->
-<div id="dynamic-phone">Loading...</div>
+<!-- Data attribute targeting -->
+<a href="tel:+18005551234" data-dni="phone">Call Now: +1-800-555-1234</a>
+
+<!-- Multiple locations -->
+<div class="header-phone phone-number">+1-800-DEFAULT</div>
+<div class="footer-contact phone-number">+1-800-DEFAULT</div>
 ```
 
-**Step 3: Attribution Tracking**
-- Automatic UTM parameter capture
-- Session persistence across page views
-- Call attribution to original source
+**Advanced Integration:**
+```html
+<!-- Form integration -->
+<form id="lead-form">
+  <input type="hidden" id="tracking-phone" name="phone_number" value="">
+  <input type="text" name="customer_name" placeholder="Your Name">
+  <input type="email" name="customer_email" placeholder="Your Email">
+  <button type="submit">Call Me Back</button>
+</form>
 
-### DNI Analytics
+<script>
+// Auto-populate form with tracking number
+if (window.dniPhoneNumber) {
+  document.getElementById('tracking-phone').value = window.dniPhoneNumber;
+}
+</script>
+```
 
-- **Source Attribution**: Track calls by traffic source
-- **Campaign Performance**: Measure conversion rates
-- **Session Analysis**: Understand visitor behavior
-- **ROI Calculation**: Cost per call and conversion
+### DNI Analytics and Tracking
+
+**Session Tracking:**
+- **Session Persistence**: Cross-page visit tracking
+- **Attribution Window**: Configurable attribution timeframe
+- **Source Analysis**: Traffic source breakdown
+- **Conversion Tracking**: Call-to-conversion attribution
+
+**UTM Parameter Integration:**
+- **Automatic Capture**: All UTM parameters saved
+- **Campaign Attribution**: Link calls to specific campaigns
+- **Source Tracking**: Detailed traffic source analysis
+- **ROI Calculation**: Revenue attribution by source
+
+**Performance Metrics:**
+- **Number Utilization**: Usage rates per tracking number
+- **Source Performance**: Conversion rates by traffic source
+- **Geographic Analysis**: Performance by location
+- **Time-based Analysis**: Performance by time periods
+
+### DNI Configuration Options
+
+**Number Pool Integration:**
+- **Dynamic Assignment**: Numbers assigned from pools
+- **Exclusive Usage**: Prevent number conflicts
+- **Automatic Rotation**: Fresh numbers for campaigns
+- **Geographic Matching**: Local numbers for regions
+
+**Attribution Rules:**
+- **First Touch**: Credit first interaction
+- **Last Touch**: Credit final interaction
+- **Linear**: Distribute credit evenly
+- **Time Decay**: Weighted by recency
+
+**Session Management:**
+- **Session Duration**: Configurable timeout
+- **Cross-domain Tracking**: Multi-site attribution
+- **Cookie Management**: GDPR-compliant tracking
+- **Local Storage**: Client-side persistence
 
 ---
 
-## Real-Time Bidding (RTB) System
+## Integrations
 
-### RTB Overview
+### Location: `/integrations`
 
-The Real-Time Bidding system enables auction-based call distribution, allowing multiple buyers to compete for incoming calls in real-time. The system features comprehensive analytics with target name resolution for better tracking and reporting.
+### Integration Dashboard Overview
 
-### Recent Improvements
+The Integrations section provides connections to external systems, APIs, and services that enhance CallCenter Pro functionality.
 
-**July 15, 2025:**
-- **Enhanced Analytics**: RTB analytics now display target names instead of generic IDs
-- **Improved User Experience**: Bid request details show meaningful target names like "Premium Bid" instead of "Target 18"
-- **Better Tracking**: Winning target display uses actual target names for clearer reporting
-- **Enhanced Visibility**: Individual bid responses show target names for better understanding
+### Available Integrations
 
-### RTB Components
+**1. URL Parameters Integration**
 
-**1. RTB Targets**
-- External bidding endpoints
-- Authentication and security
-- Bid request/response handling
-- Response parsing configuration
+**Purpose**: Capture and track URL parameters for attribution analysis
 
-**2. RTB Routers**
-- Auction orchestration
-- Bidder management
-- Timeout handling
-- Winner selection
+**Configuration:**
+- **Parameter Name**: URL parameter to track (e.g., 'utm_source')
+- **Display Name**: Human-readable name
+- **Tracking Scope**: Campaign-specific or global
+- **Data Type**: String, Number, Boolean
+- **Default Value**: Fallback if parameter missing
 
-**3. Bid Requests**
-- Standardized bid request format
-- Template variable substitution
-- Custom field support
-- Multiple format support
+**Common Parameters:**
+```
+UTM Parameters:
+- utm_source: Traffic source identification
+- utm_medium: Marketing medium (cpc, email, social)
+- utm_campaign: Specific campaign name
+- utm_content: Content variation identifier
+- utm_term: Keyword or search term
 
-**4. Bid Responses**
-- Flexible response parsing
-- JSONPath field extraction
-- Validation and verification
-- Winner determination
-
-### RTB Configuration
-
-**Creating RTB Targets:**
-
-1. **Basic Information**
-   - Target name and company details
-   - Contact information
-   - Endpoint URL and authentication
-
-2. **Request Configuration**
-   - HTTP method and content type
-   - Request body template with variables
-   - Authentication headers
-   - Timeout settings
-
-3. **Response Parsing**
-   - JSONPath field mapping
-   - Bid amount extraction
-   - Destination number parsing
-   - Acceptance verification
-
-4. **Capacity Management**
-   - Concurrent call limits
-   - Daily/hourly/monthly caps
-   - Bid amount ranges
-   - Currency settings
-
-### RTB Request Template Variables
-
-The system supports dynamic variable substitution in request templates:
-
-```json
-{
-  "requestId": "{requestId}",
-  "campaignId": "{campaignId}",
-  "callerId": "{callerId}",
-  "callStartTime": "{callStartTime}",
-  "bidParams": {
-    "minBid": "{minBid}",
-    "maxBid": "{maxBid}",
-    "currency": "{currency}"
-  },
-  "location": {
-    "state": "{callerState}",
-    "zip": "{callerZip}"
-  },
-  "timestamp": "{timestamp}"
-}
+Custom Parameters:
+- ref: Referral code
+- affiliate: Affiliate identifier
+- promo: Promotional code
+- landing: Landing page variation
 ```
 
-**Available Variables:**
-- `{requestId}` - Unique request identifier
-- `{campaignId}` - Campaign RTB ID
-- `{callerId}` - Caller's phone number
-- `{callStartTime}` - Call start timestamp
-- `{minBid}` - Minimum bid amount
-- `{maxBid}` - Maximum bid amount
-- `{currency}` - Currency code
-- `{callerState}` - Caller's state
-- `{callerZip}` - Caller's ZIP code
-- `{timestamp}` - Current timestamp
-- `{isoTimestamp}` - ISO formatted timestamp
+**Usage in Analytics:**
+- **Call Attribution**: Link calls to parameter values
+- **Performance Analysis**: Compare performance by parameter
+- **ROI Tracking**: Calculate returns by traffic source
+- **Campaign Optimization**: Identify best-performing sources
 
-### RTB Response Parsing
+**2. Webhook Integrations**
 
-The system supports multiple response formats through configurable JSONPath expressions:
+**Outbound Webhooks:**
+- **Call Events**: Real-time call status updates
+- **Campaign Events**: Campaign lifecycle notifications
+- **RTB Events**: Auction results and bidding data
+- **System Events**: Platform status and alerts
 
-**Standard Response Format:**
+**Webhook Configuration:**
+- **Endpoint URL**: Target system URL
+- **Authentication**: API keys, tokens, signatures
+- **Event Selection**: Choose events to send
+- **Retry Logic**: Failed delivery handling
+- **Payload Format**: JSON structure customization
+
+**Example Webhook Payload:**
 ```json
 {
-  "bidAmount": 8.75,
-  "destinationNumber": "+1800555BUYER",
-  "accepted": true,
-  "currency": "USD",
-  "duration": 60
-}
-```
-
-**Nested Response Format:**
-```json
-{
-  "data": {
-    "bid": {
-      "amount": 8.75,
-      "currency": "USD"
-    },
-    "routing": {
-      "phone": "+1800555BUYER",
-      "accepted": true
-    },
-    "requirements": {
-      "duration": 60
+  "event": "call_completed",
+  "timestamp": "2025-08-04T12:30:45Z",
+  "call": {
+    "id": 140,
+    "campaignId": "928a699e-e241-46ab-bc54-9f6779d38b32",
+    "fromNumber": "+12129200892",
+    "toNumber": "+18562813889",
+    "duration": 125,
+    "status": "completed",
+    "revenue": "15.50",
+    "attribution": {
+      "utm_source": "google",
+      "utm_campaign": "health_leads_2025"
     }
   }
 }
 ```
 
-**Response Field Mapping:**
-- `bidAmountPath`: Extract bid amount (e.g., "bidAmount" or "data.bid.amount")
-- `destinationNumberPath`: Extract destination phone (e.g., "destinationNumber" or "data.routing.phone")
-- `acceptancePath`: Check bid acceptance (e.g., "accepted" or "data.routing.accepted")
-- `currencyPath`: Extract currency (e.g., "currency" or "data.bid.currency")
-- `durationPath`: Extract duration (e.g., "duration" or "data.requirements.duration")
+**3. CRM Integrations**
 
-### RTB Auction Process
+**Supported CRMs:**
+- **Salesforce**: Lead and opportunity management
+- **HubSpot**: Contact and deal tracking
+- **Pipedrive**: Sales pipeline integration
+- **Custom APIs**: Generic webhook connections
 
-1. **Incoming Call**: System receives call webhook
-2. **Campaign Lookup**: Identify RTB-enabled campaign
-3. **Bidder Selection**: Find assigned RTB targets
-4. **Bid Requests**: Send parallel requests to all bidders
-5. **Response Collection**: Gather responses within timeout
-6. **Bid Validation**: Verify bid amounts and acceptance
-7. **Winner Selection**: Choose highest valid bid
-8. **Call Routing**: Route call to winning bidder
-9. **Tracking**: Log auction results and metrics
+**Integration Features:**
+- **Lead Creation**: Automatic lead generation from calls
+- **Contact Updates**: Sync call data with contacts
+- **Activity Logging**: Record call activities
+- **Deal Attribution**: Link calls to opportunities
 
-### RTB Analytics
+**4. Analytics Integrations**
 
-- **Auction Performance**: Win rates and response times
-- **Bidder Analysis**: Performance metrics per target
-- **Revenue Tracking**: Winning bid amounts and trends
-- **System Metrics**: Timeout rates and errors
+**Google Analytics:**
+- **Event Tracking**: Call events in GA
+- **Goal Configuration**: Call completion goals
+- **Attribution Models**: Multi-touch attribution
+- **Custom Dimensions**: Call metadata in GA
+
+**Facebook Pixel:**
+- **Conversion Tracking**: Call-based conversions
+- **Audience Building**: Retargeting based on calls
+- **Event Optimization**: Optimize for call events
+- **CAPI Integration**: Server-side event tracking
+
+### Integration Management
+
+**Setup Process:**
+1. **Select Integration**: Choose from available options
+2. **Authentication**: Configure API credentials
+3. **Event Selection**: Choose events to sync
+4. **Field Mapping**: Map data fields between systems
+5. **Testing**: Verify integration functionality
+6. **Monitoring**: Track integration performance
+
+**Integration Status Monitoring:**
+- **Connection Health**: Real-time status checking
+- **Event Delivery**: Success/failure tracking
+- **Error Logging**: Detailed error information
+- **Performance Metrics**: Response times and throughput
 
 ---
 
-## Advanced Call Flow System
+## Phone Number Management
 
-### Overview
+### Location: `/phone-numbers`
 
-The Advanced Call Flow System is a comprehensive visual flow builder that enables sophisticated call routing with enterprise-level features. Located at `/call-flows`, this system provides a professional interface for creating complex Interactive Voice Response (IVR) scenarios, business hours management, traffic splitting, and comprehensive tracking integration.
+### Phone Number Overview
 
-### Access and Usage
+Phone Number Management provides centralized control over all telephony assets, including Twilio integration, webhook configuration, and usage tracking.
 
-**Navigation:** Access through the sidebar menu "Call Flows" or direct URL `/call-flows`
+### Number List View
 
-**Interface Features:**
-- Visual drag-and-drop flow builder with professional grid layout
-- Real-time connection editing with inline label modification
-- Comprehensive node configuration dialogs
-- Zoom and pan controls for large flow management
-- Professional dark theme matching enterprise standards
-- Export/import functionality for flow templates
+**Table Columns:**
+- **Phone Number**: Formatted number display
+- **Country**: Geographic region/country code
+- **Type**: Local, Toll-Free, Mobile
+- **Status**: Active, Inactive, Suspended
+- **Campaign**: Currently assigned campaign
+- **Pool**: Associated number pool
+- **Webhook URL**: Current webhook configuration
+- **Usage**: Call volume and usage statistics
 
-### Key System Capabilities
+### Number Management Operations
 
-**✓ Visual Flow Builder**
-- Professional drag-and-drop interface with snap-to-grid functionality
-- 11 specialized node types for different call routing scenarios
-- Real-time flow execution with TwiML generation
-- Session management for multi-step interactions
-- Connection labels with inline editing capabilities
+**1. Number Provisioning**
 
-**✓ Live IVR Integration**
-- Complete webhook-to-TwiML pipeline for real-time call processing
-- Live call flow execution with Twilio voice integration
-- Session persistence across IVR interactions
-- Response processing for DTMF input and speech recognition
+**Twilio Integration:**
+- **Search Available**: Find numbers by area code/country
+- **Purchase Numbers**: Automatic Twilio provisioning
+- **Number Types**: Local, toll-free, mobile options
+- **Geographic Filtering**: Region-specific searches
 
-**✓ Enterprise-Level Features**
-- Enhanced business hours with holiday support and timezone awareness
-- Advanced traffic splitting with 4 distribution strategies
-- Comprehensive tracking integration with pixel firing
-- Production-ready advanced routing capabilities matching platforms like Ringba
+**Bulk Operations:**
+- **Bulk Purchase**: Multiple number acquisition
+- **CSV Import**: Import existing number lists
+- **Batch Configuration**: Mass webhook setup
+- **Area Code Allocation**: Geographic number planning
 
-### Complete Node Reference
+**2. Webhook Configuration**
 
-#### 1. Start Node
-**Purpose:** Entry point for all call flows
-**Icon:** Play button (green circle)
-**Configuration:** No configuration required - automatically created
-**Functionality:**
-- Initializes call session with unique UUID
-- Triggers analytics events for call flow start
-- Provides entry point for webhook processing
+**Automatic Setup:**
+- **Campaign Assignment**: Auto-configure webhooks
+- **Pool Assignment**: Pool-based webhook management
+- **URL Generation**: Dynamic webhook URL creation
+- **Authentication**: Secure webhook endpoints
 
-#### 2. IVR Menu Node
-**Purpose:** Interactive voice response with multiple menu options
-**Icon:** Menu bars
-**Configuration Options:**
-- **Basic Settings:**
-  - Welcome Message: Custom greeting text (e.g., "Press 1 for sales, 2 for support")
-  - Timeout: Wait time in seconds (default: 10)
-  - Max Retries: Number of retry attempts (default: 3)
-- **Menu Options:**
-  - Key: DTMF digit (1-9, 0, *, #)
-  - Label: Description of option
-  - Action: Route to specific destination
-- **Advanced Settings:**
-  - Invalid input handling
-  - Timeout behavior configuration
-  - Voice settings and language options
+**Manual Configuration:**
+- **Custom Webhooks**: Direct URL specification
+- **Authentication Tokens**: Security configuration
+- **Fallback URLs**: Backup webhook endpoints
+- **Status Callbacks**: Call status tracking
 
-#### 3. Gather Input Node
-**Purpose:** Collect caller information (digits or speech)
-**Icon:** Microphone
-**Configuration Options:**
-- **Input Settings:**
-  - Input Type: Digits, Speech, or Both
-  - Expected Length: Minimum/maximum characters
-  - Validation Pattern: Regular expression for validation
-- **Prompts:**
-  - Initial Prompt: "Please enter your phone number"
-  - Retry Prompt: "Invalid input, please try again"
-  - Error Prompt: "Maximum attempts reached"
-- **Advanced Settings:**
-  - Timeout configuration
-  - Speech recognition settings
-  - Input termination characters
+**3. Number Assignment and Routing**
 
-#### 4. Play Audio Node
-**Purpose:** Text-to-speech or audio URL playback
-**Icon:** Speaker
-**Configuration Options:**
-- **Content Settings:**
-  - Message Type: Text-to-Speech or Audio URL
-  - Text Content: Custom message text
-  - Audio URL: Direct link to audio file
-- **Voice Settings:**
-  - Voice Selection: Choose from available TTS voices
-  - Speed Control: Playback speed adjustment
-  - Language: Voice language selection
-- **Advanced Options:**
-  - Loop settings and repeat options
-  - Dynamic content with session variables
+**Assignment Types:**
+- **Direct Assignment**: Single campaign assignment
+- **Pool Assignment**: Dynamic pool-based routing
+- **Shared Assignment**: Multi-campaign usage
+- **Reserved Numbers**: Dedicated special numbers
 
-#### 5. Business Hours Node
-**Purpose:** Route calls based on business hours and schedules
-**Icon:** Clock
-**Configuration Options:**
-- **Schedule Settings:**
-  - Timezone: Geographic timezone (e.g., America/New_York)
-  - Business Hours: Monday-Sunday time ranges
-  - Multiple Time Ranges: Support for lunch breaks
-- **Holiday Management:**
-  - Holiday Dates: Specific dates to exclude
-  - Holiday Names: Custom holiday descriptions
-  - Holiday Behavior: Override or follow regular schedule
-- **Routing Options:**
-  - Open Hours Action: Route destination when open
-  - Closed Hours Action: Route destination when closed
-  - Holiday Action: Special holiday routing
+**Routing Configuration:**
+- **Primary Destination**: Main routing target
+- **Fallback Routing**: Backup destinations
+- **Time-based Routing**: Schedule-based changes
+- **Geographic Routing**: Location-based routing
 
-#### 6. Advanced Router Node
-**Purpose:** Intelligent call routing with multiple strategies
-**Icon:** Network diagram
-**Configuration Options:**
-- **Routing Strategy:**
-  - Priority-based: Route by buyer priority levels
-  - Round-robin: Equal distribution across buyers
-  - Capacity-based: Route based on available capacity
-  - RTB Integration: Auction-based routing
-- **Buyer Selection:**
-  - Available Buyers: List of configured buyers
-  - Priority Levels: Custom priority assignments
-  - Capacity Limits: Maximum concurrent calls
-- **Fallback Settings:**
-  - Backup routing when primary fails
-  - Overflow handling for capacity limits
+### Number Analytics
 
-#### 7. Traffic Splitter Node
-**Purpose:** Distribute calls across multiple destinations
-**Icon:** Branching arrows
-**Configuration Options:**
-- **Distribution Strategy:**
-  - Percentage: Simple percentage-based splits (e.g., 60/40)
-  - Weighted: Performance-based routing with weights
-  - Time-based: Hour ranges and day-of-week filters
-  - Round Robin: Equal distribution across targets
-- **Split Configuration:**
-  - Destination Names: Custom names for each split
-  - Weight/Percentage: Distribution ratios
-  - Target Nodes: Destination node connections
-- **Advanced Features:**
-  - Failover support when destinations unavailable
-  - Analytics tracking for performance monitoring
+**Usage Metrics:**
+- **Call Volume**: Calls per number over time
+- **Duration Statistics**: Average call lengths
+- **Success Rates**: Connection success rates
+- **Revenue Attribution**: Revenue per number
 
-#### 8. Tracking Pixel Node
-**Purpose:** Fire tracking pixels and analytics events
-**Icon:** Target/bullseye
-**Configuration Options:**
-- **Pixel Configuration:**
-  - Pixel URLs: Multiple tracking pixel endpoints
-  - HTTP Method: GET or POST requests
-  - Template Variables: {campaign_id}, {session_id}, {timestamp}
-- **Analytics Events:**
-  - Event Types: Custom event names
-  - Parameter Mapping: Custom parameter assignments
-  - Conversion Tracking: Revenue and conversion data
-- **Advanced Settings:**
-  - HTTP timeout configuration
-  - Error handling and retry logic
+**Performance Analysis:**
+- **Peak Usage**: High-traffic time identification
+- **Geographic Performance**: Regional performance
+- **Campaign Attribution**: Performance by campaign
+- **Cost Analysis**: Cost per call and revenue
 
-#### 9. Action Node
-**Purpose:** Execute specific call actions
-**Icon:** Lightning bolt
-**Configuration Options:**
-- **Action Types:**
-  - Route to Buyer: Direct routing to specific buyer
-  - Hangup: End call with optional message
-  - Transfer Call: Transfer to external number
-  - Send to Voicemail: Route to voicemail system
-- **Route to Buyer Settings:**
-  - Destination: Buyer, External Number, or Queue
-  - Buyer ID: Specific buyer selection
-  - External Number: Direct phone number routing
-- **Transfer Settings:**
-  - Transfer Number: Destination phone number
-  - Transfer Type: Warm or cold transfer
-- **Voicemail Settings:**
-  - Voicemail Message: Custom greeting
-  - Recording Settings: Maximum length and format
+**Health Monitoring:**
+- **Connection Quality**: Call quality metrics
+- **Webhook Status**: Webhook delivery success
+- **Error Rates**: Failed call percentages
+- **Response Times**: System response performance
 
-#### 10. Condition Node
-**Purpose:** Conditional routing based on call criteria
-**Icon:** Diamond shape
-**Configuration Options:**
-- **Condition Types:**
-  - Caller ID: Route based on calling number
-  - Time-based: Route based on time of day
-  - Custom Rule: JavaScript-based custom logic
-- **Caller ID Settings:**
-  - Caller ID Rule: Pattern matching (e.g., "starts with +1800")
-  - Action: Route based on match or no match
-- **Time-based Settings:**
-  - Start Time: Beginning of time range
-  - End Time: End of time range
-  - Days of Week: Specific days to apply rule
-- **Custom Rule Settings:**
-  - JavaScript Code: Custom condition logic
-  - Session Variables: Access to call session data
+### Twilio Integration Details
 
-#### 11. End Node
-**Purpose:** Terminate call flows
-**Icon:** Stop sign (red circle)
-**Configuration Options:**
-- **End Types:**
-  - Hangup: Simple call termination
-  - Play Message & Hangup: Play message then end call
-- **Message Settings:**
-  - End Message: Custom goodbye message
-  - Voice Settings: TTS voice selection
-  - Message Duration: Playback length
+**API Connection:**
+- **Account Configuration**: Twilio account setup
+- **Authentication**: API key management
+- **Rate Limiting**: API usage optimization
+- **Error Handling**: Failure recovery mechanisms
 
-### Connection Management
+**Webhook Management:**
+- **TwiML Response**: Dynamic call routing
+- **Status Callbacks**: Real-time call updates
+- **Recording Control**: Automatic recording setup
+- **Transcription**: Speech-to-text integration
 
-**Connection Features:**
-- **Visual Connections:** Drag from node handles to create connections
-- **Connection Labels:** Click any connection to edit its label inline
-- **Keyboard Support:** Enter to save, Escape to cancel label editing
-- **Connection Types:** Support for conditional routing (Yes/No, Success/Fail)
-- **Connection Validation:** Prevents invalid connections between incompatible nodes
+**Number Lifecycle:**
+- **Provisioning**: New number acquisition
+- **Configuration**: Webhook and routing setup
+- **Monitoring**: Usage and performance tracking
+- **Retirement**: Number release and cleanup
 
-### Flow Management Interface
+---
 
-**Flow Operations:**
-- **Create Flow:** Build new call flows from scratch
-- **Edit Flow:** Modify existing flows with visual editor
-- **Test Flow:** Real-time testing with live phone calls
-- **Deploy Flow:** Activate flows for campaign assignment
-- **Template Management:** Save and reuse flow templates
+## Settings & Configuration
 
-**Campaign Integration:**
-- **Flow Assignment:** Assign flows to specific campaigns
-- **Flow Priority:** Set flow execution priority over traditional routing
-- **Flow Analytics:** Track flow execution and performance metrics
-- **Flow Debugging:** Real-time execution logging and troubleshooting
+### Location: `/settings`
 
-### Phase 3 Advanced Features
+### Settings Overview
 
-#### Enhanced Business Hours Logic
-```javascript
-// Business hours configuration
-{
-  timezone: 'America/New_York',
-  businessHours: {
-    monday: {
-      enabled: true,
-      timeRanges: [
-        { open: '09:00', close: '12:00' },  // Morning
-        { open: '13:00', close: '17:00' }   // Afternoon
-      ]
-    }
-  },
-  holidays: [
-    { date: '2025-12-25', enabled: true, name: 'Christmas' },
-    { date: '2025-01-01', enabled: true, name: 'New Year' }
-  ]
-}
-```
+The Settings section provides comprehensive platform configuration options for users, campaigns, system integration, and security settings.
 
-#### Advanced Traffic Splitting
-```javascript
-// Weighted distribution example
-{
-  strategy: 'weighted',
-  splits: [
-    { name: 'Premium Route', weight: 3, nodeId: 'premium' },
-    { name: 'Standard Route', weight: 2, nodeId: 'standard' },
-    { name: 'Budget Route', weight: 1, nodeId: 'budget' }
-  ],
-  enableFailover: true,
-  enableAnalytics: true
-}
-```
+### User Profile Settings
 
-#### Comprehensive Tracking Integration
-```javascript
-// Tracking pixel configuration
-{
-  pixelUrl: 'https://analytics.example.com/track',
-  parameters: {
-    campaign_id: '{campaign_id}',
-    caller_number: '{caller_number}',
-    session_id: '{session_id}',
-    flow_id: '{flow_id}',
-    timestamp: '{timestamp}'
-  },
-  customPixels: [
-    {
-      name: 'Conversion Pixel',
-      url: 'https://conversion.example.com/pixel',
-      parameters: { event: 'call_start', value: '1.00' }
-    }
-  ]
-}
-```
+**Account Information:**
+- **Username**: Login identifier (read-only)
+- **Email Address**: Contact email
+- **First Name**: User first name
+- **Last Name**: User last name
+- **Profile Image**: Avatar upload
+- **Time Zone**: Local time zone setting
+- **Language**: Interface language preference
 
-### Flow Configuration Interface
+**Security Settings:**
+- **Password Change**: Current and new password
+- **Two-Factor Authentication**: TOTP setup
+- **API Keys**: Personal API key management
+- **Session Management**: Active session control
+- **Login History**: Recent login tracking
 
-The system provides tabbed configuration interfaces for complex node settings:
+### System Configuration
 
-- **Basic Tab**: Core functionality and primary settings
-- **Advanced Tab**: Complex routing rules and failover options
-- **Analytics Tab**: Tracking configuration and event selection
-- **Validation Tab**: Input validation and error handling
-- **Holidays Tab**: Holiday management and special schedules
+**Twilio Integration:**
+- **Account SID**: Twilio account identifier
+- **Auth Token**: Twilio authentication token
+- **Phone Number**: Default Twilio number
+- **Webhook URL**: Base webhook endpoint
+- **Voice Settings**: Default voice and language
+- **Recording Options**: Global recording settings
 
-### Flow Execution Engine
+**Database Settings:**
+- **Connection Status**: Database health check
+- **Backup Schedule**: Automated backup configuration
+- **Performance Metrics**: Query performance monitoring
+- **Maintenance Windows**: Scheduled maintenance times
 
-The Flow Execution Engine manages call flow state and coordinates between nodes:
+### Campaign Defaults
 
-1. **Session Management**: Tracks call state across multiple interactions
-2. **Node Execution**: Processes each node type with specialized logic
-3. **Response Processing**: Handles user input from gather operations
-4. **TwiML Generation**: Converts flow logic into Twilio-compatible XML
-5. **Analytics Integration**: Tracks execution metrics and performance
+**Default Settings:**
+- **Recording Enabled**: Global recording default
+- **Transcription**: Automatic transcription default
+- **Timeout Values**: Default timeout settings
+- **Retry Attempts**: Failed call retry configuration
+- **Quality Thresholds**: Call quality requirements
 
-### Technical Implementation
+**RTB Configuration:**
+- **Default Timeout**: RTB auction timeout
+- **Minimum Bid**: Global minimum bid amount
+- **Currency**: Default currency setting
+- **Auction Rules**: Default auction behavior
 
-**Core Components:**
-- **CallFlowEditor.tsx**: Visual flow builder with drag-and-drop interface
-- **FlowExecutionEngine**: Server-side flow processing and execution
-- **TwiMLGenerator**: Converts flow nodes to Twilio voice responses
-- **SessionManager**: Maintains state across multi-step interactions
-- **AnalyticsTracker**: Records flow execution metrics and events
+### Notification Settings
 
-**Database Integration:**
-- **call_flows** table: Stores flow definitions and metadata
-- **call_logs** table: Tracks execution history and performance
-- **campaigns** table: Links flows to specific campaigns
-- **analytics_events** table: Detailed interaction tracking
+**Email Notifications:**
+- **Campaign Alerts**: Campaign status changes
+- **System Alerts**: Platform notifications
+- **Performance Reports**: Scheduled reports
+- **Security Alerts**: Security-related notifications
+- **Billing Alerts**: Usage and billing notifications
 
-### Best Practices
+**Webhook Notifications:**
+- **Real-time Events**: Live event streaming
+- **Batch Updates**: Scheduled batch notifications
+- **Error Alerts**: System error notifications
+- **Performance Alerts**: Performance threshold alerts
 
-**Flow Design Guidelines:**
-1. **Start Simple**: Begin with basic flows and add complexity gradually
-2. **Test Thoroughly**: Use real phone numbers to test complete flows
-3. **Plan for Failures**: Include timeout handling and error recovery
-4. **Monitor Performance**: Track execution metrics and user behavior
-5. **Document Flows**: Use clear connection labels and node descriptions
+### Integration Settings
 
-**Node Configuration Tips:**
-- **IVR Menus**: Keep options clear and limited (max 5-6 options)
-- **Timeouts**: Set appropriate timeouts for user response (10-15 seconds)
-- **Error Handling**: Provide clear error messages and retry logic
-- **Voice Quality**: Test TTS messages for clarity and pronunciation
-- **Business Hours**: Account for timezone differences and holidays
+**API Configuration:**
+- **API Rate Limits**: Request throttling settings
+- **Authentication**: API security configuration
+- **Webhook Security**: Signature verification
+- **CORS Settings**: Cross-origin request policies
+
+**Third-party Integrations:**
+- **CRM Settings**: External CRM configuration
+- **Analytics**: Google Analytics integration
+- **Monitoring**: External monitoring setup
+- **Compliance**: GDPR and privacy settings
+
+### Advanced Settings
 
 **Performance Optimization:**
-- **Connection Efficiency**: Minimize complex nested flows
-- **Session Management**: Keep session data lightweight
-- **Tracking Balance**: Track essential metrics without overwhelming system
-- **Failover Planning**: Include backup routes for critical flows
+- **Caching Settings**: System cache configuration
+- **Database Optimization**: Query optimization settings
+- **CDN Configuration**: Content delivery network
+- **Load Balancing**: Traffic distribution settings
 
-### Integration with Campaign System
-
-**Campaign Assignment:**
-1. Navigate to campaign details page
-2. Access "Call Flow" tab in campaign configuration
-3. Select active flow from dropdown menu
-4. Save campaign to activate flow-based routing
-
-**Flow Priority System:**
-- **High Priority**: Call flows take precedence over traditional routing
-- **Fallback Routing**: If no flow assigned, use traditional buyer routing
-- **Hybrid Approach**: Combine flow-based and traditional routing seamlessly
-
-**Real-time Execution:**
-- **Webhook Integration**: Flows execute automatically on incoming calls
-- **Session Continuity**: Maintains state across IVR interactions
-- **Analytics Tracking**: Real-time performance monitoring
-- **Error Recovery**: Automatic fallback to traditional routing on failures
-
-### Analytics and Reporting
-
-**Flow Performance Metrics:**
-- **Execution Count**: Number of times flow has been executed
-- **Completion Rate**: Percentage of flows completed successfully
-- **Average Duration**: Time spent in flow execution
-- **Drop-off Points**: Where users commonly exit flows
-- **Success Rate**: Percentage of flows achieving intended outcome
-
-**Real-time Monitoring:**
-- **Active Sessions**: Currently executing flows
-- **Response Times**: Node execution performance
-- **Error Rates**: Failed executions and timeout occurrences
-- **User Behavior**: Common paths and interaction patterns
-
-### Troubleshooting Guide
-
-**Common Issues:**
-1. **Flow Not Executing**: Check campaign assignment and flow activation
-2. **Node Configuration**: Verify all required fields are completed
-3. **Connection Issues**: Ensure proper node connections and labels
-4. **TwiML Errors**: Check node configurations for invalid parameters
-5. **Session Problems**: Verify session management and state persistence
-
-**Debugging Tools:**
-- **Flow Execution Logs**: Detailed execution traces in system logs
-- **TwiML Preview**: Visual preview of generated TwiML responses
-- **Session Inspector**: Real-time session data monitoring
-- **Analytics Dashboard**: Performance metrics and error tracking
-
-### Security Considerations
-
-**Multi-tenant Isolation:**
-- **Flow Ownership**: Flows are user-scoped with proper access controls
-- **Session Security**: Session data isolated per user account
-- **Configuration Privacy**: Node configurations not shared between users
-- **Audit Trail**: Complete logging of flow modifications and executions
-
-**Data Protection:**
-- **Sensitive Data**: PII handling in gather input nodes
-- **Encryption**: Session data encrypted in transit and at rest
-- **Access Logging**: Complete audit trail of flow access and modifications
-- **Compliance**: GDPR and CCPA compliance for call recording and data collection
-4. **Tracking Integration**: Fires pixels and analytics events
-5. **Error Handling**: Manages failures and fallback scenarios
-
-### TwiML Generation
-
-The system generates production-ready TwiML for various scenarios:
-
-```xml
-<!-- IVR Menu Example -->
-<Response>
-  <Gather input="dtmf" timeout="10" numDigits="1">
-    <Say>Press 1 for Sales, 2 for Support, or 3 for Billing</Say>
-  </Gather>
-  <Redirect>/api/flow/timeout</Redirect>
-</Response>
-
-<!-- Business Hours Example -->
-<Response>
-  <Say>We are currently closed. Please call back during business hours.</Say>
-  <Hangup/>
-</Response>
-
-<!-- Traffic Splitting Example -->
-<Response>
-  <Dial timeout="30">
-    <Number>+1800555PREMIUM</Number>
-  </Dial>
-</Response>
-```
-
-### Analytics and Tracking
-
-The system provides comprehensive analytics for call flow performance:
-
-- **Node Performance**: Execution times and success rates
-- **Split Analytics**: Distribution effectiveness and performance
-- **Pixel Tracking**: Conversion events and attribution
-- **Session Analytics**: Flow completion rates and drop-off points
-- **Business Hours Analytics**: Call volume patterns and peak times
-
-### Integration with Campaign System
-
-Call flows integrate seamlessly with the campaign management system:
-
-- **Campaign Assignment**: Flows can be assigned to specific campaigns
-- **Automatic Execution**: Flows execute when campaigns have active flows
-- **Fallback Routing**: Traditional buyer routing when no flow is active
-- **Performance Tracking**: Flow metrics integrated with campaign analytics
+**Security Configuration:**
+- **Access Control**: IP restrictions and allowlists
+- **Encryption Settings**: Data encryption configuration
+- **Audit Logging**: Security event logging
+- **Compliance**: Regulatory compliance settings
 
 ---
 
-## Twilio Integration
+## AI Help System
 
-### Webhook Configuration
+### Location: Accessible via Help button in top navigation
 
-The system handles incoming calls through Twilio webhooks:
+### AI Assistant Overview
 
-**Voice Webhook URL:**
+The AI Help System provides intelligent assistance powered by Claude Sonnet 4, offering project-specific knowledge, code search capabilities, and comprehensive support for all platform features.
+
+### AI Assistant Features
+
+**1. Project-Specific Knowledge**
+- **Platform Expertise**: Deep understanding of CallCenter Pro
+- **Feature Guidance**: Step-by-step feature explanations
+- **Troubleshooting**: Intelligent problem resolution
+- **Best Practices**: Optimization recommendations
+
+**2. Code Search Integration**
+- **File System Access**: Search through project codebase
+- **Function Lookup**: Find specific functions and methods
+- **Class Definitions**: Locate class implementations
+- **Documentation Search**: Find relevant documentation
+
+**3. Contextual Assistance**
+- **Page-Specific Help**: Help relevant to current page
+- **Feature Explanations**: Detailed feature descriptions
+- **Configuration Guidance**: Setup and configuration help
+- **Integration Support**: Third-party integration assistance
+
+### AI Chat Interface
+
+**Chat Features:**
+- **Natural Language**: Conversational interaction style
+- **Code Examples**: Practical implementation examples
+- **Visual Explanations**: Step-by-step guidance
+- **Multi-turn Conversations**: Context-aware discussions
+
+**Query Types Supported:**
+- **"How do I set up RTB bidding?"**
+- **"What's causing my webhook failures?"**
+- **"Show me how to create a call flow"**
+- **"Find the campaign validation logic"**
+- **"Explain the DNI tracking system"**
+
+### AI Knowledge Base
+
+**System Understanding:**
+- **Architecture Knowledge**: Complete system architecture
+- **Data Flow**: Understanding of data connections
+- **API Endpoints**: Knowledge of all API routes
+- **Database Schema**: Complete database understanding
+- **Integration Points**: External system connections
+
+**Feature Expertise:**
+- **Campaign Management**: Complete workflow knowledge
+- **RTB System**: Auction process and configuration
+- **Call Flows**: Visual builder and execution
+- **DNI System**: Tracking and attribution
+- **Reporting**: Analytics and metrics
+
+### AI-Powered Troubleshooting
+
+**Automated Diagnostics:**
+- **Error Analysis**: Intelligent error interpretation
+- **Log Analysis**: System log examination
+- **Performance Issues**: Performance bottleneck identification
+- **Configuration Validation**: Settings verification
+
+**Solution Recommendations:**
+- **Step-by-step Fixes**: Detailed resolution steps
+- **Code Examples**: Implementation examples
+- **Alternative Approaches**: Multiple solution options
+- **Prevention Tips**: Avoid future issues
+
+---
+
+## Data Connections & Flow
+
+### System Data Architecture
+
+### Core Data Entities
+
+**1. Users**
+- **Primary Key**: Integer ID (auto-increment)
+- **Authentication**: Username/password with sessions
+- **Multi-tenancy**: All data scoped by user ID
+- **Session Storage**: PostgreSQL-backed sessions
+
+**2. Campaigns**
+- **Primary Key**: UUID for external references
+- **Ownership**: Linked to user ID
+- **Types**: Direct, Pool, RTB routing
+- **Status**: Active, Paused, Completed, Draft
+
+**3. Buyers/Targets**
+- **Primary Key**: Integer ID (auto-increment)
+- **Campaign Links**: Many-to-many with campaigns
+- **Routing Priority**: 1-10 priority ranking
+- **Capacity Limits**: Concurrent and daily caps
+
+**4. Phone Numbers**
+- **Primary Key**: Integer ID (auto-increment)
+- **Twilio Integration**: SID and configuration
+- **Assignment**: Campaign or pool exclusive assignment
+- **Webhook URLs**: Dynamic configuration
+
+**5. Number Pools**
+- **Primary Key**: Integer ID (auto-increment)
+- **Number Collection**: One-to-many with phone numbers
+- **Exclusive Assignment**: Conflict prevention
+- **Dynamic Allocation**: Campaign assignment
+
+**6. Calls**
+- **Primary Key**: Integer ID (auto-increment)
+- **Twilio Integration**: Call SID linking
+- **Campaign Attribution**: Campaign and buyer linking
+- **Performance Data**: Duration, cost, revenue
+- **Geographic Data**: Location and routing info
+
+**7. RTB System**
+- **RTB Targets**: External bidding endpoints
+- **Bid Requests**: Auction initiation records
+- **Bid Responses**: Individual bidder responses
+- **Auction Results**: Winner selection and routing
+
+**8. Call Flows**
+- **Flow Definitions**: Visual flow configurations
+- **Node Configurations**: Individual node settings
+- **Execution Logs**: Runtime flow tracking
+- **Performance Metrics**: Flow analytics
+
+### Data Flow Patterns
+
+**1. Call Processing Flow**
 ```
-https://your-domain.com/api/webhooks/voice
+Incoming Call (Twilio) →
+Webhook Processing →
+Campaign Identification →
+Routing Decision (Direct/Pool/RTB) →
+Buyer Selection/RTB Auction →
+Call Routing →
+Status Tracking →
+Analytics Recording
 ```
 
-**Pool-based Webhook URL:**
+**2. RTB Auction Flow**
 ```
-https://your-domain.com/api/webhooks/pool/{poolId}/voice
-```
-
-### Call Flow
-
-1. **Incoming Call**: Twilio sends webhook to configured URL
-2. **Campaign Identification**: Lookup campaign by phone number
-3. **Routing Decision**: Select appropriate buyer/agent
-4. **TwiML Response**: Generate call forwarding instructions
-5. **Call Tracking**: Log call details and routing decisions
-6. **Status Updates**: Track call progress and completion
-
-### TwiML Generation
-
-The system generates TwiML responses for call routing:
-
-```xml
-<Response>
-  <Dial timeout="30" callerId="+1234567890">
-    <Number>+1800555BUYER</Number>
-  </Dial>
-</Response>
+Call Received →
+RTB Campaign Detected →
+Target Selection →
+Parallel Bid Requests →
+Response Collection →
+Bid Validation →
+Winner Selection →
+Call Routing →
+Auction Analytics
 ```
 
-### Call Recording
+**3. DNI Tracking Flow**
+```
+Website Visit →
+JavaScript SDK Execution →
+Session Tracking →
+UTM Parameter Capture →
+Phone Number Assignment →
+Call Attribution →
+Conversion Tracking →
+ROI Calculation
+```
 
-Automatic call recording with configurable settings:
-- Recording enabled/disabled per campaign
-- Transcription options
-- Storage and retrieval
-- Recording URL generation
+**4. Campaign Management Flow**
+```
+Campaign Creation →
+Buyer Assignment →
+Number/Pool Assignment →
+Webhook Configuration →
+Status Activation →
+Call Routing →
+Performance Tracking →
+Analytics and Reporting
+```
 
-### Number Provisioning
+### Database Connections
 
-Search and purchase phone numbers through Twilio:
-- Area code selection
-- Number type (local, toll-free)
-- Capability requirements (voice, SMS)
-- Pricing and availability
+**Primary Database**: PostgreSQL
+- **ORM**: Drizzle for type-safe operations
+- **Migrations**: Drizzle Kit for schema management
+- **Connection Pooling**: Optimized connection management
+- **Session Storage**: Express sessions in PostgreSQL
+
+**Hybrid Storage Pattern**:
+- **Database First**: Primary data source
+- **Memory Fallback**: Backup for database failures
+- **Performance Optimization**: Query optimization and caching
+- **Error Handling**: Graceful degradation
+
+### API Data Flow
+
+**1. Frontend to Backend**
+```
+React Components →
+TanStack Query →
+API Requests →
+Express Routes →
+Storage Layer →
+Database Operations →
+Response Formatting →
+Frontend Updates
+```
+
+**2. External Integrations**
+```
+Twilio Webhooks →
+Route Processing →
+Data Validation →
+Business Logic →
+Database Updates →
+Response Generation →
+External Confirmations
+```
+
+**3. RTB External Communication**
+```
+Auction Trigger →
+Bid Request Generation →
+HTTP Requests to Bidders →
+Response Collection →
+Parsing and Validation →
+Winner Selection →
+Call Routing Execution
+```
+
+### Real-time Data Updates
+
+**1. Call Status Updates**
+- **Twilio Webhooks**: Real-time call status
+- **Database Updates**: Status persistence
+- **Frontend Notifications**: Live updates
+- **Analytics Updates**: Performance metrics
+
+**2. Campaign Monitoring**
+- **Performance Metrics**: Real-time calculations
+- **Capacity Tracking**: Live buyer availability
+- **Error Monitoring**: System health tracking
+- **Alert Generation**: Threshold-based alerts
+
+### Data Security and Isolation
+
+**Multi-tenancy Implementation**:
+- **User ID Scoping**: All queries filtered by user
+- **Session Validation**: Authenticated requests only
+- **Data Isolation**: Complete user data separation
+- **Security Testing**: Comprehensive vulnerability testing
+
+**Data Encryption**:
+- **Transit Security**: HTTPS for all communications
+- **Session Security**: Secure cookie configuration
+- **API Security**: Token-based authentication
+- **Database Security**: Connection encryption
+
+---
+
+## Technical Architecture
+
+### System Components
+
+### Frontend Architecture
+
+**React Application Structure:**
+```
+client/src/
+├── components/          # Reusable UI components
+│   ├── ui/             # shadcn/ui components
+│   ├── reporting/      # Reporting-specific components
+│   ├── forms/          # Form components
+│   └── layout/         # Layout components
+├── pages/              # Page components
+│   ├── dashboard.tsx   # Main dashboard
+│   ├── campaigns.tsx   # Campaign management
+│   ├── buyers.tsx      # Buyer management
+│   └── [other pages]
+├── lib/                # Utility libraries
+│   ├── queryClient.ts  # React Query configuration
+│   ├── utils.ts        # General utilities
+│   └── validation.ts   # Form validation
+└── hooks/              # Custom React hooks
+    ├── use-toast.ts    # Toast notifications
+    └── [other hooks]
+```
+
+**State Management:**
+- **TanStack React Query**: Server state management
+- **React Hooks**: Local component state
+- **Form State**: React Hook Form with Zod validation
+- **Global State**: Minimal global state with Context API
+
+### Backend Architecture
+
+**Express Application Structure:**
+```
+server/
+├── routes.ts           # Main API route definitions
+├── storage.ts          # Abstract storage interface
+├── storage-db.ts       # Database storage implementation
+├── hybrid-storage.ts   # Hybrid storage with fallback
+├── rtb-service.ts      # RTB auction logic
+├── dni-service.ts      # DNI tracking service
+├── call-routing.ts     # Call routing algorithms
+├── webhook-handlers.ts # Twilio webhook processing
+└── index.ts           # Application entry point
+```
+
+**API Architecture:**
+- **RESTful Design**: Standard HTTP methods and status codes
+- **Route Organization**: Logical grouping by feature
+- **Middleware Stack**: Authentication, logging, error handling
+- **Request Validation**: Zod schema validation
+- **Response Formatting**: Consistent JSON responses
+
+### Database Architecture
+
+**PostgreSQL Schema Design:**
+```sql
+-- Core entity tables
+users (id, username, email, password_hash, created_at)
+campaigns (id, user_id, name, type, status, settings, created_at)
+buyers (id, user_id, name, company, phone, priority, capacity)
+phone_numbers (id, user_id, phone_number, country, type, status)
+number_pools (id, user_id, name, description, status)
+
+-- Relationship tables
+campaign_buyers (campaign_id, buyer_id, priority, capacity)
+pool_numbers (pool_id, phone_number_id, assigned_at)
+
+-- Call tracking
+calls (id, campaign_id, buyer_id, call_sid, from_number, to_number, 
+       duration, status, cost, revenue, created_at)
+
+-- RTB system
+rtb_targets (id, user_id, name, endpoint_url, config, status)
+bid_requests (id, request_id, campaign_id, targets_pinged, created_at)
+bid_responses (id, request_id, target_id, bid_amount, response_time, status)
+
+-- DNI tracking
+tracking_tags (id, user_id, tag_code, campaign_id, config)
+dni_sessions (id, session_id, tag_code, utm_params, phone_number, created_at)
+
+-- Call flows
+call_flows (id, user_id, name, flow_definition, status)
+flow_executions (id, call_id, flow_id, execution_path, created_at)
+```
+
+**Database Optimization:**
+- **Indexes**: Strategic indexing for performance
+- **Query Optimization**: Efficient query patterns
+- **Connection Pooling**: Optimized connection management
+- **Migrations**: Drizzle Kit for schema evolution
+
+### Integration Architecture
+
+**Twilio Integration:**
+```
+CallCenter Pro ←→ Twilio Voice API
+├── Webhook Endpoints: Incoming call processing
+├── API Calls: Outbound call initiation
+├── TwiML Generation: Dynamic call routing
+└── Status Callbacks: Real-time call updates
+```
+
+**External RTB Integration:**
+```
+RTB Auction Engine ←→ External Bidders
+├── HTTP Requests: Bid request distribution
+├── Response Processing: Bid response parsing
+├── Timeout Handling: Graceful failure management
+└── Winner Selection: Auction result processing
+```
+
+### Performance Architecture
+
+**Caching Strategy:**
+- **Memory Caching**: Frequently accessed data
+- **Query Caching**: Database query results
+- **Session Caching**: User session data
+- **CDN Integration**: Static asset delivery
+
+**Optimization Techniques:**
+- **Query Optimization**: Efficient database queries
+- **Connection Pooling**: Database connection management
+- **Async Processing**: Non-blocking operations
+- **Error Handling**: Graceful error recovery
+
+### Security Architecture
+
+**Authentication & Authorization:**
+- **Session-based Authentication**: Express sessions with PostgreSQL
+- **Multi-tenancy**: User ID scoping for all operations
+- **API Security**: Token-based API authentication
+- **Role-based Access**: Granular permission system
+
+**Data Security:**
+- **Encryption in Transit**: HTTPS for all communications
+- **Secure Sessions**: HTTP-only secure cookies
+- **Input Validation**: Comprehensive input sanitization
+- **SQL Injection Prevention**: ORM-based query protection
+
+### Monitoring & Observability
+
+**Logging System:**
+- **Structured Logging**: JSON-formatted logs
+- **Log Levels**: Debug, Info, Warning, Error
+- **Request Logging**: HTTP request/response tracking
+- **Error Tracking**: Comprehensive error logging
+
+**Performance Monitoring:**
+- **Response Time Tracking**: API endpoint performance
+- **Database Query Performance**: Query execution monitoring
+- **Memory Usage**: Application memory tracking
+- **External Service Monitoring**: Twilio API performance
 
 ---
 
 ## API Documentation
 
+### API Overview
+
+The CallCenter Pro API provides comprehensive RESTful endpoints for all platform functionality with consistent request/response patterns and robust error handling.
+
 ### Authentication
 
-All API requests require session-based authentication:
-
-```javascript
-// Login request
+**Session-based Authentication:**
+```http
 POST /api/auth/login
+Content-Type: application/json
+
 {
-  "username": "your_username",
-  "password": "your_password"
+  "username": "sumit",
+  "password": "demo123"
 }
 
-// Check authentication status
+Response:
+{
+  "success": true,
+  "user": {
+    "id": 2,
+    "username": "sumit",
+    "email": "sumit@blinkdigital.in"
+  }
+}
+```
+
+**Session Management:**
+```http
 GET /api/auth/user
+Cookie: connect.sid=s%3A[session-id]
+
+Response:
+{
+  "id": 2,
+  "username": "sumit",
+  "email": "sumit@blinkdigital.in"
+}
 ```
 
 ### Core API Endpoints
 
-**Campaigns:**
-```
-GET    /api/campaigns              # List campaigns
-POST   /api/campaigns              # Create campaign
-GET    /api/campaigns/{id}         # Get campaign details
-PUT    /api/campaigns/{id}         # Update campaign
-DELETE /api/campaigns/{id}         # Delete campaign
+### Campaign Management
+
+**List Campaigns:**
+```http
+GET /api/campaigns
+Authorization: Session-based
+
+Response:
+[
+  {
+    "id": "928a699e-e241-46ab-bc54-9f6779d38b32",
+    "name": "Health Campaign",
+    "type": "pool",
+    "status": "active",
+    "phoneNumber": "+18562813889",
+    "buyersCount": 1,
+    "callsCount": 5,
+    "successRate": 80.0,
+    "revenue": "125.50"
+  }
+]
 ```
 
-**Buyers:**
-```
-GET    /api/buyers                 # List buyers
-POST   /api/buyers                 # Create buyer
-GET    /api/buyers/{id}            # Get buyer details
-PUT    /api/buyers/{id}            # Update buyer
-DELETE /api/buyers/{id}            # Delete buyer
+**Create Campaign:**
+```http
+POST /api/campaigns
+Content-Type: application/json
+
+{
+  "name": "New Health Campaign",
+  "description": "Medicare lead generation",
+  "type": "pool",
+  "status": "active",
+  "routingType": "pool",
+  "poolId": 16,
+  "callRoutingStrategy": "priority",
+  "maxConcurrentCalls": 10,
+  "callCap": 100
+}
+
+Response:
+{
+  "id": "new-campaign-uuid",
+  "name": "New Health Campaign",
+  "status": "active",
+  "created": true
+}
 ```
 
-**Number Pools:**
-```
-GET    /api/pools                  # List pools
-POST   /api/pools                  # Create pool
-GET    /api/pools/{id}             # Get pool details
-PUT    /api/pools/{id}             # Update pool
-DELETE /api/pools/{id}             # Delete pool
+**Update Campaign:**
+```http
+PUT /api/campaigns/:id
+Content-Type: application/json
+
+{
+  "name": "Updated Campaign Name",
+  "status": "paused",
+  "maxConcurrentCalls": 15
+}
+
+Response:
+{
+  "id": "campaign-uuid",
+  "updated": true,
+  "changes": ["name", "status", "maxConcurrentCalls"]
+}
 ```
 
-**RTB System:**
-```
-GET    /api/rtb/targets            # List RTB targets
-POST   /api/rtb/targets            # Create RTB target
-GET    /api/rtb/routers            # List RTB routers
-POST   /api/rtb/routers            # Create RTB router
-GET    /api/rtb/bid-requests       # List bid requests
-GET    /api/rtb/bid-responses      # List bid responses
+### Buyer Management
+
+**List Buyers:**
+```http
+GET /api/buyers
+
+Response:
+[
+  {
+    "id": 32,
+    "name": "Premium Buyer",
+    "company": "Health Solutions Inc",
+    "phone": "+18005551234",
+    "priority": 8,
+    "status": "active",
+    "maxConcurrentCalls": 5,
+    "currentCalls": 2,
+    "successRate": 85.5,
+    "totalCalls": 1250
+  }
+]
 ```
 
-**DNI System:**
-```
-POST   /api/dni/track              # Track DNI request
-GET    /api/tracking-tags          # List tracking tags
-POST   /api/tracking-tags          # Create tracking tag
+**Create Buyer:**
+```http
+POST /api/buyers
+Content-Type: application/json
+
+{
+  "name": "New Buyer",
+  "company": "Lead Generation Co",
+  "phone": "+18005559999",
+  "email": "contact@leadgen.com",
+  "priority": 7,
+  "maxConcurrentCalls": 3,
+  "dailyCallCap": 50,
+  "status": "active"
+}
+
+Response:
+{
+  "id": 33,
+  "name": "New Buyer",
+  "created": true
+}
 ```
 
-**Analytics:**
+### Call Management
+
+**List Calls:**
+```http
+GET /api/calls?limit=50&offset=0&status=completed
+
+Response:
+{
+  "calls": [
+    {
+      "id": 140,
+      "campaignId": "928a699e-e241-46ab-bc54-9f6779d38b32",
+      "buyerId": 32,
+      "callSid": "CA62900b63849fc3eaaaab5cd85e25e582",
+      "fromNumber": "+12129200892",
+      "toNumber": "+18562813889",
+      "duration": 125,
+      "status": "completed",
+      "cost": "0.0850",
+      "revenue": "15.50",
+      "createdAt": "2025-08-04T12:30:45Z"
+    }
+  ],
+  "total": 1,
+  "hasMore": false
+}
 ```
-GET    /api/stats/historical       # Historical statistics
-GET    /api/stats/campaign/{id}    # Campaign-specific stats
-GET    /api/calls                  # Call logs
+
+**Get Call Details:**
+```http
+GET /api/calls/:id
+
+Response:
+{
+  "id": 140,
+  "campaignId": "928a699e-e241-46ab-bc54-9f6779d38b32",
+  "buyerId": 32,
+  "callSid": "CA62900b63849fc3eaaaab5cd85e25e582",
+  "fromNumber": "+12129200892",
+  "toNumber": "+18562813889",
+  "duration": 125,
+  "status": "completed",
+  "callQuality": "excellent",
+  "recordingUrl": "https://api.twilio.com/recording123",
+  "transcription": "Call transcription text...",
+  "cost": "0.0850",
+  "revenue": "15.50",
+  "geoLocation": "New York, NY",
+  "campaign": {
+    "name": "Health Campaign",
+    "type": "pool"
+  },
+  "buyer": {
+    "name": "Premium Buyer",
+    "company": "Health Solutions Inc"
+  }
+}
+```
+
+### RTB Management
+
+**List RTB Targets:**
+```http
+GET /api/rtb/targets
+
+Response:
+[
+  {
+    "id": 38,
+    "name": "MEDI - United Health - Tier 1",
+    "company": "United Health Solutions",
+    "endpointUrl": "https://api.unitedhealth.com/rtb/bid",
+    "status": "active",
+    "responseTimeMs": 450,
+    "successRate": 92.5,
+    "winRate": 15.2,
+    "totalBids": 1847
+  }
+]
+```
+
+**Create RTB Target:**
+```http
+POST /api/rtb/targets
+Content-Type: application/json
+
+{
+  "name": "New RTB Target",
+  "company": "Bidding Company",
+  "endpointUrl": "https://api.bidder.com/bid",
+  "requestMethod": "POST",
+  "requestTemplate": {
+    "requestId": "{requestId}",
+    "campaignId": "{campaignId}",
+    "callerId": "{callerId}",
+    "bidParams": {
+      "minBid": "{minBid}",
+      "maxBid": "{maxBid}"
+    }
+  },
+  "responseConfig": {
+    "bidAmountPath": "bidAmount",
+    "destinationNumberPath": "destinationNumber",
+    "acceptancePath": "accepted"
+  },
+  "timeoutMs": 5000,
+  "maxConcurrentCalls": 10
+}
+
+Response:
+{
+  "id": 39,
+  "name": "New RTB Target",
+  "created": true
+}
+```
+
+**Get RTB Bid Requests:**
+```http
+GET /api/rtb/bid-requests?limit=20
+
+Response:
+[
+  {
+    "id": 44,
+    "requestId": "pool_16_CA540901",
+    "campaignId": "928a699e-e241-46ab-bc54-9f6779d38b32",
+    "callStartTime": "2025-08-04T12:30:45Z",
+    "totalTargets": 33,
+    "successfulResponses": 0,
+    "failedResponses": 33,
+    "totalResponseTimeMs": 3970,
+    "winningBid": null,
+    "winningTarget": null
+  }
+]
+```
+
+**Get Bid Request Details:**
+```http
+GET /api/rtb/bid-requests/:requestId/responses
+
+Response:
+[
+  {
+    "id": 156,
+    "requestId": "pool_16_CA540901",
+    "rtbTargetId": 5,
+    "bidAmount": "0.00",
+    "destinationNumber": null,
+    "responseTimeMs": 459,
+    "responseStatus": "success",
+    "isWinningBid": false,
+    "errorMessage": null,
+    "rejectionReason": "Final capacity check (Code: 1006)"
+  }
+]
+```
+
+### Number Pool Management
+
+**List Number Pools:**
+```http
+GET /api/pools
+
+Response:
+[
+  {
+    "id": 16,
+    "name": "Health Pool",
+    "description": "Healthcare campaign numbers",
+    "country": "US",
+    "totalNumbers": 25,
+    "availableNumbers": 18,
+    "assignedNumbers": 7,
+    "status": "active"
+  }
+]
+```
+
+**Create Number Pool:**
+```http
+POST /api/pools
+Content-Type: application/json
+
+{
+  "name": "New Pool",
+  "description": "Insurance campaign pool",
+  "country": "US",
+  "status": "active"
+}
+
+Response:
+{
+  "id": 17,
+  "name": "New Pool",
+  "created": true
+}
+```
+
+### Phone Number Management
+
+**List Phone Numbers:**
+```http
+GET /api/phone-numbers
+
+Response:
+[
+  {
+    "id": 41,
+    "phoneNumber": "+18562813889",
+    "country": "US",
+    "type": "local",
+    "status": "active",
+    "campaignId": "928a699e-e241-46ab-bc54-9f6779d38b32",
+    "poolId": 16,
+    "webhookUrl": "https://your-domain.com/api/webhooks/twilio",
+    "totalCalls": 5,
+    "successRate": 80.0
+  }
+]
+```
+
+### DNI Management
+
+**Create Tracking Tag:**
+```http
+POST /api/dni/tags
+Content-Type: application/json
+
+{
+  "tagCode": "landing_page_v2",
+  "campaignId": "928a699e-e241-46ab-bc54-9f6779d38b32",
+  "description": "Main landing page tracking",
+  "attributionWindow": 30,
+  "status": "active"
+}
+
+Response:
+{
+  "id": 15,
+  "tagCode": "landing_page_v2",
+  "jsCode": "<script>/* Generated tracking code */</script>",
+  "created": true
+}
+```
+
+**Track DNI Session:**
+```http
+POST /api/dni/track
+Content-Type: application/json
+
+{
+  "tagCode": "landing_page_v2",
+  "sessionId": "dni_1725456789_abc123",
+  "referrer": "https://google.com",
+  "userAgent": "Mozilla/5.0...",
+  "url": "https://landingpage.com/health",
+  "utmParams": {
+    "utm_source": "google",
+    "utm_medium": "cpc",
+    "utm_campaign": "health_leads_2025"
+  }
+}
+
+Response:
+{
+  "success": true,
+  "phoneNumber": "+18562813889",
+  "formattedNumber": "+1 (856) 281-3889",
+  "sessionTracked": true
+}
+```
+
+### Analytics and Reporting
+
+**Get Dashboard Stats:**
+```http
+GET /api/stats/dashboard
+
+Response:
+{
+  "activeCampaigns": 1,
+  "totalCalls": 5,
+  "successRate": 80.0,
+  "totalRevenue": "125.50",
+  "recentCalls": [
+    {
+      "id": 140,
+      "fromNumber": "+12129200892",
+      "status": "completed",
+      "duration": 125,
+      "createdAt": "2025-08-04T12:30:45Z"
+    }
+  ]
+}
+```
+
+**Get Historical Analytics:**
+```http
+GET /api/stats/historical?days=30
+
+Response:
+{
+  "activeCampaigns": 1,
+  "totalCalls": 5,
+  "successRate": 80.0,
+  "totalRevenue": "125.50",
+  "averageDuration": 98,
+  "callsByDay": [
+    {
+      "date": "2025-08-04",
+      "calls": 5,
+      "revenue": "125.50"
+    }
+  ],
+  "topCampaigns": [
+    {
+      "campaignId": "928a699e-e241-46ab-bc54-9f6779d38b32",
+      "name": "Health Campaign",
+      "calls": 5,
+      "revenue": "125.50"
+    }
+  ]
+}
 ```
 
 ### Webhook Endpoints
 
-**Twilio Webhooks:**
-```
-POST   /api/webhooks/voice         # Voice webhook handler
-POST   /api/webhooks/pool/{id}/voice # Pool-based voice handler
-POST   /api/webhooks/status        # Call status updates
+**Twilio Call Webhook:**
+```http
+POST /api/webhooks/twilio
+Content-Type: application/x-www-form-urlencoded
+
+CallSid=CA123456789&From=%2B12129200892&To=%2B18562813889&CallStatus=ringing
+
+Response:
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Dial timeout="30" record="true">
+    <Number>+18005551234</Number>
+  </Dial>
+</Response>
 ```
 
-**RTB Webhooks:**
+**Call Status Webhook:**
+```http
+POST /api/webhooks/twilio/status
+Content-Type: application/x-www-form-urlencoded
+
+CallSid=CA123456789&CallStatus=completed&CallDuration=125
+
+Response:
+{
+  "received": true,
+  "callId": 140,
+  "status": "completed"
+}
 ```
-POST   /api/rtb/webhook/{id}       # RTB target webhook
+
+### Error Handling
+
+**Standard Error Response:**
+```http
+HTTP/1.1 400 Bad Request
+Content-Type: application/json
+
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid campaign configuration",
+    "details": {
+      "field": "phoneNumber",
+      "reason": "Phone number is already assigned to another campaign"
+    }
+  }
+}
+```
+
+**Common Error Codes:**
+- `400 Bad Request`: Invalid request data
+- `401 Unauthorized`: Authentication required
+- `403 Forbidden`: Insufficient permissions
+- `404 Not Found`: Resource not found
+- `409 Conflict`: Resource conflict (e.g., duplicate assignment)
+- `422 Unprocessable Entity`: Validation failed
+- `500 Internal Server Error`: Server error
+
+### Rate Limiting
+
+**Rate Limit Headers:**
+```http
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1725456789
+```
+
+**Rate Limit Response:**
+```http
+HTTP/1.1 429 Too Many Requests
+Content-Type: application/json
+
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "API rate limit exceeded",
+    "retryAfter": 60
+  }
+}
 ```
 
 ---
 
 ## Database Schema
 
+### Schema Overview
+
+CallCenter Pro uses PostgreSQL with Drizzle ORM for type-safe database operations. The schema is designed for multi-tenancy with user-scoped data access.
+
 ### Core Tables
 
-**users**
-- User authentication and profile information
-- Session management and preferences
+### Users Table
+```sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  first_name VARCHAR(100),
+  last_name VARCHAR(100),
+  profile_image_url VARCHAR(500),
+  time_zone VARCHAR(50) DEFAULT 'UTC',
+  language VARCHAR(10) DEFAULT 'en',
+  status VARCHAR(20) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-**campaigns**
-- Campaign configuration and settings
-- Routing type and RTB configuration
-- Status and performance tracking
+-- Indexes
+CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_status ON users(status);
+```
 
-**buyers**
-- Buyer/agent contact information
-- Capacity limits and priorities
-- Performance metrics
+### Campaigns Table
+```sql
+CREATE TABLE campaigns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  type VARCHAR(20) NOT NULL CHECK (type IN ('direct', 'pool', 'rtb')),
+  status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('active', 'paused', 'completed', 'draft')),
+  routing_type VARCHAR(20) NOT NULL,
+  phone_number VARCHAR(20),
+  pool_id INTEGER REFERENCES number_pools(id),
+  call_routing_strategy VARCHAR(20) DEFAULT 'priority',
+  max_concurrent_calls INTEGER DEFAULT 10,
+  call_cap INTEGER DEFAULT 100,
+  call_timeout INTEGER DEFAULT 30,
+  recording_enabled BOOLEAN DEFAULT true,
+  transcription_enabled BOOLEAN DEFAULT false,
+  webhook_url VARCHAR(500),
+  tracking_pixel_url VARCHAR(500),
+  settings JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-**phone_numbers**
-- Phone number inventory
-- Assignment tracking and status
-- Twilio integration details
+-- Indexes
+CREATE INDEX idx_campaigns_user_id ON campaigns(user_id);
+CREATE INDEX idx_campaigns_status ON campaigns(status);
+CREATE INDEX idx_campaigns_type ON campaigns(type);
+CREATE INDEX idx_campaigns_pool_id ON campaigns(pool_id);
+```
 
-**number_pools**
-- Pool definitions and configuration
-- Exclusive number assignment
-- Webhook management
+### Buyers Table
+```sql
+CREATE TABLE buyers (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  company VARCHAR(255),
+  email VARCHAR(255),
+  phone VARCHAR(20) NOT NULL,
+  backup_phone VARCHAR(20),
+  priority INTEGER DEFAULT 5 CHECK (priority >= 1 AND priority <= 10),
+  max_concurrent_calls INTEGER DEFAULT 5,
+  daily_call_cap INTEGER DEFAULT 100,
+  hourly_call_cap INTEGER DEFAULT 20,
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'paused')),
+  business_hours JSONB DEFAULT '{}',
+  time_zone VARCHAR(50) DEFAULT 'UTC',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-**calls**
-- Call tracking and logging
-- Routing decisions and outcomes
-- Performance metrics
+-- Indexes
+CREATE INDEX idx_buyers_user_id ON buyers(user_id);
+CREATE INDEX idx_buyers_status ON buyers(status);
+CREATE INDEX idx_buyers_priority ON buyers(priority);
+```
 
-### RTB Tables
+### Campaign Buyers Relationship
+```sql
+CREATE TABLE campaign_buyers (
+  id SERIAL PRIMARY KEY,
+  campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  buyer_id INTEGER NOT NULL REFERENCES buyers(id) ON DELETE CASCADE,
+  priority INTEGER DEFAULT 5,
+  capacity_override INTEGER,
+  status VARCHAR(20) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(campaign_id, buyer_id)
+);
 
-**rtb_targets**
-- External bidding endpoint configuration
-- Authentication and parsing settings
-- Capacity and limit management
+-- Indexes
+CREATE INDEX idx_campaign_buyers_campaign_id ON campaign_buyers(campaign_id);
+CREATE INDEX idx_campaign_buyers_buyer_id ON campaign_buyers(buyer_id);
+CREATE INDEX idx_campaign_buyers_priority ON campaign_buyers(priority);
+```
 
-**rtb_routers**
-- Auction orchestration settings
-- Bidder assignment and management
-- Performance configuration
+### Number Pools Table
+```sql
+CREATE TABLE number_pools (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  country VARCHAR(3) DEFAULT 'US',
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  webhook_url VARCHAR(500),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, name)
+);
 
-**rtb_router_assignments**
-- Target-to-router assignments
-- Priority and weight settings
+-- Indexes
+CREATE INDEX idx_number_pools_user_id ON number_pools(user_id);
+CREATE INDEX idx_number_pools_status ON number_pools(status);
+```
 
-**rtb_bid_requests**
-- Bid request history and tracking
-- Template and variable logging
+### Phone Numbers Table
+```sql
+CREATE TABLE phone_numbers (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  phone_number VARCHAR(20) UNIQUE NOT NULL,
+  formatted_number VARCHAR(30),
+  country VARCHAR(3) DEFAULT 'US',
+  type VARCHAR(20) DEFAULT 'local' CHECK (type IN ('local', 'toll_free', 'mobile')),
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
+  twilio_sid VARCHAR(100),
+  campaign_id UUID REFERENCES campaigns(id),
+  pool_id INTEGER REFERENCES number_pools(id),
+  webhook_url VARCHAR(500),
+  voice_url VARCHAR(500),
+  status_callback_url VARCHAR(500),
+  purchased_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-**rtb_bid_responses**
-- Bid response tracking and analysis
-- Winner determination and metrics
+-- Indexes
+CREATE INDEX idx_phone_numbers_user_id ON phone_numbers(user_id);
+CREATE INDEX idx_phone_numbers_phone_number ON phone_numbers(phone_number);
+CREATE INDEX idx_phone_numbers_campaign_id ON phone_numbers(campaign_id);
+CREATE INDEX idx_phone_numbers_pool_id ON phone_numbers(pool_id);
+CREATE INDEX idx_phone_numbers_status ON phone_numbers(status);
+```
 
-### DNI Tables
+### Calls Table
+```sql
+CREATE TABLE calls (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  campaign_id UUID REFERENCES campaigns(id),
+  buyer_id INTEGER REFERENCES buyers(id),
+  target_id INTEGER REFERENCES buyers(id), -- Same as buyer_id, for flexibility
+  publisher_id INTEGER,
+  publisher_name VARCHAR(255),
+  publisher_sub_id VARCHAR(100),
+  tracking_tag_id INTEGER,
+  inbound_number VARCHAR(20),
+  inbound_call_id VARCHAR(100),
+  call_sid VARCHAR(100) UNIQUE NOT NULL,
+  from_number VARCHAR(20) NOT NULL,
+  to_number VARCHAR(20) NOT NULL,
+  flow_execution_id INTEGER,
+  ring_tree_id INTEGER,
+  current_node_id INTEGER,
+  flow_path JSONB,
+  routing_attempts INTEGER DEFAULT 0,
+  dialed_number VARCHAR(20),
+  number_pool_id INTEGER REFERENCES number_pools(id),
+  phone_number_id INTEGER REFERENCES phone_numbers(id),
+  duration INTEGER DEFAULT 0, -- in seconds
+  ring_time INTEGER DEFAULT 0,
+  talk_time INTEGER DEFAULT 0,
+  hold_time INTEGER DEFAULT 0,
+  status VARCHAR(20) DEFAULT 'initiated',
+  disposition VARCHAR(50),
+  hangup_cause VARCHAR(50),
+  call_quality VARCHAR(20),
+  connection_time TIMESTAMP,
+  audio_quality JSONB,
+  is_duplicate BOOLEAN DEFAULT false,
+  duplicate_of_call_id INTEGER,
+  cost DECIMAL(10,4) DEFAULT 0.0000,
+  payout DECIMAL(10,4) DEFAULT 0.0000,
+  revenue DECIMAL(10,4) DEFAULT 0.0000,
+  profit DECIMAL(10,4) DEFAULT 0.0000,
+  margin DECIMAL(5,2) DEFAULT 0.00,
+  tags TEXT[],
+  utm_source VARCHAR(100),
+  utm_medium VARCHAR(100),
+  utm_campaign VARCHAR(100),
+  utm_content VARCHAR(100),
+  utm_term VARCHAR(100),
+  referrer VARCHAR(500),
+  landing_page VARCHAR(500),
+  geo_location JSONB,
+  user_agent TEXT,
+  ip_address INET,
+  recording_url VARCHAR(500),
+  recording_sid VARCHAR(100),
+  recording_status VARCHAR(20),
+  recording_duration INTEGER,
+  transcription TEXT,
+  transcription_status VARCHAR(20),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-**tracking_tags**
-- DNI tag configuration and settings
-- Campaign association and tracking
+-- Indexes
+CREATE INDEX idx_calls_user_id ON calls(user_id);
+CREATE INDEX idx_calls_campaign_id ON calls(campaign_id);
+CREATE INDEX idx_calls_buyer_id ON calls(buyer_id);
+CREATE INDEX idx_calls_call_sid ON calls(call_sid);
+CREATE INDEX idx_calls_from_number ON calls(from_number);
+CREATE INDEX idx_calls_status ON calls(status);
+CREATE INDEX idx_calls_created_at ON calls(created_at);
+CREATE INDEX idx_calls_utm_source ON calls(utm_source);
+```
 
-**tracking_sessions**
-- Session tracking and attribution
-- UTM parameter capture
-- Conversion tracking
+### RTB System Tables
+
+### RTB Targets
+```sql
+CREATE TABLE rtb_targets (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  company VARCHAR(255),
+  contact_email VARCHAR(255),
+  contact_phone VARCHAR(20),
+  endpoint_url VARCHAR(500) NOT NULL,
+  request_method VARCHAR(10) DEFAULT 'POST',
+  request_headers JSONB DEFAULT '{}',
+  request_template JSONB NOT NULL,
+  response_config JSONB NOT NULL,
+  timeout_ms INTEGER DEFAULT 5000,
+  max_concurrent_calls INTEGER DEFAULT 10,
+  daily_call_cap INTEGER DEFAULT 1000,
+  hourly_call_cap INTEGER DEFAULT 100,
+  min_bid_amount DECIMAL(10,2) DEFAULT 0.00,
+  max_bid_amount DECIMAL(10,2) DEFAULT 1000.00,
+  currency VARCHAR(3) DEFAULT 'USD',
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'testing')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes
+CREATE INDEX idx_rtb_targets_user_id ON rtb_targets(user_id);
+CREATE INDEX idx_rtb_targets_status ON rtb_targets(status);
+```
+
+### Campaign RTB Targets Relationship
+```sql
+CREATE TABLE campaign_rtb_targets (
+  id SERIAL PRIMARY KEY,
+  campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  rtb_target_id INTEGER NOT NULL REFERENCES rtb_targets(id) ON DELETE CASCADE,
+  priority INTEGER DEFAULT 5,
+  enabled BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(campaign_id, rtb_target_id)
+);
+
+-- Indexes
+CREATE INDEX idx_campaign_rtb_targets_campaign_id ON campaign_rtb_targets(campaign_id);
+CREATE INDEX idx_campaign_rtb_targets_rtb_target_id ON campaign_rtb_targets(rtb_target_id);
+```
+
+### RTB Bid Requests
+```sql
+CREATE TABLE rtb_bid_requests (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  request_id VARCHAR(100) UNIQUE NOT NULL,
+  campaign_id UUID NOT NULL REFERENCES campaigns(id),
+  call_id INTEGER REFERENCES calls(id),
+  call_start_time TIMESTAMP NOT NULL,
+  caller_number VARCHAR(20),
+  inbound_number VARCHAR(20),
+  geo_location JSONB,
+  utm_params JSONB,
+  total_targets INTEGER DEFAULT 0,
+  successful_responses INTEGER DEFAULT 0,
+  failed_responses INTEGER DEFAULT 0,
+  timeout_responses INTEGER DEFAULT 0,
+  total_response_time_ms INTEGER DEFAULT 0,
+  average_response_time_ms INTEGER DEFAULT 0,
+  winning_bid_amount DECIMAL(10,2),
+  winning_target_id INTEGER REFERENCES rtb_targets(id),
+  winning_destination VARCHAR(20),
+  auction_status VARCHAR(20) DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  completed_at TIMESTAMP
+);
+
+-- Indexes
+CREATE INDEX idx_rtb_bid_requests_user_id ON rtb_bid_requests(user_id);
+CREATE INDEX idx_rtb_bid_requests_request_id ON rtb_bid_requests(request_id);
+CREATE INDEX idx_rtb_bid_requests_campaign_id ON rtb_bid_requests(campaign_id);
+CREATE INDEX idx_rtb_bid_requests_call_id ON rtb_bid_requests(call_id);
+CREATE INDEX idx_rtb_bid_requests_created_at ON rtb_bid_requests(created_at);
+```
+
+### RTB Bid Responses
+```sql
+CREATE TABLE rtb_bid_responses (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  bid_request_id INTEGER NOT NULL REFERENCES rtb_bid_requests(id) ON DELETE CASCADE,
+  rtb_target_id INTEGER NOT NULL REFERENCES rtb_targets(id),
+  request_sent_at TIMESTAMP NOT NULL,
+  response_received_at TIMESTAMP,
+  response_time_ms INTEGER,
+  http_status_code INTEGER,
+  response_status VARCHAR(20), -- 'success', 'timeout', 'error', 'rejected'
+  bid_amount DECIMAL(10,2) DEFAULT 0.00,
+  bid_currency VARCHAR(3) DEFAULT 'USD',
+  destination_number VARCHAR(20),
+  is_accepted BOOLEAN DEFAULT false,
+  is_winning_bid BOOLEAN DEFAULT false,
+  rejection_reason VARCHAR(255),
+  error_message TEXT,
+  raw_request TEXT,
+  raw_response TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes
+CREATE INDEX idx_rtb_bid_responses_user_id ON rtb_bid_responses(user_id);
+CREATE INDEX idx_rtb_bid_responses_bid_request_id ON rtb_bid_responses(bid_request_id);
+CREATE INDEX idx_rtb_bid_responses_rtb_target_id ON rtb_bid_responses(rtb_target_id);
+CREATE INDEX idx_rtb_bid_responses_response_status ON rtb_bid_responses(response_status);
+CREATE INDEX idx_rtb_bid_responses_is_winning_bid ON rtb_bid_responses(is_winning_bid);
+```
+
+### DNI System Tables
+
+### Tracking Tags
+```sql
+CREATE TABLE tracking_tags (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  tag_code VARCHAR(100) NOT NULL,
+  campaign_id UUID REFERENCES campaigns(id),
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  attribution_window INTEGER DEFAULT 30, -- days
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  js_code TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, tag_code)
+);
+
+-- Indexes
+CREATE INDEX idx_tracking_tags_user_id ON tracking_tags(user_id);
+CREATE INDEX idx_tracking_tags_tag_code ON tracking_tags(tag_code);
+CREATE INDEX idx_tracking_tags_campaign_id ON tracking_tags(campaign_id);
+```
+
+### DNI Sessions
+```sql
+CREATE TABLE dni_sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  session_id VARCHAR(100) NOT NULL,
+  tracking_tag_id INTEGER NOT NULL REFERENCES tracking_tags(id),
+  phone_number VARCHAR(20),
+  phone_number_id INTEGER REFERENCES phone_numbers(id),
+  referrer VARCHAR(500),
+  landing_page VARCHAR(500),
+  user_agent TEXT,
+  ip_address INET,
+  utm_source VARCHAR(100),
+  utm_medium VARCHAR(100),
+  utm_campaign VARCHAR(100),
+  utm_content VARCHAR(100),
+  utm_term VARCHAR(100),
+  custom_params JSONB DEFAULT '{}',
+  attribution_data JSONB DEFAULT '{}',
+  first_visit TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_visit TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  page_views INTEGER DEFAULT 1,
+  converted BOOLEAN DEFAULT false,
+  conversion_time TIMESTAMP,
+  call_id INTEGER REFERENCES calls(id)
+);
+
+-- Indexes
+CREATE INDEX idx_dni_sessions_user_id ON dni_sessions(user_id);
+CREATE INDEX idx_dni_sessions_session_id ON dni_sessions(session_id);
+CREATE INDEX idx_dni_sessions_tracking_tag_id ON dni_sessions(tracking_tag_id);
+CREATE INDEX idx_dni_sessions_phone_number ON dni_sessions(phone_number);
+CREATE INDEX idx_dni_sessions_utm_source ON dni_sessions(utm_source);
+CREATE INDEX idx_dni_sessions_first_visit ON dni_sessions(first_visit);
+```
+
+### Call Flow System Tables
+
+### Call Flows
+```sql
+CREATE TABLE call_flows (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  flow_definition JSONB NOT NULL,
+  status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('active', 'inactive', 'draft')),
+  version INTEGER DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes
+CREATE INDEX idx_call_flows_user_id ON call_flows(user_id);
+CREATE INDEX idx_call_flows_status ON call_flows(status);
+```
+
+### Flow Executions
+```sql
+CREATE TABLE flow_executions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  call_id INTEGER NOT NULL REFERENCES calls(id),
+  flow_id INTEGER NOT NULL REFERENCES call_flows(id),
+  execution_path JSONB NOT NULL,
+  current_node_id VARCHAR(100),
+  variables JSONB DEFAULT '{}',
+  status VARCHAR(20) DEFAULT 'running',
+  started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  completed_at TIMESTAMP,
+  error_message TEXT
+);
+
+-- Indexes
+CREATE INDEX idx_flow_executions_user_id ON flow_executions(user_id);
+CREATE INDEX idx_flow_executions_call_id ON flow_executions(call_id);
+CREATE INDEX idx_flow_executions_flow_id ON flow_executions(flow_id);
+```
+
+### Integration Tables
+
+### URL Parameters
+```sql
+CREATE TABLE url_parameters (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  parameter_name VARCHAR(100) NOT NULL,
+  display_name VARCHAR(255) NOT NULL,
+  parameter_type VARCHAR(20) DEFAULT 'string',
+  default_value VARCHAR(255),
+  tracking_scope VARCHAR(20) DEFAULT 'global',
+  status VARCHAR(20) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, parameter_name)
+);
+
+-- Indexes
+CREATE INDEX idx_url_parameters_user_id ON url_parameters(user_id);
+CREATE INDEX idx_url_parameters_parameter_name ON url_parameters(parameter_name);
+```
+
+### Session Management
+```sql
+CREATE TABLE session (
+  sid VARCHAR NOT NULL COLLATE "default",
+  sess JSON NOT NULL,
+  expire TIMESTAMP(6) NOT NULL,
+  CONSTRAINT session_pkey PRIMARY KEY (sid)
+);
+
+-- Indexes
+CREATE INDEX idx_session_expire ON session(expire);
+```
+
+### Data Relationships
+
+### Key Relationships:
+1. **Users** → All entities (multi-tenancy)
+2. **Campaigns** → Buyers (many-to-many via campaign_buyers)
+3. **Campaigns** → Phone Numbers (via direct assignment or pools)
+4. **Campaigns** → RTB Targets (many-to-many via campaign_rtb_targets)
+5. **Number Pools** → Phone Numbers (one-to-many)
+6. **Calls** → Campaigns, Buyers, Phone Numbers (many-to-one)
+7. **RTB Bid Requests** → RTB Bid Responses (one-to-many)
+8. **DNI Sessions** → Tracking Tags, Phone Numbers, Calls
+
+### Performance Considerations:
+- **Indexes**: Strategic indexing on frequently queried columns
+- **Partitioning**: Consider partitioning large tables like calls by date
+- **Archiving**: Archive old call data to maintain performance
+- **Query Optimization**: Use appropriate joins and avoid N+1 queries
 
 ---
 
-## Setup and Configuration
+## Troubleshooting & Support
 
-### Prerequisites
+### Common Issues and Solutions
 
-- Node.js 20 or higher
-- PostgreSQL 16 or higher
-- Twilio integration is managed by the system
-- Supabase or Neon database (optional)
+### 1. Authentication Issues
 
-### Installation
+**Problem**: "Unauthorized" errors or login failures
+**Solutions:**
+- **Check Credentials**: Verify username: `sumit`, password: `demo123`
+- **Clear Cookies**: Clear browser cookies and try again
+- **Session Timeout**: Re-login if session has expired
+- **Database Connection**: Check PostgreSQL connection status
 
-1. **Clone Repository**
+**Debug Steps:**
 ```bash
-git clone <repository-url>
-cd callcenter-pro
+# Check database connection
+curl -X GET http://localhost:5000/api/auth/user
+
+# Expected response if not authenticated:
+{"message":"Unauthorized"}
+
+# Login again:
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"sumit","password":"demo123"}'
 ```
 
-2. **Install Dependencies**
+### 2. RTB Auction Issues
+
+**Problem**: RTB auctions showing no bids or all rejections
+**Common Causes:**
+- **Target Configuration**: Incorrect endpoint URLs
+- **Timeout Issues**: Bidders taking too long to respond
+- **Authentication**: Invalid API keys or tokens
+- **Network Issues**: Connectivity problems
+
+**Diagnostic Steps:**
+1. **Check Target Status**: Verify all RTB targets are active
+2. **Test Endpoints**: Manually test bidder endpoints
+3. **Review Logs**: Check application logs for errors
+4. **Validate Templates**: Ensure request templates are valid JSON
+
+**Sample Debug Request:**
 ```bash
-npm install
+# Test RTB target manually
+curl -X POST https://api.bidder.com/bid \
+  -H "Content-Type: application/json" \
+  -d '{
+    "requestId": "test_123",
+    "campaignId": "test_campaign",
+    "callerId": "+12125551234",
+    "callStartTime": "2025-08-04T12:30:45Z"
+  }'
 ```
 
-3. **Environment Configuration**
+### 3. Call Routing Failures
+
+**Problem**: Calls not routing to buyers or failing to connect
+**Common Causes:**
+- **Webhook Configuration**: Incorrect Twilio webhooks
+- **Buyer Availability**: No available buyers
+- **Phone Number Issues**: Invalid or unassigned numbers
+- **Capacity Limits**: Buyers at capacity
+
+**Debug Process:**
+1. **Check Webhook URLs**: Verify Twilio webhook configuration
+2. **Buyer Status**: Ensure buyers are active and available
+3. **Phone Numbers**: Verify number assignment and webhooks
+4. **Capacity Monitoring**: Check buyer concurrent call limits
+
+**Webhook Testing:**
 ```bash
-cp .env.example .env
-# Edit .env with your configuration
+# Test webhook manually
+curl -X POST http://localhost:5000/api/webhooks/twilio \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "CallSid=CA123456789&From=%2B12125551234&To=%2B18005551234&CallStatus=ringing"
 ```
 
-4. **Database Setup**
+### 4. DNI Tracking Issues
+
+**Problem**: Phone numbers not replacing on website or tracking not working
+**Common Causes:**
+- **JavaScript Errors**: Console errors preventing execution
+- **CORS Issues**: Cross-origin request problems
+- **Wrong Selectors**: Incorrect CSS selectors for replacement
+- **Network Blocking**: Ad blockers or network restrictions
+
+**Debug Steps:**
+1. **Check Console**: Look for JavaScript errors in browser console
+2. **Network Tab**: Verify API requests are being made
+3. **Element Selection**: Confirm CSS selectors match elements
+4. **Test Locally**: Test tracking code in isolated environment
+
+**Debug JavaScript:**
+```javascript
+// Add to tracking code for debugging
+fetch(apiUrl, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(trackingData)
+})
+.then(response => {
+  console.log('DNI Response Status:', response.status);
+  return response.json();
+})
+.then(data => {
+  console.log('DNI Response Data:', data);
+  // Phone number replacement logic
+})
+.catch(error => {
+  console.error('DNI Tracking Error:', error);
+});
+```
+
+### 5. Database Connection Issues
+
+**Problem**: Database errors or connection failures
+**Common Causes:**
+- **Connection String**: Invalid DATABASE_URL
+- **Network Issues**: Connectivity to database server
+- **Credentials**: Invalid database credentials
+- **Schema Issues**: Missing tables or columns
+
+**Diagnostic Commands:**
 ```bash
-# Push schema to database
-npm run db:push
+# Check database environment variable
+echo $DATABASE_URL
 
-# Or run migrations
-npm run db:migrate
+# Test database connection manually
+psql $DATABASE_URL -c "SELECT NOW();"
+
+# Check table existence
+psql $DATABASE_URL -c "\dt"
 ```
 
-5. **Start Development Server**
+### 6. Performance Issues
+
+**Problem**: Slow response times or timeouts
+**Common Causes:**
+- **Database Queries**: Inefficient or missing indexes
+- **External API Calls**: Slow third-party services
+- **Memory Issues**: High memory usage
+- **Network Latency**: Connectivity issues
+
+**Performance Monitoring:**
 ```bash
-npm run dev
+# Monitor API response times
+curl -w "@curl-format.txt" -o /dev/null -s http://localhost:5000/api/calls
+
+# Check database query performance
+psql $DATABASE_URL -c "EXPLAIN ANALYZE SELECT * FROM calls WHERE user_id = 2 LIMIT 10;"
 ```
 
-### Environment Variables
-
-```env
-# Database
-DATABASE_URL=postgresql://user:password@host:port/database
-
-# Twilio (Managed by System)
-TWILIO_ACCOUNT_SID=system_managed
-TWILIO_AUTH_TOKEN=system_managed
-
-# Session
-SESSION_SECRET=your_session_secret
-
-# Note: Twilio credentials are managed by the system
-# Users do not need to configure these variables
-```
-
-### Twilio Integration
-
-**Managed Service:**
-- Twilio integration is fully managed by the system
-- Users do not need to create or configure Twilio accounts
-- Phone numbers are provisioned and managed automatically
-- All webhooks and voice configurations are handled internally
-
-**How It Works:**
-1. **Phone Number Assignment**
-   - Choose from available phone numbers in the system
-   - Numbers are assigned exclusively to your campaigns
-   - Pool-based routing for dynamic number assignment
-
-2. **Automatic Configuration**
-   - Voice routing is configured automatically
-   - Call tracking and recording managed seamlessly
-   - Status callbacks handled internally
-
-3. **Features Included**
-   - Call recording and transcription
-   - Real-time call status tracking
-   - Automatic failover and redundancy
-   - Geographic and toll-free number support
-
----
-
-## RedTrack Integration
-
-### Overview
-
-CallCenter Pro provides 100% RedTrack integration compliance with automatic parameter detection and zero-configuration setup. The system works exactly like Ringba's tracking approach, automatically detecting RedTrack parameters and initializing conversion tracking.
-
-### Auto-Detection System
-
-**Automatic Parameter Detection:**
-- **clickid**: Primary RedTrack tracking identifier
-- **campaign_id**: RedTrack campaign identification
-- **offer_id**: RedTrack offer identification  
-- **affiliate_id**: RedTrack affiliate identification
-- **Additional Parameters**: Supports all standard RedTrack URL parameters
-
-**Zero Configuration Required:**
-```html
-<!-- Simple one-line integration -->
-<script src="/js/t.js" data-campaign="YOUR_CAMPAIGN_ID" async></script>
-```
-
-### Conversion Tracking
-
-**Three Conversion Types:**
-1. **RAWCall**: Phone click events (immediate tracking)
-2. **AnsweredCall**: Completed calls (call duration based)
-3. **ConvertedCall**: Quality calls over 30 seconds
-
-**Automatic Postback Integration:**
-- Fires RedTrack postback pixels automatically
-- Proper token replacement: `[tag:User:clickid]`, `[Call:ConversionPayout]`
-- No manual postback URL configuration needed
-
-### Technical Implementation
-
-**Global Variables (Ringba-Style):**
-- `window.rtkClickID`: Stores RedTrack click ID globally
-- `window._rgba_tags`: Ringba-compatible tag system
-- `window.ccpRedTrackConfig`: Complete RedTrack configuration object
-
-**API Endpoints:**
-- `/api/tracking/redtrack/session`: Session initialization
-- `/api/tracking/redtrack/conversion`: Conversion event tracking
-- `/api/tracking/redtrack/quality`: Call quality events (AnsweredCall, ConvertedCall)
-
-### Setup Instructions
-
-**Step 1: Add Tracking Script**
-Add the CallCenter Pro tracking script to your website header:
-```html
-<script src="https://your-domain.replit.app/js/t.js" data-campaign="YOUR_CAMPAIGN_ID" async></script>
-```
-
-**Step 2: RedTrack Campaign Setup**
-Configure your RedTrack campaign with CallCenter Pro landing page URLs containing tracking parameters:
-```
-https://your-landing-page.com/?clickid={clickid}&campaign_id={campaign_id}&offer_id={offer_id}
-```
-
-**Step 3: Automatic Integration**
-RedTrack integration happens automatically when parameters are detected - no additional configuration needed.
-
-### Advanced Features
-
-**Professional Compliance:**
-- Meets all RedTrack-Ringba integration requirements
-- Compatible with standard RedTrack workflows
-- Works with existing RedTrack campaign structures
-
-**Real-time Analytics:**
-- Call attribution through complete tracking chain
-- Performance metrics with RedTrack parameter visibility
-- Revenue tracking with proper payout attribution
-
----
-
-## AI Help System
-
-### Overview
-
-The AI Help System is a Claude-powered intelligent assistant integrated into the CallCenter Pro platform. It provides context-aware support and answers user questions about system features, functionality, and troubleshooting.
-
-### Key Features
-
-**Project-Specific Knowledge:**
-- Comprehensive understanding of CallCenter Pro features and capabilities
-- Real-time access to current system documentation and code
-- Context-aware responses based on actual implementation
-- Dynamic search through project files and configurations
-
-**Intelligent Assistance:**
-- Campaign management guidance
-- RTB system explanations
-- Call routing troubleshooting
-- Feature usage instructions
-- Technical problem resolution
-
-### How It Works
-
-**Knowledge Sources:**
-1. **Documentation Files** - Reads current `Documentation.md` and `replit.md` files
-2. **Code Search** - Searches through actual project code for specific implementations
-3. **System Context** - Understands current project state and recent changes
-4. **User Interactions** - Learns from conversation history to provide better responses
-
-**Update Mechanism:**
-- Knowledge updates automatically when documentation files are modified
-- Code search provides real-time access to current implementations
-- System stays current with project changes and new features
-- Conversation history stored for continuous improvement
-
-### Usage
-
-**Accessing the Assistant:**
-1. Navigate to the Help section in the main navigation
-2. Type your question in the chat interface
-3. Receive context-aware responses about your specific system
-
-**Best Practices:**
-- Ask specific questions about features you're using
-- Mention error messages or issues you're experiencing
-- Request guidance on complex configurations
-- Use it for troubleshooting call routing or RTB issues
-
-**Response Quality:**
-- Provides accurate information based on actual code and documentation
-- Uses simple, non-technical language suitable for business users
-- Includes relevant examples and step-by-step instructions
-- Fallback responses available if Claude API is unavailable
-
-### Technical Implementation
-
-**Architecture:**
-- ChatbotService handles conversation processing
-- File search capabilities for code analysis
-- Project context injection for accurate responses
-- Session management for conversation continuity
-
-**Integration:**
-- Powered by Claude Sonnet 4 for intelligent responses
-- Integrated with project documentation system
-- Connected to conversation storage for feedback
-- Supports both technical and business user questions
-
----
-
-## Testing Guide
-
-### Unit Testing
-
-Run unit tests for individual components:
-
-```bash
-npm run test
-```
-
-### Integration Testing
-
-Test API endpoints and database operations:
-
-```bash
-npm run test:integration
-```
-
-### Phase Testing
-
-The system includes comprehensive test scripts for each development phase:
-
-**Phase 1 Testing:**
-```bash
-node test-flow-execution.js
-```
-
-**Phase 2 Testing:**
-```bash
-node test-phase2-integration.js
-node test-live-ivr.js
-```
-
-**Phase 3 Testing:**
-```bash
-node test-phase3-advanced-features.js
-```
-
-### RTB Testing
-
-Test real-time bidding functionality:
-
-```bash
-node test-advanced-rtb-system.js
-```
-
-### Security Testing
-
-Validate multi-tenancy and security fixes:
-
-```bash
-node test-security-fixes.js
-```
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-**Database Connection Issues:**
-- Check `DATABASE_URL` environment variable
-- Verify database server is running
-- Ensure proper network connectivity
-
-**Call Routing Problems:**
-- Verify campaign status is active
-- Check buyer configuration and capacity
-- Review call logs for routing decisions
-
-**RTB Auction Failures:**
-- Validate RTB target endpoints
-- Check bid timeout settings
-- Review bid request/response logs
-
-**Call Flow Execution Issues:**
-- Verify flow definition is valid
-- Check node configurations
-- Review session tracking logs
-
-### Debug Mode
-
-Enable debug logging:
-
-```bash
-DEBUG=* npm run dev
-```
+### Error Code Reference
+
+### HTTP Status Codes
+- **200 OK**: Request successful
+- **201 Created**: Resource created successfully
+- **400 Bad Request**: Invalid request data
+- **401 Unauthorized**: Authentication required
+- **403 Forbidden**: Access denied
+- **404 Not Found**: Resource not found
+- **409 Conflict**: Resource conflict
+- **422 Unprocessable Entity**: Validation failed
+- **429 Too Many Requests**: Rate limit exceeded
+- **500 Internal Server Error**: Server error
+
+### Application Error Codes
+- **VALIDATION_ERROR**: Data validation failed
+- **AUTHENTICATION_FAILED**: Invalid credentials
+- **AUTHORIZATION_FAILED**: Insufficient permissions
+- **RESOURCE_NOT_FOUND**: Requested resource missing
+- **RESOURCE_CONFLICT**: Duplicate or conflicting resource
+- **EXTERNAL_SERVICE_ERROR**: Third-party service failure
+- **DATABASE_ERROR**: Database operation failed
+- **NETWORK_ERROR**: Network connectivity issue
+
+### RTB-Specific Error Codes
+- **1002**: Daily cap exceeded
+- **1003**: Geographic restriction
+- **1004**: Time-based filter
+- **1005**: Quality score too low
+- **1006**: Final capacity check
+- **1007**: Budget limit reached
+- **1008**: Duplicate caller detected
+- **1009**: Invalid caller state
+- **1010**: Campaign paused
 
 ### Support Resources
 
-- **Documentation**: Complete system documentation
-- **Test Scripts**: Comprehensive testing suite
-- **Error Logs**: Detailed error tracking
-- **Performance Monitoring**: Real-time system metrics
+### Logs and Monitoring
+- **Application Logs**: Check server console for detailed error messages
+- **Database Logs**: Monitor PostgreSQL logs for query issues
+- **Twilio Logs**: Check Twilio console for webhook delivery status
+- **Browser Console**: JavaScript errors and network requests
+
+### Contact Information
+- **Technical Support**: Use the AI Help system for immediate assistance
+- **Documentation**: Refer to this comprehensive documentation
+- **Code Repository**: Check the codebase for implementation details
+- **Community**: Engage with other users for shared solutions
+
+### Maintenance and Updates
+- **Regular Backups**: Automated database backups
+- **Security Updates**: Regular dependency updates
+- **Performance Monitoring**: Continuous performance tracking
+- **Feature Updates**: Regular platform enhancements
 
 ---
 
-## Recent Updates
-
-### July 17, 2025 - Call Flow Editor Enhancements
-
-**✓ Enhanced Configuration Dialogs**
-- Added comprehensive configuration dialogs for Action, Condition, and End node types
-- Action nodes now support Route to Buyer, Hangup, Transfer Call, and Send to Voicemail with dynamic form fields
-- Condition nodes support caller ID rules, time-based routing, and custom JavaScript conditions
-- End nodes support hangup and message playback configurations
-- All configuration dialogs provide proper form validation and user feedback
-
-**✓ Interactive Connection Editing**
-- Implemented inline connection label editing with "Click to edit" prompts
-- Added keyboard support (Enter to save, Escape to cancel)
-- Connection labels now show helpful prompts when empty
-- Fixed node configuration dialog opening issues for all node types
-
-**✓ Professional Interface Standards**
-- Enhanced professional interface standards matching enterprise routing management systems
-- Improved user experience with intuitive editing workflows
-- All node types now have proper configuration capabilities
-- Fixed UI consistency issues across all configuration dialogs
-
-### July 16, 2025 - Phase 3 Complete: Advanced Features Implemented
-
-**✓ Enhanced Business Hours Logic**
-- Holiday support with date-based exclusions
-- Multiple time ranges per day (lunch breaks, complex schedules)
-- Timezone-aware calculations for global operations
-- Holiday management with custom schedules
-
-**✓ Advanced Traffic Splitting**
-- 4 distribution strategies: percentage, weighted, time-based rules, round-robin
-- Weighted distribution considers performance factors and success rates
-- Time-based rules with hour ranges and day-of-week filters
-- Failover support and detailed analytics tracking
-
-**✓ Comprehensive Tracking Integration**
-- Pixel firing with template variables ({campaign_id}, {session_id}, {timestamp})
-- Analytics events for all node executions and flow interactions
-- Custom pixel arrays for multiple tracking systems
-- HTTP timeout and error handling for reliable tracking
-
-**✓ Enhanced User Interface**
-- Tabbed configuration interfaces for complex node settings
-- Real-time preview of distribution strategies
-- Advanced time-based rule builders
-- Analytics configuration with event selection
-
-**✓ Production-Ready Features**
-- All Phase 3 features validated through comprehensive test suites
-- Enterprise-level routing capabilities matching platforms like Ringba
-- Complex business scenarios supported with sophisticated routing logic
-- Comprehensive tracking integration for call attribution
-
-### July 16, 2025 - Phase 2 Complete: Database Integration Resolved
-
-**✓ Call Flow Database Integration**
-- Fixed database table creation for call_flows with proper schema
-- Resolved PostgreSQL persistence issues
-- Database methods properly implemented with error handling
-- Call flow CRUD operations fully operational
-
-**✓ Live IVR Integration**
-- Complete webhook-to-TwiML pipeline for real-time IVR execution
-- Session management with UUID tracking for call state persistence
-- Response processing pipeline for DTMF input and speech recognition
-- Production-ready system supporting complete IVR experiences
-
-### July 15, 2025 - Advanced Features and Security
-
-**✓ Claude AI Integration**
-- Intelligent AI chatbot powered by Claude Sonnet 4
-- Project context awareness and file search capabilities
-- Contextual answers about system features and functionality
-
-**✓ Critical Security Fixes**
-- Multi-tenancy vulnerability resolved
-- User-scoped data filtering implemented
-- Authentication requirements added to all sensitive endpoints
-- Comprehensive security test suite created
-
-**✓ RTB System Enhancements**
-- External destination routing for winning bidders
-- RTB target architectural simplification
-- Advanced RTB analytics with target name resolution
-- Enterprise-level RTB ID system with crypto-secure identifiers
-
-### System Status
-
-**Current Version**: Production-ready with Phase 3 complete
-**Database**: PostgreSQL with 47 calls and 13 feedback records
-**Security**: Multi-tenant with user-scoped data access
-**Authentication**: Session-based (username: sumit, password: demo1)
-**Features**: All enterprise-level routing capabilities implemented
-
-The system now provides enterprise-grade call center management with sophisticated routing logic, comprehensive tracking integration, and production-ready advanced features matching industry-leading platforms.
-
----
-
-## Conclusion
-
-CallCenter Pro represents a complete, enterprise-grade call center management solution with advanced routing capabilities, comprehensive tracking integration, and production-ready features. The system has been developed through three major phases:
-
-**Phase 1**: Core flow management and TwiML generation
-**Phase 2**: Live IVR integration with database persistence
-**Phase 3**: Advanced enterprise features with business hours, traffic splitting, and tracking
-
-The platform is ready for production deployment with sophisticated routing logic, comprehensive analytics, and enterprise-level security. All features have been thoroughly tested and validated through comprehensive test suites.
-
-For additional support, consult the testing scripts, API documentation, and troubleshooting sections provided in this documentation.
-**Features**: All enterprise-level routing capabilities implemented
-
-The system now provides enterprise-grade call center management with sophisticated routing logic, comprehensive tracking integration, and production-ready advanced features matching industry-leading platforms.
-
-### End-to-End Testing
-
-Test complete call flows:
-
-```bash
-npm run test:e2e
-```
-
-### Manual Testing
-
-**Campaign Testing:**
-1. Create test campaign with direct routing
-2. Add test buyer with your phone number
-3. Set up Twilio webhook pointing to your development server
-4. Call the campaign phone number
-5. Verify call routing to buyer phone number
-
-**Pool Testing:**
-1. Create number pool with test numbers
-2. Create campaign with pool-based routing
-3. Test dynamic number assignment
-4. Verify exclusive number assignment
-
-**RTB Testing:**
-1. Create test RTB target with mock endpoint
-2. Set up RTB router with test target
-3. Create campaign with RTB routing
-4. Test bid request/response flow
-5. Verify winner selection and call routing
-
-**DNI Testing:**
-1. Create tracking tag for test campaign
-2. Implement JavaScript code on test website
-3. Visit website and verify number replacement
-4. Test attribution tracking with UTM parameters
-
-### Test Scripts
-
-The project includes several test scripts:
-
-```bash
-# Test Twilio authentication
-node test-twilio-simple.js
-
-# Test advanced RTB system
-node test-advanced-rtb-system.js
-
-# Test pool assignment
-node test-pool-assignment.js
-
-# Test bidding server
-node test-bidding-server.js
-```
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-**1. Database Connection Issues**
-- Verify DATABASE_URL is correct
-- Check database server is running
-- Ensure proper network access
-
-**2. Twilio Webhook Failures**
-- Verify webhook URL is accessible
-- Check Twilio credentials are correct
-- Ensure HTTPS is used for production
-
-**3. RTB Auction Failures**
-- Verify RTB targets are properly configured
-- Check endpoint URLs are accessible
-- Validate request/response formats
-
-**4. Call Routing Issues**
-- Verify buyers have valid phone numbers
-- Check capacity limits and availability
-- Ensure campaign is active
-
-### Debug Mode
-
-Enable debug logging:
-
-```bash
-DEBUG=* npm run dev
-```
-
-### Log Analysis
-
-Check logs for common patterns:
-
-```bash
-# Call routing logs
-grep "Call routing" logs/app.log
-
-# RTB auction logs
-grep "RTB auction" logs/app.log
-
-# DNI tracking logs
-grep "DNI tracking" logs/app.log
-```
-
-### Performance Monitoring
-
-Monitor key metrics:
-- Database query performance
-- API response times
-- Twilio webhook latency
-- RTB auction response times
-
----
-
-## Support and Maintenance
-
-### Regular Maintenance
-
-**Daily:**
-- Monitor call volume and routing success rates
-- Check system logs for errors
-- Verify Twilio webhook functionality
-
-**Weekly:**
-- Review campaign performance metrics
-- Update buyer capacity limits as needed
-- Check RTB target performance
-
-**Monthly:**
-- Database maintenance and optimization
-- Security updates and patches
-- Performance analysis and optimization
-
-### Backup and Recovery
-
-**Database Backups:**
-- Automated daily backups
-- Point-in-time recovery capability
-- Disaster recovery procedures
-
-**Configuration Backups:**
-- Environment variable backups
-- Campaign configuration exports
-- RTB target configuration backups
-
-### Scaling Considerations
-
-**Horizontal Scaling:**
-- Load balancer configuration
-- Database connection pooling
-- Session store scaling
-
-**Vertical Scaling:**
-- CPU and memory optimization
-- Database performance tuning
-- Caching strategies
-
----
-
-## Security and Multi-Tenancy
-
-### Security Overview
-
-CallCenter Pro implements enterprise-grade security with comprehensive multi-tenant isolation to ensure data privacy and system integrity.
-
-### Multi-Tenancy Security Features
-
-**Data Isolation:**
-- Complete user-scoped data filtering for all sensitive resources
-- Foreign key relationships ensure data ownership integrity
-- No cross-tenant data access possible through API endpoints
-- Comprehensive authentication requirements on all sensitive endpoints
-
-**Secured Resources:**
-- Campaigns: User-specific with ownership validation
-- Buyers: Isolated by user ID with proper filtering
-- RTB Targets: User-scoped with secure access controls
-- RTB Routers: User-specific with ownership validation
-- Bid Requests: Filtered by user's campaigns only
-- Call Logs: User-scoped with campaign-based filtering
-
-### Security Improvements (July 15, 2025)
-
-**CRITICAL SECURITY FIXES:**
-- ✅ **Resolved multi-tenancy vulnerability**: Fixed critical security issue where users could access other accounts' data
-- ✅ **Enhanced authentication**: Added proper `requireAuth` middleware to all sensitive endpoints
-- ✅ **User-scoped filtering**: Implemented comprehensive user ID filtering in storage layer
-- ✅ **Campaign-buyer relationships**: Added ownership validation for all campaign-buyer operations
-- ✅ **Removed dangerous operations**: Eliminated database clearing functionality from user interface
-- ✅ **Comprehensive testing**: Created security test suite to verify authentication and data isolation
-
-**Security Test Coverage:**
-- Authentication requirement verification for all endpoints
-- User data isolation validation
-- Campaign ownership enforcement
-- Buyer access control validation
-- RTB target security verification
-- Call log access restrictions
-
-### Authentication System
-
-**Session Management:**
-- Express sessions with PostgreSQL storage
-- Secure session cookies with proper configuration
-- Session timeout and cleanup mechanisms
-- User authentication state management
-
-**API Security:**
-- All sensitive endpoints require authentication
-- User context validation on every request
-- SQL injection prevention through parameterized queries
-- XSS protection through input sanitization
-
-### Data Protection
-
-**Database Security:**
-- Encrypted connections to PostgreSQL
-- Parameterized queries prevent SQL injection
-- Foreign key constraints ensure data integrity
-- User-scoped data access patterns
-
-**Environment Security:**
-- Secure environment variable management
-- API key protection and rotation
-- Twilio credential security
-- Database connection security
-
-### Compliance and Best Practices
-
-**Data Privacy:**
-- User data isolation and segregation
-- Audit logging for data access
-- Secure data transmission
-- Privacy-by-design architecture
-
-**Security Monitoring:**
-- Failed authentication tracking
-- Suspicious activity detection
-- Error logging and monitoring
-- Security event auditing
-
----
-
-## Recent Updates
-
-### Latest Features (July 24, 2025)
-
-**Enhanced Reporting System Streamlined:**
-- **Integrated Call Details**: Removed redundant "Detailed Call Views" page - all call details now accessible through Enhanced Reporting expandable rows
-- **Ringba-Style UI**: Simplified expandable call details with minimal, clean design matching Ringba screenshot reference
-- **Compact Layout**: Left-aligned content with flexible wrapping to prevent horizontal scrolling, 60% reduced spacing
-- **Natural Integration**: Accordion content looks like natural extension of table rows rather than separate sections
-- **Single Location**: All call detail viewing now unified in Enhanced Reporting for streamlined workflow
-
-**Call Flow Editor Enhancements:**
-- **Configuration Mini Notes**: Added visual summaries on nodes showing routing destinations, conditions, and menu options
-- **Dynamic Updates**: Configuration summaries update immediately when node settings change
-- **Visual Feedback**: Clean mini notes with icons for quick identification of node functionality
-- **Professional Interface**: Enhanced user experience matching enterprise call flow standards
-
-**RTB System Advanced Features:**
-- **Phase 3 & 4 Complete**: Comprehensive RTB auction logging and routing decision tracking operational
-- **Routing Decision Journey**: Sequential visualization with numbered steps, success/failure badges, color-coded response times
-- **RTB Auction Analytics**: Winner-ranking display with crown icons, bid amounts, destination routing visibility
-- **Real-time Data Capture**: Complete call journey analytics from RTB auction through final buyer selection
-
-**RedTrack Integration Complete:**
-- **Auto-Detection System**: 100% RedTrack-Ringba integration compliance with automatic parameter detection
-- **JavaScript SDK**: Enhanced `/js/t.js` automatically detects RedTrack parameters and initializes integration
-- **Three Conversion Types**: RAWCall (phone click), AnsweredCall (completed), ConvertedCall (>30 seconds)
-- **Zero Configuration**: Simple script tag approach - RedTrack integration happens automatically
-
-**Data Integrity Improvements:**
-- **Authentic Data Only**: Eliminated all mock data - acceptance rates and response times now calculated from real call performance
-- **Publisher Attribution Fixed**: Complete publisher tracking from URL parameters through visitor sessions to call attribution
-- **Database Integration**: Campaign URL Parameters upgraded to full database functionality matching Integrations
-- **Real-time Validation**: Added comprehensive validation with visual feedback for parameter conflicts
-
-**User Experience Optimizations:**
-- **Navigation Cleanup**: Streamlined sidebar with redundant sections removed for cleaner interface
-- **Column Conflict Resolution**: Built-in Publisher column renamed to prevent conflicts with custom URL parameters
-- **Form Data Persistence**: Enhanced forms with proper data retention and validation across all modules
-- **Professional Standards**: All interfaces now match enterprise call tracking platform capabilities
-
-### Technical Improvements (July 2025)
-
-**Architecture Simplification:**
-- **RTB Direct Assignment**: Simplified RTB system removing router dependency for Ringba-style direct campaign-to-target assignments
-- **UUID Campaign IDs**: Enhanced security with cryptographically secure UUID identifiers preventing ID enumeration attacks
-- **Database Schema Updates**: Added routing_decisions and rtb_auction_details tables for comprehensive Phase 3 data capture
-- **Webhook Automation**: Complete automatic webhook management for all pool and direct number operations
-
-**Performance Enhancements:**
-- **Aggressive Auto-Refresh Eliminated**: Fixed repetitive database queries by changing from 5-30 second intervals to 1-5 minutes
-- **Event-Driven Refresh**: Replaced fixed-interval auto-refresh with intelligent response-triggered refresh system
-- **Analytics Data Integrity**: Enhanced analytics pages to display only when authentic data exists, eliminated placeholder content
-- **Production Cleanup**: Systematically removed all development artifacts for clean production deployment
-
-**Integration Improvements:**
-- **Twilio Webhook System**: Fixed critical TwiML response bugs resolving "application error" during real phone calls
-- **Call Flow System**: Successfully completed Phase 2 IVR system integration with live webhook execution
-- **DNI System**: Fixed pool assignment and database user ID issues for complete phone number replacement functionality
-- **Pixel Tracking**: Successfully implemented real-time visitor tracking with external website integration
-
-### Security & Compliance (July 2025)
-
-**Multi-Tenancy Security:**
-- **Complete User Isolation**: Comprehensive data filtering for all sensitive resources with foreign key integrity
-- **Authentication Requirements**: All sensitive endpoints require proper authentication middleware
-- **Security Test Coverage**: Created comprehensive security test suite validating authentication and data isolation
-- **Data Protection**: Enhanced database security with encrypted connections and parameterized queries
-
-**System Reliability:**
-- **Error Handling**: Comprehensive error handling and validation across all form operations
-- **Database Constraints**: Proper foreign key constraints ensuring data integrity
-- **Session Management**: Secure session handling with PostgreSQL storage and proper timeout mechanisms
-- **API Security**: SQL injection prevention and XSS protection through input sanitization
-
-### Knowledge Base & Support (July 2025)
-
-**AI Help System:**
-- **Claude-Powered Assistant**: Integrated Claude Sonnet 4 for intelligent, context-aware support
-- **Project-Specific Knowledge**: Real-time access to current system documentation and code
-- **Dynamic Search**: Searches through actual project files for specific implementations
-- **Conversation Storage**: Maintains feedback history for continuous improvement and user support
-
-**Documentation Updates:**
-- **Comprehensive Coverage**: Updated documentation reflecting all latest features and improvements
-- **User-Friendly Language**: Simple, everyday language suitable for non-technical business users
-- **Real-time Updates**: Knowledge updates automatically when documentation files are modified
-- **Professional Standards**: Documentation matches enterprise call tracking platform capabilities
-
----
-
-## Conclusion
-
-CallCenter Pro provides a comprehensive solution for modern call center operations with advanced features like RTB auctions, DNI tracking, and intelligent call routing. The system is designed to scale with your business needs while maintaining high performance and reliability.
-
-The latest updates have significantly streamlined the user experience, enhanced data integrity, and improved system performance. All features now use authentic data, provide real-time insights, and match enterprise-grade call tracking platform standards.
-
-For additional support or feature requests, please refer to the AI Help System in the application or contact the development team.
-
----
-
-*Last Updated: July 24, 2025*
-*Version: 2.0.0*
-*Document Status: Complete - Updated with Latest Streamlined Features and Improvements*
+*This documentation is comprehensive and covers all aspects of the CallCenter Pro platform. For specific technical questions or issues not covered here, use the AI Help system for immediate assistance.*
