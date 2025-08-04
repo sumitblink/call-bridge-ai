@@ -6854,6 +6854,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // RTB Health Monitoring and Security Endpoints
+  app.get('/api/rtb/health-checks', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const { RTBService } = await import('./rtb-service');
+      
+      const healthResults = await RTBService.performHealthChecks(userId);
+      
+      res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        totalTargets: healthResults.length,
+        healthyTargets: healthResults.filter(r => r.health.healthy).length,
+        unhealthyTargets: healthResults.filter(r => !r.health.healthy).length,
+        results: healthResults.map(r => ({
+          targetId: r.target.id,
+          targetName: r.target.name,
+          endpointUrl: r.target.endpointUrl,
+          healthy: r.health.healthy,
+          responseTime: r.health.responseTime,
+          error: r.health.error,
+          lastChecked: new Date().toISOString()
+        }))
+      });
+    } catch (error) {
+      console.error('Error performing RTB health checks:', error);
+      res.status(500).json({ error: 'Failed to perform RTB health checks' });
+    }
+  });
+
+  app.get('/api/rtb/targets/:targetId/uptime', requireAuth, async (req: any, res) => {
+    try {
+      const { targetId } = req.params;
+      const { hours = 24 } = req.query;
+      const { RTBService } = await import('./rtb-service');
+      
+      const uptimeData = await RTBService.getTargetUptime(parseInt(targetId), parseInt(hours as string));
+      
+      res.json({
+        success: true,
+        targetId: parseInt(targetId),
+        period: `${hours} hours`,
+        uptime: uptimeData.uptime,
+        totalChecks: uptimeData.checks,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching RTB target uptime:', error);
+      res.status(500).json({ error: 'Failed to fetch RTB target uptime' });
+    }
+  });
+
   // Campaign RTB Target Assignments (replaced router assignments)
   app.get('/api/campaigns/:campaignId/rtb-targets', requireAuth, async (req: any, res) => {
     try {

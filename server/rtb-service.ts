@@ -62,6 +62,108 @@ export interface AuctionResult {
 }
 
 export class RTBService {
+  // Enhanced logging for comprehensive RTB tracking
+  private static rtbLogger = {
+    logBidRequest: (target: RtbTarget, request: any, requestId: string) => {
+      console.log(`[RTB-REQ] ${new Date().toISOString()} - Target: ${target.name} (ID: ${target.id})`);
+      console.log(`[RTB-REQ] Request ID: ${requestId}`);
+      console.log(`[RTB-REQ] Endpoint: ${target.endpointUrl}`);
+      console.log(`[RTB-REQ] Request Body:`, JSON.stringify(request, null, 2));
+    },
+    
+    logBidResponse: (target: RtbTarget, response: any, responseTime: number, status: number) => {
+      console.log(`[RTB-RESP] ${new Date().toISOString()} - Target: ${target.name} (ID: ${target.id})`);
+      console.log(`[RTB-RESP] Response Time: ${responseTime}ms, Status: ${status}`);
+      console.log(`[RTB-RESP] Response Body:`, JSON.stringify(response, null, 2));
+    },
+    
+    logFailedBid: (target: RtbTarget, error: string, requestId: string, responseTime?: number) => {
+      console.error(`[RTB-FAIL] ${new Date().toISOString()} - Target: ${target.name} (ID: ${target.id})`);
+      console.error(`[RTB-FAIL] Request ID: ${requestId}`);
+      console.error(`[RTB-FAIL] Response Time: ${responseTime || 'N/A'}ms`);
+      console.error(`[RTB-FAIL] Error: ${error}`);
+    },
+    
+    logAuctionSummary: (requestId: string, totalTargets: number, successCount: number, failCount: number, winner?: any) => {
+      console.log(`[RTB-AUCTION] ${new Date().toISOString()} - Request ID: ${requestId}`);
+      console.log(`[RTB-AUCTION] Total Targets: ${totalTargets}, Success: ${successCount}, Failed: ${failCount}`);
+      if (winner) {
+        console.log(`[RTB-AUCTION] Winner: ${winner.targetName} with bid $${winner.bidAmount}`);
+      } else {
+        console.log(`[RTB-AUCTION] No winner - all bids rejected or failed`);
+      }
+    }
+  };
+
+  // Security utilities for phone number obfuscation
+  private static securityUtils = {
+    obfuscatePhoneNumber: (phoneNumber: string): string => {
+      // Obfuscate phone numbers in logs to prevent harvesting
+      if (!phoneNumber) return 'N/A';
+      const cleaned = phoneNumber.replace(/\D/g, '');
+      if (cleaned.length >= 10) {
+        return `${cleaned.slice(0, 3)}***${cleaned.slice(-4)}`;
+      }
+      return '***';
+    },
+    
+    sanitizeForLogging: (data: any): any => {
+      // Recursively sanitize sensitive data for logging
+      if (typeof data === 'string' && /^\+?1?\d{10,11}$/.test(data.replace(/\D/g, ''))) {
+        return RTBService.securityUtils.obfuscatePhoneNumber(data);
+      }
+      if (typeof data === 'object' && data !== null) {
+        const sanitized: any = {};
+        for (const [key, value] of Object.entries(data)) {
+          if (key.toLowerCase().includes('phone') || key.toLowerCase().includes('number')) {
+            sanitized[key] = typeof value === 'string' ? RTBService.securityUtils.obfuscatePhoneNumber(value) : value;
+          } else {
+            sanitized[key] = RTBService.securityUtils.sanitizeForLogging(value);
+          }
+        }
+        return sanitized;
+      }
+      return data;
+    }
+  };
+
+  // Health monitoring for RTB endpoints
+  private static healthMonitor = {
+    checkEndpointHealth: async (target: RtbTarget): Promise<{ healthy: boolean; responseTime: number; error?: string }> => {
+      try {
+        const startTime = Date.now();
+        const response = await fetch(target.endpointUrl, {
+          method: 'HEAD', // Use HEAD to avoid sending actual bid request
+          timeout: 5000,
+          headers: {
+            'User-Agent': 'CallCenter-Pro-Health-Check/1.0'
+          }
+        });
+        const responseTime = Date.now() - startTime;
+        
+        return {
+          healthy: response.status < 400,
+          responseTime,
+          error: response.status >= 400 ? `HTTP ${response.status}` : undefined
+        };
+      } catch (error) {
+        return {
+          healthy: false,
+          responseTime: 5000,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
+      }
+    },
+    
+    logHealthCheck: (target: RtbTarget, result: { healthy: boolean; responseTime: number; error?: string }) => {
+      const status = result.healthy ? 'HEALTHY' : 'UNHEALTHY';
+      console.log(`[RTB-HEALTH] ${new Date().toISOString()} - ${target.name}: ${status} (${result.responseTime}ms)`);
+      if (!result.healthy) {
+        console.error(`[RTB-HEALTH] ${target.name} Error: ${result.error}`);
+      }
+    }
+  };
+
   /**
    * Generate a publisher-specific inbound call ID
    */
@@ -684,6 +786,22 @@ export class RTBService {
         });
       }
 
+      // Log comprehensive auction summary
+      const failedCount = activeAssignments.length - successfulResponses;
+      const winner = winningBid ? {
+        targetId: winningBid.rtbTargetId,
+        targetName: (await storage.getRtbTarget(winningBid.rtbTargetId))?.name || `Target ${winningBid.rtbTargetId}`,
+        bidAmount: parseFloat(winningBid.bidAmount.toString())
+      } : undefined;
+      
+      this.rtbLogger.logAuctionSummary(
+        bidRequest.requestId,
+        activeAssignments.length,
+        successfulResponses,
+        failedCount,
+        winner
+      );
+
       return {
         success: !!winningBid,
         winningBid,
@@ -706,13 +824,60 @@ export class RTBService {
   }
 
   /**
-   * Send bid request to a specific target
+   * Health monitoring methods for RTB endpoints
+   */
+  static async performHealthChecks(userId: number): Promise<Array<{target: RtbTarget; health: any}>> {
+    try {
+      const targets = await storage.getUserRtbTargets(userId);
+      const healthResults = [];
+
+      for (const target of targets) {
+        if (target.isActive) {
+          const healthResult = await this.healthMonitor.checkEndpointHealth(target);
+          this.healthMonitor.logHealthCheck(target, healthResult);
+          healthResults.push({
+            target,
+            health: healthResult
+          });
+        }
+      }
+
+      return healthResults;
+    } catch (error) {
+      console.error('[RTB-HEALTH] Failed to perform health checks:', error);
+      return [];
+    }
+  }
+
+  static async getTargetUptime(targetId: number, hours: number = 24): Promise<{uptime: number; checks: number}> {
+    // This would typically query a database table storing health check results
+    // For now, return a calculated uptime based on recent activity
+    try {
+      const target = await storage.getRtbTarget(targetId);
+      if (!target) return { uptime: 0, checks: 0 };
+
+      // Perform a quick health check
+      const health = await this.healthMonitor.checkEndpointHealth(target);
+      
+      // In a production system, you'd query historical health data
+      // For now, return current status as uptime indicator
+      return {
+        uptime: health.healthy ? 100 : 0,
+        checks: 1
+      };
+    } catch (error) {
+      return { uptime: 0, checks: 0 };
+    }
+  }
+
+  /**
+   * Send bid request to a specific target with comprehensive logging and security
    */
   private static async sendBidRequest(
     targetId: number,
     bidRequest: BidRequest
   ): Promise<BidResponse | null> {
-    const startTime = Date.now(); // Move startTime to the beginning so it's in scope for error handling
+    const startTime = Date.now();
     
     try {
       const target = await storage.getRtbTarget(targetId);
@@ -722,12 +887,16 @@ export class RTBService {
 
       // Check capacity limits
       if (!await this.checkTargetCapacity(target)) {
-        throw new Error('Target capacity exceeded');
+        const error = 'Target capacity exceeded';
+        this.rtbLogger.logFailedBid(target, error, bidRequest.requestId);
+        throw new Error(error);
       }
 
       // Check operating hours
       if (!this.checkOperatingHours(target)) {
-        throw new Error('Target outside operating hours');
+        const error = 'Target outside operating hours';
+        this.rtbLogger.logFailedBid(target, error, bidRequest.requestId);
+        throw new Error(error);
       }
 
       // Prepare bid request with template substitution
@@ -744,7 +913,7 @@ export class RTBService {
         // Use custom request body template with variable substitution
         requestBody = this.substituteTemplateVariables(target.requestBody, requestWithTargetData);
       } else {
-        // Default JSON payload
+        // Default JSON payload with obfuscated phone numbers for logging
         const payload = {
           requestId: bidRequest.requestId,
           campaignId: bidRequest.campaignRtbId || bidRequest.campaignId.toString(),
@@ -788,44 +957,43 @@ export class RTBService {
       // startTime already defined at function beginning
       const timeoutMs = target.timeoutMs || 5000;
       
-      // Debug: Log the request being sent
-      console.log(`[RTB] Sending request to ${target.name} (${target.endpointUrl})`);
-      console.log(`[RTB] Request body: ${requestBody}`);
-      console.log(`[RTB] Headers:`, headers);
+      // Enhanced logging with security
+      const sanitizedRequest = this.securityUtils.sanitizeForLogging(JSON.parse(requestBody));
+      this.rtbLogger.logBidRequest(target, sanitizedRequest, bidRequest.requestId);
       
-      // Make HTTP request to target endpoint using AbortSignal.timeout (same as working test service)
+      // Make HTTP request to target endpoint using AbortSignal.timeout
       const response = await fetch(target.endpointUrl, {
         method: target.httpMethod || 'POST',
         headers,
         body: target.httpMethod === 'GET' ? undefined : requestBody,
         signal: AbortSignal.timeout(timeoutMs)
       });
-      
-      console.log(`[RTB] Got response from ${target.name}: ${response.status} ${response.statusText}`);
 
       const responseTime = Date.now() - startTime;
 
       if (!response.ok) {
         if (response.status === 204) {
-          // No bid response, return null to indicate no bid
+          // Log 204 (No Content) responses - critical for debugging failed bids
+          this.rtbLogger.logFailedBid(target, 'HTTP 204 No Content - No bid response', bidRequest.requestId, responseTime);
           return null;
         }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+        this.rtbLogger.logFailedBid(target, errorMsg, bidRequest.requestId, responseTime);
+        throw new Error(errorMsg);
       }
 
       const responseText = await response.text();
-      console.log(`[RTB] ===== RESPONSE FROM ${target.name} =====`);
-      console.log(`[RTB] Status: ${response.status} ${response.statusText}`);
-      console.log(`[RTB] Response body:`, responseText);
-      console.log(`[RTB] ===== END RESPONSE =====`);
       
       let responseData;
       try {
         responseData = JSON.parse(responseText);
+        // Log successful response with sanitized data
+        const sanitizedResponse = this.securityUtils.sanitizeForLogging(responseData);
+        this.rtbLogger.logBidResponse(target, sanitizedResponse, responseTime, response.status);
       } catch (parseError) {
-        console.error(`[RTB] Failed to parse JSON response from ${target.name}:`, parseError);
-        console.log(`[RTB] Raw response text:`, responseText);
-        throw new Error(`Invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+        const errorMsg = `Invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`;
+        this.rtbLogger.logFailedBid(target, errorMsg, bidRequest.requestId, responseTime);
+        throw new Error(errorMsg);
       }
 
       // Use advanced response parsing with JSONPath
@@ -883,10 +1051,17 @@ export class RTBService {
 
     } catch (error) {
       const responseTime = Date.now() - startTime;
-      console.error(`[RTB] Bid request failed for target ID ${targetId}:`, error);
-      console.error(`[RTB] Error type:`, error instanceof Error ? error.name : typeof error);
-      console.error(`[RTB] Error message:`, error instanceof Error ? error.message : error);
-      console.error(`[RTB] Response time: ${responseTime}ms, Timeout setting: ${target.timeoutMs || 5000}ms`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Enhanced error logging
+      const target = await storage.getRtbTarget(targetId).catch(() => null);
+      if (target) {
+        this.rtbLogger.logFailedBid(target, errorMessage, bidRequest.requestId, responseTime);
+      } else {
+        console.error(`[RTB-FAIL] ${new Date().toISOString()} - Target ID: ${targetId} (not found)`);
+        console.error(`[RTB-FAIL] Request ID: ${bidRequest.requestId}`);
+        console.error(`[RTB-FAIL] Error: ${errorMessage}`);
+      }
       
       // For timeout errors, log specific details
       if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('timeout'))) {
