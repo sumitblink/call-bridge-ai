@@ -453,7 +453,7 @@ export default function SimplifiedRTBManagementPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Target</TableHead>
-                      <TableHead>Company</TableHead>
+                      <TableHead>Buyer</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Success Rate</TableHead>
                       <TableHead>Actions</TableHead>
