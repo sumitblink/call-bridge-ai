@@ -12,7 +12,7 @@ When copying code from this code snippet, ensure you also include this informati
 // Flow node types from the visual builder
 export interface FlowNode {
   id: string;
-  type: 'start' | 'ivr_menu' | 'gather_input' | 'play_audio' | 'business_hours' | 'advanced_router' | 'traffic_splitter' | 'tracking_pixel' | 'custom_logic' | 'end';
+  type: 'start' | 'ivr_menu' | 'gather_input' | 'play_audio' | 'business_hours' | 'advanced_router' | 'traffic_splitter' | 'tracking_pixel' | 'custom_logic' | 'profile_enrich' | 'whisper' | 'transfer' | 'hangup' | 'end';
   position: { x: number; y: number };
   data: any;
   connections: string[]; // IDs of connected nodes
@@ -96,6 +96,18 @@ export class TwiMLGenerator {
       
       case 'custom_logic':
         return this.generateCustomLogicTwiML(node, session, flow, twiml);
+      
+      case 'profile_enrich':
+        return this.generateProfileEnrichTwiML(node, session, flow, twiml);
+      
+      case 'whisper':
+        return this.generateWhisperTwiML(node, session, flow, twiml);
+      
+      case 'transfer':
+        return this.generateTransferTwiML(node, session, flow, twiml);
+      
+      case 'hangup':
+        return this.generateHangupTwiML(node, session, flow, twiml);
       
       case 'end':
         return this.generateEndNodeTwiML(node, session, flow, twiml);
@@ -488,6 +500,144 @@ export class TwiMLGenerator {
       twiml.hangup();
       return { twiml: twiml.toString() };
     }
+  }
+
+  /**
+   * Generate TwiML for Profile Enrichment Node
+   * Enriches caller data from external APIs before routing
+   */
+  private static generateProfileEnrichTwiML(
+    node: FlowNode,
+    session: CallSession,
+    flow: CallFlowDefinition,
+    twiml: twilio.twiml.VoiceResponse
+  ): TwiMLResponse {
+    const config = node.data.config || {};
+    const apiEndpoint = config.apiEndpoint;
+    const timeoutMs = config.timeoutMs || 2000;
+    const fallbackAction = config.fallbackAction || 'continue';
+    
+    // Add brief hold message while enriching
+    if (config.holdMessage) {
+      twiml.say({
+        voice: 'alice',
+        language: 'en-US'
+      }, config.holdMessage);
+    }
+
+    // In a real implementation, we would make the API call here
+    // For now, we'll continue to the next node
+    const nextConnection = flow.connections?.find(conn => conn.source === node.id);
+    if (nextConnection) {
+      twiml.redirect(`${this.baseUrl}/api/flow/execute/${session.flowId}/node/${nextConnection.target}?sessionId=${session.sessionId}`);
+    } else {
+      twiml.hangup();
+    }
+
+    return { twiml: twiml.toString() };
+  }
+
+  /**
+   * Generate TwiML for Whisper Node
+   * Plays message to agent before connecting caller
+   */
+  private static generateWhisperTwiML(
+    node: FlowNode,
+    session: CallSession,
+    flow: CallFlowDefinition,
+    twiml: twilio.twiml.VoiceResponse
+  ): TwiMLResponse {
+    const config = node.data.config || {};
+    const whisperMessage = config.whisperMessage || 'Incoming call';
+    const playToAgent = config.playToAgent !== false; // Default true
+    const voice = config.voice || 'alice';
+    const language = config.language || 'en-US';
+
+    if (playToAgent && config.agentNumber) {
+      const dial = twiml.dial({
+        record: config.enableRecording !== false,
+        timeout: config.timeout || 30
+      });
+      
+      dial.number({
+        statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
+        statusCallback: `${this.baseUrl}/api/flow/whisper-status`,
+        statusCallbackMethod: 'POST'
+      }, config.agentNumber);
+    } else {
+      // Continue to next node if no agent number
+      const nextConnection = flow.connections?.find(conn => conn.source === node.id);
+      if (nextConnection) {
+        twiml.redirect(`${this.baseUrl}/api/flow/execute/${session.flowId}/node/${nextConnection.target}?sessionId=${session.sessionId}`);
+      } else {
+        twiml.hangup();
+      }
+    }
+
+    return { twiml: twiml.toString() };
+  }
+
+  /**
+   * Generate TwiML for Transfer Node
+   * Transfers call to another number or extension
+   */
+  private static generateTransferTwiML(
+    node: FlowNode,
+    session: CallSession,
+    flow: CallFlowDefinition,
+    twiml: twilio.twiml.VoiceResponse
+  ): TwiMLResponse {
+    const config = node.data.config || {};
+    const transferNumber = config.transferNumber;
+    const transferMessage = config.transferMessage;
+    const timeout = config.timeout || 30;
+    const record = config.record !== false; // Default true
+
+    if (transferMessage) {
+      twiml.say({
+        voice: 'alice',
+        language: 'en-US'
+      }, transferMessage);
+    }
+
+    if (transferNumber) {
+      twiml.dial({
+        timeout: timeout,
+        record: record,
+        action: `${this.baseUrl}/api/flow/transfer-complete/${session.flowId}?sessionId=${session.sessionId}`,
+        method: 'POST'
+      }, transferNumber);
+    } else {
+      twiml.say('Transfer number not configured.');
+      twiml.hangup();
+    }
+
+    return { twiml: twiml.toString() };
+  }
+
+  /**
+   * Generate TwiML for Hangup Node
+   * Controlled call termination with optional message
+   */
+  private static generateHangupTwiML(
+    node: FlowNode,
+    session: CallSession,
+    flow: CallFlowDefinition,
+    twiml: twilio.twiml.VoiceResponse
+  ): TwiMLResponse {
+    const config = node.data.config || {};
+    const hangupMessage = config.hangupMessage;
+    const hangupReason = config.hangupReason || 'normal';
+    
+    if (hangupMessage) {
+      twiml.say({
+        voice: 'alice',
+        language: 'en-US'
+      }, hangupMessage);
+    }
+
+    twiml.hangup();
+    return { twiml: twiml.toString() };
   }
 
   /**

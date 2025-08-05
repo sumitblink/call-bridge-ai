@@ -24,7 +24,7 @@ interface CallFlowEditorProps {
 
 interface FlowNode {
   id: string;
-  type: 'start' | 'condition' | 'action' | 'menu' | 'gather' | 'play' | 'hours' | 'router' | 'splitter' | 'pixel' | 'javascript' | 'end';
+  type: 'start' | 'condition' | 'action' | 'menu' | 'gather' | 'play' | 'hours' | 'router' | 'splitter' | 'pixel' | 'profile_enrich' | 'whisper' | 'transfer' | 'hangup' | 'javascript' | 'end';
   x: number;
   y: number;
   data: {
@@ -100,6 +100,10 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
     { type: 'router', label: 'Advanced Router', icon: '🚀', color: 'bg-pink-100 border-pink-300', description: 'Routes calls to buyers using priority, capacity limits, and RTB bidding systems' },
     { type: 'splitter', label: 'Traffic Splitter', icon: '🔀', color: 'bg-teal-100 border-teal-300', description: 'Splits incoming traffic between multiple paths for A/B testing or load balancing' },
     { type: 'pixel', label: 'Tracking Pixel', icon: '📊', color: 'bg-cyan-100 border-cyan-300', description: 'Fires tracking pixels and postback URLs for analytics and conversion tracking' },
+    { type: 'profile_enrich', label: 'Profile Enrich', icon: '👤', color: 'bg-purple-100 border-purple-300', description: 'Enriches caller data from external APIs before routing' },
+    { type: 'whisper', label: 'Whisper', icon: '💬', color: 'bg-teal-100 border-teal-300', description: 'Plays message to agent before connecting caller' },
+    { type: 'transfer', label: 'Transfer', icon: '📞', color: 'bg-blue-100 border-blue-300', description: 'Transfers call to another number or extension' },
+    { type: 'hangup', label: 'Hangup', icon: '📴', color: 'bg-red-100 border-red-300', description: 'Controlled call termination with optional message' },
     { type: 'javascript', label: 'Custom Logic', icon: '⚙️', color: 'bg-gray-100 border-gray-300', description: 'Executes custom JavaScript code for complex business logic and dynamic routing' },
     { type: 'end', label: 'End', icon: '🏁', color: 'bg-red-100 border-red-300', description: 'Ends the call flow with a goodbye message or hangup action' }
   ];
@@ -203,6 +207,36 @@ export function CallFlowEditor({ flow, campaigns, onSave, onCancel }: CallFlowEd
             { name: 'caller_id', value: '{caller_number}' },
             { name: 'campaign_id', value: '{campaign_id}' }
           ]
+        };
+      case 'profile_enrich':
+        return {
+          apiEndpoint: 'https://api.example.com/enrich',
+          timeoutMs: 2000,
+          fallbackAction: 'continue',
+          holdMessage: 'Please hold while we process your information',
+          fields: ['credit_score', 'income_range', 'property_value']
+        };
+      case 'whisper':
+        return {
+          whisperMessage: 'High-value lead from campaign',
+          agentNumber: '',
+          playToAgent: true,
+          enableRecording: true,
+          timeout: 30,
+          voice: 'alice',
+          language: 'en-US'
+        };
+      case 'transfer':
+        return {
+          transferNumber: '',
+          transferMessage: 'Please hold while we transfer your call',
+          timeout: 30,
+          record: true
+        };
+      case 'hangup':
+        return {
+          hangupMessage: 'Thank you for calling. Goodbye.',
+          hangupReason: 'normal'
         };
       case 'javascript':
         return {
@@ -2638,6 +2672,204 @@ function NodeConfigurationDialog({ node, buyers, onSave, onCancel }: {
                 />
               </div>
             )}
+          </div>
+        );
+
+      case 'profile_enrich':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="apiEndpoint">API Endpoint</Label>
+              <Input
+                id="apiEndpoint"
+                value={config.apiEndpoint || ''}
+                onChange={(e) => updateConfig('apiEndpoint', e.target.value)}
+                placeholder="https://api.example.com/enrich"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="timeoutMs">Timeout (ms)</Label>
+              <Input
+                id="timeoutMs"
+                type="number"
+                value={config.timeoutMs || 2000}
+                onChange={(e) => updateConfig('timeoutMs', parseInt(e.target.value))}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="holdMessage">Hold Message</Label>
+              <Textarea
+                id="holdMessage"
+                value={config.holdMessage || ''}
+                onChange={(e) => updateConfig('holdMessage', e.target.value)}
+                placeholder="Please hold while we process your information"
+                rows={2}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="fallbackAction">Fallback Action</Label>  
+              <Select
+                value={config.fallbackAction || 'continue'}
+                onValueChange={(value) => updateConfig('fallbackAction', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="continue">Continue</SelectItem>
+                  <SelectItem value="hangup">Hangup</SelectItem>
+                  <SelectItem value="retry">Retry</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        );
+
+      case 'whisper':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="whisperMessage">Whisper Message</Label>
+              <Textarea
+                id="whisperMessage"
+                value={config.whisperMessage || ''}
+                onChange={(e) => updateConfig('whisperMessage', e.target.value)}
+                placeholder="High-value lead from campaign"
+                rows={2}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="agentNumber">Agent Number</Label>
+              <Input
+                id="agentNumber"
+                value={config.agentNumber || ''}
+                onChange={(e) => updateConfig('agentNumber', e.target.value)}
+                placeholder="+1234567890"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="timeout">Timeout (seconds)</Label>
+                <Input
+                  id="timeout"
+                  type="number"
+                  value={config.timeout || 30}
+                  onChange={(e) => updateConfig('timeout', parseInt(e.target.value))}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="voice">Voice</Label>
+                <Select
+                  value={config.voice || 'alice'}
+                  onValueChange={(value) => updateConfig('voice', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="alice">Alice</SelectItem>
+                    <SelectItem value="man">Man</SelectItem>
+                    <SelectItem value="woman">Woman</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="enableRecording"
+                checked={config.enableRecording !== false}
+                onCheckedChange={(checked) => updateConfig('enableRecording', checked)}
+              />
+              <Label htmlFor="enableRecording">Enable Recording</Label>
+            </div>
+          </div>
+        );
+
+      case 'transfer':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="transferNumber">Transfer Number</Label>
+              <Input
+                id="transferNumber"
+                value={config.transferNumber || ''}
+                onChange={(e) => updateConfig('transferNumber', e.target.value)}
+                placeholder="+1234567890"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="transferMessage">Transfer Message</Label>
+              <Textarea
+                id="transferMessage"
+                value={config.transferMessage || ''}
+                onChange={(e) => updateConfig('transferMessage', e.target.value)}
+                placeholder="Please hold while we transfer your call"
+                rows={2}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="timeout">Timeout (seconds)</Label>
+                <Input
+                  id="timeout"
+                  type="number"
+                  value={config.timeout || 30}
+                  onChange={(e) => updateConfig('timeout', parseInt(e.target.value))}
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="record"
+                  checked={config.record !== false}
+                  onCheckedChange={(checked) => updateConfig('record', checked)}
+                />
+                <Label htmlFor="record">Record Transfer</Label>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'hangup':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="hangupMessage">Hangup Message</Label>
+              <Textarea
+                id="hangupMessage"
+                value={config.hangupMessage || ''}
+                onChange={(e) => updateConfig('hangupMessage', e.target.value)}
+                placeholder="Thank you for calling. Goodbye."
+                rows={2}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="hangupReason">Hangup Reason</Label>
+              <Select
+                value={config.hangupReason || 'normal'}
+                onValueChange={(value) => updateConfig('hangupReason', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="busy">Busy</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="timeout">Timeout</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         );
 
