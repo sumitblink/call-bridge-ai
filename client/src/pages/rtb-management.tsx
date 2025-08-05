@@ -582,7 +582,7 @@ export default function SimplifiedRTBManagementPage() {
                         <TableHead className="w-32">Request ID</TableHead>
                         <TableHead>Campaign</TableHead>
                         <TableHead>Caller ID</TableHead>
-                        <TableHead>Call Start</TableHead>
+                        <TableHead>Date & Time</TableHead>
                         <TableHead>Targets Pinged</TableHead>
                         <TableHead>Successful Bids</TableHead>
                         <TableHead>Failed Bids</TableHead>
@@ -649,9 +649,9 @@ export default function SimplifiedRTBManagementPage() {
                             </TableCell>
                             <TableCell className="text-sm">
                               <div className="flex flex-col">
-                                <span>{new Date(request.callStartTime).toLocaleTimeString()}</span>
-                                <span className="text-muted-foreground text-xs">
-                                  {new Date(request.callStartTime).toLocaleDateString()}
+                                <span className="font-medium">{new Date(request.callStartTime).toLocaleDateString()}</span>
+                                <span className="text-muted-foreground font-mono text-xs">
+                                  {new Date(request.callStartTime).toLocaleTimeString()}
                                 </span>
                               </div>
                             </TableCell>
