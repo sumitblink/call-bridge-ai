@@ -430,7 +430,7 @@ export default function SimplifiedRTBManagementPage() {
         <Tabs defaultValue="targets" className="space-y-4">
           <TabsList>
             <TabsTrigger value="targets">RTB Targets</TabsTrigger>
-            <TabsTrigger value="analytics">Auction Analytics</TabsTrigger>
+            <TabsTrigger value="analytics">RTB Detailed Analytics</TabsTrigger>
           </TabsList>
 
           {/* RTB Targets Tab */}
@@ -548,7 +548,7 @@ export default function SimplifiedRTBManagementPage() {
           <TabsContent value="analytics" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Recent Auction Activity</CardTitle>
+                <CardTitle>Recent RTB Activity</CardTitle>
                 <CardDescription>RTB auction requests and responses</CardDescription>
               </CardHeader>
               <CardContent>
