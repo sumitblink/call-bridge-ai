@@ -104,16 +104,18 @@ interface RoutingDecision {
 
 interface RTBAuctionDetail {
   id: number;
+  callId: number;
   auctionId: string;
   targetId: number;
   targetName: string;
   bidAmount: string;
-  bidStatus: string;
+  bidStatus: string; // 'bid_received', 'won', 'failed', 'rejected'
   responseTime: number;
   destinationNumber: string | null;
   isWinner: boolean;
   rejectionReason: string | null;
   timestamp: string;
+  metadata?: any;
 }
 
 export default function CallDetailsAccordion({ call, campaign, buyer }: CallDetailsAccordionProps) {
@@ -121,19 +123,19 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
 
   // Fetch call events for the Events tab
   const { data: callEvents } = useQuery<CallEvent[]>({
-    queryKey: ['/api/call-events', call.id],
+    queryKey: ['/api/calls', call.id, 'events'],
     enabled: expandedCall === call.id.toString(),
   });
 
   // Fetch routing decisions for Ring Tree Events tab
   const { data: routingDecisions } = useQuery<RoutingDecision[]>({
-    queryKey: ['/api/routing-decisions', call.id],
+    queryKey: ['/api/calls', call.id, 'routing'],
     enabled: expandedCall === call.id.toString(),
   });
 
   // Fetch RTB auction details for RTB tab
   const { data: rtbAuctionDetails } = useQuery<RTBAuctionDetail[]>({
-    queryKey: ['/api/rtb-auction-details', call.id],
+    queryKey: ['/api/calls', call.id, 'rtb'],
     enabled: expandedCall === call.id.toString(),
   });
 
