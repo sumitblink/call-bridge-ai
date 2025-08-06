@@ -13,6 +13,7 @@ import {
   Search, Tag, Calendar, MapPin, Users, Target 
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import CallDetailsAccordion from "@/components/CallDetailsAccordion";
 
 interface CallWithDetails {
   id: number;
@@ -654,88 +655,66 @@ export function AdvancedReporting() {
                 No calls found matching your filters.
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Campaign</TableHead>
-                    <TableHead>Publisher</TableHead>
-                    <TableHead>Target</TableHead>
-                    <TableHead>Buyer</TableHead>
-                    <TableHead>Number Pool</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Tags</TableHead>
-                    <TableHead>Revenue</TableHead>
-                    <TableHead>Profit</TableHead>
-                    <TableHead>Conversion</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {calls.map((call) => (
-                    <TableRow key={call.id} className="hover:bg-gray-50">
-                      <TableCell>
-                        <div className="font-medium">{call.campaignName}</div>
-                        <div className="text-xs text-gray-500">{call.utmCampaign}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{call.publisherName || 'Direct'}</div>
-                        <div className="text-xs text-gray-500">{call.utmSource}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">{call.keyword || 'N/A'}</div>
-                        <div className="text-xs text-gray-500">{call.adGroup}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{call.buyerName}</div>
-                        <div className="text-xs text-gray-500">{call.disposition}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-mono text-sm">{call.dialedNumber || call.toNumber}</div>
-                        <div className="text-xs text-gray-500">{call.fromNumber}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">{new Date(call.createdAt).toLocaleDateString()}</div>
-                        <div className="text-xs text-gray-500">{formatDistanceToNow(new Date(call.createdAt))} ago</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">{formatDuration(call.duration)}</div>
-                        <Badge className={call.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                          {call.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          {call.sub1 && <Badge variant="outline" className="text-xs">{call.sub1}</Badge>}
-                          {call.sub2 && <Badge variant="outline" className="text-xs">{call.sub2}</Badge>}
-                          {call.sub3 && <Badge variant="outline" className="text-xs">{call.sub3}</Badge>}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-green-600 font-medium">
-                          {formatCurrency(parseFloat(call.revenue || '0'))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className={`font-medium ${parseFloat(call.profit || '0') >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(parseFloat(call.profit || '0'))}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {parseFloat(call.margin?.toString() || '0').toFixed(1)}%
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {call.isConverted ? (
-                          <Badge className="bg-green-100 text-green-800">
-                            {call.conversionType || 'Converted'}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">No</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="space-y-2">
+                {calls.map((call) => {
+                  // Transform the call data to match the accordion interface expectations
+                  const transformedCall = {
+                    id: call.id,
+                    campaignId: call.campaignId,
+                    buyerId: call.buyerId,
+                    callSid: call.callSid || `call_${call.id}`,
+                    fromNumber: call.fromNumber,
+                    toNumber: call.toNumber || call.dialedNumber,
+                    duration: call.duration,
+                    status: call.status,
+                    callQuality: call.callQuality,
+                    recordingUrl: call.recordingUrl,
+                    recordingSid: call.recordingSid,
+                    recordingStatus: call.recordingStatus,
+                    recordingDuration: call.recordingDuration,
+                    transcription: call.transcription,
+                    transcriptionStatus: call.transcriptionStatus,
+                    cost: call.cost?.toString() || '0',
+                    revenue: call.revenue?.toString() || '0',
+                    geoLocation: call.geoLocation,
+                    userAgent: call.userAgent,
+                    createdAt: call.createdAt,
+                    updatedAt: call.updatedAt
+                  };
+
+                  const campaign = {
+                    id: call.campaignId,
+                    name: call.campaignName || 'Unknown Campaign',
+                    description: null,
+                    status: 'active',
+                    phoneNumber: call.toNumber || call.dialedNumber,
+                    routingType: 'round_robin',
+                    maxConcurrentCalls: 1,
+                    callCap: 100,
+                    geoTargeting: null,
+                    timeZoneRestriction: null,
+                    createdAt: call.createdAt,
+                    updatedAt: call.updatedAt
+                  };
+
+                  const buyer = call.buyerName ? {
+                    id: call.buyerId || 0,
+                    name: call.buyerName,
+                    email: null,
+                    phoneNumber: null,
+                    status: 'active'
+                  } : undefined;
+
+                  return (
+                    <CallDetailsAccordion
+                      key={call.id}
+                      call={transformedCall}
+                      campaign={campaign}
+                      buyer={buyer}
+                    />
+                  );
+                })}
+              </div>
             )}
           </CardContent>
         </Card>
