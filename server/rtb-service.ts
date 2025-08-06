@@ -411,7 +411,11 @@ export class RTBService {
     rejectionReason?: string
   ): Promise<void> {
     try {
-      const auctionDetails = {
+      // Store directly in database using Drizzle
+      const { db } = await import('./db');
+      const { rtbAuctionDetails } = await import('../shared/schema');
+
+      const auctionDetailsData = {
         callId,
         auctionId,
         targetId,
@@ -429,12 +433,7 @@ export class RTBService {
         }
       };
 
-      // Store in database via call-details API
-      await fetch(`/api/call-details/api/calls/${callId}/rtb`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(auctionDetails)
-      });
+      await db.insert(rtbAuctionDetails).values(auctionDetailsData);
 
       console.log(`[RTB Phase3] Logged auction details for call ${callId}, target ${targetName}: ${bidStatus}`);
     } catch (error) {
