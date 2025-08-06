@@ -8834,6 +8834,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mount the call details router for comprehensive call analytics
+  app.use(callDetailsRouter);
+
   const httpServer = createServer(app);
   // Test landing page route for RedTrack integration testing
   app.get('/redtrack-test-lander.html', (req, res) => {
