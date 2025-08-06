@@ -278,13 +278,13 @@ export class RTBService {
       '[tag:Geo:Timezone]': this.getTimezoneFromState(state),
       
       // Enhanced Ringba-compliant tokens for your specific requirements
-      '[tag:InboundNumber:Number-NoPlus]': (bidRequest.inboundNumber || '').replace(/^\+1/, ''),
-      '[tag:InboundNumber:Number]': bidRequest.inboundNumber || '',
+      '[tag:InboundNumber:Number-NoPlus]': (bidRequest.callerId || '').replace(/^\+1/, '').replace(/^\+/, ''),
+      '[tag:InboundNumber:Number]': bidRequest.callerId || '',
       '[Call:InboundCallId]': bidRequest.inboundCallId || bidRequest.requestId,
       '[Publisher:SubId]': bidRequest.publisherSubId || '',
       '[Publisher:Id]': bidRequest.publisherId?.toString() || '',
       '[Call:CallerId]': bidRequest.callerId || '',
-      '[Call:CallerIdNoPlus]': (bidRequest.callerId || '').replace(/^\+1/, ''),
+      '[Call:CallerIdNoPlus]': (bidRequest.callerId || '').replace(/^\+1/, '').replace(/^\+/, ''),
     };
   }
 
