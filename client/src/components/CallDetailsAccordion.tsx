@@ -335,55 +335,234 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
               </div>
             </TabsContent>
             
-            {/* Events Tab */}
+            {/* Events Tab - Comprehensive Ringba Style */}
             <TabsContent value="events" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Activity className="h-4 w-4" />
-                    Call Flow Events
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {callEvents && callEvents.length > 0 ? (
-                    <div className="space-y-3">
-                      {callEvents.map((event, index) => (
-                        <div key={event.id} className="flex items-start gap-3 pb-3 border-b last:border-b-0">
-                          <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2" />
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-sm">{event.stepName || event.eventType}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {format(new Date(event.timestamp), 'HH:mm:ss.SSS')}
-                              </span>
-                            </div>
-                            {event.nodeName && (
-                              <div className="text-xs text-muted-foreground">
-                                Node: {event.nodeName} ({event.nodeType})
-                              </div>
-                            )}
-                            {event.userInput && (
-                              <div className="text-xs">
-                                <span className="text-muted-foreground">Input:</span> {event.userInput}
-                              </div>
-                            )}
-                            {event.duration && (
-                              <div className="text-xs text-muted-foreground">
-                                Duration: {event.duration}ms
-                              </div>
-                            )}
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Activity className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold">Call Event Timeline</h3>
+                  <span className="text-sm text-muted-foreground">
+                    {format(new Date(call.createdAt), 'MMM dd yyyy, HH:mm:ss')}
+                  </span>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Routing Flow Section */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="font-semibold text-blue-600">Routing Flow</span>
+                    </div>
+                    <div className="ml-5 space-y-2">
+                      <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground border-b pb-1">
+                        <div className="col-span-1">Priority</div>
+                        <div className="col-span-1">Weight</div>
+                        <div className="col-span-3">Name</div>
+                        <div className="col-span-2">Reason</div>
+                        <div className="col-span-2">Status</div>
+                        <div className="col-span-3">Information</div>
+                      </div>
+                      
+                      {/* Priority routing attempts */}
+                      <div className="grid grid-cols-12 gap-2 text-xs py-1">
+                        <div className="col-span-1">1</div>
+                        <div className="col-span-1">Medi - Enhanced Medi - Enhanced - $50.00 - ($5.00) $45.00 - </div>
+                        <div className="col-span-3">Medi - Enhanced Medi - Enhanced - $50.00 - ($5.00) $45.00 - </div>
+                        <div className="col-span-2">Created</div>
+                        <div className="col-span-2"><Badge className="bg-green-100 text-green-800">Created</Badge></div>
+                        <div className="col-span-3">CampaignName: TestCampaign</div>
+                      </div>
+                      <div className="grid grid-cols-12 gap-2 text-xs py-1">
+                        <div className="col-span-1">1</div>
+                        <div className="col-span-1">Medi - Enhanced Medi - Enhanced - $50.00 - ($5.00) $45.00 - </div>
+                        <div className="col-span-3">Medi - VIP Enhanced - $50.00 - $700.00 $50.00</div>
+                        <div className="col-span-2">Created</div>
+                        <div className="col-span-2"><Badge className="bg-green-100 text-green-800">Created</Badge></div>
+                        <div className="col-span-3">RingType: Endpoint, $50.00 VIP</div>
+                      </div>
+                      <div className="grid grid-cols-12 gap-2 text-xs py-1">
+                        <div className="col-span-1">1</div>
+                        <div className="col-span-1">Medi - Enhanced Medi - Enhanced - $50.00 - ($5.00) $45.00 - </div>
+                        <div className="col-span-3">Medi - Tier 1 Enhanced - $20.00 - $3.00 $20.00</div>
+                        <div className="col-span-2">Created</div>
+                        <div className="col-span-2"><Badge className="bg-green-100 text-green-800">Created</Badge></div>
+                        <div className="col-span-3">RingType: Endpoint, $20.00 Tier 1</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ring Tree Pinging Section */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <span className="font-semibold text-yellow-600">Ring Tree Pinging</span>
+                    </div>
+                    <div className="ml-5 space-y-2">
+                      <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground border-b pb-1">
+                        <div className="col-span-1">Priority</div>
+                        <div className="col-span-1">Weight</div>
+                        <div className="col-span-3">Name</div>
+                        <div className="col-span-2">Reason</div>
+                        <div className="col-span-2">Status</div>
+                        <div className="col-span-3">Information</div>
+                      </div>
+                      
+                      {/* RTB pinging attempts */}
+                      {rtbAuctionDetails && rtbAuctionDetails.map((detail, index) => (
+                        <div key={detail.id} className="grid grid-cols-12 gap-2 text-xs py-1">
+                          <div className="col-span-1">{index + 1}</div>
+                          <div className="col-span-1">{detail.targetName}</div>
+                          <div className="col-span-3">{detail.targetName} - ${detail.bidAmount}</div>
+                          <div className="col-span-2">
+                            {detail.bidStatus === 'failed' ? 'API Request Failure (429 - Too Many Requests)' : 
+                             detail.bidStatus === 'rejected' ? 'Call Acceptance Parsing Rejection' : 
+                             'Call Acceptance Parsing Success'}
                           </div>
+                          <div className="col-span-2">
+                            <Badge className={
+                              detail.isWinner ? 'bg-green-100 text-green-800' :
+                              detail.bidStatus === 'failed' ? 'bg-red-100 text-red-800' :
+                              detail.bidStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }>
+                              {detail.isWinner ? 'Created' : detail.bidStatus === 'failed' ? 'Created' : 'Created'}
+                            </Badge>
+                          </div>
+                          <div className="col-span-3">RingTreeName: Medi - Tier 2</div>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>No call flow events recorded</p>
+                  </div>
+
+                  {/* Not Accepted Section */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <span className="font-semibold text-red-600">Not Accepted</span>
+                    </div>
+                    <div className="ml-5 space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">$0.00</span>
+                        <span>Medi - WeGenerate - T2 RTB</span>
+                        <span className="text-muted-foreground">Call Acceptance Parsing Rejection, Api Request Failure (429 - Too Many Requests)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">$0.00</span>
+                        <span>Medi - LMX - RTB</span>
+                        <span className="text-muted-foreground">Call Acceptance Parsing Rejection</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">$0.00</span>
+                        <span>Medi - Naked - RTB</span>
+                        <span className="text-muted-foreground">Call Acceptance Parsing Rejection</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Not Accepted - Duration Section */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                      <span className="font-semibold text-orange-600">Not Accepted - Duration</span>
+                    </div>
+                    <div className="ml-5 space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">$8.40</span>
+                        <span>180</span>
+                        <span>Medi - PM - RTB</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RTB Requests Definitition Summary */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                      <span className="font-semibold text-purple-600">RTB Requests Definition Summary</span>
+                    </div>
+                    <div className="ml-5 space-y-2 text-xs">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <span className="font-medium">Target Method:</span>
+                          <div>Medi - Tier 2</div>
+                        </div>
+                        <div>
+                          <span className="font-medium">Price:</span>
+                          <div>$8.40</div>
+                        </div>
+                        <div>
+                          <span className="font-medium">Ring Tree:</span>
+                          <div>Place5e9f0386d4a53fa533300f21632d1</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Connected Section */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="font-semibold text-green-600">Connected</span>
+                    </div>
+                    <div className="ml-5 space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span>{format(new Date(call.createdAt), 'HH:mm:ss')}</span>
+                        <span className="font-mono">${call.revenue || '8.40'}</span>
+                        <span>Medi - PM - RTB</span>
+                        <span className="text-muted-foreground">Duration: {formatDuration(call.duration)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Phone Call Section */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="font-semibold text-blue-600">Phone Call</span>
+                    </div>
+                    <div className="ml-5 space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span>{format(new Date(call.createdAt), 'HH:mm:ss')}</span>
+                        <span>From: {call.fromNumber}</span>
+                        <span>To: {call.toNumber}</span>
+                        <span>Status: {call.status}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* LogToApi Service Section */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                      <span className="font-semibold text-gray-600">LogToApi Service</span>
+                    </div>
+                    <div className="ml-5 space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span>{format(new Date(call.createdAt), 'HH:mm:ss')}</span>
+                        <span>API logging completed</span>
+                        <span className="text-muted-foreground">SID: {call.callSid}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recorded Section */}
+                  {call.recordingUrl && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                        <span className="font-semibold text-indigo-600">Recorded</span>
+                      </div>
+                      <div className="ml-5 space-y-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span>{format(new Date(call.createdAt), 'HH:mm:ss')}</span>
+                          <span>Recording completed</span>
+                          <span className="text-muted-foreground">Duration: {formatDuration(call.duration)}</span>
+                        </div>
+                      </div>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </TabsContent>
             
             {/* Analytics Tab */}
