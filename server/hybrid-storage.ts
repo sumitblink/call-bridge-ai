@@ -1189,6 +1189,28 @@ class HybridStorage implements IStorage {
     );
   }
 
+  // Call Details methods
+  async getCall(callId: number): Promise<Call | undefined> {
+    return this.executeOperation(
+      () => this.databaseStorage.getCall(callId),
+      () => this.memStorage.getCall(callId)
+    );
+  }
+
+  async getRoutingDecisions(callId: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getRoutingDecisions(callId),
+      () => this.memStorage.getRoutingDecisions(callId)
+    );
+  }
+
+  async getRTBAuctionDetails(callId: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getRTBAuctionDetails(callId),
+      () => this.memStorage.getRTBAuctionDetails(callId)
+    );
+  }
+
 }
 
 export const storage = new HybridStorage();

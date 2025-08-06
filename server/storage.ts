@@ -128,6 +128,11 @@ export interface IStorage {
   // Call Events
   getCallEvents(callId: number): Promise<any[]>;
   addCallEvent(callId: number, event: any): Promise<any>;
+  
+  // Call Details
+  getCall(callId: number): Promise<Call | undefined>;
+  getRoutingDecisions(callId: number): Promise<any[]>;
+  getRTBAuctionDetails(callId: number): Promise<any[]>;
 
   // Stats
   getStats(): Promise<{
@@ -350,6 +355,8 @@ export class MemStorage implements IStorage {
   private calls: Map<number, Call> = new Map();
   private callLogs: Map<number, CallLog> = new Map();
   private callEvents: any[] = [];
+  private routingDecisions: any[] = [];
+  private rtbAuctionDetails: any[] = [];
   private publishers: Map<number, any> = new Map();
   private publisherCampaigns: Map<string, any> = new Map();
   private phoneNumberTags: Map<number, any> = new Map();
@@ -936,6 +943,19 @@ export class MemStorage implements IStorage {
     };
     this.callEvents.push(newEvent);
     return newEvent;
+  }
+
+  // Call Details implementation
+  async getCall(callId: number): Promise<Call | undefined> {
+    return this.calls.get(callId);
+  }
+
+  async getRoutingDecisions(callId: number): Promise<any[]> {
+    return this.routingDecisions.filter(decision => decision.callId === callId);
+  }
+
+  async getRTBAuctionDetails(callId: number): Promise<any[]> {
+    return this.rtbAuctionDetails.filter(detail => detail.callId === callId);
   }
 
   // Stats

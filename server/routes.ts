@@ -867,6 +867,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Call Details API Endpoints
+  app.get('/api/call-events/:callId', requireAuth, async (req: any, res) => {
+    try {
+      const callId = parseInt(req.params.callId);
+      const userId = req.user?.id;
+      
+      // Verify call belongs to user
+      const call = await storage.getCall(callId);
+      if (!call) {
+        return res.status(404).json({ error: 'Call not found' });
+      }
+      
+      // Get campaign to verify ownership
+      const campaign = call.campaignId ? await storage.getCampaign(call.campaignId) : null;
+      if (campaign && campaign.userId !== Number(userId)) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      
+      const events = await storage.getCallEvents(callId);
+      res.json(events);
+    } catch (error) {
+      console.error('Error fetching call events:', error);
+      res.status(500).json({ error: 'Failed to fetch call events' });
+    }
+  });
+
+  app.get('/api/routing-decisions/:callId', requireAuth, async (req: any, res) => {
+    try {
+      const callId = parseInt(req.params.callId);
+      const userId = req.user?.id;
+      
+      // Verify call belongs to user
+      const call = await storage.getCall(callId);
+      if (!call) {
+        return res.status(404).json({ error: 'Call not found' });
+      }
+      
+      // Get campaign to verify ownership
+      const campaign = call.campaignId ? await storage.getCampaign(call.campaignId) : null;
+      if (campaign && campaign.userId !== Number(userId)) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      
+      const decisions = await storage.getRoutingDecisions(callId);
+      res.json(decisions);
+    } catch (error) {
+      console.error('Error fetching routing decisions:', error);
+      res.status(500).json({ error: 'Failed to fetch routing decisions' });
+    }
+  });
+
+  app.get('/api/rtb-auction-details/:callId', requireAuth, async (req: any, res) => {
+    try {
+      const callId = parseInt(req.params.callId);
+      const userId = req.user?.id;
+      
+      // Verify call belongs to user
+      const call = await storage.getCall(callId);
+      if (!call) {
+        return res.status(404).json({ error: 'Call not found' });
+      }
+      
+      // Get campaign to verify ownership
+      const campaign = call.campaignId ? await storage.getCampaign(call.campaignId) : null;
+      if (campaign && campaign.userId !== Number(userId)) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      
+      const auctionDetails = await storage.getRTBAuctionDetails(callId);
+      res.json(auctionDetails);
+    } catch (error) {
+      console.error('Error fetching RTB auction details:', error);
+      res.status(500).json({ error: 'Failed to fetch RTB auction details' });
+    }
+  });
+
   // Campaigns
   app.get('/api/campaigns', requireAuth, async (req: any, res) => {
     try {
