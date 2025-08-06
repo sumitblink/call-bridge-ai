@@ -1610,9 +1610,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Agents (backward compatibility)
-  app.get('/api/agents', async (req, res) => {
+  app.get('/api/agents', requireAuth, async (req: any, res) => {
     try {
-      const agents = await storage.getAgents();
+      const userId = req.user?.id;
+      const agents = await storage.getAgents(userId);
       res.json(agents);
     } catch (error) {
       console.error("Error fetching agents:", error);
@@ -1620,9 +1621,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/agents', async (req, res) => {
+  app.post('/api/agents', requireAuth, async (req: any, res) => {
     try {
-      const validatedData = insertAgentSchema.parse(req.body);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+      
+      const validatedData = insertAgentSchema.parse({
+        ...req.body,
+        userId: userId
+      });
       const agent = await storage.createAgent(validatedData);
       res.status(201).json(agent);
     } catch (error) {
@@ -1631,11 +1640,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/agents/:id', async (req, res) => {
+  app.put('/api/agents/:id', requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user?.id;
       const validatedData = insertAgentSchema.partial().parse(req.body);
-      const agent = await storage.updateAgent(id, validatedData);
+      const agent = await storage.updateAgent(id, validatedData, userId);
       if (!agent) {
         return res.status(404).json({ error: "Agent not found" });
       }
@@ -1646,10 +1656,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/agents/:id', async (req, res) => {
+  app.delete('/api/agents/:id', requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteAgent(id);
+      const userId = req.user?.id;
+      const success = await storage.deleteAgent(id, userId);
       if (!success) {
         return res.status(404).json({ error: "Agent not found" });
       }
