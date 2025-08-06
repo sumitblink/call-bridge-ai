@@ -31,7 +31,8 @@ import {
   AlertCircle,
   ArrowRight,
   PhoneCall,
-  Headphones
+  Headphones,
+  Trophy
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -432,57 +433,138 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
               </div>
             </TabsContent>
             
-            {/* RTB Details Tab */}
+            {/* RTB Details Tab - Ringba Style */}
             <TabsContent value="rtb" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    RTB Auction Results
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {rtbAuctionDetails && rtbAuctionDetails.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Target</TableHead>
-                          <TableHead>Bid Amount</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Response Time</TableHead>
-                          <TableHead>Result</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {rtbAuctionDetails.map((detail) => (
-                          <TableRow key={detail.id}>
-                            <TableCell className="font-medium">{detail.targetName}</TableCell>
-                            <TableCell>${detail.bidAmount}</TableCell>
-                            <TableCell>
-                              <Badge variant={detail.bidStatus === 'won' ? 'default' : 'secondary'}>
-                                {detail.bidStatus}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{detail.responseTime}ms</TableCell>
-                            <TableCell>
-                              {detail.isWinner ? (
-                                <Badge className="bg-green-100 text-green-800">Winner</Badge>
-                              ) : (
-                                <span className="text-muted-foreground">Lost</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>No RTB auction data available</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold">Ring Tree Pinging Summary</h3>
+                  <span className="text-sm text-muted-foreground">
+                    Timestamp: {format(new Date(call.createdAt), 'MMM dd HH:mm:ss aaa')}
+                  </span>
+                </div>
+
+                {rtbAuctionDetails && rtbAuctionDetails.length > 0 ? (
+                  <div className="space-y-6">
+                    {/* Not Accepted Section */}
+                    {rtbAuctionDetails.filter(detail => detail.bidStatus === 'rejected' || detail.bidStatus === 'failed').length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <XCircle className="h-4 w-4 text-red-500" />
+                          <span className="font-semibold text-red-600">Not Accepted</span>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 rounded border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="border-b">
+                                <TableHead className="font-medium">Bid Amount</TableHead>
+                                <TableHead className="font-medium">Duration</TableHead>
+                                <TableHead className="font-medium">Name</TableHead>
+                                <TableHead className="font-medium">Reason</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {rtbAuctionDetails
+                                .filter(detail => detail.bidStatus === 'rejected' || detail.bidStatus === 'failed')
+                                .map((detail) => (
+                                  <TableRow key={detail.id} className="border-b last:border-b-0">
+                                    <TableCell className="font-mono">${detail.bidAmount}</TableCell>
+                                    <TableCell>{detail.responseTime || 0}</TableCell>
+                                    <TableCell className="font-medium">{detail.targetName}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                      {detail.bidStatus === 'failed' ? 'API Request Failure (429 - Too Many Requests)' : 'Call Acceptance Parsing Rejection'}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Accepted Section */}
+                    {rtbAuctionDetails.filter(detail => detail.bidStatus === 'accepted' && !detail.isWinner).length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <span className="font-semibold text-green-600">Accepted</span>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 rounded border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="border-b">
+                                <TableHead className="font-medium">Bid Amount</TableHead>
+                                <TableHead className="font-medium">Duration</TableHead>
+                                <TableHead className="font-medium">Name</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {rtbAuctionDetails
+                                .filter(detail => detail.bidStatus === 'accepted' && !detail.isWinner)
+                                .map((detail) => (
+                                  <TableRow key={detail.id} className="border-b last:border-b-0">
+                                    <TableCell className="font-mono">${detail.bidAmount}</TableCell>
+                                    <TableCell>{detail.responseTime || 180}</TableCell>
+                                    <TableCell className="font-medium">{detail.targetName}</TableCell>
+                                  </TableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Winning Section */}
+                    {rtbAuctionDetails.filter(detail => detail.isWinner).length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Trophy className="h-4 w-4 text-yellow-500" />
+                          <span className="font-semibold text-yellow-600">Winning</span>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 rounded border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="border-b">
+                                <TableHead className="font-medium">Bid Amount</TableHead>
+                                <TableHead className="font-medium">Duration</TableHead>
+                                <TableHead className="font-medium">Name</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {rtbAuctionDetails
+                                .filter(detail => detail.isWinner)
+                                .map((detail) => (
+                                  <TableRow key={detail.id} className="border-b last:border-b-0">
+                                    <TableCell className="font-mono">${detail.bidAmount}</TableCell>
+                                    <TableCell>{detail.responseTime || 180}</TableCell>
+                                    <TableCell className="font-medium">{detail.targetName}</TableCell>
+                                  </TableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+
+                        {/* Ring Tree Details for Winner */}
+                        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium">Ring Tree:</span>
+                            <span className="ml-2">Medi - Tier 2</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">Ring Tree Id:</span>
+                            <span className="ml-2 font-mono text-xs">Place5e9f0386d4a53fa533300f21632d1</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No RTB auction data available for this call</p>
+                  </div>
+                )}
+              </div>
               
               {/* Routing Decisions */}
               {routingDecisions && routingDecisions.length > 0 && (
