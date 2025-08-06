@@ -237,7 +237,7 @@ function ApiDocumentationPage() {
       "id": 1,
       "requestId": "req_12345",
       "campaignId": "campaign_uuid",
-      "callerId": "555***1234",
+      "callerId": "+12129200892",
       "callerState": "CA",
       "callerZip": "90210",
       "callStartTime": "2025-08-04T12:00:00Z",
@@ -273,7 +273,7 @@ function ApiDocumentationPage() {
     "bidAmount": "25.50",
     "auctionStatus": "won",
     "responseTimeMs": 456,
-    "destinationNumber": "555***9876",
+    "destinationNumber": "+19876543210",
     "isWinner": true,
     "rejectionReason": null,
     "createdAt": "2025-08-04T12:00:00Z"
@@ -297,8 +297,8 @@ function ApiDocumentationPage() {
       "id": 1,
       "callSid": "CA1234567890abcdef",
       "campaignId": "campaign_uuid",
-      "from": "555***1234",
-      "to": "555***5678",
+      "from": "+12129200892",
+      "to": "+15678901234",
       "status": "completed",
       "direction": "inbound",
       "duration": 120,
@@ -420,7 +420,7 @@ function ApiDocumentationPage() {
                       <ul className="space-y-1">
                         <li>• <strong>Authentication:</strong> Session-based with secure cookies</li>
                         <li>• <strong>Rate Limiting:</strong> 100 req/min general, 1000 req/min webhooks</li>
-                        <li>• <strong>Phone Obfuscation:</strong> All logs use 555***1234 format</li>
+                        <li>• <strong>Complete Logging:</strong> All requests and responses fully logged</li>
                         <li>• <strong>Timeout Protection:</strong> 5-second max with retry logic</li>
                         <li>• <strong>Audit Trails:</strong> Complete request/response logging</li>
                         <li>• <strong>Data Validation:</strong> Zod schema validation on all inputs</li>

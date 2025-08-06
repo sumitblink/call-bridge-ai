@@ -115,7 +115,7 @@ function DocumentationPage() {
                   <ul>
                     <li><strong>33+ Bidder Support:</strong> Comprehensive rejection reason analysis</li>
                     <li><strong>Auction Management:</strong> Real-time bid processing with timeout protection</li>
-                    <li><strong>Security Features:</strong> Phone number obfuscation (555***1234 format)</li>
+                    <li><strong>Security Features:</strong> Comprehensive error logging and audit trails</li>
                     <li><strong>Health Monitoring:</strong> Uptime tracking and error alerting</li>
                     <li><strong>Comprehensive Logging:</strong> All requests/responses/failures logged</li>
                     <li><strong>Rate Limiting:</strong> Per minute/hour/day limits</li>
@@ -178,7 +178,7 @@ function DocumentationPage() {
                   <h3>Security Features</h3>
                   <ul>
                     <li><strong>Multi-tenancy:</strong> Complete data isolation between users</li>
-                    <li><strong>Phone Obfuscation:</strong> All logs use 555***1234 format</li>
+                    <li><strong>Complete Logging:</strong> All requests and responses logged for troubleshooting</li>
                     <li><strong>Session Security:</strong> Secure cookies and CSRF protection</li>
                     <li><strong>API Security:</strong> Rate limiting and authentication</li>
                     <li><strong>Audit Trails:</strong> Complete activity logging</li>

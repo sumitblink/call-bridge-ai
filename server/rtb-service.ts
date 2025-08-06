@@ -95,34 +95,10 @@ export class RTBService {
     }
   };
 
-  // Security utilities for phone number obfuscation
-  private static securityUtils = {
-    obfuscatePhoneNumber: (phoneNumber: string): string => {
-      // Obfuscate phone numbers in logs to prevent harvesting
-      if (!phoneNumber) return 'N/A';
-      const cleaned = phoneNumber.replace(/\D/g, '');
-      if (cleaned.length >= 10) {
-        return `${cleaned.slice(0, 3)}***${cleaned.slice(-4)}`;
-      }
-      return '***';
-    },
-    
+  // Logging utilities without obfuscation
+  private static loggingUtils = {
     sanitizeForLogging: (data: any): any => {
-      // Recursively sanitize sensitive data for logging
-      if (typeof data === 'string' && /^\+?1?\d{10,11}$/.test(data.replace(/\D/g, ''))) {
-        return RTBService.securityUtils.obfuscatePhoneNumber(data);
-      }
-      if (typeof data === 'object' && data !== null) {
-        const sanitized: any = {};
-        for (const [key, value] of Object.entries(data)) {
-          if (key.toLowerCase().includes('phone') || key.toLowerCase().includes('number')) {
-            sanitized[key] = typeof value === 'string' ? RTBService.securityUtils.obfuscatePhoneNumber(value) : value;
-          } else {
-            sanitized[key] = RTBService.securityUtils.sanitizeForLogging(value);
-          }
-        }
-        return sanitized;
-      }
+      // Return data as-is without obfuscation
       return data;
     }
   };
@@ -913,7 +889,7 @@ export class RTBService {
         // Use custom request body template with variable substitution
         requestBody = this.substituteTemplateVariables(target.requestBody, requestWithTargetData);
       } else {
-        // Default JSON payload with obfuscated phone numbers for logging
+        // Default JSON payload
         const payload = {
           requestId: bidRequest.requestId,
           campaignId: bidRequest.campaignRtbId || bidRequest.campaignId.toString(),
@@ -957,9 +933,9 @@ export class RTBService {
       // startTime already defined at function beginning
       const timeoutMs = target.timeoutMs || 5000;
       
-      // Enhanced logging with security
-      const sanitizedRequest = this.securityUtils.sanitizeForLogging(JSON.parse(requestBody));
-      this.rtbLogger.logBidRequest(target, sanitizedRequest, bidRequest.requestId);
+      // Enhanced logging without obfuscation
+      const requestData = JSON.parse(requestBody);
+      this.rtbLogger.logBidRequest(target, requestData, bidRequest.requestId);
       
       // Make HTTP request to target endpoint using AbortSignal.timeout
       const response = await fetch(target.endpointUrl, {
@@ -987,9 +963,8 @@ export class RTBService {
       let responseData;
       try {
         responseData = JSON.parse(responseText);
-        // Log successful response with sanitized data
-        const sanitizedResponse = this.securityUtils.sanitizeForLogging(responseData);
-        this.rtbLogger.logBidResponse(target, sanitizedResponse, responseTime, response.status);
+        // Log successful response
+        this.rtbLogger.logBidResponse(target, responseData, responseTime, response.status);
       } catch (parseError) {
         const errorMsg = `Invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`;
         this.rtbLogger.logFailedBid(target, errorMsg, bidRequest.requestId, responseTime);
