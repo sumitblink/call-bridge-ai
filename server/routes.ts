@@ -2740,7 +2740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/webhooks/call-status', async (req, res) => {
-    try:
+    try {
       const { CallSid, CallStatus, CallDuration, Duration } = req.body;
       
       console.log(`[Webhook] Call status update: ${CallSid} - ${CallStatus}`);
