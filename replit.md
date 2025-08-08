@@ -71,3 +71,9 @@ Preferred communication style: Simple, everyday language.
 - **New Enterprise Node Types**: Added Profile Enrich (caller data enrichment), Whisper (agent coaching), Transfer (live call routing), and Hangup (controlled termination) nodes
 - **Enhanced Configuration**: Full UI configuration panels with advanced settings, TTS options, and timeout controls
 - **Strategic Achievement**: CallCenter Pro now matches Ringba's call flow capabilities with superior RTB integration
+
+### DNI & Tracking Code Enhancements (August 2025)
+- **Next.js Compatibility**: Added dedicated Next.js tab in Call Tracking Tags for React-based implementations
+- **Modern Framework Support**: Generated React hooks (useDNI), components (DNIPhone, DNILink), and usage patterns for Next.js applications
+- **Client-Side Rendering**: Proper handling of SSR constraints with client-side DNI number fetching
+- **Developer Experience**: Step-by-step implementation guide with copyable code snippets for modern web frameworks
