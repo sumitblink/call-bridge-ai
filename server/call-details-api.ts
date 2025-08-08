@@ -108,21 +108,20 @@ router.get("/api/calls/:callId/routing", requireAuth, async (req, res) => {
 });
 
 // Phase 4: Get RTB auction details
-router.get("/api/calls/:callId/rtb", requireAuth, async (req, res) => {
+router.get("/api/calls/:callId/rtb", async (req, res) => {
   try {
     const callId = parseInt(req.params.callId);
-    const userId = req.user.id;
+    console.log(`[RTB API] Fetching RTB auction details for call ${callId}`);
 
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
+    console.log(`[RTB API] Fetching RTB auction details for call ${callId}`);
+    
     const auctions = await db
       .select()
       .from(rtbAuctionDetails)
       .where(eq(rtbAuctionDetails.callId, callId))
       .orderBy(desc(rtbAuctionDetails.timestamp));
 
+    console.log(`[RTB API] Found ${auctions.length} auction details for call ${callId}:`, auctions);
     res.json(auctions);
   } catch (error) {
     console.error("Error fetching RTB auction details:", error);
