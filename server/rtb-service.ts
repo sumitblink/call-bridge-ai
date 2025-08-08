@@ -71,7 +71,7 @@ export class RTBService {
       console.log(`[RTB-REQ] Request Body:`, JSON.stringify(request, null, 2));
     },
     
-    logBidResponse: (target: RtbTarget, response: any, responseTime: number, status: number) => {
+    logBidResponse: (target: RtbTarget, response: any, responseTime: number, status: number, rawResponse?: string) => {
       console.log(`[RTB-RESP] ${new Date().toISOString()} - Target: ${target.name} (ID: ${target.id})`);
       console.log(`[RTB-RESP] Response Time: ${responseTime}ms, Status: ${status}`);
       console.log(`[RTB-RESP] Response Body:`, JSON.stringify(response, null, 2));
@@ -613,7 +613,8 @@ export class RTBService {
             responseStatus: result.value.isValid ? 'success' : 'error',
             isValid: result.value.isValid,
             isWinningBid: false,
-            rejectionReason: result.value.rejectReason || null
+            rejectionReason: result.value.rejectReason || null,
+            rawResponse: result.value.rawResponse || null
           };
 
           const storedResponse = await storage.createRtbBidResponse(response);
@@ -962,8 +963,8 @@ export class RTBService {
       let responseData;
       try {
         responseData = JSON.parse(responseText);
-        // Log successful response
-        this.rtbLogger.logBidResponse(target, responseData, responseTime, response.status);
+        // Log successful response with raw response text
+        this.rtbLogger.logBidResponse(target, responseData, responseTime, response.status, responseText);
       } catch (parseError) {
         const errorMsg = `Invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`;
         this.rtbLogger.logFailedBid(target, errorMsg, bidRequest.requestId, responseTime);
@@ -1020,7 +1021,8 @@ export class RTBService {
         requiredDuration: requiredDuration ? parseInt(requiredDuration.toString()) : undefined,
         responseTimeMs: responseTime,
         isValid,
-        rejectReason: rejectReason || undefined
+        rejectReason: rejectReason || undefined,
+        rawResponse: responseData
       };
 
     } catch (error) {
