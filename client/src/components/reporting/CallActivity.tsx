@@ -7,6 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  ColumnCustomizer 
+} from "./ColumnCustomizer";
 import {
   Clock,
   Phone,
@@ -27,9 +31,14 @@ import {
   Target,
   TrendingUp,
   Building,
-  Globe
+  Globe,
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  MoreHorizontal
 } from "lucide-react";
 import { format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 
 // Call interface
 interface Call {
@@ -92,6 +101,10 @@ export default function CallActivity({ selectedCallId }: CallActivityProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("events");
   const [expandedCalls, setExpandedCalls] = useState<Set<number>>(new Set());
+  const [selectedCalls, setSelectedCalls] = useState<Set<number>>(new Set());
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([
+    'callSid', 'fromNumber', 'toNumber', 'duration', 'status', 'revenue', 'createdAt'
+  ]);
   
   // Fetch all calls
   const { data: callsResponse, isLoading: callsLoading, error: callsError } = useQuery({
@@ -138,6 +151,24 @@ export default function CallActivity({ selectedCallId }: CallActivityProps) {
       newExpanded.add(callId);
     }
     setExpandedCalls(newExpanded);
+  };
+
+  const toggleCallSelected = (callId: number) => {
+    const newSelected = new Set(selectedCalls);
+    if (newSelected.has(callId)) {
+      newSelected.delete(callId);
+    } else {
+      newSelected.add(callId);
+    }
+    setSelectedCalls(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCalls.size === calls.length) {
+      setSelectedCalls(new Set());
+    } else {
+      setSelectedCalls(new Set(calls.map((call: Call) => call.id)));
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -219,54 +250,139 @@ export default function CallActivity({ selectedCallId }: CallActivityProps) {
 
   return (
     <div className="space-y-4">
-      <div className="text-lg font-semibold text-gray-900 mb-4">Call Details</div>
+      {/* Header with Column Customizer */}
+      <div className="flex items-center justify-between">
+        <div className="text-lg font-semibold text-gray-900">Call Details</div>
+        <ColumnCustomizer
+          visibleColumns={visibleColumns}
+          onColumnsChange={setVisibleColumns}
+        />
+      </div>
       
-      {calls.map((call: Call) => {
-        const isExpanded = expandedCalls.has(call.id);
-        const campaign = campaigns?.find((c: Campaign) => c.id === call.campaignId);
-        const buyer = buyers?.find((b: Buyer) => b.id === call.buyerId);
+      {/* Call Details Table */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50">
+              <TableHead className="w-8">
+                <Checkbox
+                  checked={selectedCalls.size === calls.length && calls.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
+              <TableHead className="w-8"></TableHead> {/* Expand/Collapse */}
+              {visibleColumns.includes('callSid') && <TableHead className="text-xs">Call ID</TableHead>}
+              {visibleColumns.includes('fromNumber') && <TableHead className="text-xs">From</TableHead>}
+              {visibleColumns.includes('toNumber') && <TableHead className="text-xs">To</TableHead>}
+              {visibleColumns.includes('duration') && <TableHead className="text-xs">Duration</TableHead>}
+              {visibleColumns.includes('status') && <TableHead className="text-xs">Status</TableHead>}
+              {visibleColumns.includes('revenue') && <TableHead className="text-xs">Revenue</TableHead>}
+              {visibleColumns.includes('createdAt') && <TableHead className="text-xs">Date</TableHead>}
+              <TableHead className="text-xs">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {calls.map((call: Call) => {
+              const isExpanded = expandedCalls.has(call.id);
+              const isSelected = selectedCalls.has(call.id);
+              const campaign = campaigns?.find((c: Campaign) => c.id === call.campaignId);
+              const buyer = buyers?.find((b: Buyer) => b.id === call.buyerId);
 
-        return (
-          <div key={call.id} className="border border-gray-200 rounded-lg overflow-hidden">
-            {/* Call Row */}
-            <div 
-              className="p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer flex items-center justify-between"
-              onClick={() => toggleCallExpanded(call.id)}
-            >
-              <div className="flex items-center space-x-4">
-                <div className={`w-3 h-3 rounded-full bg-${getCallStatusColor(call.status, call.revenue)}`}></div>
-                <div className="flex items-center space-x-2">
-                  {getStatusIcon(call.status)}
-                  <span className="font-mono text-sm">{call.callSid.slice(-8)}</span>
-                </div>
-                <div className="text-sm text-gray-600">
-                  {call.fromNumber} → {call.toNumber}
-                </div>
-                <div className="text-sm text-gray-600">
-                  {formatDuration(call.duration)}
-                </div>
-                <Badge variant="outline" className="text-xs">
-                  {call.status}
-                </Badge>
-              </div>
-              <div className="text-sm text-gray-500">
-                {new Date(call.createdAt).toLocaleString()}
-              </div>
-            </div>
+              return (
+                <>
+                  {/* Main Call Row */}
+                  <TableRow key={call.id} className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}>
+                    <TableCell>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleCallSelected(call.id)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => toggleCallExpanded(call.id)}
+                      >
+                        {isExpanded ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableCell>
+                    {visibleColumns.includes('callSid') && (
+                      <TableCell className="font-mono text-sm">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-3 h-3 rounded-full bg-${getCallStatusColor(call.status, call.revenue)} border`}></div>
+                          <span>{call.callSid.slice(-8)}</span>
+                        </div>
+                      </TableCell>
+                    )}
+                    {visibleColumns.includes('fromNumber') && (
+                      <TableCell className="font-mono text-sm">{call.fromNumber}</TableCell>
+                    )}
+                    {visibleColumns.includes('toNumber') && (
+                      <TableCell className="font-mono text-sm">{call.toNumber}</TableCell>
+                    )}
+                    {visibleColumns.includes('duration') && (
+                      <TableCell className="text-sm">{formatDuration(call.duration)}</TableCell>
+                    )}
+                    {visibleColumns.includes('status') && (
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {call.status}
+                        </Badge>
+                      </TableCell>
+                    )}
+                    {visibleColumns.includes('revenue') && (
+                      <TableCell className="text-sm font-semibold text-green-600">
+                        {formatCurrency(call.revenue)}
+                      </TableCell>
+                    )}
+                    {visibleColumns.includes('createdAt') && (
+                      <TableCell className="text-sm text-gray-600">
+                        {formatDistanceToNow(new Date(call.createdAt), { addSuffix: true })}
+                      </TableCell>
+                    )}
+                    <TableCell>
+                      <div className="flex items-center space-x-1">
+                        {call.recordingUrl && (
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <Play className="h-3 w-3" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          <MoreHorizontal className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
 
-            {/* Expanded Call Details */}
-            {isExpanded && (
-              <CallDetailsExpanded 
-                call={call} 
-                campaign={campaign} 
-                buyer={buyer}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-              />
-            )}
-          </div>
-        );
-      })}
+                  {/* Expanded Call Details Row */}
+                  {isExpanded && (
+                    <TableRow>
+                      <TableCell colSpan={Object.keys(visibleColumns).length + 3} className="p-0">
+                        <CallDetailsExpanded 
+                          call={call} 
+                          campaign={campaign} 
+                          buyer={buyer}
+                          activeTab={activeTab}
+                          setActiveTab={setActiveTab}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
