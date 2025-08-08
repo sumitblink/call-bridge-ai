@@ -407,6 +407,66 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
             </div>
           </div>
 
+          {/* RTB Information Section */}
+          {rtbAuctionData && rtbAuctionData.length > 0 && (
+            <div className="border-t pt-4">
+              <div className="text-sm font-semibold text-gray-700 mb-3">RTB Auction Details</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">Winning Bid</div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between py-1 border-b border-gray-100">
+                      <span className="text-gray-500">Target:</span>
+                      <span className="font-medium">{rtbAuctionData.find((bid: any) => bid.isWinner)?.targetName || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-100">
+                      <span className="text-gray-500">Buyer:</span>
+                      <span className="font-medium">{(buyer as any)?.companyName || buyer?.name || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-100">
+                      <span className="text-gray-500">Bid Amount:</span>
+                      <span className="font-bold text-green-600">{rtbAuctionData.find((bid: any) => bid.isWinner)?.bidAmount ? formatCurrency(rtbAuctionData.find((bid: any) => bid.isWinner)?.bidAmount) : 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-100">
+                      <span className="text-gray-500">Response Time:</span>
+                      <span>{rtbAuctionData.find((bid: any) => bid.isWinner)?.responseTime || 0}ms</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-100">
+                      <span className="text-gray-500">Destination:</span>
+                      <span className="font-mono">{rtbAuctionData.find((bid: any) => bid.isWinner)?.destinationNumber || call.toNumber}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">Auction Summary</div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between py-1 border-b border-gray-100">
+                      <span className="text-gray-500">Total Bidders:</span>
+                      <span>{rtbAuctionData.length}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-100">
+                      <span className="text-gray-500">Successful Bids:</span>
+                      <span className="text-green-600">{rtbAuctionData.filter((bid: any) => bid.bidStatus === 'accepted').length}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-100">
+                      <span className="text-gray-500">Failed Bids:</span>
+                      <span className="text-red-600">{rtbAuctionData.filter((bid: any) => bid.bidStatus === 'failed').length}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-100">
+                      <span className="text-gray-500">Rejected Bids:</span>
+                      <span className="text-orange-600">{rtbAuctionData.filter((bid: any) => bid.bidStatus === 'rejected').length}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-gray-100">
+                      <span className="text-gray-500">Auction ID:</span>
+                      <span className="font-mono">{rtbAuctionData[0]?.auctionId || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {call.recordingUrl && (
             <div className="border-t pt-4">
               <div className="text-sm font-semibold text-gray-700 mb-3">Call Recording</div>
