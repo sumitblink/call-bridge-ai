@@ -1,9 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
 import { 
-  calls, callEvents, routingDecisions, rtbAuctionDetails,
-  type Call, type CallEvent, type RoutingDecision, type RtbAuctionDetails,
-  type InsertCallEvent, type InsertRoutingDecision, type InsertRtbAuctionDetails
+  calls, rtbAuctionDetails, buyers, publishers,
+  type Call, type RtbAuctionDetails
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -23,8 +22,6 @@ const router = Router();
 
 // Enhanced call details with full tracking information
 interface CallWithDetails extends Call {
-  events?: CallEvent[];
-  routingDecisions?: RoutingDecision[];
   rtbAuctions?: RtbAuctionDetails[];
   campaignName?: string;
   buyerName?: string;
@@ -34,7 +31,7 @@ interface CallWithDetails extends Call {
 router.get("/api/calls/:callId/details", requireAuth, async (req, res) => {
   try {
     const callId = parseInt(req.params.callId);
-    const userId = req.user?.id;
+    const userId = req.user.id;
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -76,20 +73,6 @@ router.get("/api/calls/:callId/details", requireAuth, async (req, res) => {
       return res.status(404).json({ message: "Call not found" });
     }
 
-    // Get call events (IVR flow tracking)
-    const events = await db
-      .select()
-      .from(callEvents)
-      .where(eq(callEvents.callId, callId))
-      .orderBy(desc(callEvents.timestamp));
-
-    // Get routing decisions
-    const routingDecs = await db
-      .select()
-      .from(routingDecisions)
-      .where(eq(routingDecisions.callId, callId))
-      .orderBy(routingDecisions.sequenceNumber);
-
     // Get RTB auction details
     const rtbAuctions = await db
       .select()
@@ -101,8 +84,6 @@ router.get("/api/calls/:callId/details", requireAuth, async (req, res) => {
       ...call,
       buyer,
       publisher,
-      events,
-      routingDecisions: routingDecs,
       rtbAuctions
     };
 
@@ -113,46 +94,22 @@ router.get("/api/calls/:callId/details", requireAuth, async (req, res) => {
   }
 });
 
-// Phase 2: Get call events for IVR flow visualization
+// Phase 2: Get call events - removed (table deleted)
 router.get("/api/calls/:callId/events", requireAuth, async (req, res) => {
   try {
-    const callId = parseInt(req.params.callId);
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const events = await db
-      .select()
-      .from(callEvents)
-      .where(eq(callEvents.callId, callId))
-      .orderBy(callEvents.timestamp);
-
-    res.json(events);
+    // Return empty array since call events system was removed
+    res.json([]);
   } catch (error) {
     console.error("Error fetching call events:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
-// Phase 3: Get routing decisions for call flow analysis
+// Phase 3: Get routing decisions - removed (table deleted)
 router.get("/api/calls/:callId/routing", requireAuth, async (req, res) => {
   try {
-    const callId = parseInt(req.params.callId);
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const decisions = await db
-      .select()
-      .from(routingDecisions)
-      .where(eq(routingDecisions.callId, callId))
-      .orderBy(routingDecisions.sequenceNumber);
-
-    res.json(decisions);
+    // Return empty array since routing decisions system was removed
+    res.json([]);
   } catch (error) {
     console.error("Error fetching routing decisions:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -163,7 +120,7 @@ router.get("/api/calls/:callId/routing", requireAuth, async (req, res) => {
 router.get("/api/calls/:callId/rtb", requireAuth, async (req, res) => {
   try {
     const callId = parseInt(req.params.callId);
-    const userId = req.user?.id;
+    const userId = req.user.id;
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -182,38 +139,24 @@ router.get("/api/calls/:callId/rtb", requireAuth, async (req, res) => {
   }
 });
 
-// POST endpoints for logging detailed call data
+// POST endpoints for logging detailed call data - removed (tables deleted)
 
-// Log call event (IVR node interactions)
+// Log call event - removed (table deleted)
 router.post("/api/calls/:callId/events", requireAuth, async (req, res) => {
   try {
-    const callId = parseInt(req.params.callId);
-    const eventData: InsertCallEvent = req.body;
-
-    const event = await db.insert(callEvents).values({
-      ...eventData,
-      callId
-    }).returning();
-
-    res.json(event[0]);
+    // Return error since call events system was removed
+    res.status(404).json({ message: "Call events system not available" });
   } catch (error) {
     console.error("Error logging call event:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
-// Log routing decision
+// Log routing decision - removed (table deleted)
 router.post("/api/calls/:callId/routing", requireAuth, async (req, res) => {
   try {
-    const callId = parseInt(req.params.callId);
-    const routingData: InsertRoutingDecision = req.body;
-
-    const decision = await db.insert(routingDecisions).values({
-      ...routingData,
-      callId
-    }).returning();
-
-    res.json(decision[0]);
+    // Return error since routing decisions system was removed
+    res.status(404).json({ message: "Routing decisions system not available" });
   } catch (error) {
     console.error("Error logging routing decision:", error);
     res.status(500).json({ message: "Internal server error" });

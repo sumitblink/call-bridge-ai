@@ -1474,105 +1474,48 @@ export class SupabaseStorage implements IStorage {
       .orderBy(desc(rtbBidResponses.bidAmount));
   }
 
-  // Call Flow methods - PostgreSQL implementation
+  // Call Flow methods - removed (tables deleted)
   async getCallFlows(userId?: number): Promise<any[]> {
-    try {
-      let query = db.select().from(callFlows);
-      
-      if (userId) {
-        query = query.where(eq(callFlows.userId, userId));
-      }
-      
-      return await query;
-    } catch (error) {
-      console.error('Error fetching call flows:', error);
-      // Return empty array if database error occurs
-      return [];
-    }
+    // Return empty array since call flows system was removed
+    return [];
   }
 
   async getCallFlow(id: number): Promise<any | undefined> {
-    try {
-      const result = await db
-        .select()
-        .from(callFlows)
-        .where(eq(callFlows.id, id))
-        .limit(1);
-      
-      return result[0];
-    } catch (error) {
-      console.error('Error fetching call flow:', error);
-      return undefined;
-    }
+    // Return undefined since call flows system was removed
+    return undefined;
   }
 
   async createCallFlow(flow: any): Promise<any> {
-    try {
-      const result = await db
-        .insert(callFlows)
-        .values(flow)
-        .returning();
-      
-      return result[0];
-    } catch (error) {
-      console.error('Error creating call flow:', error);
-      throw error;
-    }
+    // Throw error since call flows system was removed
+    throw new Error('Call flows system is not available');
   }
 
   async updateCallFlow(id: number, updates: any): Promise<any | undefined> {
-    try {
-      const result = await db
-        .update(callFlows)
-        .set(updates)
-        .where(eq(callFlows.id, id))
-        .returning();
-      
-      return result[0];
-    } catch (error) {
-      console.error('Error updating call flow:', error);
-      return undefined;
-    }
+    // Return undefined since call flows system was removed
+    return undefined;
   }
 
   async deleteCallFlow(id: number): Promise<boolean> {
-    try {
-      const result = await db
-        .delete(callFlows)
-        .where(eq(callFlows.id, id))
-        .returning();
-      
-      return result.length > 0;
-    } catch (error) {
-      console.error('Error deleting call flow:', error);
-      return false;
-    }
+    // Return false since call flows system was removed
+    return false;
   }
 
 
 
-  // Feedback methods
-  async createFeedback(feedbackData: InsertFeedback): Promise<Feedback> {
-    const result = await db.insert(feedback).values(feedbackData).returning();
-    return result[0];
+  // Feedback methods - removed (table deleted)
+  async createFeedback(feedbackData: any): Promise<any> {
+    // Throw error since feedback system was removed
+    throw new Error('Feedback system is not available');
   }
 
-  async getFeedbackHistory(userId: number): Promise<Feedback[]> {
-    const result = await db
-      .select()
-      .from(feedback)
-      .where(eq(feedback.userId, userId))
-      .orderBy(desc(feedback.timestamp));
-    return result;
+  async getFeedbackHistory(userId: number): Promise<any[]> {
+    // Return empty array since feedback system was removed
+    return [];
   }
 
-  async getAllFeedback(userId: number): Promise<Feedback[]> {
-    const result = await db
-      .select()
-      .from(feedback)
-      .where(eq(feedback.userId, userId))
-      .orderBy(desc(feedback.timestamp));
-    return result;
+  async getAllFeedback(userId: number): Promise<any[]> {
+    // Return empty array since feedback system was removed
+    return [];
   }
 
   // MVP Tracking methods (delegated to DatabaseStorage)
@@ -1596,14 +1539,14 @@ export class SupabaseStorage implements IStorage {
     return storage.updateVisitorSession(sessionId, updates);
   }
 
-  async createConversionEvent(event: InsertConversionEvent): Promise<ConversionEvent> {
-    const { storage } = await import('./storage-db');
-    return storage.createConversionEvent(event);
+  async createConversionEvent(event: any): Promise<any> {
+    // Return empty result since conversion events system was removed
+    throw new Error('Conversion events system is not available');
   }
 
-  async getConversionEvents(sessionId?: string, campaignId?: number): Promise<ConversionEvent[]> {
-    const { storage } = await import('./storage-db');
-    return storage.getConversionEvents(sessionId, campaignId);
+  async getConversionEvents(sessionId?: string, campaignId?: number): Promise<any[]> {
+    // Return empty array since conversion events system was removed
+    return [];
   }
 
   async getBasicTrackingStats(userId: number): Promise<{
