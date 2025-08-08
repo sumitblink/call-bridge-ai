@@ -108,7 +108,7 @@ router.get("/api/calls/:callId/routing", requireAuth, async (req, res) => {
 });
 
 // Phase 4: Get RTB auction details
-router.get("/api/calls/:callId/rtb", async (req, res) => {
+router.get("/api/calls/:callId/rtb", requireAuth, async (req, res) => {
   try {
     const callId = parseInt(req.params.callId);
     console.log(`[RTB API] Fetching RTB auction details for call ${callId}`);

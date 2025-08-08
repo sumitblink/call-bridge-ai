@@ -134,9 +134,18 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
   });
 
   // Fetch RTB auction details for RTB tab
-  const { data: rtbAuctionDetails } = useQuery<RTBAuctionDetail[]>({
+  const { data: rtbAuctionDetails, error: rtbError, isLoading: rtbLoading } = useQuery<RTBAuctionDetail[]>({
     queryKey: ['/api/calls', call.id, 'rtb'],
     enabled: expandedCall === call.id.toString(),
+  });
+
+  // Debug logging for RTB data
+  console.log('RTB Query State:', {
+    callId: call.id,
+    expanded: expandedCall,
+    data: rtbAuctionDetails,
+    error: rtbError,
+    loading: rtbLoading
   });
 
   const formatDuration = (seconds: number) => {
@@ -625,7 +634,17 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
                   </span>
                 </div>
 
-                {rtbAuctionDetails && rtbAuctionDetails.length > 0 ? (
+                {rtbLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <p>Loading RTB auction data...</p>
+                  </div>
+                ) : rtbError ? (
+                  <div className="text-center py-8 text-red-600">
+                    <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Error loading RTB data: {rtbError.message}</p>
+                  </div>
+                ) : rtbAuctionDetails && rtbAuctionDetails.length > 0 ? (
                   <div className="space-y-6">
                     {/* Not Accepted Section */}
                     {rtbAuctionDetails.filter(detail => detail.bidStatus === 'rejected' || detail.bidStatus === 'failed').length > 0 && (
