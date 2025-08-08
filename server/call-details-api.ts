@@ -6,17 +6,8 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
-// Custom authentication middleware (copied from routes.ts)
-import type { Request, Response, NextFunction } from "express";
-
-const requireAuth = (req: any, res: Response, next: NextFunction) => {
-  const sessionUser = req.session?.user;
-  if (!sessionUser || !sessionUser.id) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-  req.user = sessionUser;
-  next();
-};
+// Import shared authentication middleware
+import { requireAuth } from "./middleware/auth";
 
 const router = Router();
 

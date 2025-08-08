@@ -8845,8 +8845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mount the call details router for comprehensive call analytics
-  app.use(callDetailsRouter);
+  // Call details router already mounted above - removed duplicate mounting
 
   const httpServer = createServer(app);
   // Test landing page route for RedTrack integration testing
