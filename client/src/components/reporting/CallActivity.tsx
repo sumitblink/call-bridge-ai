@@ -119,7 +119,7 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
       }
       return response.json();
     },
-    enabled: activeTab === 'rtb', // Only fetch when RTB tab is active
+    enabled: activeTab === 'rtb' || activeTab === 'routing' || activeTab === 'events' || activeTab === 'ringtree', // Fetch for tabs that need RTB data
   });
 
   const formatDuration = (seconds: number) => {
@@ -466,20 +466,20 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                 <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">Routing Details</div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between py-1">
-                    <span className="text-gray-500">Buyer:</span>
-                    <span>{buyer ? (buyer.name || 'Unnamed Buyer') : 'No buyer assigned'}</span>
+                    <span className="text-gray-500">RTB Winner:</span>
+                    <span>{rtbAuctionData?.find((bid: any) => bid.isWinner)?.targetName || 'No RTB winner'}</span>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span className="text-gray-500">Target:</span>
-                    <span>{(targets?.find((t: any) => t.id === (call as any).targetId))?.name || 'No target assigned'}</span>
+                    <span className="text-gray-500">Winning Bid:</span>
+                    <span>{rtbAuctionData?.find((bid: any) => bid.isWinner)?.bidAmount ? formatCurrency(rtbAuctionData.find((bid: any) => bid.isWinner)?.bidAmount) : 'N/A'}</span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-gray-500">Routing Attempts:</span>
-                    <span>{(call as any).routingAttempts || 0}</span>
+                    <span>{(call as any).routingAttempts || rtbAuctionData?.length || 0}</span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-gray-500">Dialed Number:</span>
-                    <span className="font-mono">{(call as any).dialedNumber || call.toNumber}</span>
+                    <span className="font-mono">{rtbAuctionData?.find((bid: any) => bid.isWinner)?.destinationNumber || call.toNumber}</span>
                   </div>
                 </div>
               </div>
