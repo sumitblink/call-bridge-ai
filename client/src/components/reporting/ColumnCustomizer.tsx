@@ -25,11 +25,16 @@ interface ColumnPreferences {
 
 export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCustomizerProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Popular', 'Call']));
-  // Initialize with the actual default visible columns from CallActivity
-  const [localVisibleColumns, setLocalVisibleColumns] = useState<string[]>([]);
+  // Use the parent component's visible columns directly
+  const [localVisibleColumns, setLocalVisibleColumns] = useState<string[]>(visibleColumns);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Sync local state with parent whenever visibleColumns changes
+  useEffect(() => {
+    setLocalVisibleColumns(visibleColumns);
+  }, [visibleColumns]);
 
   // Fetch URL parameters to add as dynamic column options
   const { data: urlParameters } = useQuery({
@@ -39,34 +44,33 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
     staleTime: 0 // Always refetch to ensure deleted parameters are removed immediately
   });
 
-  // Filter out deleted URL parameters from visible columns
+  // Only run URL parameter cleanup when URL parameters change, not when visible columns change
   useEffect(() => {
-    if (urlParameters !== undefined) { // Only run when data is loaded (including empty array)
+    if (urlParameters !== undefined && urlParameters !== null) {
       // Get current URL parameter IDs to detect deletions
       const currentUrlParameterIds = (urlParameters || []).map((param: any) => param.parameterName);
       
-      const filteredColumns = localVisibleColumns.filter(columnId => {
-        // Keep static columns and currently existing URL parameters
-        const isStaticColumn = COLUMN_DEFINITIONS.some(col => col.id === columnId);
-        const isExistingUrlParam = currentUrlParameterIds.includes(columnId);
-        return isStaticColumn || isExistingUrlParam;
-      });
-      
-      if (filteredColumns.length !== localVisibleColumns.length) {
-
-        setLocalVisibleColumns(filteredColumns);
-        onColumnsChange(filteredColumns);
+      // Get saved preferences to check against
+      const saved = localStorage.getItem('call-details-column-preferences');
+      if (saved) {
+        const prefs = JSON.parse(saved);
+        const savedColumns = prefs.visibleColumns || [];
         
-        // Also update localStorage immediately
-        const saved = localStorage.getItem('call-details-column-preferences');
-        if (saved) {
-          const prefs = JSON.parse(saved);
-          prefs.visibleColumns = filteredColumns;
-          localStorage.setItem('call-details-column-preferences', JSON.stringify(prefs));
+        const filteredColumns = savedColumns.filter((columnId: string) => {
+          // Keep static columns and currently existing URL parameters
+          const isStaticColumn = COLUMN_DEFINITIONS.some(col => col.id === columnId);
+          const isExistingUrlParam = currentUrlParameterIds.includes(columnId);
+          return isStaticColumn || isExistingUrlParam;
+        });
+        
+        // Only update if there's actually a difference and we found deleted parameters
+        if (filteredColumns.length !== savedColumns.length) {
+          console.log('Cleaning up deleted URL parameters from preferences');
+          onColumnsChange(filteredColumns);
         }
       }
     }
-  }, [urlParameters, localVisibleColumns.length]);
+  }, [urlParameters]); // Only depend on urlParameters, not visibleColumns
 
   // Convert URL parameters to column definitions
   const urlParameterColumns: ColumnDefinition[] = (urlParameters || []).map((param: any) => {

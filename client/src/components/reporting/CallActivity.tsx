@@ -847,20 +847,31 @@ export default function CallActivity() {
     return { id: columnId, label: columnId, category: 'Unknown', dataType: 'string', defaultVisible: false };
   };
 
-  const handleColumnsChange = (newVisibleColumns: string[]) => {
+  const handleColumnsChange = useCallback((newVisibleColumns: string[]) => {
     // Remove duplicates to fix React key issues
     const uniqueColumns = [...new Set(newVisibleColumns)];
+    
     // Ensure actions column is always at the right end
     const actionsIndex = uniqueColumns.indexOf('actions');
+    let finalColumns;
     if (actionsIndex > -1) {
       const columnsWithoutActions = uniqueColumns.filter(col => col !== 'actions');
-      setVisibleColumns([...columnsWithoutActions, 'actions']);
+      finalColumns = [...columnsWithoutActions, 'actions'];
     } else {
-      setVisibleColumns(uniqueColumns);
+      finalColumns = uniqueColumns;
     }
-    // Save to localStorage
-    localStorage.setItem('call-details-column-preferences', JSON.stringify({ visibleColumns: uniqueColumns }));
-  };
+    
+    setVisibleColumns(finalColumns);
+    
+    // Save to localStorage with proper structure
+    const saved = localStorage.getItem('call-details-column-preferences');
+    const existingPrefs = saved ? JSON.parse(saved) : {};
+    const updatedPrefs = {
+      ...existingPrefs,
+      visibleColumns: finalColumns
+    };
+    localStorage.setItem('call-details-column-preferences', JSON.stringify(updatedPrefs));
+  }, []);
 
   // Drag and drop sensors and handlers
   const sensors = useSensors(
@@ -873,14 +884,26 @@ export default function CallActivity() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (active.id !== over?.id) {
+    if (active.id !== over?.id && over?.id) {
       const oldIndex = visibleColumns.indexOf(active.id as string);
-      const newIndex = visibleColumns.indexOf(over?.id as string);
+      const newIndex = visibleColumns.indexOf(over.id as string);
 
-      const newColumns = arrayMove(visibleColumns, oldIndex, newIndex);
-      setVisibleColumns(newColumns);
-      // Save to localStorage
-      localStorage.setItem('call-details-column-preferences', JSON.stringify({ visibleColumns: newColumns }));
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newColumns = arrayMove(visibleColumns, oldIndex, newIndex);
+        setVisibleColumns(newColumns);
+        
+        // Save to localStorage with proper structure
+        const saved = localStorage.getItem('call-details-column-preferences');
+        const existingPrefs = saved ? JSON.parse(saved) : {};
+        const updatedPrefs = {
+          ...existingPrefs,
+          visibleColumns: newColumns,
+          columnOrder: newColumns
+        };
+        localStorage.setItem('call-details-column-preferences', JSON.stringify(updatedPrefs));
+        
+        console.log('Column order updated:', newColumns);
+      }
     }
   };
 
