@@ -303,14 +303,13 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
                         <input
                           type="checkbox"
                           id={`checkbox-${column.id}`}
-                          checked={localVisibleColumns.includes(column.id)}
+                          checked={visibleColumns.includes(column.id)}
                           onChange={(e) => {
-
                             e.preventDefault();
                             e.stopPropagation();
                             
                             // Immediately update the checkbox state to prevent revert
-                            const isCurrentlyChecked = localVisibleColumns.includes(column.id);
+                            const isCurrentlyChecked = visibleColumns.includes(column.id);
                             if (e.target.checked !== isCurrentlyChecked) {
                               toggleColumn(column.id);
                             }
