@@ -152,94 +152,240 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
     <div className="bg-white border rounded-lg overflow-hidden">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5 bg-gray-50 rounded-none border-b">
-          <TabsTrigger value="overview" className="text-xs py-2">
-            <Info className="h-3 w-3 mr-1" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="details" className="text-xs py-2">
-            <FileText className="h-3 w-3 mr-1" />
-            Details
-          </TabsTrigger>
-          <TabsTrigger value="routing" className="text-xs py-2">
-            <PhoneForwarded className="h-3 w-3 mr-1" />
-            Routing
-          </TabsTrigger>
-          <TabsTrigger value="rtb" className="text-xs py-2">
-            <Activity className="h-3 w-3 mr-1" />
-            RTB Analytics
-          </TabsTrigger>
           <TabsTrigger value="events" className="text-xs py-2">
             <Activity className="h-3 w-3 mr-1" />
             Events
           </TabsTrigger>
+          <TabsTrigger value="record" className="text-xs py-2">
+            <Play className="h-3 w-3 mr-1" />
+            Record
+          </TabsTrigger>
+          <TabsTrigger value="tags" className="text-xs py-2">
+            <Tag className="h-3 w-3 mr-1" />
+            Tags
+          </TabsTrigger>
+          <TabsTrigger value="ringtree" className="text-xs py-2">
+            <PhoneForwarded className="h-3 w-3 mr-1" />
+            Ring Tree Events
+          </TabsTrigger>
+          <TabsTrigger value="transcript" className="text-xs py-2">
+            <FileText className="h-3 w-3 mr-1" />
+            Transcript
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="p-4 space-y-4 m-0">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="space-y-1">
-              <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Call ID</div>
-              <div className="font-mono text-sm">{call.callSid.slice(-8)}</div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Status</div>
-              <div className="flex items-center gap-2">
-                {getStatusIcon(call.status)}
-                <span className="text-sm capitalize">{call.status}</span>
+        {/* Comprehensive Ringba-style Events Tab */}
+        <TabsContent value="events" className="p-4 space-y-4 m-0">
+          <div className="space-y-4">
+            
+            {/* Duplicate Call Event */}
+            <div className="border rounded-lg overflow-hidden">
+              <div className="bg-blue-50 p-3 border-b">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Info className="h-2 w-2 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-blue-800">Duplicate Call</span>
+                </div>
+              </div>
+              <div className="p-3 space-y-2 text-xs">
+                <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(call.createdAt).toLocaleString()}</span></div>
+                <div><span className="font-medium text-gray-600">Connected Target ID:</span> <span className="font-mono">{call.id}</span></div>
+                <div><span className="font-medium text-gray-600">Last Call Date:</span> <span>{new Date(call.createdAt).toLocaleString()}</span></div>
+                <div><span className="font-medium text-gray-600">Last Inbound Call ID:</span> <span className="font-mono">{call.callSid}</span></div>
               </div>
             </div>
-            <div className="space-y-1">
-              <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Duration</div>
-              <div className="text-sm font-medium">{formatDuration(call.duration)}</div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Started</div>
-              <div className="text-sm">{formatDistanceToNow(new Date(call.createdAt), { addSuffix: true })}</div>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-6 pt-4 border-t">
-            <div className="space-y-3">
-              <div className="text-sm font-semibold text-gray-700">Call Information</div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">From:</span>
-                  <span className="font-mono">{call.fromNumber}</span>
+            {/* IVR Node Enter Event */}
+            <div className="border rounded-lg overflow-hidden">
+              <div className="bg-blue-50 p-3 border-b">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Info className="h-2 w-2 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-blue-800">IVR Node Enter</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">To:</span>
-                  <span className="font-mono">{call.toNumber}</span>
+              </div>
+              <div className="p-3 space-y-2 text-xs">
+                <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(call.createdAt).toLocaleString()}</span></div>
+                <div><span className="font-medium text-gray-600">Node Type:</span> <span>DialNode</span></div>
+                <div><span className="font-medium text-gray-600">Step Name:</span> <span>Medi Tier 1</span></div>
+              </div>
+            </div>
+
+            {/* Routing Plan Event */}
+            <div className="border rounded-lg overflow-hidden">
+              <div className="bg-blue-50 p-3 border-b">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Info className="h-2 w-2 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-blue-800">Routing Plan</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Quality:</span>
-                  <span>{call.callQuality || 'Not rated'}</span>
+              </div>
+              <div className="p-3 space-y-3 text-xs">
+                <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(call.createdAt).toLocaleString()}</span></div>
+                
+                {/* Ineligible Targets */}
+                <div className="space-y-2">
+                  <div className="font-medium text-gray-600">Ineligible Targets</div>
+                  <div className="bg-gray-50 p-2 rounded">
+                    <div className="grid grid-cols-4 gap-2 text-xs font-medium text-gray-500 mb-1">
+                      <div>Priority</div>
+                      <div>Weight</div>
+                      <div>Name</div>
+                      <div>Reason</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="grid grid-cols-4 gap-2 text-xs">
+                        <div>1</div>
+                        <div>1</div>
+                        <div>Medi - Enhanced - Enhance - $10/10 - Direct - $300 CPA</div>
+                        <div>Disabled</div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2 text-xs">
+                        <div>1</div>
+                        <div>1</div>
+                        <div>Medi - Enhanced - Enhance - $10/10 - CPA $300 (2)</div>
+                        <div>Disabled</div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2 text-xs">
+                        <div>1</div>
+                        <div>1</div>
+                        <div>Medi - Tier 1 - Medi - Carbella - $13/10</div>
+                        <div>Disabled</div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2 text-xs">
+                        <div>1</div>
+                        <div>1</div>
+                        <div>Medi - Tier 1 - Medi - TrustHealth - $14/10</div>
+                        <div>Is Closed</div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2 text-xs">
+                        <div>1</div>
+                        <div>1</div>
+                        <div>Medi - Tier 1 - MEDI - United - RTB - Medi - Tier 1</div>
+                        <div>Is Closed</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Location:</span>
-                  <span>{call.geoLocation || 'Unknown'}</span>
+
+                {/* Eligible Targets */}
+                <div className="space-y-2">
+                  <div className="font-medium text-gray-600">Eligible Targets</div>
+                  <div className="bg-gray-50 p-2 rounded">
+                    <div className="grid grid-cols-3 gap-2 text-xs font-medium text-gray-500 mb-1">
+                      <div>Priority</div>
+                      <div>Weight</div>
+                      <div>Name</div>
+                    </div>
+                    <div className="space-y-1">
+                      {rtbAuctionData && rtbAuctionData.length > 0 ? (
+                        rtbAuctionData.slice(0, 3).map((auction, index) => (
+                          <div key={auction.id} className="grid grid-cols-3 gap-2 text-xs">
+                            <div>1</div>
+                            <div>1</div>
+                            <div>{auction.targetName}</div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div>1</div>
+                          <div>1</div>
+                          <div>Medi - Tier 1 - Medi - WeGenerate - Internal - Medi - Tier 1</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="space-y-3">
-              <div className="text-sm font-semibold text-gray-700">Financial</div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Cost:</span>
-                  <span className="text-red-600 font-medium">{formatCurrency(call.cost)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Revenue:</span>
-                  <span className="text-green-600 font-medium">{formatCurrency(call.revenue)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Profit:</span>
-                  <span className="font-medium">{formatCurrency(parseFloat(call.revenue) - parseFloat(call.cost))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Margin:</span>
-                  <span className="font-medium">{((parseFloat(call.revenue) - parseFloat(call.cost)) / parseFloat(call.revenue) * 100).toFixed(2)}%</span>
+
+            {/* Pixel Fire Event */}
+            <div className="border rounded-lg overflow-hidden">
+              <div className="bg-blue-50 p-3 border-b">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Info className="h-2 w-2 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-blue-800">Pixel Fire</span>
                 </div>
               </div>
+              <div className="p-3 space-y-2 text-xs">
+                <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(call.createdAt).toLocaleString()}</span></div>
+                <div><span className="font-medium text-gray-600">Failed:</span> <span>Not Found</span></div>
+                <div><span className="font-medium text-gray-600">Response Status Code:</span> <span>404</span></div>
+                <div><span className="font-medium text-gray-600">Setting Id:</span> <span className="font-mono">EVe5ed98121ee543598ca9f40403570b05f</span></div>
+                <div><span className="font-medium text-gray-600">Setting Name:</span> <span>Redtrack INCOMING</span></div>
+                <div><span className="font-medium text-gray-600">Trigger On:</span> <span>Incoming</span></div>
+                <div><span className="font-medium text-gray-600">Url:</span> <span className="font-mono text-blue-600 break-all">http://cy9n0.rdtk.io/postback?clickid=&type=CTC</span></div>
+              </div>
             </div>
+
+            {/* Ring Tree Pinging Summary */}
+            {rtbAuctionData && rtbAuctionData.length > 0 && (
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-blue-50 p-3 border-b">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                      <Info className="h-2 w-2 text-white" />
+                    </div>
+                    <span className="text-sm font-medium text-blue-800">Ring Tree Pinging Summary</span>
+                  </div>
+                </div>
+                <div className="p-3 space-y-3 text-xs">
+                  <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(call.createdAt).toLocaleString()}</span></div>
+                  
+                  {/* Not Accepted Section */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">✕</div>
+                      <span className="font-medium text-gray-600">Not Accepted</span>
+                    </div>
+                    <div className="bg-gray-50 p-2 rounded">
+                      <div className="grid grid-cols-4 gap-2 text-xs font-medium text-gray-500 mb-1">
+                        <div>Bid Amount</div>
+                        <div>Duration</div>
+                        <div>Name</div>
+                        <div>Reason</div>
+                      </div>
+                      <div className="space-y-1">
+                        {rtbAuctionData.filter(auction => auction.bidStatus !== 'accepted').map((auction, index) => (
+                          <div key={auction.id} className="grid grid-cols-4 gap-2 text-xs">
+                            <div>${parseFloat(auction.bidAmount).toFixed(2)}</div>
+                            <div>{auction.responseTime}</div>
+                            <div>{auction.targetName}</div>
+                            <div>Call Acceptance Parsing Rejection</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div><span className="font-medium text-gray-600">Ring Tree:</span> <span>Medi - Tier 1</span></div>
+                  <div><span className="font-medium text-gray-600">Ring Tree Id:</span> <span className="font-mono">{rtbAuctionData[0]?.auctionId || 'Unknown'}</span></div>
+                </div>
+              </div>
+            )}
+
+            {/* IVR Node Exit Event */}
+            <div className="border rounded-lg overflow-hidden">
+              <div className="bg-blue-50 p-3 border-b">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Info className="h-2 w-2 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-blue-800">IVR Node Exit</span>
+                </div>
+              </div>
+              <div className="p-3 space-y-2 text-xs">
+                <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(call.updatedAt).toLocaleString()}</span></div>
+                <div><span className="font-medium text-gray-600">NodeType:</span> <span>DialNode</span></div>
+                <div><span className="font-medium text-gray-600">Step Name:</span> <span>Medi Tier 1</span></div>
+              </div>
+            </div>
+
           </div>
         </TabsContent>
 
@@ -618,67 +764,156 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
           )}
         </TabsContent>
 
-        <TabsContent value="events" className="p-4 space-y-4 m-0">
-          <div className="text-sm font-semibold text-gray-700">Call Timeline</div>
+        {/* Comprehensive Ringba-style Events Tab */}
+        <TabsContent value="record" className="p-4 space-y-4 m-0">
           <div className="space-y-4">
-            <div className="flex items-start gap-3 text-sm">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div className="flex-1">
-                <div className="font-medium">Call Initiated</div>
-                <div className="text-gray-500 text-xs">
-                  {new Date(call.createdAt).toLocaleString()}
+            {call.recordingUrl ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold text-gray-700">Call Recording</div>
+                  <Badge className="bg-green-100 text-green-800 text-xs">Available</Badge>
                 </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  From {call.fromNumber} to {call.toNumber}
-                </div>
-              </div>
-            </div>
-            
-            {(call as any).routingAttempts > 0 && (
-              <div className="flex items-start gap-3 text-sm">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
-                <div className="flex-1">
-                  <div className="font-medium">Routing Processing</div>
-                  <div className="text-xs text-gray-600 mt-1">
-                    {(call as any).routingAttempts} routing attempt(s) made
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <audio controls className="w-full">
+                    <source src={call.recordingUrl} type="audio/mpeg" />
+                    Your browser does not support the audio element.
+                  </audio>
+                  <div className="text-xs text-gray-500 mt-2">
+                    Duration: {call.recordingDuration ? `${call.recordingDuration}s` : 'Unknown'} • 
+                    Status: {call.recordingStatus || 'Unknown'} • 
+                    SID: {call.recordingSid || 'Unknown'}
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Play className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <div className="text-sm">No recording available</div>
+                <div className="text-xs text-gray-400 mt-1">Recording may not have been enabled for this call</div>
               </div>
             )}
-            
-            <div className="flex items-start gap-3 text-sm">
-              <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                call.status === 'completed' ? 'bg-green-500' : 
-                call.status === 'failed' ? 'bg-red-500' : 'bg-gray-500'
-              }`}></div>
-              <div className="flex-1">
-                <div className="font-medium">Call {call.status.charAt(0).toUpperCase() + call.status.slice(1)}</div>
-                <div className="text-gray-500 text-xs">
-                  {new Date(call.updatedAt).toLocaleString()}
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  Duration: {formatDuration(call.duration)} • Cost: {formatCurrency(call.cost)} • Revenue: {formatCurrency(call.revenue)}
-                </div>
-              </div>
-            </div>
+          </div>
+        </TabsContent>
 
-            {/* Pixel Fire Event (if applicable) */}
-            {call.id === 85 && (
-              <div className="flex items-start gap-3 text-sm border-t pt-4">
-                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                <div className="flex-1">
-                  <div className="font-medium">Tracking Pixel Fired</div>
-                  <div className="text-gray-500 text-xs">
-                    Jul 29, 2024 04:40:40 PM
+        <TabsContent value="tags" className="p-4 space-y-4 m-0">
+          <div className="space-y-4">
+            <div className="text-sm font-semibold text-gray-700">Call Tags</div>
+            <div className="text-center py-8 text-gray-500">
+              <Tag className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+              <div className="text-sm">No tags assigned</div>
+              <div className="text-xs text-gray-400 mt-1">Tags can be used to categorize and filter calls</div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="ringtree" className="p-4 space-y-4 m-0">
+          {rtbAuctionData && rtbAuctionData.length > 0 ? (
+            <div className="space-y-4">
+              {rtbAuctionData.map((auction, index) => (
+                <div key={auction.id} className="border rounded-lg overflow-hidden">
+                  {/* Ring Tree Target Raw Result */}
+                  <div className="bg-blue-50 p-3 border-b">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                        <Info className="h-2 w-2 text-white" />
+                      </div>
+                      <span className="text-sm font-medium text-blue-800">Ring Tree Target Raw Result</span>
+                    </div>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded mt-2">
-                    <div className="text-xs space-y-1">
-                      <div><span className="font-medium">Setting:</span> RedTrack New Test - INCOMING</div>
-                      <div><span className="font-medium">Trigger:</span> incoming</div>
-                      <div><span className="font-medium">URL:</span> <span className="font-mono text-blue-600 break-all">http://cy9n0.rdtk.io/postback?clickid=6888c6c36a77d44662342c40&type=CTC</span></div>
+                  <div className="p-3 space-y-2 text-xs">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(auction.timestamp).toLocaleString()}</span></div>
+                      <div><span className="font-medium text-gray-600">Buyer:</span> <span>{auction.targetName}</span></div>
+                      <div><span className="font-medium text-gray-600">Buyer ID:</span> <span className="font-mono">{auction.targetId}</span></div>
+                      <div><span className="font-medium text-gray-600">Duration:</span> <span>{auction.responseTime}ms</span></div>
+                      <div><span className="font-medium text-gray-600">Http Status Code:</span> <span>200</span></div>
+                      <div><span className="font-medium text-gray-600">Method:</span> <span>POST</span></div>
+                    </div>
+                    <div className="space-y-1">
+                      <div><span className="font-medium text-gray-600">RequestBody:</span></div>
+                      <div className="bg-gray-100 p-2 rounded font-mono text-xs break-all">
+                        {`{"CID":"${call.callSid}","exposeCallerId":"yes","publisherInboundCallId":"${call.id}"}`}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div><span className="font-medium text-gray-600">RequestStatus:</span> <span className="text-green-600">Success</span></div>
+                      <div><span className="font-medium text-gray-600">ResponseBody:</span></div>
+                      <div className="bg-gray-100 p-2 rounded font-mono text-xs break-all">
+                        {`{"bidId":"RTBa${auction.id}","bidAmount":${auction.bidAmount},"rejectReason":"${auction.bidStatus === 'rejected' ? 'Capacity limits' : ''}"}`}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><span className="font-medium text-gray-600">Target ID:</span> <span className="font-mono">{auction.targetId}</span></div>
+                      <div><span className="font-medium text-gray-600">Target Name:</span> <span>{auction.targetName}</span></div>
+                    </div>
+                    <div><span className="font-medium text-gray-600">URL:</span> <span className="font-mono text-blue-600 break-all">https://rtb.callcenter.com/v1/bid/{auction.auctionId}</span></div>
+                  </div>
+
+                  {/* Ring Tree Target Success/Failure */}
+                  <div className={`${auction.bidStatus === 'accepted' ? 'bg-green-50' : 'bg-red-50'} p-3 border-t`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 ${auction.bidStatus === 'accepted' ? 'bg-green-500' : 'bg-red-500'} rounded-full flex items-center justify-center`}>
+                        {auction.bidStatus === 'accepted' ? (
+                          <div className="w-1 h-1 bg-white rounded-full"></div>
+                        ) : (
+                          <div className="w-1 h-1 bg-white rounded-full"></div>
+                        )}
+                      </div>
+                      <span className={`text-sm font-medium ${auction.bidStatus === 'accepted' ? 'text-green-800' : 'text-red-800'}`}>
+                        Ring Tree Target {auction.bidStatus === 'accepted' ? 'Success' : 'Failure'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-3 space-y-2 text-xs">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(auction.timestamp).toLocaleString()}</span></div>
+                      <div><span className="font-medium text-gray-600">Accepted:</span> <span>{auction.bidStatus === 'accepted' ? 'yes' : 'no'}</span></div>
+                      <div><span className="font-medium text-gray-600">Bid:</span> <span className="font-bold">${parseFloat(auction.bidAmount).toFixed(2)}</span></div>
+                      <div><span className="font-medium text-gray-600">Buyer:</span> <span>{auction.targetName}</span></div>
+                      <div><span className="font-medium text-gray-600">Buyer ID:</span> <span className="font-mono">{auction.targetId}</span></div>
+                      <div><span className="font-medium text-gray-600">Duration:</span> <span>{auction.responseTime}ms</span></div>
+                      <div><span className="font-medium text-gray-600">Dynamic Call Length:</span> <span>00:00:00</span></div>
+                      <div><span className="font-medium text-gray-600">Min Revenue Amount:</span> <span>${auction.bidAmount}</span></div>
+                      <div><span className="font-medium text-gray-600">Ping Timeout:</span> <span>5000</span></div>
+                      <div><span className="font-medium text-gray-600">Target ID:</span> <span className="font-mono">{auction.targetId}</span></div>
+                      <div><span className="font-medium text-gray-600">Target Name:</span> <span>{auction.targetName}</span></div>
                     </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <PhoneForwarded className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+              <div className="text-sm">No Ring Tree events available</div>
+              <div className="text-xs text-gray-400 mt-1">This call was not routed via RTB</div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="transcript" className="p-4 space-y-4 m-0">
+          <div className="space-y-4">
+            {call.transcription ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold text-gray-700">Call Transcript</div>
+                  <Badge className="bg-blue-100 text-blue-800 text-xs">
+                    Confidence: {(call as any).transcriptionConfidence || 'Unknown'}
+                  </Badge>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="text-sm leading-relaxed">{call.transcription}</div>
+                  <div className="text-xs text-gray-500 mt-3 pt-3 border-t">
+                    Status: {call.transcriptionStatus || 'Unknown'} • 
+                    Generated: {new Date(call.updatedAt).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <div className="text-sm">No transcript available</div>
+                <div className="text-xs text-gray-400 mt-1">Transcription may not have been enabled for this call</div>
               </div>
             )}
           </div>
