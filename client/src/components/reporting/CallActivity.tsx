@@ -881,7 +881,7 @@ export default function CallActivity() {
     })
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
 
     if (active.id !== over?.id && over?.id) {
@@ -890,9 +890,11 @@ export default function CallActivity() {
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const newColumns = arrayMove(visibleColumns, oldIndex, newIndex);
+        
+        // Update state immediately
         setVisibleColumns(newColumns);
         
-        // Save to localStorage with proper structure
+        // Save to localStorage immediately with proper structure
         const saved = localStorage.getItem('call-details-column-preferences');
         const existingPrefs = saved ? JSON.parse(saved) : {};
         const updatedPrefs = {
@@ -902,10 +904,10 @@ export default function CallActivity() {
         };
         localStorage.setItem('call-details-column-preferences', JSON.stringify(updatedPrefs));
         
-        console.log('Column order updated:', newColumns);
+        console.log('Drag completed - new column order:', newColumns);
       }
     }
-  };
+  }, [visibleColumns]);
 
   // Toggle row expansion
   const toggleRowExpansion = (callId: number) => {

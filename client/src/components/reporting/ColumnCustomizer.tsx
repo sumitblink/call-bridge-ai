@@ -25,52 +25,25 @@ interface ColumnPreferences {
 
 export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCustomizerProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Popular', 'Call']));
-  // Use the parent component's visible columns directly
-  const [localVisibleColumns, setLocalVisibleColumns] = useState<string[]>(visibleColumns);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Sync local state with parent whenever visibleColumns changes
-  useEffect(() => {
-    setLocalVisibleColumns(visibleColumns);
-  }, [visibleColumns]);
+  // Don't use local state for visible columns - use parent state directly to prevent conflicts
 
   // Fetch URL parameters to add as dynamic column options
   const { data: urlParameters } = useQuery({
     queryKey: ['/api/integrations/url-parameters'],
     queryFn: () => fetch('/api/integrations/url-parameters').then(res => res.json()),
-    refetchOnWindowFocus: true,
-    staleTime: 0 // Always refetch to ensure deleted parameters are removed immediately
+    refetchOnWindowFocus: false, // Disable refetch to prevent interference
+    staleTime: 5 * 60 * 1000 // Cache for 5 minutes to reduce requests
   });
 
-  // Only run URL parameter cleanup when URL parameters change, not when visible columns change
-  useEffect(() => {
-    if (urlParameters !== undefined && urlParameters !== null) {
-      // Get current URL parameter IDs to detect deletions
-      const currentUrlParameterIds = (urlParameters || []).map((param: any) => param.parameterName);
-      
-      // Get saved preferences to check against
-      const saved = localStorage.getItem('call-details-column-preferences');
-      if (saved) {
-        const prefs = JSON.parse(saved);
-        const savedColumns = prefs.visibleColumns || [];
-        
-        const filteredColumns = savedColumns.filter((columnId: string) => {
-          // Keep static columns and currently existing URL parameters
-          const isStaticColumn = COLUMN_DEFINITIONS.some(col => col.id === columnId);
-          const isExistingUrlParam = currentUrlParameterIds.includes(columnId);
-          return isStaticColumn || isExistingUrlParam;
-        });
-        
-        // Only update if there's actually a difference and we found deleted parameters
-        if (filteredColumns.length !== savedColumns.length) {
-          console.log('Cleaning up deleted URL parameters from preferences');
-          onColumnsChange(filteredColumns);
-        }
-      }
-    }
-  }, [urlParameters]); // Only depend on urlParameters, not visibleColumns
+  // Completely disable URL parameter cleanup to prevent interference with drag-and-drop
+  // This was causing the infinite loop and column reversion
+  // useEffect(() => {
+  //   // URL parameter cleanup disabled to allow drag-and-drop to work properly
+  // }, [urlParameters]);
 
   // Convert URL parameters to column definitions
   const urlParameterColumns: ColumnDefinition[] = (urlParameters || []).map((param: any) => {
@@ -141,12 +114,12 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
         description: "Your column preferences have been saved."
       });
       // Ensure actions column is always at the right end
-      const actionsIndex = localVisibleColumns.indexOf('actions');
+      const actionsIndex = visibleColumns.indexOf('actions');
       if (actionsIndex > -1) {
-        const columnsWithoutActions = localVisibleColumns.filter(col => col !== 'actions');
+        const columnsWithoutActions = visibleColumns.filter(col => col !== 'actions');
         onColumnsChange([...columnsWithoutActions, 'actions']);
       } else {
-        onColumnsChange(localVisibleColumns);
+        onColumnsChange(visibleColumns);
       }
     },
     onError: () => {
@@ -170,7 +143,6 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
       return defaultPrefs;
     },
     onSuccess: (data: ColumnPreferences) => {
-      setLocalVisibleColumns(data.visibleColumns);
       queryClient.invalidateQueries({ queryKey: ['/api/column-preferences', 'call_details'] });
       toast({
         title: "Columns Reset",
@@ -194,24 +166,19 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
     }
   });
 
-  // Initialize with saved preferences or provided visible columns
+  // Load preferences only once on mount - no infinite loops
   useEffect(() => {
-    if (preferences && preferences.visibleColumns.length > 0) {
-
-      setLocalVisibleColumns(preferences.visibleColumns);
-      // Ensure actions column is always at the right end
+    // Only initialize once when preferences are first loaded
+    if (preferences && preferences.visibleColumns.length > 0 && visibleColumns.length <= 8) {
       const actionsIndex = preferences.visibleColumns.indexOf('actions');
+      let targetColumns = preferences.visibleColumns;
       if (actionsIndex > -1) {
         const columnsWithoutActions = preferences.visibleColumns.filter(col => col !== 'actions');
-        onColumnsChange([...columnsWithoutActions, 'actions']);
-      } else {
-        onColumnsChange(preferences.visibleColumns);
+        targetColumns = [...columnsWithoutActions, 'actions'];
       }
-    } else {
-
-      setLocalVisibleColumns(visibleColumns);
+      onColumnsChange(targetColumns);
     }
-  }, [preferences, visibleColumns, onColumnsChange]);
+  }, [preferences?.visibleColumns?.length]); // Only depend on length to prevent loops
 
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -224,20 +191,13 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
   };
 
   const toggleColumn = (columnId: string) => {
-
-    
-    const isCurrentlyVisible = localVisibleColumns.includes(columnId);
-
-    
+    const isCurrentlyVisible = visibleColumns.includes(columnId);
     const newVisible = isCurrentlyVisible
-      ? localVisibleColumns.filter(id => id !== columnId)
-      : [...localVisibleColumns, columnId];
-    
-
+      ? visibleColumns.filter(id => id !== columnId)
+      : [...visibleColumns, columnId];
     
     // Ensure at least one column remains visible
     if (newVisible.length === 0) {
-
       toast({
         title: "Warning",
         description: "At least one column must remain visible.",
@@ -245,9 +205,6 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
       });
       return;
     }
-    
-
-    setLocalVisibleColumns(newVisible);
     
     // Auto-save the column preferences immediately
     const updatedPrefs = {
@@ -258,21 +215,14 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
     localStorage.setItem('call-details-column-preferences', JSON.stringify(updatedPrefs));
     queryClient.invalidateQueries({ queryKey: ['/api/column-preferences', 'call_details'] });
     
-
     // Apply changes immediately to the table
-    setTimeout(() => {
-      onColumnsChange(newVisible);
-    }, 0);
-
+    onColumnsChange(newVisible);
   };
 
   const handleSave = () => {
-    // Immediately apply changes to the table
-    onColumnsChange(localVisibleColumns);
-    
     // Mock save for demonstration
     saveMutation.mutate({
-      visibleColumns: localVisibleColumns,
+      visibleColumns: visibleColumns,
       columnOrder: null,
       columnWidths: {}
     });
@@ -285,7 +235,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
 
   const getVisibleColumnCount = (category: string) => {
     const categoryColumns = columnsByCategory[category] || [];
-    return categoryColumns.filter(col => localVisibleColumns.includes(col.id)).length;
+    return categoryColumns.filter(col => visibleColumns.includes(col.id)).length;
   };
 
   const getTotalColumnCount = (category: string) => {
@@ -297,7 +247,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Settings2Icon className="h-4 w-4" />
-          Columns ({localVisibleColumns.length})
+          Columns ({visibleColumns.length})
         </Button>
       </SheetTrigger>
       <SheetContent className="w-[400px] sm:w-[500px]" side="right">
@@ -310,7 +260,7 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
 
         <div className="flex items-center justify-between py-4">
           <div className="text-sm text-muted-foreground">
-            {localVisibleColumns.length} of {allColumnDefinitions.length} columns selected
+            {visibleColumns.length} of {allColumnDefinitions.length} columns selected
           </div>
           <Button
             variant="ghost"
