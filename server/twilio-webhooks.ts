@@ -168,7 +168,8 @@ export async function handleIncomingCall(req: Request, res: Response) {
         } else {
           console.log(`[Webhook] RTB routing to destination: ${destinationNumber}`);
           
-          // Enhanced TwiML with better error handling and fallback
+          // Enhanced TwiML with better error handling and diagnostic logging
+          console.log(`[RTB Transfer] Attempting transfer to ${destinationNumber} for call ${callId}`);
           res.set('Content-Type', 'text/xml');
           res.send(`<?xml version="1.0" encoding="UTF-8"?>
             <Response>
@@ -176,7 +177,7 @@ export async function handleIncomingCall(req: Request, res: Response) {
               <Dial timeout="30" record="record-from-ringing" action="/api/webhooks/rtb-dial-status" method="POST">
                 <Number>${destinationNumber}</Number>
               </Dial>
-              <Say voice="alice">We're sorry, the call could not be completed at this time. Please try again later.</Say>
+              <Say voice="alice">We're sorry, that number appears to be experiencing issues. Please try again later.</Say>
               <Hangup/>
             </Response>`);
           return;
