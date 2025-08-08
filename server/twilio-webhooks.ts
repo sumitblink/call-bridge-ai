@@ -159,16 +159,26 @@ export async function handleIncomingCall(req: Request, res: Response) {
         console.log('[Webhook] RTB auction successful, routing to winner');
         const winnerTarget = await storage.getRtbTarget(auctionResult.winningBid.rtbTargetId);
         
-        // Return TwiML for RTB winner
-        res.set('Content-Type', 'text/xml');
-        res.send(`<?xml version="1.0" encoding="UTF-8"?>
-          <Response>
-            <Say voice="alice">Connecting to our premium partner.</Say>
-            <Dial timeout="30" record="record-from-ringing">
-              <Number>${auctionResult.winningBid.destinationNumber}</Number>
-            </Dial>
-          </Response>`);
-        return;
+        // Validate destination number before generating TwiML
+        const destinationNumber = auctionResult.winningBid.destinationNumber;
+        if (!destinationNumber || destinationNumber.trim() === '') {
+          console.error('[Webhook] RTB winner has no destination number, falling back to traditional routing');
+          // Phase 3: Log RTB failure due to missing destination
+          await RoutingDecisionTracker.logRoutingDecision(callId, routingSequence++, 'rtb', undefined, 'RTB Auction', undefined, undefined, 'Missing destination number in winning bid', 'failed');
+        } else {
+          console.log(`[Webhook] RTB routing to destination: ${destinationNumber}`);
+          
+          // Return TwiML for RTB winner
+          res.set('Content-Type', 'text/xml');
+          res.send(`<?xml version="1.0" encoding="UTF-8"?>
+            <Response>
+              <Say voice="alice">Connecting to our premium partner.</Say>
+              <Dial timeout="30" record="record-from-ringing">
+                <Number>${destinationNumber}</Number>
+              </Dial>
+            </Response>`);
+          return;
+        }
       } else {
         console.log('[Webhook] RTB auction failed, falling back to traditional routing:', auctionResult.error);
         // Phase 3: Log RTB failure
