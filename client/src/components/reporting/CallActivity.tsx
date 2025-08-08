@@ -1,5 +1,24 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useInfiniteQuery } from "@tanstack/react-query";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import {
+  CSS,
+} from '@dnd-kit/utilities';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -681,9 +700,52 @@ function getStatusColor(status: string): string {
   }
 }
 
+// Sortable table header component
+function SortableTableHead({ column, columnDef, columnWidths, handleMouseDown }: {
+  column: string;
+  columnDef: any;
+  columnWidths: Record<string, number>;
+  handleMouseDown: (e: React.MouseEvent, column: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: column });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableHead 
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`text-xs font-semibold relative bg-white text-gray-800 sticky top-0 z-30 border-r border-gray-200 cursor-move ${isDragging ? 'opacity-50' : ''}`}
+      data-column={column}
+    >
+      <div className="flex items-center justify-between">
+        <span>{columnDef?.label || column}</span>
+        <div 
+          className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500"
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            handleMouseDown(e, column);
+          }}
+        />
+      </div>
+    </TableHead>
+  );
+}
+
 export default function CallActivity() {
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [campaignFilter, setCampaignFilter] = useState<string>("all");
   
   // Expanded rows state for accordion functionality
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
@@ -795,6 +857,30 @@ export default function CallActivity() {
       setVisibleColumns([...columnsWithoutActions, 'actions']);
     } else {
       setVisibleColumns(uniqueColumns);
+    }
+    // Save to localStorage
+    localStorage.setItem('call-details-column-preferences', JSON.stringify({ visibleColumns: uniqueColumns }));
+  };
+
+  // Drag and drop sensors and handlers
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = visibleColumns.indexOf(active.id as string);
+      const newIndex = visibleColumns.indexOf(over?.id as string);
+
+      const newColumns = arrayMove(visibleColumns, oldIndex, newIndex);
+      setVisibleColumns(newColumns);
+      // Save to localStorage
+      localStorage.setItem('call-details-column-preferences', JSON.stringify({ visibleColumns: newColumns }));
     }
   };
 
@@ -933,16 +1019,14 @@ export default function CallActivity() {
     return calls.filter(call => {
       if (!call) return false;
       
-      const matchesStatus = statusFilter === "all" || call.status === statusFilter;
-      const matchesCampaign = campaignFilter === "all" || call.campaignId === campaignFilter;
       const matchesSearch = searchTerm === "" || 
         (call.fromNumber && call.fromNumber.toLowerCase().includes(searchTerm.toLowerCase())) || 
         (call.toNumber && call.toNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (call.callSid && call.callSid.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      return matchesStatus && matchesCampaign && matchesSearch;
+      return matchesSearch;
     });
-  }, [calls, statusFilter, campaignFilter, searchTerm]);
+  }, [calls, searchTerm]);
 
   // Debug: log filtered calls count
 
@@ -1330,37 +1414,6 @@ export default function CallActivity() {
         </div>
         
         <div className="flex items-center space-x-4 mt-4">
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4" />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="busy">Busy</SelectItem>
-                <SelectItem value="no-answer">No Answer</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <Select value={campaignFilter} onValueChange={setCampaignFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Campaign" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Campaigns</SelectItem>
-              {campaigns.map(campaign => (
-                <SelectItem key={campaign.id} value={campaign.id.toString()}>
-                  {campaign.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
           <Input
             placeholder="Search calls..."
             value={searchTerm}
@@ -1386,31 +1439,31 @@ export default function CallActivity() {
               className="overflow-auto max-h-[600px] relative"
               style={{ scrollBehavior: 'smooth' }}
             >
-              <Table ref={tableRef} className="relative">
-                <TableHeader className="sticky top-0 z-30 bg-white border-b-2 border-gray-200">
-                  <TableRow className="bg-white">
-                    <TableHead className="text-xs font-semibold bg-white text-gray-800 w-8 sticky top-0 z-30 border-r border-gray-200"></TableHead>
-                    {visibleColumns.map((column, columnIndex) => {
-                      const columnDef = getDynamicColumnDefinition(column);
-                      return (
-                        <TableHead 
-                          key={`header-${columnIndex}-${column}`} 
-                          className="text-xs font-semibold relative bg-white text-gray-800 sticky top-0 z-30 border-r border-gray-200"
-                          style={{ 
-                            width: columnWidths[column] || columnDef?.width || 'auto',
-                            minWidth: '60px'
-                          }}
-                        >
-                          {columnDef?.label || column}
-                          <div 
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500"
-                            onMouseDown={(e) => handleMouseDown(e, column)}
-                          />
-                        </TableHead>
-                      );
-                    })}
-                  </TableRow>
-                </TableHeader>
+              <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <Table ref={tableRef} className="relative">
+                  <TableHeader className="sticky top-0 z-30 bg-white border-b-2 border-gray-200">
+                    <TableRow className="bg-white">
+                      <TableHead className="text-xs font-semibold bg-white text-gray-800 w-8 sticky top-0 z-30 border-r border-gray-200"></TableHead>
+                      <SortableContext items={visibleColumns} strategy={horizontalListSortingStrategy}>
+                        {visibleColumns.map((column) => {
+                          const columnDef = getDynamicColumnDefinition(column);
+                          return (
+                            <SortableTableHead 
+                              key={column}
+                              column={column}
+                              columnDef={columnDef}
+                              columnWidths={columnWidths}
+                              handleMouseDown={handleMouseDown}
+                            />
+                          );
+                        })}
+                      </SortableContext>
+                    </TableRow>
+                  </TableHeader>
               <TableBody>
                 {filteredCalls.slice(0, 50).flatMap((call, callIndex) => {
                   const rows = [
@@ -1498,17 +1551,18 @@ export default function CallActivity() {
 
                   return rows;
                 })}
-              </TableBody>
-            </Table>
-            
-            {/* Simple call count display */}
-            {calls.length > 0 && (
-              <div className="border-t bg-muted/20">
-                <div className="flex items-center justify-center px-4 py-2 text-xs text-muted-foreground">
-                  <span>Showing {calls.length} calls</span>
+                </TableBody>
+                </Table>
+              </DndContext>
+              
+              {/* Simple call count display */}
+              {calls.length > 0 && (
+                <div className="border-t bg-muted/20">
+                  <div className="flex items-center justify-center px-4 py-2 text-xs text-muted-foreground">
+                    <span>Showing {calls.length} calls</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             </div>
           </div>
         )}
