@@ -85,6 +85,24 @@ interface CallDetailsExpandedProps {
 function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpandedProps) {
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Fetch RTB auction data for this specific call
+  const { data: rtbAuctionData, isLoading: isLoadingRtb, error: rtbError } = useQuery({
+    queryKey: ['/api/calls', call.id, 'rtb'],
+    queryFn: async () => {
+      const response = await fetch(`/api/calls/${call.id}/rtb`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch RTB data');
+      }
+      return response.json();
+    },
+    enabled: activeTab === 'rtb', // Only fetch when RTB tab is active
+  });
+
   const formatDuration = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
@@ -350,7 +368,17 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
         </TabsContent>
 
         <TabsContent value="rtb" className="p-4 space-y-4 m-0">
-          {(call as any).rtbRequestId ? (
+          {isLoadingRtb ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p>Loading RTB auction data...</p>
+            </div>
+          ) : rtbError ? (
+            <div className="text-center py-8 text-red-600">
+              <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>Error loading RTB data: {rtbError.message}</p>
+            </div>
+          ) : rtbAuctionData && rtbAuctionData.length > 0 ? (
             <div className="space-y-4">
               {/* Auction Header Info */}
               <div className="flex items-center space-x-4 pb-3 border-b border-border/40">
@@ -359,18 +387,18 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                   <span className="font-medium">RTB Details</span>
                 </div>
                 <Badge variant="outline" className="text-xs">
-                  Request ID: {(call as any).rtbRequestId}
+                  Call ID: {call.id}
                 </Badge>
                 <Badge 
-                  variant={(call as any).winningBidAmount && parseFloat((call as any).winningBidAmount) > 0 ? "default" : "secondary"}
-                  className={(call as any).winningBidAmount && parseFloat((call as any).winningBidAmount) > 0 ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}
+                  variant={rtbAuctionData?.some((bid: any) => bid.isWinner) ? "default" : "secondary"}
+                  className={rtbAuctionData?.some((bid: any) => bid.isWinner) ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}
                 >
-                  {(call as any).winningBidAmount && parseFloat((call as any).winningBidAmount) > 0 ? "Won" : "No Winner"}
+                  {rtbAuctionData?.some((bid: any) => bid.isWinner) ? "Won" : "No Winner"}
                 </Badge>
               </div>
 
               {/* Individual Bidder Results Table */}
-              {(call as any).rtbBidders && (call as any).rtbBidders.length > 0 && (
+              {rtbAuctionData && rtbAuctionData.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <Users className="h-4 w-4 text-gray-500" />
@@ -389,8 +417,8 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {(call as any).rtbBidders
-                          .sort((a: any, b: any) => b.bidAmount - a.bidAmount)
+                        {rtbAuctionData && rtbAuctionData.length > 0 ? rtbAuctionData
+                          .sort((a: any, b: any) => parseFloat(b.bidAmount) - parseFloat(a.bidAmount))
                           .map((bidder: any, idx: number) => (
                           <TableRow key={idx} className="text-sm">
                             <TableCell>
@@ -404,11 +432,8 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <div className="font-semibold text-green-600">
-                                ${bidder.bidAmount.toFixed(2)}
-                              </div>
-                              <div className="text-xs text-gray-500">{bidder.currency || 'USD'}</div>
+                            <TableCell className="font-bold text-green-600">
+                              ${parseFloat(bidder.bidAmount || '0').toFixed(2)}
                             </TableCell>
                             <TableCell>
                               <div className="font-mono text-sm">
@@ -473,7 +498,13 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                               )}
                             </TableCell>
                           </TableRow>
-                        ))}
+                        )) : (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                              No bidder data available
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -500,8 +531,8 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                     <div className="flex justify-between">
                       <span className="text-gray-600">Avg Response:</span>
                       <span className="font-mono">
-                        {(call as any).rtbBidders 
-                          ? Math.round((call as any).rtbBidders.reduce((sum: number, b: any) => sum + b.responseTime, 0) / (call as any).rtbBidders.length)
+                        {rtbAuctionData && rtbAuctionData.length > 0
+                          ? Math.round(rtbAuctionData.reduce((sum: number, b: any) => sum + b.responseTime, 0) / rtbAuctionData.length)
                           : 0}ms
                       </span>
                     </div>
@@ -517,17 +548,17 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Targets Pinged:</span>
-                      <span className="font-medium">{(call as any).totalTargetsPinged || 0}</span>
+                      <span className="font-medium">{rtbAuctionData ? rtbAuctionData.length : 0}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Successful Bids:</span>
-                      <span className="font-medium text-green-600">{(call as any).successfulResponses || 0}</span>
+                      <span className="font-medium text-green-600">{rtbAuctionData ? rtbAuctionData.filter(bid => bid.bidStatus === 'accepted').length : 0}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Success Rate:</span>
                       <span className="font-medium">
-                        {(call as any).totalTargetsPinged 
-                          ? Math.round(((call as any).successfulResponses / (call as any).totalTargetsPinged) * 100)
+                        {rtbAuctionData && rtbAuctionData.length > 0
+                          ? Math.round((rtbAuctionData.filter(bid => bid.bidStatus === 'accepted').length / rtbAuctionData.length) * 100)
                           : 0}%
                       </span>
                     </div>
@@ -544,12 +575,12 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                     <div className="flex justify-between">
                       <span className="text-gray-600">Winning Bid:</span>
                       <span className="font-bold text-green-600">
-                        ${(call as any).winningBidAmount || '0.00'}
+                        ${rtbAuctionData?.find(bid => bid.isWinner)?.bidAmount ? parseFloat(rtbAuctionData.find(bid => bid.isWinner).bidAmount).toFixed(2) : '0.00'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Winner ID:</span>
-                      <span className="font-mono">{(call as any).winningTargetId || 'None'}</span>
+                      <span className="font-mono">{rtbAuctionData?.find(bid => bid.isWinner)?.targetId || 'None'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Route Method:</span>
@@ -873,6 +904,26 @@ export default function CallActivity() {
     queryKey: ["/api/pools"],
     staleTime: 0 // Force fresh data
   });
+
+  // RTB auction data query for individual calls
+  const getRtbAuctionData = (callId: number) => {
+    return useQuery({
+      queryKey: ['/api/calls', callId, 'rtb'],
+      queryFn: async () => {
+        const response = await fetch(`/api/calls/${callId}/rtb`, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch RTB data');
+        }
+        return response.json();
+      },
+      enabled: false, // Only enabled when explicitly called
+    });
+  };
 
   // Removed infinite scroll functionality for simplicity
 
