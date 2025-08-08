@@ -524,129 +524,6 @@ export function CallTrackingTags({ campaignId }: CallTrackingTagsProps) {
 ${generateJavaScriptCode(tag)}`;
   };
 
-  // Next.js-specific code generation functions
-  const generateNextJSHook = (tag: any) => {
-    if (!tag) return '';
-    
-    const currentDomain = window.location.hostname;
-    const protocol = window.location.protocol;
-    const port = window.location.port ? `:${window.location.port}` : '';
-    const baseUrl = `${protocol}//${currentDomain}${port}`;
-    
-    return `// hooks/useDNI.js
-import { useState, useEffect } from 'react';
-
-export function useDNI(tagCode = '${tag.tagCode}') {
-  const [phoneNumber, setPhoneNumber] = useState('${tag.numberToReplace || '(555) 123-4567'}');
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const getDNINumber = async () => {
-      try {
-        const sessionId = sessionStorage.getItem('dni_session_id') || 
-          'dni_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        sessionStorage.setItem('dni_session_id', sessionId);
-
-        const response = await fetch('${baseUrl}/api/dni/track-simple', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            campaignId: '${campaignId}',
-            sessionId,
-            domain: window.location.hostname,
-            referrer: document.referrer,
-            userAgent: navigator.userAgent
-          })
-        });
-
-        const data = await response.json();
-        if (data.formattedNumber) {
-          setPhoneNumber(data.formattedNumber);
-        }
-      } catch (error) {
-        console.error('DNI tracking error:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getDNINumber();
-  }, [tagCode]);
-
-  return { phoneNumber, isLoading };
-}`;
-  };
-
-  const generateNextJSComponent = (tag: any) => {
-    if (!tag) return '';
-    
-    return `// components/DNIPhone.jsx
-'use client';
-import { useDNI } from '../hooks/useDNI';
-
-export function DNIPhone({ 
-  tagCode = '${tag.tagCode}',
-  className = '',
-  children,
-  showLoader = false,
-  fallbackNumber = '${tag.numberToReplace || '(555) 123-4567'}'
-}) {
-  const { phoneNumber, isLoading } = useDNI(tagCode);
-
-  if (isLoading && showLoader) {
-    return <span className={className}>Loading...</span>;
-  }
-
-  const displayNumber = phoneNumber || fallbackNumber;
-
-  if (children) {
-    // If children provided, render them with phone number available
-    return children({ phoneNumber: displayNumber, isLoading });
-  }
-
-  return <span className={className}>{displayNumber}</span>;
-}
-
-export function DNILink({ 
-  tagCode = '${tag.tagCode}',
-  className = '',
-  children,
-  fallbackNumber = '${tag.numberToReplace || '(555) 123-4567'}'
-}) {
-  const { phoneNumber, isLoading } = useDNI(tagCode);
-  const displayNumber = phoneNumber || fallbackNumber;
-  const telHref = 'tel:' + displayNumber.replace(/[^0-9+]/g, '');
-
-  return (
-    <a href={telHref} className={className}>
-      {children || displayNumber}
-    </a>
-  );
-}`;
-  };
-
-  const generateNextJSUsage = (tag: any) => {
-    if (!tag) return '';
-    
-    return `// Usage in your Next.js pages/components
-import { DNIPhone, DNILink } from '../components/DNIPhone';
-
-// Simple phone number display
-<DNIPhone />
-
-// As a clickable link
-<DNILink className="btn btn-primary">Call Now</DNILink>
-
-// Custom render with loading state
-<DNIPhone showLoader>
-  {({ phoneNumber, isLoading }) => (
-    <div>
-      {isLoading ? 'Getting number...' : \`Call us at \${phoneNumber}\`}
-    </div>
-  )}
-</DNIPhone>`;
-  };
-
   const rotationStrategies = [
     { value: "round_robin", label: "Round Robin" },
     { value: "sticky", label: "Sticky (Session-based)" },
@@ -1087,9 +964,8 @@ import { DNIPhone, DNILink } from '../components/DNIPhone';
             </DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="simple" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="simple">Simple (Recommended)</TabsTrigger>
-              <TabsTrigger value="nextjs">Next.js</TabsTrigger>
               <TabsTrigger value="javascript">Advanced JavaScript</TabsTrigger>
               <TabsTrigger value="html">HTML Snippet</TabsTrigger>
               <TabsTrigger value="manual">Manual Integration</TabsTrigger>
@@ -1117,64 +993,6 @@ import { DNIPhone, DNILink } from '../components/DNIPhone';
                   </Button>
                 </div>
 
-              </div>
-            </TabsContent>
-            <TabsContent value="nextjs" className="space-y-4">
-              <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200 dark:border-green-800">
-                <p className="text-sm text-green-600 dark:text-green-400">
-                  Next.js-compatible implementation using React hooks and client-side rendering for dynamic number insertion.
-                </p>
-              </div>
-              <div>
-                <Label>Step 1: Install the DNI Hook</Label>
-                <div className="relative">
-                  <Textarea
-                    className="font-mono text-sm h-32"
-                    value={selectedTag ? generateNextJSHook(selectedTag) : ''}
-                    readOnly
-                  />
-                  <Button
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => selectedTag && copyToClipboard(generateNextJSHook(selectedTag))}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div>
-                <Label>Step 2: DNI Component Implementation</Label>
-                <div className="relative">
-                  <Textarea
-                    className="font-mono text-sm min-h-[400px]"
-                    value={selectedTag ? generateNextJSComponent(selectedTag) : ''}
-                    readOnly
-                  />
-                  <Button
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => selectedTag && copyToClipboard(generateNextJSComponent(selectedTag))}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div>
-                <Label>Step 3: Usage in Your Pages</Label>
-                <div className="relative">
-                  <Textarea
-                    className="font-mono text-sm h-24"
-                    value={selectedTag ? generateNextJSUsage(selectedTag) : ''}
-                    readOnly
-                  />
-                  <Button
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => selectedTag && copyToClipboard(generateNextJSUsage(selectedTag))}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
             </TabsContent>
             <TabsContent value="javascript" className="space-y-4">
