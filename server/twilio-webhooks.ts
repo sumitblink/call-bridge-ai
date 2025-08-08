@@ -168,14 +168,16 @@ export async function handleIncomingCall(req: Request, res: Response) {
         } else {
           console.log(`[Webhook] RTB routing to destination: ${destinationNumber}`);
           
-          // Return TwiML for RTB winner
+          // Enhanced TwiML with better error handling and fallback
           res.set('Content-Type', 'text/xml');
           res.send(`<?xml version="1.0" encoding="UTF-8"?>
             <Response>
               <Say voice="alice">Connecting to our premium partner.</Say>
-              <Dial timeout="30" record="record-from-ringing">
+              <Dial timeout="30" record="record-from-ringing" action="/api/webhooks/rtb-dial-status" method="POST">
                 <Number>${destinationNumber}</Number>
               </Dial>
+              <Say voice="alice">We're sorry, the call could not be completed at this time. Please try again later.</Say>
+              <Hangup/>
             </Response>`);
           return;
         }

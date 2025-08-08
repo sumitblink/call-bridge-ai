@@ -2721,8 +2721,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/webhooks/call-status', async (req, res) => {
+  // RTB dial status webhook to catch external transfer failures
+  app.post('/api/webhooks/rtb-dial-status', async (req, res) => {
     try {
+      const { CallSid, DialCallStatus, DialCallDuration } = req.body;
+      console.log(`[RTB Dial] Call ${CallSid} dial status: ${DialCallStatus}, duration: ${DialCallDuration}`);
+      
+      if (DialCallStatus === 'failed' || DialCallStatus === 'busy' || DialCallStatus === 'no-answer') {
+        console.error(`[RTB Dial] External RTB transfer failed: ${DialCallStatus}`);
+        // You could implement retry logic or alternative routing here
+      }
+      
+      res.send('OK');
+    } catch (error) {
+      console.error('[RTB Dial] Error processing dial status:', error);
+      res.send('ERROR');
+    }
+  });
+
+  app.post('/api/webhooks/call-status', async (req, res) => {
+    try:
       const { CallSid, CallStatus, CallDuration, Duration } = req.body;
       
       console.log(`[Webhook] Call status update: ${CallSid} - ${CallStatus}`);
