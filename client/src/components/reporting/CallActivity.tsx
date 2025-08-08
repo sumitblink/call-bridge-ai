@@ -905,25 +905,7 @@ export default function CallActivity() {
     staleTime: 0 // Force fresh data
   });
 
-  // RTB auction data query for individual calls
-  const getRtbAuctionData = (callId: number) => {
-    return useQuery({
-      queryKey: ['/api/calls', callId, 'rtb'],
-      queryFn: async () => {
-        const response = await fetch(`/api/calls/${callId}/rtb`, {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch RTB data');
-        }
-        return response.json();
-      },
-      enabled: false, // Only enabled when explicitly called
-    });
-  };
+
 
   // Removed infinite scroll functionality for simplicity
 
