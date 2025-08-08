@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { 
-  calls, rtbAuctionDetails, buyers, publishers,
+  calls, rtbAuctionDetails, buyers, publishers, rtbTargets,
   type Call, type RtbAuctionDetails
 } from "@shared/schema";
 import { db } from "./db";
@@ -107,21 +107,35 @@ router.get("/api/calls/:callId/routing", requireAuth, async (req, res) => {
   }
 });
 
-// Phase 4: Get RTB auction details
+// Phase 4: Get RTB auction details with proper target name mapping
 router.get("/api/calls/:callId/rtb", requireAuth, async (req, res) => {
   try {
     const callId = parseInt(req.params.callId);
     console.log(`[RTB API] Fetching RTB auction details for call ${callId}`);
-
-    console.log(`[RTB API] Fetching RTB auction details for call ${callId}`);
     
+    // Get auctions with proper target name mapping from local configuration
     const auctions = await db
-      .select()
+      .select({
+        id: rtbAuctionDetails.id,
+        callId: rtbAuctionDetails.callId,
+        auctionId: rtbAuctionDetails.auctionId,
+        targetId: rtbAuctionDetails.targetId,
+        targetName: rtbTargets.name, // Use local target name instead of external response
+        bidAmount: rtbAuctionDetails.bidAmount,
+        bidStatus: rtbAuctionDetails.bidStatus,
+        responseTime: rtbAuctionDetails.responseTime,
+        destinationNumber: rtbAuctionDetails.destinationNumber,
+        isWinner: rtbAuctionDetails.isWinner,
+        rejectionReason: rtbAuctionDetails.rejectionReason,
+        timestamp: rtbAuctionDetails.timestamp,
+        metadata: rtbAuctionDetails.metadata
+      })
       .from(rtbAuctionDetails)
+      .leftJoin(rtbTargets, eq(rtbAuctionDetails.targetId, rtbTargets.id))
       .where(eq(rtbAuctionDetails.callId, callId))
       .orderBy(desc(rtbAuctionDetails.timestamp));
 
-    console.log(`[RTB API] Found ${auctions.length} auction details for call ${callId}:`, auctions);
+    console.log(`[RTB API] Found ${auctions.length} auction details for call ${callId} with correct target names`);
     res.json(auctions);
   } catch (error) {
     console.error("Error fetching RTB auction details:", error);
