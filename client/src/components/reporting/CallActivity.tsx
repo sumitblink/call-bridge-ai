@@ -102,7 +102,7 @@ interface CallDetailsExpandedProps {
 }
 
 function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpandedProps) {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("events");
 
   // Fetch RTB auction data for this specific call
   const { data: rtbAuctionData, isLoading: isLoadingRtb, error: rtbError } = useQuery({
@@ -178,38 +178,21 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
         <TabsContent value="events" className="p-4 space-y-4 m-0">
           <div className="space-y-4">
             
-            {/* Duplicate Call Event */}
+            {/* Call Initiated Event */}
             <div className="border rounded-lg overflow-hidden">
-              <div className="bg-blue-50 p-3 border-b">
+              <div className="bg-green-50 p-3 border-b">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Info className="h-2 w-2 text-white" />
+                  <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                    <div className="w-1 h-1 bg-white rounded-full"></div>
                   </div>
-                  <span className="text-sm font-medium text-blue-800">Duplicate Call</span>
+                  <span className="text-sm font-medium text-green-800">Call Initiated</span>
                 </div>
               </div>
               <div className="p-3 space-y-2 text-xs">
                 <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(call.createdAt).toLocaleString()}</span></div>
-                <div><span className="font-medium text-gray-600">Connected Target ID:</span> <span className="font-mono">{call.id}</span></div>
-                <div><span className="font-medium text-gray-600">Last Call Date:</span> <span>{new Date(call.createdAt).toLocaleString()}</span></div>
-                <div><span className="font-medium text-gray-600">Last Inbound Call ID:</span> <span className="font-mono">{call.callSid}</span></div>
-              </div>
-            </div>
-
-            {/* IVR Node Enter Event */}
-            <div className="border rounded-lg overflow-hidden">
-              <div className="bg-blue-50 p-3 border-b">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Info className="h-2 w-2 text-white" />
-                  </div>
-                  <span className="text-sm font-medium text-blue-800">IVR Node Enter</span>
-                </div>
-              </div>
-              <div className="p-3 space-y-2 text-xs">
-                <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(call.createdAt).toLocaleString()}</span></div>
-                <div><span className="font-medium text-gray-600">Node Type:</span> <span>DialNode</span></div>
-                <div><span className="font-medium text-gray-600">Step Name:</span> <span>Medi Tier 1</span></div>
+                <div><span className="font-medium text-gray-600">From:</span> <span className="font-mono">{call.fromNumber}</span></div>
+                <div><span className="font-medium text-gray-600">To:</span> <span className="font-mono">{call.toNumber}</span></div>
+                <div><span className="font-medium text-gray-600">Call SID:</span> <span className="font-mono">{call.callSid}</span></div>
               </div>
             </div>
 
@@ -236,37 +219,8 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                       <div>Name</div>
                       <div>Reason</div>
                     </div>
-                    <div className="space-y-1">
-                      <div className="grid grid-cols-4 gap-2 text-xs">
-                        <div>1</div>
-                        <div>1</div>
-                        <div>Medi - Enhanced - Enhance - $10/10 - Direct - $300 CPA</div>
-                        <div>Disabled</div>
-                      </div>
-                      <div className="grid grid-cols-4 gap-2 text-xs">
-                        <div>1</div>
-                        <div>1</div>
-                        <div>Medi - Enhanced - Enhance - $10/10 - CPA $300 (2)</div>
-                        <div>Disabled</div>
-                      </div>
-                      <div className="grid grid-cols-4 gap-2 text-xs">
-                        <div>1</div>
-                        <div>1</div>
-                        <div>Medi - Tier 1 - Medi - Carbella - $13/10</div>
-                        <div>Disabled</div>
-                      </div>
-                      <div className="grid grid-cols-4 gap-2 text-xs">
-                        <div>1</div>
-                        <div>1</div>
-                        <div>Medi - Tier 1 - Medi - TrustHealth - $14/10</div>
-                        <div>Is Closed</div>
-                      </div>
-                      <div className="grid grid-cols-4 gap-2 text-xs">
-                        <div>1</div>
-                        <div>1</div>
-                        <div>Medi - Tier 1 - MEDI - United - RTB - Medi - Tier 1</div>
-                        <div>Is Closed</div>
-                      </div>
+                    <div className="text-xs text-gray-500 text-center py-2">
+                      No ineligible targets found for this call
                     </div>
                   </div>
                 </div>
@@ -290,10 +244,8 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                           </div>
                         ))
                       ) : (
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div>1</div>
-                          <div>1</div>
-                          <div>Medi - Tier 1 - Medi - WeGenerate - Internal - Medi - Tier 1</div>
+                        <div className="text-xs text-gray-500 text-center py-2">
+                          No eligible targets found for this call
                         </div>
                       )}
                     </div>
@@ -302,26 +254,25 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
               </div>
             </div>
 
-            {/* Pixel Fire Event */}
-            <div className="border rounded-lg overflow-hidden">
-              <div className="bg-blue-50 p-3 border-b">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Info className="h-2 w-2 text-white" />
+            {/* Pixel Fire Event - only show if tracking pixels exist */}
+            {(call as any).trackingPixelFired && (
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-blue-50 p-3 border-b">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                      <Info className="h-2 w-2 text-white" />
+                    </div>
+                    <span className="text-sm font-medium text-blue-800">Pixel Fire</span>
                   </div>
-                  <span className="text-sm font-medium text-blue-800">Pixel Fire</span>
+                </div>
+                <div className="p-3 space-y-2 text-xs">
+                  <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(call.createdAt).toLocaleString()}</span></div>
+                  <div><span className="font-medium text-gray-600">Status:</span> <span>{(call as any).pixelStatus || 'Success'}</span></div>
+                  <div><span className="font-medium text-gray-600">Response Code:</span> <span>{(call as any).pixelResponseCode || '200'}</span></div>
+                  <div><span className="font-medium text-gray-600">URL:</span> <span className="font-mono text-blue-600 break-all">{(call as any).pixelUrl || 'N/A'}</span></div>
                 </div>
               </div>
-              <div className="p-3 space-y-2 text-xs">
-                <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(call.createdAt).toLocaleString()}</span></div>
-                <div><span className="font-medium text-gray-600">Failed:</span> <span>Not Found</span></div>
-                <div><span className="font-medium text-gray-600">Response Status Code:</span> <span>404</span></div>
-                <div><span className="font-medium text-gray-600">Setting Id:</span> <span className="font-mono">EVe5ed98121ee543598ca9f40403570b05f</span></div>
-                <div><span className="font-medium text-gray-600">Setting Name:</span> <span>Redtrack INCOMING</span></div>
-                <div><span className="font-medium text-gray-600">Trigger On:</span> <span>Incoming</span></div>
-                <div><span className="font-medium text-gray-600">Url:</span> <span className="font-mono text-blue-600 break-all">http://cy9n0.rdtk.io/postback?clickid=&type=CTC</span></div>
-              </div>
-            </div>
+            )}
 
             {/* Ring Tree Pinging Summary */}
             {rtbAuctionData && rtbAuctionData.length > 0 && (
@@ -369,20 +320,24 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
               </div>
             )}
 
-            {/* IVR Node Exit Event */}
+            {/* Call Completed Event */}
             <div className="border rounded-lg overflow-hidden">
-              <div className="bg-blue-50 p-3 border-b">
+              <div className={`${call.status === 'completed' ? 'bg-green-50' : 'bg-red-50'} p-3 border-b`}>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Info className="h-2 w-2 text-white" />
+                  <div className={`w-4 h-4 ${call.status === 'completed' ? 'bg-green-500' : 'bg-red-500'} rounded-full flex items-center justify-center`}>
+                    <div className="w-1 h-1 bg-white rounded-full"></div>
                   </div>
-                  <span className="text-sm font-medium text-blue-800">IVR Node Exit</span>
+                  <span className={`text-sm font-medium ${call.status === 'completed' ? 'text-green-800' : 'text-red-800'}`}>
+                    Call {call.status.charAt(0).toUpperCase() + call.status.slice(1)}
+                  </span>
                 </div>
               </div>
               <div className="p-3 space-y-2 text-xs">
                 <div><span className="font-medium text-gray-600">Timestamp:</span> <span>{new Date(call.updatedAt).toLocaleString()}</span></div>
-                <div><span className="font-medium text-gray-600">NodeType:</span> <span>DialNode</span></div>
-                <div><span className="font-medium text-gray-600">Step Name:</span> <span>Medi Tier 1</span></div>
+                <div><span className="font-medium text-gray-600">Duration:</span> <span>{formatDuration(call.duration)}</span></div>
+                <div><span className="font-medium text-gray-600">Status:</span> <span className="capitalize">{call.status}</span></div>
+                <div><span className="font-medium text-gray-600">Cost:</span> <span>{formatCurrency(call.cost)}</span></div>
+                <div><span className="font-medium text-gray-600">Revenue:</span> <span>{formatCurrency(call.revenue)}</span></div>
               </div>
             </div>
 
@@ -774,8 +729,8 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                   <Badge className="bg-green-100 text-green-800 text-xs">Available</Badge>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <audio controls className="w-full">
-                    <source src={call.recordingUrl} type="audio/mpeg" />
+                  <audio controls className="w-full" crossOrigin="anonymous">
+                    <source src={`/api/recordings/${call.recordingSid}`} type="audio/mpeg" />
                     Your browser does not support the audio element.
                   </audio>
                   <div className="text-xs text-gray-500 mt-2">
