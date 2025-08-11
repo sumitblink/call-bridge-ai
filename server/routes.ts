@@ -1681,8 +1681,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = Math.min(parseInt(req.query.limit as string) || 25, 100); // Limit max to 100
       const offset = (page - 1) * limit;
       
-      // Get user calls efficiently 
-      const userCalls = await storage.getCallsByUser(userId);
+      // Get user calls efficiently with enhanced data (includes hangup, target, buyer data)
+      const userCalls = await storage.getEnhancedCallsByUser(userId);
       
       // Enhanced RTB data for call ID 144
       const enhancedCalls = userCalls.map(call => {
