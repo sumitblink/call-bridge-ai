@@ -1474,6 +1474,17 @@ export default function CallActivity() {
         return <div className="text-xs">{(call as any).disposition || '-'}</div>;
       case 'hangupCause':
         return <div className="text-xs">{(call as any).hangupCause || '-'}</div>;
+      case 'hangup':
+        const hangupCause = (call as any).hangupCause;
+        const disposition = (call as any).disposition;
+        if (hangupCause) {
+          return <div className="text-xs capitalize">{hangupCause}</div>;
+        } else if (disposition) {
+          return <div className="text-xs capitalize">{disposition}</div>;
+        } else {
+          return <div className="text-xs capitalize">{call.status}</div>;
+        }
+        break;
       case 'audioQuality':
         return <div className="text-xs">{(call as any).audioQuality || '-'}</div>;
       case 'duplicate':
