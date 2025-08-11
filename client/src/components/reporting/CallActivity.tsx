@@ -36,6 +36,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ColumnCustomizer } from "./ColumnCustomizer";
 import { getDefaultVisibleColumns, getColumnDefinition } from "@shared/column-definitions";
 import { formatDistanceToNow } from "date-fns";
+import { RtbAuctionDetails } from "./RtbAuctionDetails";
 
 interface Call {
   id: number;
@@ -122,6 +123,24 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
     enabled: activeTab === 'rtb' || activeTab === 'routing' || activeTab === 'events' || activeTab === 'ringtree', // Fetch for tabs that need RTB data
   });
 
+  // Fetch comprehensive RTB auction details (Ringba-style)
+  const { data: comprehensiveRtbData, isLoading: isLoadingComprehensiveRtb } = useQuery({
+    queryKey: ['/api/calls', call.id, 'rtb-auction-details'],
+    queryFn: async () => {
+      const response = await fetch(`/api/calls/${call.id}/rtb-auction-details`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch comprehensive RTB auction data');
+      }
+      return response.json();
+    },
+    enabled: activeTab === 'rtb-auction' || activeTab === 'events', // Only fetch when needed
+  });
+
   const formatDuration = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
@@ -151,7 +170,7 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
   return (
     <div className="bg-white border rounded-lg overflow-hidden">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-gray-50 rounded-none border-b">
+        <TabsList className="grid w-full grid-cols-6 bg-gray-50 rounded-none border-b">
           <TabsTrigger value="events" className="text-xs py-2">
             <Activity className="h-3 w-3 mr-1" />
             Events
@@ -163,6 +182,10 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
           <TabsTrigger value="tags" className="text-xs py-2">
             <Tag className="h-3 w-3 mr-1" />
             Tags
+          </TabsTrigger>
+          <TabsTrigger value="rtb-auction" className="text-xs py-2">
+            <TrendingUp className="h-3 w-3 mr-1" />
+            RTB Auction
           </TabsTrigger>
           <TabsTrigger value="ringtree" className="text-xs py-2">
             <PhoneForwarded className="h-3 w-3 mr-1" />
@@ -819,6 +842,22 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
               <div className="text-xs text-gray-400 mt-1">Tags can be used to categorize and filter calls</div>
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="rtb-auction" className="p-4 space-y-4 m-0">
+          {isLoadingComprehensiveRtb ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : comprehensiveRtbData ? (
+            <RtbAuctionDetails auctionData={comprehensiveRtbData} callId={call.id} />
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <TrendingUp className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+              <div className="text-sm">No RTB auction data available</div>
+              <div className="text-xs text-gray-400 mt-1">This call was not routed via RTB auction</div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="ringtree" className="p-4 space-y-4 m-0">

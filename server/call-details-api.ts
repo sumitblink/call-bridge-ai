@@ -11,11 +11,45 @@ import { requireAuth } from "./middleware/auth";
 
 const router = Router();
 
+// Add missing imports
+import { rtbBidRequests, rtbBidResponses, rtbTargets } from "@shared/schema";
+
 // Enhanced call details with full tracking information
 interface CallWithDetails extends Call {
   rtbAuctions?: RtbAuctionDetails[];
   campaignName?: string;
   buyerName?: string;
+}
+
+// Comprehensive RTB auction data interface
+interface RtbAuctionSummary {
+  requestId: string;
+  campaignId: string;
+  callerId: string;
+  totalTargetsPinged: number;
+  successfulResponses: number;
+  winningBidAmount: number;
+  winningTargetId: number;
+  totalResponseTimeMs: number;
+  publisherId: number;
+  inboundNumber: string;
+  callStatus: string;
+  callDuration: number;
+  fromNumber: string;
+  toNumber: string;
+  bidResponses: Array<{
+    id: number;
+    rtbTargetId: number;
+    targetName: string;
+    bidAmount: number;
+    destinationNumber: string;
+    responseTimeMs: number;
+    responseStatus: string;
+    isValid: boolean;
+    isWinningBid: boolean;
+    rejectionReason: string | null;
+    rawResponse: any;
+  }>;
 }
 
 // Phase 1: Get detailed call information for expandable rows
@@ -182,6 +216,94 @@ router.post("/api/calls/:callId/rtb", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Error logging RTB auction details:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Comprehensive RTB auction details for call analysis (Ringba-style)
+router.get("/api/calls/:callId/rtb-auction-details", requireAuth, async (req, res) => {
+  try {
+    const callId = parseInt(req.params.callId);
+    const userId = req.user.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // First get the call to verify ownership
+    const call = await db.query.calls.findFirst({
+      where: and(eq(calls.id, callId), eq(calls.userId, userId))
+    });
+
+    if (!call) {
+      return res.status(404).json({ message: "Call not found" });
+    }
+
+    // Get RTB bid request associated with this call
+    const bidRequest = await db.query.rtbBidRequests.findFirst({
+      where: eq(rtbBidRequests.campaignId, call.campaignId!)
+    });
+
+    if (!bidRequest) {
+      return res.status(404).json({ message: "No RTB auction data found for this call" });
+    }
+
+    // Get all bid responses for this request
+    const bidResponses = await db
+      .select({
+        id: rtbBidResponses.id,
+        rtbTargetId: rtbBidResponses.rtbTargetId,
+        targetName: rtbTargets.name,
+        bidAmount: rtbBidResponses.bidAmount,
+        destinationNumber: rtbBidResponses.destinationNumber,
+        responseTimeMs: rtbBidResponses.responseTimeMs,
+        responseStatus: rtbBidResponses.responseStatus,
+        isValid: rtbBidResponses.isValid,
+        isWinningBid: rtbBidResponses.isWinningBid,
+        rejectionReason: rtbBidResponses.rejectionReason,
+        rawResponse: rtbBidResponses.rawResponse,
+      })
+      .from(rtbBidResponses)
+      .leftJoin(rtbTargets, eq(rtbBidResponses.rtbTargetId, rtbTargets.id))
+      .where(eq(rtbBidResponses.requestId, bidRequest.requestId))
+      .orderBy(desc(rtbBidResponses.isWinningBid), desc(rtbBidResponses.bidAmount));
+
+    // Construct comprehensive auction summary
+    const auctionSummary: RtbAuctionSummary = {
+      requestId: bidRequest.requestId,
+      campaignId: bidRequest.campaignId,
+      callerId: bidRequest.callerId || call.fromNumber,
+      totalTargetsPinged: bidRequest.totalTargetsPinged || bidResponses.length,
+      successfulResponses: bidRequest.successfulResponses || bidResponses.filter(b => b.responseStatus === 'success').length,
+      winningBidAmount: bidRequest.winningBidAmount || 0,
+      winningTargetId: bidRequest.winningTargetId || 0,
+      totalResponseTimeMs: bidRequest.totalResponseTimeMs || 0,
+      publisherId: bidRequest.publisherId || 0,
+      inboundNumber: bidRequest.inboundNumber || call.toNumber,
+      callStatus: call.status,
+      callDuration: call.duration,
+      fromNumber: call.fromNumber,
+      toNumber: call.toNumber,
+      bidResponses: bidResponses.map(bid => ({
+        id: bid.id,
+        rtbTargetId: bid.rtbTargetId,
+        targetName: bid.targetName || `Target ${bid.rtbTargetId}`,
+        bidAmount: parseFloat(bid.bidAmount?.toString() || '0'),
+        destinationNumber: bid.destinationNumber || '',
+        responseTimeMs: bid.responseTimeMs || 0,
+        responseStatus: bid.responseStatus || 'unknown',
+        isValid: bid.isValid || false,
+        isWinningBid: bid.isWinningBid || false,
+        rejectionReason: bid.rejectionReason,
+        rawResponse: bid.rawResponse
+      }))
+    };
+
+    console.log(`[RTB AUCTION API] Call ${callId} - Pinged: ${auctionSummary.totalTargetsPinged}, Responses: ${auctionSummary.successfulResponses}, Winner: $${auctionSummary.winningBidAmount}`);
+
+    res.json(auctionSummary);
+  } catch (error) {
+    console.error("Error fetching RTB auction details:", error);
+    res.status(500).json({ message: "Failed to fetch RTB auction details" });
   }
 });
 
