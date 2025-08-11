@@ -668,44 +668,69 @@ export class SupabaseStorage implements IStorage {
   // Enhanced Calls with detailed joins for reporting
   async getEnhancedCallsByUser(userId: number, filters?: any): Promise<any[]> {
     try {
-      let query = db
-        .select()
+      // Use the working query structure from getCallsByUser but enhanced
+      const result = await db
+        .select({
+          // Call fields
+          id: calls.id,
+          campaignId: calls.campaignId,
+          buyerId: calls.buyerId,
+          targetId: calls.targetId,
+          numberPoolId: calls.numberPoolId,
+          phoneNumberId: calls.phoneNumberId,
+          callSid: calls.callSid,
+          fromNumber: calls.fromNumber,
+          toNumber: calls.toNumber,
+          duration: calls.duration,
+          status: calls.status,
+          callQuality: calls.callQuality,
+          recordingUrl: calls.recordingUrl,
+          recordingSid: calls.recordingSid,
+          recordingStatus: calls.recordingStatus,
+          recordingDuration: calls.recordingDuration,
+          transcription: calls.transcription,
+          transcriptionStatus: calls.transcriptionStatus,
+          cost: calls.cost,
+          revenue: calls.revenue,
+          payout: calls.payout,
+          profit: calls.profit,
+          geoLocation: calls.geoLocation,
+          userAgent: calls.userAgent,
+          clickId: calls.clickId,
+          publisherName: calls.publisherName,
+          utmSource: calls.utmSource,
+          utmMedium: calls.utmMedium,
+          utmCampaign: calls.utmCampaign,
+          utmContent: calls.utmContent,
+          utmTerm: calls.utmTerm,
+          referrer: calls.referrer,
+          landingPage: calls.landingPage,
+          ipAddress: calls.ipAddress,
+          createdAt: calls.createdAt,
+          updatedAt: calls.updatedAt,
+          hangupCause: calls.hangupCause,
+          disposition: calls.disposition,
+          // Buyer fields
+          buyerName: buyers.companyName,
+          buyerEmail: buyers.email,
+          // Campaign fields  
+          campaignName: campaigns.name,
+          // RTB Target fields
+          targetName: rtbTargets.name,
+          targetCompany: rtbTargets.companyName,
+        })
         .from(calls)
-        .leftJoin(campaigns, eq(calls.campaignId, campaigns.id))
+        .innerJoin(campaigns, eq(calls.campaignId, campaigns.id))
         .leftJoin(buyers, eq(calls.buyerId, buyers.id))
-        .leftJoin(publishers, eq(calls.publisherId, publishers.id))
-        .where(eq(campaigns.userId, userId));
-
-    // Apply filters
-    if (filters?.status && filters.status !== "all") {
-      query = query.where(eq(calls.status, filters.status));
-    }
-
-    if (filters?.campaignId && filters.campaignId !== "all") {
-      query = query.where(eq(calls.campaignId, filters.campaignId));
-    }
-
-    if (filters?.minDuration) {
-      const minDuration = parseInt(filters.minDuration);
-      if (!isNaN(minDuration)) {
-        query = query.where(gte(calls.duration, minDuration));
-      }
-    }
-
-      const result = await query.orderBy(desc(calls.createdAt));
+        .leftJoin(rtbTargets, eq(calls.targetId, rtbTargets.id))
+        .where(eq(campaigns.userId, userId))
+        .orderBy(desc(calls.createdAt))
+        .limit(1000);
       
-      return result.map(row => ({
-        ...row.calls,
-        campaignName: row.campaigns?.name,
-        campaignStatus: row.campaigns?.status,
-        buyerName: row.buyers?.name,
-        buyerEmail: row.buyers?.email,
-        publisherName: row.publishers?.name,
-        publisherStatus: row.publishers?.status,
-      }));
+      return result;
     } catch (error) {
       console.error('Error getting enhanced calls:', error);
-      throw error;
+      return [];
     }
   }
 
