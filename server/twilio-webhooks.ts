@@ -7,6 +7,47 @@ import { twilioService } from './twilio-service';
 import { FlowExecutionEngine } from './flow-execution-engine';
 import { RTBService } from './rtb-service';
 
+// Map RTB target to buyer based on naming patterns
+async function mapTargetToBuyer(targetId: number): Promise<number | undefined> {
+  try {
+    const target = await storage.getRtbTarget(targetId);
+    if (!target) return undefined;
+    
+    // Target-to-buyer mapping based on naming patterns
+    const targetMapping: Record<string, string> = {
+      'MHA': 'MyHealthAngel',
+      'ADSparkX': 'AdSparkX', 
+      'United': 'United',
+      'WeGenerate': 'WeGenerate',
+      'Naked': 'Naked Media - Medicare',
+      'PM': 'PM',
+      'PolicyBind': 'PolicyBind',
+      'WeCall': 'WeCall',
+      'Jet': 'Jet-Medicare',
+      'Leadnomics': 'Leadnomics',
+      'VIP': 'VIP Response'
+    };
+    
+    // Find matching buyer company
+    for (const [pattern, buyerCompany] of Object.entries(targetMapping)) {
+      if (target.name.includes(pattern)) {
+        const buyers = await storage.getBuyers();
+        const buyer = buyers.find(b => b.companyName === buyerCompany);
+        if (buyer) {
+          console.log(`[Target Mapping] Mapped target "${target.name}" to buyer "${buyer.companyName}" (ID: ${buyer.id})`);
+          return buyer.id;
+        }
+      }
+    }
+    
+    console.log(`[Target Mapping] No buyer mapping found for target: ${target.name}`);
+    return undefined;
+  } catch (error) {
+    console.error('[Target Mapping] Error mapping target to buyer:', error);
+    return undefined;
+  }
+}
+
 export interface TwilioCallRequest {
   CallSid: string;
   From: string;
@@ -158,6 +199,26 @@ export async function handleIncomingCall(req: Request, res: Response) {
       if (auctionResult.success && auctionResult.winningBid) {
         console.log('[Webhook] RTB auction successful, routing to winner');
         const winnerTarget = await storage.getRtbTarget(auctionResult.winningBid.rtbTargetId);
+        
+        // UPDATE: Assign winning target to call record
+        if (callId && auctionResult.winningBid.rtbTargetId) {
+          try {
+            // Map RTB target to buyer based on naming conventions
+            const mappedBuyerId = await mapTargetToBuyer(auctionResult.winningBid.rtbTargetId);
+            
+            await storage.updateCall(callId, {
+              targetId: auctionResult.winningBid.rtbTargetId,
+              buyerId: mappedBuyerId, // Assign the mapped buyer
+              // Update payout/revenue based on winning bid if needed
+              payout: auctionResult.winningBid.bidAmount?.toString() || (parseFloat(campaign.defaultPayout || '0.00')).toFixed(4),
+              revenue: auctionResult.winningBid.bidAmount?.toString() || (parseFloat(campaign.defaultPayout || '0.00')).toFixed(4),
+              profit: (parseFloat(auctionResult.winningBid.bidAmount?.toString() || campaign.defaultPayout || '0.00') - 0).toFixed(4)
+            });
+            console.log(`[RTB Assignment] Call ${callId} assigned to target ${auctionResult.winningBid.rtbTargetId} (buyer: ${mappedBuyerId}) with bid $${auctionResult.winningBid.bidAmount}`);
+          } catch (error) {
+            console.error('[RTB Assignment] Failed to update call with target assignment:', error);
+          }
+        }
         
         // Validate destination number before generating TwiML
         const destinationNumber = auctionResult.winningBid.destinationNumber;
