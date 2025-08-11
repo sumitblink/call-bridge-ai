@@ -1356,6 +1356,11 @@ export default function CallActivity() {
         const buyer = buyers.find(b => b.id === call.buyerId);
         return <div className="truncate text-xs">{(buyer as any)?.companyName || buyer?.name || 'No Buyer'}</div>;
       case 'target':
+        // Use targetName from call data (includes RTB targets) or fallback to regular targets
+        const targetName = (call as any).targetName;
+        if (targetName) {
+          return <div className="truncate text-xs">{targetName}</div>;
+        }
         const target = targets?.find((t: any) => t.id === (call as any).targetId);
         return <div className="truncate text-xs">{target?.name || 'No Target'}</div>;
       case 'fromNumber':
