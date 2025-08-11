@@ -1476,13 +1476,30 @@ export default function CallActivity() {
         return <div className="text-xs">{(call as any).hangupCause || '-'}</div>;
       case 'hangup':
         const hangupCause = (call as any).hangupCause;
-        const disposition = (call as any).disposition;
         if (hangupCause) {
-          return <div className="text-xs capitalize">{hangupCause}</div>;
-        } else if (disposition) {
-          return <div className="text-xs capitalize">{disposition}</div>;
+          // Map Twilio hangup causes to who hung up
+          switch (hangupCause) {
+            case 'caller-hangup':
+            case 'originator-cancel':
+              return <div className="text-xs text-blue-600 font-medium">Caller</div>;
+            case 'callee-hangup':
+            case 'callee-busy':
+              return <div className="text-xs text-orange-600 font-medium">Callee</div>;
+            case 'normal-clearing':
+              return <div className="text-xs text-green-600 font-medium">Normal</div>;
+            case 'no-answer':
+            case 'timeout':
+              return <div className="text-xs text-yellow-600 font-medium">No Answer</div>;
+            case 'busy':
+              return <div className="text-xs text-red-600 font-medium">Busy</div>;
+            case 'failed':
+            case 'congestion':
+              return <div className="text-xs text-red-600 font-medium">System</div>;
+            default:
+              return <div className="text-xs text-gray-600 capitalize">{hangupCause}</div>;
+          }
         } else {
-          return <div className="text-xs capitalize">{call.status}</div>;
+          return <div className="text-xs text-gray-400">Unknown</div>;
         }
         break;
       case 'audioQuality':
