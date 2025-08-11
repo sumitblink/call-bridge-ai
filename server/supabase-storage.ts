@@ -548,7 +548,7 @@ export class SupabaseStorage implements IStorage {
 
   async getCallsByUser(userId: number): Promise<any[]> {
     try {
-      // Join with buyers table to get buyer information
+      // Join with buyers and RTB targets tables to get complete information
       const result = await db
         .select({
           // Call fields
@@ -593,10 +593,13 @@ export class SupabaseStorage implements IStorage {
           buyerEmail: buyers.email,
           // Campaign fields  
           campaignName: campaigns.name,
+          // RTB Target fields - FIXED!
+          targetName: rtbTargets.name,
         })
         .from(calls)
         .innerJoin(campaigns, eq(calls.campaignId, campaigns.id))
         .leftJoin(buyers, eq(calls.buyerId, buyers.id)) // Left join to include calls without buyers
+        .leftJoin(rtbTargets, eq(calls.targetId, rtbTargets.id)) // Left join to include RTB target information
         .where(eq(campaigns.userId, userId))
         .orderBy(desc(calls.createdAt))
         .limit(1000); // Limit to prevent massive queries
