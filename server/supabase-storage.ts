@@ -710,6 +710,7 @@ export class SupabaseStorage implements IStorage {
           updatedAt: calls.updatedAt,
           hangupCause: calls.hangupCause,
           disposition: calls.disposition,
+          whoHungUp: calls.whoHungUp,
           // Buyer fields
           buyerName: buyers.companyName,
           buyerEmail: buyers.email,

@@ -1475,9 +1475,22 @@ export default function CallActivity() {
       case 'hangupCause':
         return <div className="text-xs">{(call as any).hangupCause || '-'}</div>;
       case 'hangup':
+        // Use direct Twilio "Who Hung Up" data if available, otherwise fallback to hangup cause mapping
+        const whoHungUp = (call as any).whoHungUp;
         const hangupCause = (call as any).hangupCause;
-        if (hangupCause) {
-          // Map Twilio hangup causes to who hung up
+        
+        if (whoHungUp) {
+          // Direct from Twilio - exactly what shows in Twilio console
+          switch (whoHungUp.toLowerCase()) {
+            case 'caller':
+              return <div className="text-xs text-blue-600 font-medium">Caller</div>;
+            case 'callee':
+              return <div className="text-xs text-orange-600 font-medium">Callee</div>;
+            default:
+              return <div className="text-xs text-gray-600 capitalize">{whoHungUp}</div>;
+          }
+        } else if (hangupCause) {
+          // Fallback to hangup cause mapping for older calls
           switch (hangupCause) {
             case 'caller-hangup':
             case 'originator-cancel':

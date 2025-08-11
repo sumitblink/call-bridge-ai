@@ -73,6 +73,8 @@ export interface TwilioCallStatusRequest extends TwilioCallRequest {
   DialCallStatus?: string; // Status of the dialed leg
   DialCallDuration?: string; // Duration of dialed leg
   DialHangupCause?: string; // Hangup cause of dialed leg
+  // Who hung up the call - direct from Twilio
+  WhoHungUp?: string; // "caller", "callee", or other Twilio values
   AnsweredBy?: string; // human, machine, fax, unknown
   // Additional timing data
   RingTime?: string; // Time spent ringing before answer
@@ -560,6 +562,12 @@ export async function handleCallStatus(req: Request, res: Response) {
     if (statusData.HangupCause) {
       updates.hangupCause = statusData.HangupCause;
       console.log(`[Webhook] Hangup cause captured: ${statusData.HangupCause}`);
+    }
+
+    // Capture WHO hung up the call - direct from Twilio
+    if (statusData.WhoHungUp) {
+      updates.whoHungUp = statusData.WhoHungUp.toLowerCase(); // "caller" or "callee"
+      console.log(`[Webhook] Who hung up captured: ${statusData.WhoHungUp}`);
     }
 
     // Map Twilio call status to disposition

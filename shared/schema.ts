@@ -268,6 +268,7 @@ export const calls = pgTable("calls", {
   status: varchar("status", { length: 50 }).notNull(), // ringing, in_progress, completed, failed, busy, no_answer
   disposition: varchar("disposition", { length: 50 }), // connected, no_answer, busy, failed, voicemail
   hangupCause: varchar("hangup_cause", { length: 50 }), // caller_hangup, callee_hangup, timeout, error
+  whoHungUp: varchar("who_hung_up", { length: 20 }), // caller, callee - direct from Twilio
   
   // Quality & Performance
   callQuality: varchar("call_quality", { length: 20 }), // excellent, good, fair, poor
