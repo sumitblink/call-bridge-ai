@@ -629,6 +629,75 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Enhanced Calls with Joins  
+  async getEnhancedCallsByUser(userId: number, filters?: any): Promise<any[]> {
+    try {
+      const result = await db
+        .select({
+          // Call fields
+          id: calls.id,
+          campaignId: calls.campaignId,
+          buyerId: calls.buyerId,
+          targetId: calls.targetId,
+          numberPoolId: calls.numberPoolId,
+          phoneNumberId: calls.phoneNumberId,
+          callSid: calls.callSid,
+          fromNumber: calls.fromNumber,
+          toNumber: calls.toNumber,
+          duration: calls.duration,
+          status: calls.status,
+          callQuality: calls.callQuality,
+          recordingUrl: calls.recordingUrl,
+          recordingSid: calls.recordingSid,
+          recordingStatus: calls.recordingStatus,
+          recordingDuration: calls.recordingDuration,
+          transcription: calls.transcription,
+          transcriptionStatus: calls.transcriptionStatus,
+          cost: calls.cost,
+          revenue: calls.revenue,
+          payout: calls.payout,
+          profit: calls.profit,
+          geoLocation: calls.geoLocation,
+          userAgent: calls.userAgent,
+          clickId: calls.clickId,
+          publisherName: calls.publisherName,
+          utmSource: calls.utmSource,
+          utmMedium: calls.utmMedium,
+          utmCampaign: calls.utmCampaign,
+          utmContent: calls.utmContent,
+          utmTerm: calls.utmTerm,
+          referrer: calls.referrer,
+          landingPage: calls.landingPage,
+          ipAddress: calls.ipAddress,
+          createdAt: calls.createdAt,
+          updatedAt: calls.updatedAt,
+          hangupCause: calls.hangupCause,
+          disposition: calls.disposition,
+          whoHungUp: calls.whoHungUp,
+          // Buyer fields
+          buyerName: buyers.companyName,
+          buyerEmail: buyers.email,
+          // Campaign fields  
+          campaignName: campaigns.name,
+          // RTB Target fields
+          targetName: rtbTargets.name,
+          targetCompany: rtbTargets.companyName,
+        })
+        .from(calls)
+        .innerJoin(campaigns, eq(calls.campaignId, campaigns.id))
+        .leftJoin(buyers, eq(calls.buyerId, buyers.id))
+        .leftJoin(rtbTargets, eq(calls.targetId, rtbTargets.id))
+        .where(eq(campaigns.userId, userId))
+        .orderBy(desc(calls.createdAt))
+        .limit(1000);
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting enhanced calls:', error);
+      return [];
+    }
+  }
+
   // Stats
   async getStats(): Promise<{
     activeCampaigns: number;
