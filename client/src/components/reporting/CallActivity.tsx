@@ -385,6 +385,14 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                   <span>{(call as any).talkTime || 0}s</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Connection Time:</span>
+                  <span>{(call as any).connectionTime || 0}ms</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Call Quality:</span>
+                  <span className="capitalize">{(call as any).callQuality || 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
                   <span className="text-gray-500">Recording SID:</span>
                   <span className="font-mono">{call.recordingSid || 'N/A'}</span>
                 </div>
@@ -399,6 +407,32 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
               </div>
             </div>
             
+            <div className="space-y-3">
+              <div className="text-sm font-semibold text-gray-700">Hangup & Call Termination</div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Final Status:</span>
+                  <span className="capitalize">{call.status}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Disposition:</span>
+                  <span className="capitalize">{(call as any).disposition || 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Hangup Cause:</span>
+                  <span className="capitalize">{(call as any).hangupCause || 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Total Duration:</span>
+                  <span>{call.duration}s</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-gray-100">
+                  <span className="text-gray-500">Call Ended:</span>
+                  <span>{new Date(call.updatedAt).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-3">
               <div className="text-sm font-semibold text-gray-700">Tracking & Attribution</div>
               <div className="space-y-2 text-xs">

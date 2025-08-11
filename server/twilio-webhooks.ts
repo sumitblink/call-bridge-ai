@@ -67,6 +67,20 @@ export interface TwilioCallStatusRequest extends TwilioCallRequest {
   RecordingUrl?: string;
   RecordingSid?: string;
   RecordingDuration?: string;
+  // Enhanced hangup data from Twilio
+  HangupCause?: string; // normal-clearing, caller-hangup, busy, no-answer, congestion, etc.
+  CallReason?: string; // Twilio's reason for call termination
+  DialCallStatus?: string; // Status of the dialed leg
+  DialCallDuration?: string; // Duration of dialed leg
+  DialHangupCause?: string; // Hangup cause of dialed leg
+  AnsweredBy?: string; // human, machine, fax, unknown
+  // Additional timing data
+  RingTime?: string; // Time spent ringing before answer
+  TalkTime?: string; // Time spent in conversation
+  // Call quality metrics
+  ConnectionTime?: string; // Time to establish connection
+  CallQuality?: string; // Twilio's call quality assessment
+  AudioCodec?: string; // Audio codec used
 }
 
 /**
@@ -540,6 +554,65 @@ export async function handleCallStatus(req: Request, res: Response) {
 
     if (statusData.RecordingDuration) {
       updates.recordingDuration = parseInt(statusData.RecordingDuration, 10);
+    }
+
+    // Enhanced hangup data capture from Twilio webhook
+    if (statusData.HangupCause) {
+      updates.hangupCause = statusData.HangupCause;
+      console.log(`[Webhook] Hangup cause captured: ${statusData.HangupCause}`);
+    }
+
+    // Map Twilio call status to disposition
+    if (statusData.CallStatus) {
+      switch (statusData.CallStatus) {
+        case 'completed':
+          updates.disposition = 'connected';
+          break;
+        case 'busy':
+          updates.disposition = 'busy';
+          break;
+        case 'no-answer':
+          updates.disposition = 'no_answer';
+          break;
+        case 'failed':
+          updates.disposition = 'failed';
+          break;
+        case 'canceled':
+          updates.disposition = 'failed';
+          break;
+        default:
+          updates.disposition = statusData.CallStatus;
+      }
+    }
+
+    // Capture timing data from Twilio
+    if (statusData.RingTime) {
+      updates.ringTime = parseInt(statusData.RingTime, 10);
+    }
+
+    if (statusData.TalkTime) {
+      updates.talkTime = parseInt(statusData.TalkTime, 10);
+    }
+
+    if (statusData.ConnectionTime) {
+      updates.connectionTime = parseInt(statusData.ConnectionTime, 10);
+    }
+
+    // Capture call quality data
+    if (statusData.CallQuality) {
+      updates.callQuality = statusData.CallQuality;
+    }
+
+    // Handle answered by machine detection
+    if (statusData.AnsweredBy) {
+      console.log(`[Webhook] Call answered by: ${statusData.AnsweredBy}`);
+      // Store in call log for detailed tracking
+      await storage.createCallLog({
+        callId: call.id,
+        buyerId: call.buyerId,
+        action: 'machine_detection',
+        response: `Answered by: ${statusData.AnsweredBy}`,
+      });
     }
 
     // Actually update the call record in storage
