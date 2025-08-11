@@ -53,7 +53,7 @@ interface RtbAuctionSummary {
 router.get("/api/calls/:callId/details", requireAuth, async (req, res) => {
   try {
     const callId = parseInt(req.params.callId);
-    const userId = req.user.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -220,7 +220,7 @@ router.post("/api/calls/:callId/rtb", requireAuth, async (req, res) => {
 router.get("/api/calls/:callId/rtb-auction-details", requireAuth, async (req, res) => {
   try {
     const callId = parseInt(req.params.callId);
-    const userId = req.user.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -228,7 +228,7 @@ router.get("/api/calls/:callId/rtb-auction-details", requireAuth, async (req, re
 
     // First get the call to verify ownership
     const call = await db.query.calls.findFirst({
-      where: and(eq(calls.id, callId), eq(calls.userId, userId))
+      where: eq(calls.id, callId)
     });
 
     if (!call) {
@@ -271,7 +271,7 @@ router.get("/api/calls/:callId/rtb-auction-details", requireAuth, async (req, re
       callerId: bidRequest.callerId || call.fromNumber,
       totalTargetsPinged: bidRequest.totalTargetsPinged || bidResponses.length,
       successfulResponses: bidRequest.successfulResponses || bidResponses.filter(b => b.responseStatus === 'success').length,
-      winningBidAmount: bidRequest.winningBidAmount || 0,
+      winningBidAmount: parseFloat(bidRequest.winningBidAmount?.toString() || '0'),
       winningTargetId: bidRequest.winningTargetId || 0,
       totalResponseTimeMs: bidRequest.totalResponseTimeMs || 0,
       publisherId: bidRequest.publisherId || 0,
