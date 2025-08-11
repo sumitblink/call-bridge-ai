@@ -2,17 +2,14 @@ import { Router } from "express";
 import { z } from "zod";
 import { 
   calls, rtbAuctionDetails, buyers, publishers, rtbTargets,
-  type Call, type RtbAuctionDetails
+  rtbBidRequests, rtbBidResponses, insertRtbAuctionDetailsSchema,
+  type Call, type RtbAuctionDetails, type InsertRtbAuctionDetails
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
-// Import shared authentication middleware
 import { requireAuth } from "./middleware/auth";
 
 const router = Router();
-
-// Add missing imports
-import { rtbBidRequests, rtbBidResponses, rtbTargets } from "@shared/schema";
 
 // Enhanced call details with full tracking information
 interface CallWithDetails extends Call {
@@ -265,7 +262,7 @@ router.get("/api/calls/:callId/rtb-auction-details", requireAuth, async (req, re
       .from(rtbBidResponses)
       .leftJoin(rtbTargets, eq(rtbBidResponses.rtbTargetId, rtbTargets.id))
       .where(eq(rtbBidResponses.requestId, bidRequest.requestId))
-      .orderBy(desc(rtbBidResponses.isWinningBid), desc(rtbBidResponses.bidAmount));
+      .orderBy(desc(rtbBidResponses.bidAmount));
 
     // Construct comprehensive auction summary
     const auctionSummary: RtbAuctionSummary = {
