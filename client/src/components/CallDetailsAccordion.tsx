@@ -135,7 +135,7 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
 
   // Fetch RTB auction details for RTB tab
   const { data: rtbAuctionDetails, error: rtbError, isLoading: rtbLoading } = useQuery<RTBAuctionDetail[]>({
-    queryKey: ['/api/calls', call.id, 'rtb'],
+    queryKey: ['/api/rtb-auction-details', call.id],
     enabled: expandedCall === call.id.toString(),
   });
 

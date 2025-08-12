@@ -1645,6 +1645,49 @@ export class DatabaseStorage implements IStorage {
       .where(eq(redtrackConfigs.id, id));
     return result.rowCount > 0;
   }
+
+  // RTB Auction Details method
+  async getRTBAuctionDetails(callId: number): Promise<any[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          id,
+          call_id as "callId",
+          auction_id as "auctionId", 
+          target_id as "targetId",
+          target_name as "targetName",
+          bid_amount as "bidAmount",
+          bid_duration as "bidDuration",
+          bid_status as "bidStatus",
+          response_time as "responseTime",
+          rejection_reason as "rejectionReason", 
+          destination_number as "destinationNumber",
+          is_winner as "isWinner",
+          timestamp,
+          metadata
+        FROM rtb_auction_details 
+        WHERE call_id = ${callId}
+        ORDER BY timestamp ASC
+      `);
+      return result.rows || [];
+    } catch (error) {
+      console.error('[DatabaseStorage] Error fetching RTB auction details:', error);
+      return [];
+    }
+  }
+
+  // Missing methods for routing decisions and call events
+  async getRoutingDecisions(callId: number): Promise<any[]> {
+    // For now, return empty array since routing decisions are stored differently
+    // In the future, this could query a dedicated routing_decisions table
+    return [];
+  }
+
+  async getCallEvents(callId: number): Promise<any[]> {
+    // For now, return empty array since call events are stored differently
+    // In the future, this could query a dedicated call_events table
+    return [];
+  }
 }
 
 export const storage = new DatabaseStorage();
