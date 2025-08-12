@@ -338,10 +338,15 @@ export async function handleIncomingCall(req: Request, res: Response) {
             console.log(`[RTB Transfer] Using SIP format: ${selectedSipUri}`);
             console.log(`[RTB Transfer] Alternative formats available: ${sipFormats.length}`);
             
+            // Ensure SIP URI is fully qualified for Twilio recognition
+            const fullyQualifiedSipUri = selectedSipUri.includes('sip:') ? selectedSipUri : `sip:${selectedSipUri}`;
+            
             dialXml = `
               <Dial answerOnBridge="true" timeout="30" callerId="${callerIdToPresent}" action="/api/webhooks/rtb-dial-status" method="POST" record="record-from-answer">
-                <Sip>${selectedSipUri}</Sip>
+                <Sip>${fullyQualifiedSipUri}</Sip>
               </Dial>`;
+              
+            console.log(`[RTB Transfer] Final SIP URI for Twilio: ${fullyQualifiedSipUri}`);
           } else {
             // DID routing - validate E.164 format
             const e164 = toE164(dest);
