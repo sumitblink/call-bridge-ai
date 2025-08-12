@@ -235,13 +235,18 @@ async function fireRedTrackPostback(clickid: string, conversionType: string, con
         
         console.log('[Webhook] Firing RedTrack postback:', postbackUrl);
         
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
         const response = await fetch(postbackUrl, {
           method: 'GET',
-          timeout: 10000,
+          signal: controller.signal,
           headers: {
             'User-Agent': 'CallCenter-Pro-Webhook/1.0'
           }
         });
+        
+        clearTimeout(timeoutId);
 
         if (response.ok) {
           console.log(`[Webhook] ✅ RedTrack postback fired successfully to ${domain}:`, {
@@ -255,7 +260,7 @@ async function fireRedTrackPostback(clickid: string, conversionType: string, con
           console.log(`[Webhook] RedTrack postback failed for ${domain}:`, response.status);
         }
       } catch (error) {
-        console.log(`[Webhook] RedTrack postback error for ${domain}:`, error.message);
+        console.log(`[Webhook] RedTrack postback error for ${domain}:`, (error as Error).message);
       }
     }
 
@@ -332,6 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userData) {
         userData = {
           id: sessionUser.id,
+          username: sessionUser.username || sessionUser.email || "",
           email: sessionUser.email,
           firstName: sessionUser.firstName,
           lastName: sessionUser.lastName,
@@ -697,7 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Find existing session by clickid
       const sessions = await storage.getVisitorSessions(2); // System user
-      const session = sessions.find(s => s.redtrackData && s.redtrackData.clickid === clickid);
+      const session = sessions.find(s => (s as any).redtrackData && (s as any).redtrackData.clickid === clickid);
 
       const sessionId = session?.sessionId || `rt_conv_${Date.now()}`;
 
@@ -782,7 +788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Get tracking pixels that should fire for this conversion type
           const userId = 2; // System user for external tracking
-          const pixels = await storage.getTrackingPixels(userId);
+          const pixels = await storage.getTrackingPixels();
           const redtrackPixels = pixels.filter(p => 
             p.url.includes('redtrack') || 
             p.url.includes('postback') ||
@@ -1234,7 +1240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: campaign.name,
           status: campaign.status,
           enableRtb: campaign.enableRtb,
-          rtbRouterId: campaign.rtbRouterId,
+          rtbRouterId: (campaign as any).rtbRouterId || null,
           createdAt: campaign.createdAt
         }
       });
@@ -1471,10 +1477,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(buyer);
     } catch (error) {
       console.error("Error creating buyer:", error);
-      if (error.name === 'ZodError') {
-        res.status(400).json({ error: "Validation error", details: error.errors });
+      if ((error as any).name === 'ZodError') {
+        res.status(400).json({ error: "Validation error", details: (error as any).errors });
       } else {
-        res.status(500).json({ error: "Failed to create buyer", message: error.message });
+        res.status(500).json({ error: "Failed to create buyer", message: (error as Error).message });
       }
     }
   });
@@ -1985,7 +1991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Prepare bid request for RTB (use CallSid to ensure same call gets same request ID)
             const bidRequest = {
               requestId: `pool_${poolId}_${CallSid}`,
-              campaignId: campaign.id,
+              campaignId: Number(campaign.id) || 0,
               campaignRtbId: campaign.rtbId || undefined,
               callerId: fromNumber,
               callerState: req.body.CallerState || null,
@@ -2028,11 +2034,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               routingData = {
                 ...routingData,
-                method: 'rtb',
                 rtbRequestId,
                 winningBidAmount,
                 winningTargetId,
-                targetName: biddingResult.winningBid.targetName || 'External Bidder',
+                targetName: (biddingResult.winningBid as any).targetName || 'External Bidder',
                 totalTargetsPinged: biddingResult.totalTargetsPinged,
                 responseTimeMs: biddingResult.totalResponseTime
               };
@@ -2087,7 +2092,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         selectedBuyer = routingResult.selectedBuyer;
         routingData = {
           ...routingData,
-          method: routingMethod,
           routingReason: routingResult.reason,
           alternatives: routingResult.alternativeBuyers.length
         };
@@ -2151,7 +2155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let finalBuyerId = selectedBuyer.id;
       let finalTargetId = selectedTarget?.id || null;
       
-      if (routingMethod === 'rtb' && selectedBuyer.external) {
+      if (routingMethod === 'rtb' && (selectedBuyer as any).external) {
         console.log(`[RTB Database] Creating/finding RTB buyer record for tracking...`);
         
         // Create or find RTB buyer record for database tracking
@@ -2175,7 +2179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               email: 'rtb@external.com',
               phoneNumber: targetPhoneNumber,
               description: `External RTB bidder: ${rtbBuyerName}`,
-              defaultPayout: winningBidAmount ? parseFloat(winningBidAmount) : 0,
+              defaultPayout: winningBidAmount ? parseFloat(String(winningBidAmount)) : 0,
               isActive: true,
               timezone: 'UTC'
             });
@@ -3485,7 +3489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: new Date()
       };
 
-      const updatedPixel = await storage.updateCampaignTrackingPixel(campaignId, pixelId, pixelData);
+      const updatedPixel = await storage.createCampaignTrackingPixel(pixelData);
       if (!updatedPixel) {
         return res.status(404).json({ error: "Campaign tracking pixel not found" });
       }
