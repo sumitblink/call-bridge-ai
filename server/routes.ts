@@ -1991,7 +1991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Prepare bid request for RTB (use CallSid to ensure same call gets same request ID)
             const bidRequest = {
               requestId: `pool_${poolId}_${CallSid}`,
-              campaignId: Number(campaign.id) || 0,
+              campaignId: campaign.id, // Keep as UUID string, don't convert to number
               campaignRtbId: campaign.rtbId || undefined,
               callerId: fromNumber,
               callerState: req.body.CallerState || null,
