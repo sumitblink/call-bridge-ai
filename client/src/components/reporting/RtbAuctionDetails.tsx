@@ -78,104 +78,102 @@ export function RtbAuctionDetails({ auctionData, callId }: RtbAuctionDetailsProp
   const hangupInfo = getHangupInfo();
 
   return (
-    <div className="space-y-6">
-      {/* Ringba-Style RTB Auction Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Target className="h-4 w-4 text-blue-600" />
+    <div className="space-y-3">
+      {/* Compact RTB Auction Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <Card className="border-l-4 border-l-blue-500">
+          <CardContent className="p-2">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium">Targets Pinged</p>
-                <p className="text-2xl font-bold">{totalTargetsPinged}</p>
+                <p className="text-xs font-medium text-muted-foreground">Targets Pinged</p>
+                <p className="text-lg font-bold">{totalTargetsPinged}</p>
               </div>
+              <Target className="h-3 w-3 text-blue-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Activity className="h-4 w-4 text-green-600" />
+        <Card className="border-l-4 border-l-green-500">
+          <CardContent className="p-2">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium">Responses</p>
-                <p className="text-2xl font-bold">{successfulResponses}</p>
-                <p className="text-xs text-muted-foreground">{failedPings} failed</p>
+                <p className="text-xs font-medium text-muted-foreground">Responses</p>
+                <p className="text-lg font-bold">{successfulResponses}</p>
+                <p className="text-xs text-red-500">{failedPings} failed</p>
               </div>
+              <Activity className="h-3 w-3 text-green-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-orange-600" />
+        <Card className="border-l-4 border-l-orange-500">
+          <CardContent className="p-2">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium">Eligible Bidders</p>
-                <p className="text-2xl font-bold">{eligibleBidders}</p>
+                <p className="text-xs font-medium text-muted-foreground">Eligible Bidders</p>
+                <p className="text-lg font-bold">{eligibleBidders}</p>
               </div>
+              <Users className="h-3 w-3 text-orange-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-4 w-4 text-green-600" />
+        <Card className="border-l-4 border-l-green-600">
+          <CardContent className="p-2">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium">Winning Bid</p>
-                <p className="text-2xl font-bold">${winningBidAmount}</p>
+                <p className="text-xs font-medium text-muted-foreground">Winning Bid</p>
+                <p className="text-lg font-bold">${winningBidAmount}</p>
                 <p className="text-xs text-muted-foreground">{totalResponseTimeMs}ms</p>
               </div>
+              <DollarSign className="h-3 w-3 text-green-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Call Flow Information */}
+      {/* Compact Call Flow Details */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <PhoneCall className="h-5 w-5" />
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center space-x-2 text-sm">
+            <PhoneCall className="h-4 w-4" />
             <span>Call Flow Details</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Caller Number</p>
-              <p className="font-mono">{fromNumber}</p>
+              <p className="text-xs text-muted-foreground">Caller Number</p>
+              <p className="font-mono text-sm">{fromNumber}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Inbound Number</p>
-              <p className="font-mono">{inboundNumber}</p>
+              <p className="text-xs text-muted-foreground">Inbound Number</p>
+              <p className="font-mono text-sm">{inboundNumber}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Destination Number</p>
-              <p className="font-mono">{winningBid?.destinationNumber || "N/A"}</p>
+              <p className="text-xs text-muted-foreground">Destination Number</p>
+              <p className="font-mono text-sm">{winningBid?.destinationNumber || "N/A"}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Call Duration</p>
-              <p className="font-mono">{callDuration}s</p>
+              <p className="text-xs text-muted-foreground">Call Duration</p>
+              <p className="font-mono text-sm">{callDuration}s</p>
             </div>
           </div>
           
-          <div className="mt-4 p-3 bg-muted rounded-lg">
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-sm font-medium">Call Termination:</span>
-              <Badge variant={hangupInfo.color as any}>{hangupInfo.party}</Badge>
-              <span className="text-sm text-muted-foreground">- {hangupInfo.reason}</span>
-            </div>
+          <div className="mt-3 p-2 bg-muted rounded flex items-center space-x-2">
+            <AlertCircle className="h-3 w-3" />
+            <span className="text-xs font-medium">Call Termination:</span>
+            <Badge variant={hangupInfo.color as any} className="text-xs py-0 px-1">{hangupInfo.party}</Badge>
+            <span className="text-xs text-muted-foreground">- {hangupInfo.reason}</span>
           </div>
         </CardContent>
       </Card>
 
       {/* Detailed RTB Bidding Results */}
       <Card>
-        <CardHeader>
-          <CardTitle>RTB Auction Results</CardTitle>
-          <CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">RTB Auction Results</CardTitle>
+          <CardDescription className="text-xs">
             Real-time bidding details for all targets contacted during the auction
           </CardDescription>
         </CardHeader>
