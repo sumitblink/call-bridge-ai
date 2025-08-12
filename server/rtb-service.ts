@@ -996,8 +996,9 @@ export class RTBService {
       const bidAmount = this.extractResponseValue(responseData, target.bidAmountPath) || 
                        responseData.bidAmount || responseData.price || 0;
       
-      const destinationNumber = this.extractResponseValue(responseData, target.destinationNumberPath) || 
-                               responseData.destinationNumber || responseData.phoneNumber || null;
+      // Enhanced destination parsing - prefer SIP over phone number
+      let destinationNumber = this.extractResponseValue(responseData, target.destinationNumberPath) || 
+                             responseData.sipAddress || responseData.destinationNumber || responseData.phoneNumber || null;
       
       const currency = this.extractResponseValue(responseData, target.currencyPath) || 
                       responseData.bidCurrency || responseData.currency || target.currency;
@@ -1007,6 +1008,13 @@ export class RTBService {
       
       const acceptance = this.extractResponseValue(responseData, target.acceptancePath) || 
                         responseData.accepted || responseData.accept || true;
+
+      // Check bid expiration if provided
+      const bidExpiration = this.checkBidExpiration(responseData);
+      if (!bidExpiration.isValid) {
+        console.log(`[RTB] Bid from ${target.name} has expired: ${bidExpiration.reason}`);
+        throw new Error(`Bid expired: ${bidExpiration.reason}`);
+      }
 
       // Extract rejection reason from response - support both naming conventions
       const rejectReason = responseData.rejectReason || responseData.rejectionReason || responseData.rejection_reason;
@@ -1092,6 +1100,61 @@ export class RTBService {
   }
 
   /**
+   * Check if bid has expired based on expiration fields
+   */
+  private static checkBidExpiration(response: any): { isValid: boolean; reason?: string } {
+    try {
+      // Check for various expiration formats
+      const expireInSeconds = response.expireInSeconds || response.expiresInSec;
+      const bidExpireDT = response.bidExpireDT;
+      const bidExpireEpoch = response.bidExpireEpoch;
+      
+      const now = Date.now();
+      
+      // Check epoch timestamp expiration
+      if (bidExpireEpoch) {
+        if (now > bidExpireEpoch) {
+          return { isValid: false, reason: `Bid expired at epoch ${bidExpireEpoch}, current: ${now}` };
+        }
+      }
+      
+      // Check ISO date string expiration
+      if (bidExpireDT) {
+        const expireTime = new Date(bidExpireDT).getTime();
+        if (now > expireTime) {
+          return { isValid: false, reason: `Bid expired at ${bidExpireDT}` };
+        }
+      }
+      
+      // Check expireInSeconds (relative expiration) - allow bids with at least 10 seconds
+      if (expireInSeconds && expireInSeconds < 10) {
+        return { isValid: false, reason: `Bid expires in ${expireInSeconds} seconds (too soon)` };
+      }
+      
+      // Check for warnings about cached/expired bids - be more lenient with cached responses
+      if (response.warnings && Array.isArray(response.warnings)) {
+        for (const warning of response.warnings) {
+          if (warning.code === 230 || warning.description?.includes('not yet expired')) {
+            console.log(`[RTB] Warning: Cached bid response detected - Code ${warning.code}: ${warning.description}`);
+            // Don't reject cached responses if they still have reasonable expiration time
+            if (expireInSeconds && expireInSeconds >= 30) {
+              console.log(`[RTB] Accepting cached bid with ${expireInSeconds} seconds remaining`);
+              return { isValid: true };
+            } else {
+              return { isValid: false, reason: 'Cached bid with insufficient time remaining' };
+            }
+          }
+        }
+      }
+      
+      return { isValid: true };
+    } catch (error) {
+      console.error('[RTB] Error checking bid expiration:', error);
+      return { isValid: true }; // Default to valid if we can't parse expiration
+    }
+  }
+
+  /**
    * Validate bid response structure with enhanced destination validation
    */
   private static validateBidResponse(response: any, target: RtbTarget): boolean {
@@ -1112,7 +1175,8 @@ export class RTBService {
     }
     
     // For valid bids (bidAmount > 0), validate and normalize destination
-    const dest = response.destinationNumber;
+    // Check SIP address first (preferred), then fall back to phone number
+    let dest = response.sipAddress || response.destinationNumber || response.phoneNumber;
     if (!dest || typeof dest !== 'string' || dest.length === 0) {
       return false;
     }
@@ -1120,6 +1184,7 @@ export class RTBService {
     // Validate destination format (SIP or E.164)
     if (isSip(dest)) {
       response.destinationNumber = dest.startsWith("sip:") ? dest : `sip:${dest}`;
+      response.routingType = 'sip';
       return true;
     } else {
       const e164 = toE164(dest);
@@ -1128,6 +1193,7 @@ export class RTBService {
         return false;
       }
       response.destinationNumber = e164;
+      response.routingType = 'phone';
       return true;
     }
   }

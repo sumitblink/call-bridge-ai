@@ -7184,6 +7184,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           bidCurrency: 'USD',
           requiredDuration: 90
         },
+        accept_with_expiration: {
+          bidAmount: req.body.bidAmount || 4.2,
+          bidCurrency: 'USD',
+          expireInSeconds: req.body.expireInSeconds || 39,
+          bidExpireDT: req.body.bidExpireDT,
+          bidExpireEpoch: req.body.bidExpireEpoch,
+          sipAddress: req.body.sipAddress || 'RTBtest@rtb.ringba.sip.telnyx.com',
+          phoneNumber: req.body.phoneNumber || '+17733408913',
+          destinationNumber: req.body.sipAddress || req.body.phoneNumber || '+17733408913',
+          accepted: true,
+          requiredDuration: 60,
+          warnings: req.body.warnings || []
+        },
         reject: {
           bidAmount: 0,
           accepted: false,
