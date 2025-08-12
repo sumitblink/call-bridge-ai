@@ -335,14 +335,17 @@ export async function handleIncomingCall(req: Request, res: Response) {
           }
 
           // Generate enhanced TwiML response
-          res.set('Content-Type', 'text/xml');
-          res.send(`<?xml version="1.0" encoding="UTF-8"?>
+          const finalTwiML = `<?xml version="1.0" encoding="UTF-8"?>
             <Response>
               <Say voice="alice">Connecting to our premium partner, please hold.</Say>
               ${dialXml}
               <Say voice="alice">We're sorry, that number appears to be experiencing issues. Please try again later.</Say>
               <Hangup/>
-            </Response>`);
+            </Response>`;
+          
+          console.log(`[RTB Transfer] Generated TwiML for call ${callId}:`, finalTwiML);
+          res.set('Content-Type', 'text/xml');
+          res.send(finalTwiML);
           return;
         }
       } else {
