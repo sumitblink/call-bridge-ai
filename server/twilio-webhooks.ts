@@ -10,12 +10,25 @@ import { RTBService } from './rtb-service';
 // RTB Routing Utility Functions
 const isSip = (dest: string): boolean => {
   if (!dest) return false;
-  return /^sip:/i.test(dest) || /@/.test(dest);
+  const trimmed = dest.trim();
+  // Check for SIP URI format or domain-like strings with @ symbol
+  return /^sip:/i.test(trimmed) || 
+         /@/.test(trimmed) || 
+         /\.sip\./.test(trimmed) || 
+         /\.(com|net|org|io)$/i.test(trimmed);
 };
 
 const toE164 = (n: string): string | null => {
   if (!n) return null;
-  let s = n.trim().replace(/[^\d+]/g, "");
+  const trimmed = n.trim();
+  
+  // Don't attempt E.164 conversion on SIP addresses
+  if (isSip(trimmed)) {
+    console.log(`[toE164] Skipping E.164 conversion for SIP address: ${trimmed}`);
+    return null;
+  }
+  
+  let s = trimmed.replace(/[^\d+]/g, "");
   if (!s.startsWith("+")) s = "+" + s; // assume already has country code from bidders
   return /^\+[1-9]\d{7,14}$/.test(s) ? s : null;
 };
