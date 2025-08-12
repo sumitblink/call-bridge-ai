@@ -2697,11 +2697,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? `recordingStatusCallback="https://${req.hostname}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST"`
         : '';
         
+      // Check if destination is SIP address for RTB calls
+      const isSipDestination = (dest: string): boolean => {
+        if (!dest) return false;
+        const trimmed = dest.trim();
+        return /^sip:/i.test(trimmed) || /@/.test(trimmed) || /\.sip\./i.test(trimmed) || /\.(com|net|org|io)$/i.test(trimmed);
+      };
+
+      let dialTag: string;
+      if (routingMethod === 'rtb' && isSipDestination(targetPhoneNumber)) {
+        // RTB SIP routing - apply Twilio compatibility fixes
+        let sipUri = targetPhoneNumber.startsWith('sip:') ? targetPhoneNumber : `sip:${targetPhoneNumber}`;
+        
+        // Add transport parameter to force SIP recognition
+        if (!sipUri.includes('transport=')) {
+          const separator = sipUri.includes('?') ? '&' : '?';
+          sipUri = `${sipUri}${separator}transport=udp`;
+        }
+        
+        console.log(`[RTB SIP] Original: ${targetPhoneNumber}`);
+        console.log(`[RTB SIP] Twilio-compatible: ${sipUri}`);
+        
+        dialTag = `<Sip>${sipUri}</Sip>`;
+      } else {
+        // Regular phone number routing
+        dialTag = `<Number>${targetPhoneNumber}</Number>`;
+      }
+
       const twiml = `
         <Response>
           <Say>${connectMessage}</Say>
           <Dial timeout="30" callerId="${fromNumber}" action="https://${req.hostname}/api/webhooks/dial-status" method="POST" ${recordingAttribute} ${recordingCallback}>
-            <Number>${targetPhoneNumber}</Number>
+            ${dialTag}
           </Dial>
           <Say>The call has ended. Thank you for calling.</Say>
           <Hangup/>
@@ -2709,6 +2736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `;
       
       console.log(`[Webhook RTB] Generated TwiML for routing to ${targetPhoneNumber} via ${routingMethod}`);
+      console.log(`[Webhook RTB] TwiML:`, twiml);
       res.type('text/xml').send(twiml);
       
     } catch (error) {
