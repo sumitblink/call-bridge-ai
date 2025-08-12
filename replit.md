@@ -52,6 +52,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (August 2025)
 
+### RTB Production Enhancements (Latest)
+- **SIP Routing Preference**: Enhanced TwiML generation to prefer `<Sip>` tags over `<Number>` for SIP destinations with proper URI formatting and header support
+- **Caller ID Policies**: Implemented per-target caller ID configuration (passthrough, fixed, campaign_default) with E.164 normalization
+- **HMAC Authentication**: Added HMAC-SHA256 authentication support for production-grade RTB security with timestamped signatures
+- **Destination Validation**: Enhanced bid response validation with automatic E.164 normalization and SIP URI formatting
+- **RTB Simulator**: Development endpoint `/_sim/rtb` with configurable test scenarios (accept, accept_sip, reject, invalid_number, timeout)
+- **Database Schema**: Extended RTB targets with `caller_id_policy`, `caller_id_fixed`, `force_e164`, `sip_headers`, `dtmf_on_answer`, and `auth_secret` fields
+- **Production Ready**: RTB system now handles real-world routing scenarios with proper caller ID presentation and SIP header configuration
+
 ### RTB Security & Monitoring Enhancements
 - **Enhanced RTB Logging**: Comprehensive bid request/response tracking with sanitized phone numbers
 - **Health Monitoring**: New API endpoints `/api/rtb/health-checks` and `/api/rtb/targets/{id}/uptime` for RTB target monitoring

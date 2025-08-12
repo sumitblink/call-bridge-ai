@@ -1,5 +1,6 @@
 import { storage } from './storage-db';
 import fetch from 'node-fetch';
+import crypto from 'crypto';
 import type { 
   RtbTarget, 
   RtbRouter, 
@@ -9,6 +10,19 @@ import type {
   InsertRtbBidResponse,
   Campaign 
 } from '@shared/schema';
+
+// RTB Utility Functions
+const isSip = (dest: string): boolean => {
+  if (!dest) return false;
+  return /^sip:/i.test(dest) || /@/.test(dest);
+};
+
+const toE164 = (n: string): string | null => {
+  if (!n) return null;
+  let s = n.trim().replace(/[^\d+]/g, "");
+  if (!s.startsWith("+")) s = "+" + s;
+  return /^\+[1-9]\d{7,14}$/.test(s) ? s : null;
+};
 
 export interface BidRequest {
   requestId: string;
@@ -917,6 +931,13 @@ export class RTBService {
         headers['X-API-Key'] = target.authToken;
       } else if (target.authMethod === 'bearer' && target.authToken) {
         headers['Authorization'] = `Bearer ${target.authToken}`;
+      } else if (target.authMethod === 'hmac-sha256' && target.authSecret) {
+        // HMAC-SHA256 authentication
+        const timestamp = Date.now().toString();
+        const bodyStr = requestBody;
+        const sig = crypto.createHmac("sha256", target.authSecret).update(timestamp + "." + bodyStr).digest("base64");
+        headers["X-RTB-Timestamp"] = timestamp;
+        headers["X-RTB-Signature"] = sig;
       } else if (target.authMethod === 'basic' && target.authToken) {
         headers['Authorization'] = `Basic ${target.authToken}`;
       } else if (target.authMethod === 'choose_authentication') {
@@ -1071,7 +1092,7 @@ export class RTBService {
   }
 
   /**
-   * Validate bid response structure
+   * Validate bid response structure with enhanced destination validation
    */
   private static validateBidResponse(response: any, target: RtbTarget): boolean {
     // Basic response object validation
@@ -1090,8 +1111,25 @@ export class RTBService {
       return true; // Valid rejection response
     }
     
-    // For valid bids (bidAmount > 0), destinationNumber is required
-    return typeof response.destinationNumber === 'string' && response.destinationNumber.length > 0;
+    // For valid bids (bidAmount > 0), validate and normalize destination
+    const dest = response.destinationNumber;
+    if (!dest || typeof dest !== 'string' || dest.length === 0) {
+      return false;
+    }
+    
+    // Validate destination format (SIP or E.164)
+    if (isSip(dest)) {
+      response.destinationNumber = dest.startsWith("sip:") ? dest : `sip:${dest}`;
+      return true;
+    } else {
+      const e164 = toE164(dest);
+      if (!e164) {
+        console.log(`[RTB Validation] Invalid destination format: ${dest}`);
+        return false;
+      }
+      response.destinationNumber = e164;
+      return true;
+    }
   }
 
   /**

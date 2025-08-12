@@ -1374,8 +1374,9 @@ export const rtbTargets = pgTable("rtb_targets", {
   connectionTimeout: integer("connection_timeout").default(5000).notNull(),
   
   // Authentication
-  authMethod: varchar("auth_method", { length: 50 }).default("none").notNull(), // none, api_key, bearer, basic
+  authMethod: varchar("auth_method", { length: 50 }).default("none").notNull(), // none, api_key, bearer, basic, hmac-sha256
   authToken: varchar("auth_token", { length: 512 }),
+  authSecret: varchar("auth_secret", { length: 512 }), // HMAC secret key
   authHeaders: json("auth_headers"), // jsonb for custom headers
   
   // Operational Settings
@@ -1404,6 +1405,15 @@ export const rtbTargets = pgTable("rtb_targets", {
   // Dynamic routing capabilities
   enableDynamicNumber: boolean("enable_dynamic_number").default(false).notNull(),
   enableDynamicSip: boolean("enable_dynamic_sip").default(false).notNull(),
+  
+  // Caller ID Policy Configuration
+  callerIdPolicy: varchar("caller_id_policy", { length: 50 }).default("passthrough").notNull(), // passthrough, fixed, campaign_default
+  callerIdFixed: varchar("caller_id_fixed", { length: 20 }), // E.164 format fixed caller ID
+  forceE164: boolean("force_e164").default(true).notNull(),
+  
+  // SIP Configuration
+  sipHeaders: json("sip_headers"), // JSON map of SIP headers to add
+  dtmfOnAnswer: varchar("dtmf_on_answer", { length: 50 }), // DTMF digits to send on answer
   
   // RTB Shareable Tags
   sharedTagGroups: text("shared_tag_groups").array(), // group IDs for tag sharing

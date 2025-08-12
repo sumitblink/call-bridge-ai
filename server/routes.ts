@@ -7162,6 +7162,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RTB Development Simulator
+  app.post('/_sim/rtb', async (req, res) => {
+    try {
+      const { scenario = 'accept' } = req.body;
+      
+      // Simulated RTB responses for testing
+      const responses = {
+        accept: {
+          bidAmount: 5.50,
+          destinationNumber: '+15551234567',
+          accepted: true,
+          bidCurrency: 'USD',
+          requiredDuration: 60
+        },
+        accept_sip: {
+          bidAmount: 7.25,
+          destinationNumber: 'sip:test@buyer.example.com',
+          accepted: true,
+          bidCurrency: 'USD',
+          requiredDuration: 90
+        },
+        reject: {
+          bidAmount: 0,
+          accepted: false,
+          reason: 'No capacity'
+        },
+        invalid_number: {
+          bidAmount: 3.00,
+          destinationNumber: 'invalid-number',
+          accepted: true
+        },
+        timeout: null // Simulate timeout by not responding
+      };
+      
+      const response = responses[scenario as keyof typeof responses];
+      
+      if (scenario === 'timeout') {
+        // Simulate timeout - wait 6 seconds before responding
+        await new Promise(resolve => setTimeout(resolve, 6000));
+      }
+      
+      if (!response) {
+        return res.status(400).json({ error: 'Invalid scenario' });
+      }
+      
+      console.log(`[RTB Simulator] Returning ${scenario} response:`, response);
+      res.json(response);
+    } catch (error) {
+      console.error('[RTB Simulator] Error:', error);
+      res.status(500).json({ error: 'Simulator error' });
+    }
+  });
+
   app.get('/api/rtb/targets/:targetId/uptime', requireAuth, async (req: any, res) => {
     try {
       const { targetId } = req.params;

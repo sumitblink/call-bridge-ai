@@ -7,6 +7,34 @@ import { twilioService } from './twilio-service';
 import { FlowExecutionEngine } from './flow-execution-engine';
 import { RTBService } from './rtb-service';
 
+// RTB Routing Utility Functions
+const isSip = (dest: string): boolean => {
+  if (!dest) return false;
+  return /^sip:/i.test(dest) || /@/.test(dest);
+};
+
+const toE164 = (n: string): string | null => {
+  if (!n) return null;
+  let s = n.trim().replace(/[^\d+]/g, "");
+  if (!s.startsWith("+")) s = "+" + s; // assume already has country code from bidders
+  return /^\+[1-9]\d{7,14}$/.test(s) ? s : null;
+};
+
+// Caller ID Policy Function
+function chooseCallerId(inboundAni: string, targetCfg: any, campaignCfg: any): string {
+  if (targetCfg?.callerIdPolicy === "fixed" && targetCfg?.callerIdFixed) {
+    const fixed = toE164(targetCfg.callerIdFixed);
+    if (fixed) return fixed;
+  }
+  if (targetCfg?.callerIdPolicy === "passthrough") {
+    const ani = toE164(inboundAni);
+    if (ani) return ani;
+  }
+  // fallback to campaign default or environment default
+  const fallback = toE164(campaignCfg?.defaultCallerId || process.env.DEFAULT_CALLER_ID || "+10000000000");
+  return fallback || "+10000000000"; // never leave it blank
+}
+
 // Map RTB target to buyer based on naming patterns
 async function mapTargetToBuyer(targetId: number): Promise<number | undefined> {
   try {
@@ -236,24 +264,69 @@ export async function handleIncomingCall(req: Request, res: Response) {
           }
         }
         
-        // Validate destination number before generating TwiML
-        const destinationNumber = auctionResult.winningBid.destinationNumber;
-        if (!destinationNumber || destinationNumber.trim() === '') {
+        // Get target configuration for routing decisions
+        const winningTarget = await storage.getRtbTarget(auctionResult.winningBid.rtbTargetId);
+        
+        // Validate and normalize destination number
+        const rawDestination = auctionResult.winningBid.destinationNumber;
+        if (!rawDestination || rawDestination.trim() === '') {
           console.error('[Webhook] RTB winner has no destination number, falling back to traditional routing');
           // Phase 3: Log RTB failure due to missing destination
           await RoutingDecisionTracker.logRoutingDecision(callId, routingSequence++, 'rtb', undefined, 'RTB Auction', undefined, undefined, 'Missing destination number in winning bid', 'failed');
         } else {
-          console.log(`[Webhook] RTB routing to destination: ${destinationNumber}`);
+          const dest = rawDestination.trim();
+          let dialXml: string;
+          let callerIdToPresent: string;
           
-          // Enhanced TwiML with better error handling and diagnostic logging
-          console.log(`[RTB Transfer] Attempting transfer to ${destinationNumber} for call ${callId}`);
+          // Determine caller ID based on target policy
+          callerIdToPresent = chooseCallerId(callData.From, winningTarget, campaign);
+          console.log(`[RTB Transfer] Using caller ID: ${callerIdToPresent} for call ${callId}`);
+
+          if (isSip(dest)) {
+            // SIP routing - prefer SIP when provided
+            const sipUri = dest.startsWith("sip:") ? dest : `sip:${dest}`;
+            console.log(`[RTB Transfer] Routing via SIP to ${sipUri} for call ${callId}`);
+            
+            // Add SIP headers if configured
+            let sipAttributes = '';
+            if (winningTarget?.sipHeaders) {
+              const headers = Object.entries(winningTarget.sipHeaders)
+                .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+                .join(';');
+              sipAttributes = headers ? `;${headers}` : '';
+            }
+            
+            dialXml = `
+              <Dial answerOnBridge="true" timeout="30" callerId="${callerIdToPresent}" action="/api/webhooks/rtb-dial-status" method="POST" record="record-from-answer">
+                <Sip>${sipUri}${sipAttributes}</Sip>
+              </Dial>`;
+          } else {
+            // DID routing - validate E.164 format
+            const e164 = toE164(dest);
+            if (!e164) {
+              console.error(`[RTB Transfer] Invalid destination number format: ${dest}`);
+              res.set('Content-Type', 'text/xml');
+              res.send(`<?xml version="1.0" encoding="UTF-8"?>
+                <Response>
+                  <Say voice="alice">All buyers unavailable. Please try again later.</Say>
+                  <Hangup/>
+                </Response>`);
+              return;
+            }
+            
+            console.log(`[RTB Transfer] Routing via DID to ${e164} for call ${callId}`);
+            dialXml = `
+              <Dial answerOnBridge="true" timeout="30" callerId="${callerIdToPresent}" action="/api/webhooks/rtb-dial-status" method="POST" record="record-from-answer">
+                <Number>${e164}</Number>
+              </Dial>`;
+          }
+
+          // Generate enhanced TwiML response
           res.set('Content-Type', 'text/xml');
           res.send(`<?xml version="1.0" encoding="UTF-8"?>
             <Response>
-              <Say voice="alice">Connecting to our premium partner.</Say>
-              <Dial timeout="30" record="record-from-ringing" action="/api/webhooks/rtb-dial-status" method="POST">
-                <Number>${destinationNumber}</Number>
-              </Dial>
+              <Say voice="alice">Connecting to our premium partner, please hold.</Say>
+              ${dialXml}
               <Say voice="alice">We're sorry, that number appears to be experiencing issues. Please try again later.</Say>
               <Hangup/>
             </Response>`);
