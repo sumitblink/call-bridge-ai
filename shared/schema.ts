@@ -1710,7 +1710,7 @@ export const rtbBidResponses = pgTable("rtb_bid_responses", {
   bidAmount: decimal("bid_amount", { precision: 10, scale: 2 }).notNull(),
   bidCurrency: varchar("bid_currency", { length: 3 }).default("USD").notNull(),
   requiredDuration: integer("required_duration"), // minimum call duration required
-  destinationNumber: varchar("destination_number", { length: 20 }), // nullable for rejection responses
+  destinationNumber: varchar("destination_number", { length: 128 }), // nullable for rejection responses, extended for SIP URIs
   
   // Response Tracking
   responseTimeMs: integer("response_time_ms").notNull(),
