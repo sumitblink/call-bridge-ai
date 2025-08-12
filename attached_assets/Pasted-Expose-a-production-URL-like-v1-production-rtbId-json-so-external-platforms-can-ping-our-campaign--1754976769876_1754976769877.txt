@@ -1,0 +1,146 @@
+Expose a production URL like /v1/production/:rtbId.json so external platforms can ping our campaign using an RTBID. Build the request/response flow to match common Ringba conventions, prefer SIP routing, and support auth.
+
+Scope / Tasks
+
+Public endpoint
+
+POST /v1/production/:rtbId.json (JSON only)
+
+Validate :rtbId → load active campaign (404 if missing/inactive).
+
+Optional: GET returns 405 (we only accept POST).
+
+Auth (configurable per campaign)
+
+Support: none, bearer, hmac-sha256.
+
+Bearer: require Authorization: Bearer <token>.
+
+HMAC: require X-RTB-Timestamp and X-RTB-Signature = base64(hmacSHA256(timestamp + "." + rawBody, secret)).
+
+Return 401/403 with clear error JSON on failure.
+
+Shareable tags → request body builder
+
+When campaign.rtbShareableTags === true, enrich incoming body with our token engine values (e.g., [Call:CallerId], [Geo:SubDivision], etc.).
+
+Provide a per-campaign template (JSON with tokens) that we render to produce the bidder-visible payload (store template in DB, default minimal set if none).
+
+Bid policy + capacity (MVP)
+
+Read per-campaign config: minBid, maxBid, currency, isActive, capacityAvailable.
+
+Compute accept (boolean), bidAmount (between min/max), bidCurrency (default USD).
+
+Respect optional expiresInSec (default 60) and requiredDuration if configured.
+
+Destination selection (prefer SIP)
+
+If campaign has sipSettings.rtbUri, return sipAddress.
+
+Else fall back to phoneNumber (E.164 from config).
+
+Validate: SIP must look like user@domain; DID must be E.164.
+
+Response schema (JSON)
+
+Success 200:
+
+json
+Copy
+Edit
+{
+  "bidId": "RTB<epoch-or-uuid>",
+  "accept": true,
+  "bidAmount": 2.5,
+  "bidCurrency": "USD",
+  "expiresInSec": 60,
+  "requiredDuration": 90,
+  "sipAddress": "token@rtb.buyer.sip.telnyx.com"
+  // or "phoneNumber": "+18585551234"
+}
+Rejection 200 (no bid):
+
+json
+Copy
+Edit
+{
+  "accept": false,
+  "bidAmount": 0,
+  "rejectReason": "Closed or capped"
+}
+Errors: 4xx/5xx with { "error": "<message>" }.
+
+Config / schema additions
+
+Campaign: rtbId (unique), rtbShareableTags (bool), rtbRequestTemplate (JSON), authMethod, authSecretOrToken, minBid, maxBid, currency, capacityAvailable, requiredDuration, sipSettings.rtbUri, fallbackDid.
+
+Index on rtbId.
+
+Logging & metrics
+
+[RTB-INBOUND] logs: method, url, rtbId, auth result, ms latency.
+
+Store inbound pings + our responses in rtb_inbound_requests/rtb_inbound_responses.
+
+Tests / simulator
+
+Integration tests for: bearer OK, HMAC OK/bad timestamp/bad sig, accept with SIP, accept with DID, reject, invalid rtbId.
+
+Add simulator cURL snippets to README.
+
+Acceptance Criteria
+
+Able to give a partner a single URL: POST https://<host>/v1/production/<RTB_ID>.json that returns a timely bid + destination.
+
+When SIP is configured, response contains sipAddress and our downstream dialer uses <Sip> automatically.
+
+HMAC mode verified with correct signature and replay protection (reject timestamp older than, say, 5 minutes).
+
+Shareable tags render correctly into the partner-visible payload when enabled.
+
+Logs show end-to-end: inbound ping → decision → response.
+
+Quick test commands
+
+Bearer + accept (SIP):
+
+bash
+Copy
+Edit
+curl -X POST https://<host>/v1/production/<RTB_ID>.json \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json' \
+  -d '{"test":"ping"}'
+Expect 200 with accept:true, bidAmount>0, sipAddress.
+
+Bearer + reject: set capacityAvailable=false and expect accept:false.
+
+HMAC:
+
+perl
+Copy
+Edit
+TS=$(date +%s)
+BODY='{"test":"hmac"}'
+SIG=$(python - <<PY
+import hmac,hashlib,base64,os,sys
+secret=os.environ['HMAC_SECRET']
+ts=os.environ['TS']; body=os.environ['BODY']
+print(base64.b64encode(hmac.new(secret.encode(), (ts+"."+body).encode(), hashlib.sha256).digest()).decode())
+PY
+)
+curl -X POST https://<host>/v1/production/<RTB_ID>.json \
+  -H "X-RTB-Timestamp: $TS" \
+  -H "X-RTB-Signature: $SIG" \
+  -H 'Content-Type: application/json' \
+  -d "$BODY"
+Expect 200 with valid bid JSON.
+
+Notes
+
+Keep time-to-first-byte < 500ms under normal load.
+
+Return 200 for “no bid” (with accept:false) rather than 4xx.
+
+Document the exact fields we’ll include when rtbShareableTags is ON.
