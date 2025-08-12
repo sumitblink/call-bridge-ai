@@ -108,7 +108,7 @@ class HybridStorage implements IStorage {
     if (this.useDatabase) {
       try {
         const result = await supabaseOp();
-        console.log('[HybridStorage] Database operation successful, returning database result');
+        // Removed excessive success logging to reduce console noise
         return result;
       } catch (error) {
         console.warn('Database operation failed, trying memory storage:', error);
@@ -118,7 +118,7 @@ class HybridStorage implements IStorage {
         return fallbackResult;
       }
     } else {
-      console.log('[HybridStorage] Using memory storage directly');
+      // Only log when actually using memory storage directly
       const memResult = await memoryOp();
       return memResult;
     }
