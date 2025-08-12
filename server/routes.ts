@@ -2147,13 +2147,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[Pool Webhook] Campaign financial config - Payout:', payout, 'Revenue:', revenue, 'Profit:', profit);
       
-      // Use intelligent target selection result
-      const targetId = routingMethod !== 'rtb' ? selectedTarget.id : null;
+      // For RTB calls, create/find RTB buyer and target records for database tracking
+      let finalBuyerId = selectedBuyer.id;
+      let finalTargetId = selectedTarget?.id || null;
+      
+      if (routingMethod === 'rtb' && selectedBuyer.external) {
+        console.log(`[RTB Database] Creating/finding RTB buyer record for tracking...`);
+        
+        // Create or find RTB buyer record for database tracking
+        const rtbBuyerName = selectedBuyer.companyName || selectedBuyer.name || 'RTB Winner';
+        
+        try {
+          // Check if RTB buyer already exists
+          const existingBuyers = await storage.getBuyers();
+          let rtbBuyer = existingBuyers.find(b => 
+            b.name === rtbBuyerName && 
+            b.companyName?.includes('RTB') && 
+            b.userId === campaign.userId
+          );
+          
+          if (!rtbBuyer) {
+            // Create new RTB buyer record
+            rtbBuyer = await storage.createBuyer({
+              userId: campaign.userId,
+              name: rtbBuyerName,
+              companyName: `RTB External: ${rtbBuyerName}`,
+              email: 'rtb@external.com',
+              phoneNumber: targetPhoneNumber,
+              description: `External RTB bidder: ${rtbBuyerName}`,
+              defaultPayout: winningBidAmount ? parseFloat(winningBidAmount) : 0,
+              isActive: true,
+              timezone: 'UTC'
+            });
+            console.log(`[RTB Database] Created RTB buyer record: ${rtbBuyer.id} - ${rtbBuyer.name}`);
+          }
+          
+          finalBuyerId = rtbBuyer.id;
+          
+          // For now, skip target creation and just use the buyer ID
+          // RTB targets are external and don't need internal target records
+          console.log(`[RTB Database] Using RTB buyer without internal target (external routing)`);
+          finalTargetId = null; // RTB calls route externally
+          
+
+          
+        } catch (rtbDbError) {
+          console.error('[RTB Database] Error creating RTB records:', rtbDbError);
+          // Fall back to original logic if creation fails
+          finalBuyerId = selectedBuyer.id;
+          finalTargetId = null;
+        }
+      } else if (routingMethod !== 'rtb') {
+        // Use regular target selection for internal routing
+        finalTargetId = selectedTarget?.id || null;
+      }
+
+      console.log(`[Database Assignment] Final Buyer ID: ${finalBuyerId}, Target ID: ${finalTargetId}`);
 
       let callData: any = {
         campaignId: campaign.id,
-        buyerId: routingMethod === 'rtb' ? null : selectedBuyer.id, // RTB calls use external routing
-        targetId: targetId, // Add target assignment
+        buyerId: finalBuyerId, // Use proper buyer ID for both RTB and internal
+        targetId: finalTargetId, // Use proper target ID for both RTB and internal
         callSid: CallSid,
         fromNumber,
         toNumber,
