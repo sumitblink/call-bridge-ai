@@ -248,6 +248,12 @@ export interface IStorage {
   // RTB Audit Data Cleanup
   clearRtbAuditData(): Promise<void>;
 
+  // RTB Inbound Request/Response Logging
+  logRtbInboundRequest(request: any): Promise<void>;
+  logRtbInboundResponse(response: any): Promise<void>;
+  getRtbInboundRequests(campaignId?: string): Promise<any[]>;
+  getRtbInboundResponses(requestId?: number): Promise<any[]>;
+
   // Feedback
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
   getFeedbackHistory(userId: number): Promise<Feedback[]>;

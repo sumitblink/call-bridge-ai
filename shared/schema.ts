@@ -122,6 +122,18 @@ export const campaigns = pgTable("campaigns", {
   // Bid Modifiers
   rtbBidModifiers: json("rtb_bid_modifiers"), // Array of bid modifier rules
   
+  // RTB Inbound Configuration (Production URL endpoint)
+  rtbShareableTags: boolean("rtb_shareable_tags").default(false).notNull(),
+  rtbRequestTemplate: json("rtb_request_template"), // JSON template for inbound RTB requests
+  rtbAuthMethod: varchar("rtb_auth_method", { length: 50 }).default("none").notNull(), // none, bearer, hmac-sha256
+  rtbAuthSecret: varchar("rtb_auth_secret", { length: 512 }), // Bearer token or HMAC secret
+  capacityAvailable: boolean("capacity_available").default(true).notNull(),
+  sipRtbUri: varchar("sip_rtb_uri", { length: 512 }), // SIP URI for RTB responses
+  minBid: decimal("min_bid", { precision: 10, scale: 4 }).default("1.00"),
+  maxBid: decimal("max_bid", { precision: 10, scale: 4 }).default("50.00"),
+  bidCurrency: varchar("bid_currency", { length: 3 }).default("USD"),
+  requiredDuration: integer("required_duration").default(60), // seconds
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -411,6 +423,42 @@ export const rtbAuctionDetails = pgTable("rtb_auction_details", {
   rejectionReason: text("rejection_reason"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   metadata: json("metadata"), // Additional auction metadata
+});
+
+// RTB Inbound Request Tracking
+export const rtbInboundRequests = pgTable("rtb_inbound_requests", {
+  id: serial("id").primaryKey(),
+  campaignId: uuid("campaign_id").references(() => campaigns.id).notNull(),
+  rtbId: varchar("rtb_id", { length: 100 }).notNull(),
+  bidId: varchar("bid_id", { length: 100 }).notNull(),
+  requestMethod: varchar("request_method", { length: 10 }).notNull(), // POST, GET
+  requestUrl: varchar("request_url", { length: 512 }).notNull(),
+  requestHeaders: json("request_headers"),
+  requestBody: json("request_body"),
+  clientIp: varchar("client_ip", { length: 45 }),
+  userAgent: varchar("user_agent", { length: 512 }),
+  authMethod: varchar("auth_method", { length: 50 }),
+  authResult: varchar("auth_result", { length: 20 }).notNull(), // success, failed, none
+  responseTime: integer("response_time").notNull(), // milliseconds
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+// RTB Inbound Response Tracking
+export const rtbInboundResponses = pgTable("rtb_inbound_responses", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").references(() => rtbInboundRequests.id).notNull(),
+  statusCode: integer("status_code").notNull(),
+  responseHeaders: json("response_headers"),
+  responseBody: json("response_body"),
+  bidAccepted: boolean("bid_accepted").notNull(),
+  bidAmount: decimal("bid_amount", { precision: 10, scale: 4 }),
+  bidCurrency: varchar("bid_currency", { length: 3 }),
+  destinationType: varchar("destination_type", { length: 10 }), // sip, did
+  destinationValue: varchar("destination_value", { length: 512 }),
+  rejectReason: varchar("reject_reason", { length: 200 }),
+  expiresInSec: integer("expires_in_sec"),
+  requiredDuration: integer("required_duration"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
 

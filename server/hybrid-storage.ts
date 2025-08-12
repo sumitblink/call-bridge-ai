@@ -1211,6 +1211,35 @@ class HybridStorage implements IStorage {
     );
   }
 
+  // RTB Inbound Request/Response Logging
+  async logRtbInboundRequest(request: any): Promise<void> {
+    return this.executeOperation(
+      () => this.databaseStorage.logRtbInboundRequest ? this.databaseStorage.logRtbInboundRequest(request) : Promise.resolve(),
+      () => Promise.resolve() // Memory storage doesn't persist these logs
+    );
+  }
+
+  async logRtbInboundResponse(response: any): Promise<void> {
+    return this.executeOperation(
+      () => this.databaseStorage.logRtbInboundResponse ? this.databaseStorage.logRtbInboundResponse(response) : Promise.resolve(),
+      () => Promise.resolve() // Memory storage doesn't persist these logs
+    );
+  }
+
+  async getRtbInboundRequests(campaignId?: string): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getRtbInboundRequests ? this.databaseStorage.getRtbInboundRequests(campaignId) : Promise.resolve([]),
+      () => Promise.resolve([]) // Memory storage returns empty array
+    );
+  }
+
+  async getRtbInboundResponses(requestId?: number): Promise<any[]> {
+    return this.executeOperation(
+      () => this.databaseStorage.getRtbInboundResponses ? this.databaseStorage.getRtbInboundResponses(requestId) : Promise.resolve([]),
+      () => Promise.resolve([]) // Memory storage returns empty array
+    );
+  }
+
 }
 
 export const storage = new HybridStorage();

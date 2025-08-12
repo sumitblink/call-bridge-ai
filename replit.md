@@ -52,7 +52,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (August 2025)
 
-### RTB Production Enhancements (Latest)
+### RTB Inbound Production System (Latest)
+- **Production Endpoint**: Implemented `/v1/production/:rtbId.json` for external RTB platform integration matching Ringba conventions
+- **Multi-Authentication**: Complete auth system (none, bearer, HMAC-SHA256) with timestamp validation and replay attack protection
+- **SIP-First Routing**: Responses prefer `sipAddress` over `phoneNumber` for modern call routing infrastructure
+- **Comprehensive Logging**: RTB inbound request/response tracking with sanitized phone numbers and performance metrics
+- **Shareable Tags**: Token replacement system enabling dynamic data enrichment in RTB responses
+- **Campaign Configuration**: Extended campaigns with RTB inbound settings (auth, capacity, bid ranges, SIP URIs)
+- **Production Security**: HMAC signatures, timestamp validation, rate limiting, and comprehensive audit trails
+- **Testing Infrastructure**: Complete test suite with HMAC generation, auth scenarios, and error condition validation
+
+### RTB Production Enhancements
 - **SIP Routing Preference**: Enhanced TwiML generation to prefer `<Sip>` tags over `<Number>` for SIP destinations with proper URI formatting and header support
 - **Caller ID Policies**: Implemented per-target caller ID configuration (passthrough, fixed, campaign_default) with E.164 normalization
 - **HMAC Authentication**: Added HMAC-SHA256 authentication support for production-grade RTB security with timestamped signatures

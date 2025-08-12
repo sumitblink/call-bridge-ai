@@ -36,6 +36,7 @@ import { callDetailsRouter } from "./call-details-api";
 import { z } from "zod";
 import twilio from "twilio";
 import fetch from "node-fetch";
+import crypto from "crypto";
 
 // Import authentication middleware from middleware directory
 import { requireAuth } from "./middleware/auth";
@@ -7214,6 +7215,246 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Simulator error' });
     }
   });
+
+  // RTB Production Inbound Endpoint
+  app.post('/v1/production/:rtbId.json', async (req, res) => {
+    const startTime = Date.now();
+    const { rtbId } = req.params;
+    const bidId = `RTB${Date.now()}${Math.random().toString(36).substr(2, 6)}`;
+    
+    try {
+      console.log(`[RTB-INBOUND] ${req.method} ${req.url} - RTB ID: ${rtbId}`);
+      
+      // Find campaign by RTB ID
+      const campaigns = await storage.getCampaigns();
+      const campaign = campaigns.find(c => c.rtbId === rtbId);
+      
+      if (!campaign) {
+        console.log(`[RTB-INBOUND] Campaign not found for RTB ID: ${rtbId}`);
+        return res.status(404).json({ error: 'RTB ID not found or inactive' });
+      }
+      
+      if (campaign.status !== 'active') {
+        console.log(`[RTB-INBOUND] Campaign ${campaign.id} is not active: ${campaign.status}`);
+        return res.status(404).json({ error: 'RTB ID not found or inactive' });
+      }
+      
+      console.log(`[RTB-INBOUND] Found campaign: ${campaign.name} (ID: ${campaign.id})`);
+      
+      // Authentication
+      const authResult = await authenticateRtbRequest(req, campaign);
+      if (!authResult.success) {
+        console.log(`[RTB-INBOUND] Auth failed: ${authResult.error}`);
+        return res.status(authResult.statusCode).json({ error: authResult.error });
+      }
+      
+      // Log the request
+      await logRtbInboundRequest(req, campaign, rtbId, bidId, authResult.method, 'success', Date.now() - startTime);
+      
+      // Check capacity
+      if (!campaign.capacityAvailable) {
+        console.log(`[RTB-INBOUND] Campaign ${campaign.id} has no capacity available`);
+        const response = {
+          bidId,
+          accept: false,
+          bidAmount: 0,
+          rejectReason: 'Capacity not available'
+        };
+        await logRtbInboundResponse(bidId, 200, response, false, null, 'capacity', Date.now() - startTime);
+        return res.status(200).json(response);
+      }
+      
+      // Generate bid amount between min/max
+      const minBid = parseFloat(campaign.minBid || '1.00');
+      const maxBid = parseFloat(campaign.maxBid || '50.00');
+      const bidAmount = Math.round((minBid + Math.random() * (maxBid - minBid)) * 100) / 100;
+      
+      // Determine destination - prefer SIP
+      let destination: any = {};
+      if (campaign.sipRtbUri) {
+        destination = {
+          sipAddress: campaign.sipRtbUri
+        };
+        console.log(`[RTB-INBOUND] Using SIP destination: ${campaign.sipRtbUri}`);
+      } else {
+        // Fallback to campaign phone number (E.164 format)
+        const phoneNumber = campaign.phoneNumber || '+18555551234'; // fallback
+        destination = {
+          phoneNumber: phoneNumber
+        };
+        console.log(`[RTB-INBOUND] Using phone destination: ${phoneNumber}`);
+      }
+      
+      // Build response
+      const response = {
+        bidId,
+        accept: true,
+        bidAmount,
+        bidCurrency: campaign.bidCurrency || 'USD',
+        expiresInSec: 60,
+        requiredDuration: campaign.requiredDuration || 60,
+        ...destination
+      };
+      
+      // Apply shareable tags if enabled
+      if (campaign.rtbShareableTags && campaign.rtbRequestTemplate) {
+        const enrichedTemplate = await applyShareableTags(campaign.rtbRequestTemplate, req);
+        response.metadata = enrichedTemplate;
+      }
+      
+      console.log(`[RTB-INBOUND] Bid accepted: $${bidAmount} ${campaign.bidCurrency || 'USD'}`);
+      
+      // Log the response
+      const destinationType = campaign.sipRtbUri ? 'sip' : 'did';
+      const destinationValue = campaign.sipRtbUri || campaign.phoneNumber;
+      await logRtbInboundResponse(bidId, 200, response, true, bidAmount, null, Date.now() - startTime, destinationType, destinationValue);
+      
+      res.status(200).json(response);
+      
+    } catch (error) {
+      console.error(`[RTB-INBOUND] Error processing request:`, error);
+      const response = { error: 'Internal server error' };
+      await logRtbInboundResponse(bidId, 500, response, false, null, 'server_error', Date.now() - startTime);
+      res.status(500).json(response);
+    }
+  });
+
+  // Handle GET requests to RTB endpoint (return 405)
+  app.get('/v1/production/:rtbId.json', (req, res) => {
+    res.status(405).json({ error: 'Method not allowed. Only POST requests are supported.' });
+  });
+
+  // RTB Inbound Authentication Helper
+  async function authenticateRtbRequest(req: Request, campaign: any): Promise<{ success: boolean; method: string; error?: string; statusCode?: number }> {
+    const authMethod = campaign.rtbAuthMethod || 'none';
+    
+    try {
+      switch (authMethod) {
+        case 'none':
+          return { success: true, method: 'none' };
+          
+        case 'bearer':
+          const authHeader = req.headers.authorization;
+          if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return { success: false, method: 'bearer', error: 'Bearer token required', statusCode: 401 };
+          }
+          
+          const token = authHeader.substring(7);
+          if (token !== campaign.rtbAuthSecret) {
+            return { success: false, method: 'bearer', error: 'Invalid bearer token', statusCode: 403 };
+          }
+          
+          return { success: true, method: 'bearer' };
+          
+        case 'hmac-sha256':
+          const timestamp = req.headers['x-rtb-timestamp'] as string;
+          const signature = req.headers['x-rtb-signature'] as string;
+          
+          if (!timestamp || !signature) {
+            return { success: false, method: 'hmac-sha256', error: 'HMAC headers required (X-RTB-Timestamp, X-RTB-Signature)', statusCode: 401 };
+          }
+          
+          // Check timestamp (prevent replay attacks)
+          const now = Math.floor(Date.now() / 1000);
+          const reqTimestamp = parseInt(timestamp);
+          if (Math.abs(now - reqTimestamp) > 300) { // 5 minutes
+            return { success: false, method: 'hmac-sha256', error: 'Timestamp too old or too far in future', statusCode: 401 };
+          }
+          
+          // Verify HMAC signature
+          const rawBody = JSON.stringify(req.body);
+          const expectedSignature = crypto
+            .createHmac('sha256', campaign.rtbAuthSecret)
+            .update(`${timestamp}.${rawBody}`)
+            .digest('base64');
+            
+          if (signature !== expectedSignature) {
+            return { success: false, method: 'hmac-sha256', error: 'Invalid HMAC signature', statusCode: 403 };
+          }
+          
+          return { success: true, method: 'hmac-sha256' };
+          
+        default:
+          return { success: false, method: authMethod, error: 'Unsupported auth method', statusCode: 400 };
+      }
+    } catch (error) {
+      console.error('[RTB-INBOUND] Auth error:', error);
+      return { success: false, method: authMethod, error: 'Authentication error', statusCode: 500 };
+    }
+  }
+
+  // RTB Inbound Request Logging Helper
+  async function logRtbInboundRequest(req: Request, campaign: any, rtbId: string, bidId: string, authMethod: string, authResult: string, responseTime: number) {
+    try {
+      await storage.logRtbInboundRequest({
+        campaignId: campaign.id,
+        rtbId,
+        bidId,
+        requestMethod: req.method,
+        requestUrl: req.url,
+        requestHeaders: req.headers,
+        requestBody: req.body,
+        clientIp: req.ip || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent'],
+        authMethod,
+        authResult,
+        responseTime
+      });
+    } catch (error) {
+      console.error('[RTB-INBOUND] Failed to log request:', error);
+    }
+  }
+
+  // RTB Inbound Response Logging Helper
+  async function logRtbInboundResponse(bidId: string, statusCode: number, responseBody: any, bidAccepted: boolean, bidAmount: number | null, rejectReason: string | null, responseTime: number, destinationType?: string, destinationValue?: string) {
+    try {
+      await storage.logRtbInboundResponse({
+        bidId, // Will need to map to requestId in storage layer
+        statusCode,
+        responseBody,
+        bidAccepted,
+        bidAmount,
+        rejectReason,
+        responseTime,
+        destinationType,
+        destinationValue,
+        expiresInSec: responseBody.expiresInSec || null,
+        requiredDuration: responseBody.requiredDuration || null
+      });
+    } catch (error) {
+      console.error('[RTB-INBOUND] Failed to log response:', error);
+    }
+  }
+
+  // Apply Shareable Tags to Request Template
+  async function applyShareableTags(template: any, req: Request): Promise<any> {
+    try {
+      if (!template) return {};
+      
+      // Convert template to string, apply token replacements, then parse back
+      let templateStr = JSON.stringify(template);
+      
+      // Basic token replacements (can be extended)
+      const tokens: { [key: string]: string } = {
+        '[Call:CallerId]': '555***' + Math.floor(Math.random() * 10000), // Obfuscated caller ID
+        '[Geo:SubDivision]': req.headers['x-forwarded-for'] ? 'US' : 'Unknown',
+        '[Geo:City]': req.headers['x-forwarded-for'] ? 'Unknown' : 'Unknown',
+        '[Request:Timestamp]': new Date().toISOString(),
+        '[Request:IP]': req.ip ? req.ip.replace(/\.\d+$/, '.***') : '*.*.*.***', // Obfuscated IP
+        '[Request:UserAgent]': req.headers['user-agent'] || 'Unknown'
+      };
+      
+      // Apply token replacements
+      for (const [token, value] of Object.entries(tokens)) {
+        templateStr = templateStr.replace(new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+      }
+      
+      return JSON.parse(templateStr);
+    } catch (error) {
+      console.error('[RTB-INBOUND] Failed to apply shareable tags:', error);
+      return template || {};
+    }
+  }
 
   app.get('/api/rtb/targets/:targetId/uptime', requireAuth, async (req: any, res) => {
     try {
