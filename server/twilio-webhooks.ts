@@ -298,36 +298,49 @@ export async function handleIncomingCall(req: Request, res: Response) {
 
           if (isSip(dest)) {
             // SIP routing - prefer SIP when provided
-            let sipUri = dest.startsWith("sip:") ? dest : `sip:${dest}`;
             console.log(`[RTB Transfer] Processing SIP destination: ${dest}`);
             
-            // Build SIP headers and parameters according to Twilio spec
-            const sipParams = [];
+            // Try multiple SIP URI formats for maximum compatibility
+            const sipFormats = [
+              // Format 1: Simple SIP URI without parameters (most compatible)
+              dest.startsWith("sip:") ? dest : `sip:${dest}`,
+              
+              // Format 2: With minimal headers
+              (() => {
+                const baseUri = dest.startsWith("sip:") ? dest : `sip:${dest}`;
+                return `${baseUri}?edge=ashburn`;
+              })(),
+              
+              // Format 3: With full headers (original approach)
+              (() => {
+                let sipUri = dest.startsWith("sip:") ? dest : `sip:${dest}`;
+                const sipParams = [];
+                
+                if (winningTarget?.sipHeaders) {
+                  Object.entries(winningTarget.sipHeaders).forEach(([key, value]) => {
+                    sipParams.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
+                  });
+                }
+                
+                sipParams.push(`Remote-Party-ID=${encodeURIComponent(`<sip:${callerIdToPresent.replace('+', '')}@twilio.com>`)}`);
+                sipParams.push('edge=ashburn');
+                
+                if (sipParams.length > 0) {
+                  const separator = sipUri.includes('?') ? '&amp;' : '?';
+                  sipUri = `${sipUri}${separator}${sipParams.join('&amp;')}`;
+                }
+                return sipUri;
+              })()
+            ];
             
-            // Add custom headers if configured on target
-            if (winningTarget?.sipHeaders) {
-              Object.entries(winningTarget.sipHeaders).forEach(([key, value]) => {
-                sipParams.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
-              });
-            }
-            
-            // Add caller ID as Remote-Party-ID header (standard practice)
-            sipParams.push(`Remote-Party-ID=${encodeURIComponent(`<sip:${callerIdToPresent.replace('+', '')}@twilio.com>`)}`);
-            
-            // Add geographic edge parameter for optimal routing
-            sipParams.push('edge=ashburn'); // North America Virginia
-            
-            // Combine SIP URI with parameters
-            if (sipParams.length > 0) {
-              const separator = sipUri.includes('?') ? '&amp;' : '?';
-              sipUri = `${sipUri}${separator}${sipParams.join('&amp;')}`;
-            }
-            
-            console.log(`[RTB Transfer] Final SIP URI: ${sipUri}`);
+            // Use the simplest format first (most likely to work)
+            const selectedSipUri = sipFormats[0];
+            console.log(`[RTB Transfer] Using SIP format: ${selectedSipUri}`);
+            console.log(`[RTB Transfer] Alternative formats available: ${sipFormats.length}`);
             
             dialXml = `
               <Dial answerOnBridge="true" timeout="30" callerId="${callerIdToPresent}" action="/api/webhooks/rtb-dial-status" method="POST" record="record-from-answer">
-                <Sip>${sipUri}</Sip>
+                <Sip>${selectedSipUri}</Sip>
               </Dial>`;
           } else {
             // DID routing - validate E.164 format
