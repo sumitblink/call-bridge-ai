@@ -12,9 +12,10 @@ const isSip = (dest: string): boolean => {
   if (!dest) return false;
   const trimmed = dest.trim();
   // Check for SIP URI format or domain-like strings with @ symbol
+  // Also check for specific SIP domain patterns like .sip.telnyx.com
   return /^sip:/i.test(trimmed) || 
          /@/.test(trimmed) || 
-         /\.sip\./.test(trimmed) || 
+         /\.sip\./i.test(trimmed) || 
          /\.(com|net|org|io)$/i.test(trimmed);
 };
 
@@ -297,21 +298,36 @@ export async function handleIncomingCall(req: Request, res: Response) {
 
           if (isSip(dest)) {
             // SIP routing - prefer SIP when provided
-            const sipUri = dest.startsWith("sip:") ? dest : `sip:${dest}`;
-            console.log(`[RTB Transfer] Routing via SIP to ${sipUri} for call ${callId}`);
+            let sipUri = dest.startsWith("sip:") ? dest : `sip:${dest}`;
+            console.log(`[RTB Transfer] Processing SIP destination: ${dest}`);
             
-            // Add SIP headers if configured
-            let sipAttributes = '';
+            // Build SIP headers and parameters according to Twilio spec
+            const sipParams = [];
+            
+            // Add custom headers if configured on target
             if (winningTarget?.sipHeaders) {
-              const headers = Object.entries(winningTarget.sipHeaders)
-                .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
-                .join(';');
-              sipAttributes = headers ? `;${headers}` : '';
+              Object.entries(winningTarget.sipHeaders).forEach(([key, value]) => {
+                sipParams.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
+              });
             }
+            
+            // Add caller ID as Remote-Party-ID header (standard practice)
+            sipParams.push(`Remote-Party-ID=${encodeURIComponent(`<sip:${callerIdToPresent.replace('+', '')}@twilio.com>`)}`);
+            
+            // Add geographic edge parameter for optimal routing
+            sipParams.push('edge=ashburn'); // North America Virginia
+            
+            // Combine SIP URI with parameters
+            if (sipParams.length > 0) {
+              const separator = sipUri.includes('?') ? '&amp;' : '?';
+              sipUri = `${sipUri}${separator}${sipParams.join('&amp;')}`;
+            }
+            
+            console.log(`[RTB Transfer] Final SIP URI: ${sipUri}`);
             
             dialXml = `
               <Dial answerOnBridge="true" timeout="30" callerId="${callerIdToPresent}" action="/api/webhooks/rtb-dial-status" method="POST" record="record-from-answer">
-                <Sip>${sipUri}${sipAttributes}</Sip>
+                <Sip>${sipUri}</Sip>
               </Dial>`;
           } else {
             // DID routing - validate E.164 format
