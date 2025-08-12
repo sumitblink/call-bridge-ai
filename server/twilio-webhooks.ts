@@ -300,53 +300,39 @@ export async function handleIncomingCall(req: Request, res: Response) {
             // SIP routing - prefer SIP when provided
             console.log(`[RTB Transfer] Processing SIP destination: ${dest}`);
             
-            // Try multiple SIP URI formats for maximum compatibility
-            const sipFormats = [
-              // Format 1: Simple SIP URI without parameters (most compatible)
-              dest.startsWith("sip:") ? dest : `sip:${dest}`,
-              
-              // Format 2: With minimal headers
-              (() => {
-                const baseUri = dest.startsWith("sip:") ? dest : `sip:${dest}`;
-                return `${baseUri}?edge=ashburn`;
-              })(),
-              
-              // Format 3: With full headers (original approach)
-              (() => {
-                let sipUri = dest.startsWith("sip:") ? dest : `sip:${dest}`;
-                const sipParams = [];
-                
-                if (winningTarget?.sipHeaders) {
-                  Object.entries(winningTarget.sipHeaders).forEach(([key, value]) => {
-                    sipParams.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
-                  });
-                }
-                
-                sipParams.push(`Remote-Party-ID=${encodeURIComponent(`<sip:${callerIdToPresent.replace('+', '')}@twilio.com>`)}`);
-                sipParams.push('edge=ashburn');
-                
-                if (sipParams.length > 0) {
-                  const separator = sipUri.includes('?') ? '&amp;' : '?';
-                  sipUri = `${sipUri}${separator}${sipParams.join('&amp;')}`;
-                }
-                return sipUri;
-              })()
-            ];
+            // Use Twilio-optimized SIP URI format to prevent phone number extraction
+            let selectedSipUri = dest.startsWith("sip:") ? dest : `sip:${dest}`;
             
-            // Use the simplest format first (most likely to work)
-            const selectedSipUri = sipFormats[0];
-            console.log(`[RTB Transfer] Using SIP format: ${selectedSipUri}`);
-            console.log(`[RTB Transfer] Alternative formats available: ${sipFormats.length}`);
+            console.log(`[RTB Transfer] Base SIP URI: ${selectedSipUri}`);
+            console.log(`[RTB Transfer] Applying Twilio compatibility fixes...`);
             
-            // Ensure SIP URI is fully qualified for Twilio recognition
-            const fullyQualifiedSipUri = selectedSipUri.includes('sip:') ? selectedSipUri : `sip:${selectedSipUri}`;
+            // Apply Twilio SIP URI formatting fixes to prevent phone number extraction
+            let twilioCompatibleSipUri = selectedSipUri;
+            
+            // Fix 1: Ensure proper sip: prefix
+            if (!twilioCompatibleSipUri.startsWith('sip:')) {
+              twilioCompatibleSipUri = `sip:${twilioCompatibleSipUri}`;
+            }
+            
+            // Fix 2: Add transport parameter to force SIP recognition
+            if (!twilioCompatibleSipUri.includes('transport=')) {
+              const separator = twilioCompatibleSipUri.includes('?') ? '&' : '?';
+              twilioCompatibleSipUri = `${twilioCompatibleSipUri}${separator}transport=udp`;
+            }
+            
+            // Fix 3: Ensure URI is under 255 character limit
+            if (twilioCompatibleSipUri.length > 254) {
+              console.warn(`[RTB Transfer] SIP URI too long (${twilioCompatibleSipUri.length} chars), truncating`);
+              twilioCompatibleSipUri = twilioCompatibleSipUri.substring(0, 254);
+            }
+            
+            console.log(`[RTB Transfer] Original SIP: ${selectedSipUri}`);
+            console.log(`[RTB Transfer] Twilio-compatible SIP: ${twilioCompatibleSipUri}`);
             
             dialXml = `
               <Dial answerOnBridge="true" timeout="30" callerId="${callerIdToPresent}" action="/api/webhooks/rtb-dial-status" method="POST" record="record-from-answer">
-                <Sip>${fullyQualifiedSipUri}</Sip>
+                <Sip>${twilioCompatibleSipUri}</Sip>
               </Dial>`;
-              
-            console.log(`[RTB Transfer] Final SIP URI for Twilio: ${fullyQualifiedSipUri}`);
           } else {
             // DID routing - validate E.164 format
             const e164 = toE164(dest);
