@@ -1876,8 +1876,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { poolId } = req.params;
       const { To: toNumber, From: fromNumber, CallSid } = req.body;
       
+      console.log(`\n🚨 === WEBHOOK ENTRY POINT ===`);
       console.log(`[Pool Webhook] === INCOMING CALL TO POOL ${poolId} ===`);
       console.log(`[Pool Webhook] Call from ${fromNumber} to ${toNumber}, CallSid: ${CallSid}`);
+      console.log(`[Pool Webhook] Full request body:`, req.body);
       
       // Find the pool and associated campaign
       const pool = await storage.getNumberPool(parseInt(poolId));
@@ -2269,17 +2271,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const connectMessage = routingMethod === 'rtb' 
         ? 'Connecting to our premium partner, please hold.'
         : 'Connecting your call, please hold.';
+
+      // Check if destination is SIP address for RTB calls and generate appropriate dial tag
+      const isSipDestination = (dest: string): boolean => {
+        if (!dest) return false;
+        const trimmed = dest.trim();
+        return /^sip:/i.test(trimmed) || /@/.test(trimmed) || /\.sip\./i.test(trimmed) || /\.(com|net|org|io)$/i.test(trimmed);
+      };
+
+      let dialTag: string;
+      if (routingMethod === 'rtb' && isSipDestination(targetPhoneNumber)) {
+        // RTB SIP routing - apply Twilio compatibility fixes
+        let sipUri = targetPhoneNumber.startsWith('sip:') ? targetPhoneNumber : `sip:${targetPhoneNumber}`;
+        
+        // Add transport parameter to force SIP recognition
+        if (!sipUri.includes('transport=')) {
+          const separator = sipUri.includes('?') ? '&' : '?';
+          sipUri = `${sipUri}${separator}transport=udp`;
+        }
+        
+        console.log(`🌐 === SIP ROUTING DETECTED ===`);
+        console.log(`[RTB SIP] Original destination: ${targetPhoneNumber}`);
+        console.log(`[RTB SIP] Twilio-compatible SIP URI: ${sipUri}`);
+        console.log(`[RTB SIP] Using <Sip> tag instead of <Number>`);
+        
+        dialTag = `<Sip>${sipUri}</Sip>`;
+      } else {
+        // Regular phone number routing
+        console.log(`📞 Using standard phone number routing`);
+        dialTag = `<Number>${targetPhoneNumber}</Number>`;
+      }
         
       const twiml = `
         <Response>
           <Say>${connectMessage}</Say>
           <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="https://${req.hostname}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="/api/webhooks/pool/${poolId}/status" method="POST">
-            <Number>${targetPhoneNumber}</Number>
+            ${dialTag}
           </Dial>
           <Say>The call has ended. Thank you for calling.</Say>
           <Hangup/>
         </Response>
       `;
+      
+      console.log(`📋 === GENERATED TWIML ===`);
+      console.log(twiml);
 
       console.log(`✅ CALL SUCCESSFULLY ROUTED:`);
       console.log(`   📋 Method: ${routingMethod.toUpperCase()}`);
