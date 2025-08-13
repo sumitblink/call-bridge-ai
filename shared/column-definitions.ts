@@ -573,14 +573,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 100,
     sortable: true
   },
-  {
-    id: 'profitNetTolco',
-    label: 'Profit Net Tolco',
-    category: 'Performance',
-    dataType: 'currency',
-    defaultVisible: false,
-    width: 120
-  },
+
   {
     id: 'profit',
     label: 'Profit',
@@ -598,30 +591,9 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     defaultVisible: false,
     width: 100
   },
-  {
-    id: 'voicemail',
-    label: 'Voicemail',
-    category: 'Performance',
-    dataType: 'boolean',
-    defaultVisible: false,
-    width: 100
-  },
-  {
-    id: 'totalCost',
-    label: 'Total Cost',
-    category: 'Performance',
-    dataType: 'currency',
-    defaultVisible: false,
-    width: 100
-  },
-  {
-    id: 'tolcoCost',
-    label: 'Tolco Cost',
-    category: 'Performance',
-    dataType: 'currency',
-    defaultVisible: false,
-    width: 100
-  },
+
+
+
 
   // Timestamp Columns
   {

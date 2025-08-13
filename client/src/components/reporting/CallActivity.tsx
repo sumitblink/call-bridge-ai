@@ -1444,9 +1444,19 @@ export default function CallActivity() {
       case 'payout':
         return <div className="text-xs font-medium text-blue-600">${(call as any).payout || '0.00'}</div>;
       case 'timeToCall':
-        return <div className="text-xs">{(call as any).ringTime || 0}s</div>;
+        const timeToCall = (call as any).timeToCall || (call as any).time_to_call;
+        if (timeToCall >= 60) {
+          return <div className="text-xs">{Math.floor(timeToCall / 60)}m {timeToCall % 60}s</div>;
+        }
+        return <div className="text-xs">{timeToCall || 0}s</div>;
       case 'timeToConnect':
-        return <div className="text-xs">{(call as any).connectionTime || 0}s</div>;
+        const timeToConnect = (call as any).timeToConnect || (call as any).time_to_connect;
+        if (timeToConnect >= 1000) {
+          const seconds = Math.floor(timeToConnect / 1000);
+          const milliseconds = timeToConnect % 1000;
+          return <div className="text-xs">{seconds}.{Math.floor(milliseconds / 100)}s</div>;
+        }
+        return <div className="text-xs">{timeToConnect || 0}ms</div>;
       
       // Additional missing column mappings from database
       case 'targetNumber':
