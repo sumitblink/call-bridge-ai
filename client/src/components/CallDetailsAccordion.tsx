@@ -161,8 +161,12 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
+      case 'completed-long':
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
       case 'completed':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'short-call':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
       case 'in-progress':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'failed':
@@ -178,8 +182,12 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
+      case 'completed-long':
+        return <Trophy className="h-4 w-4" />;
       case 'completed':
         return <CheckCircle className="h-4 w-4" />;
+      case 'short-call':
+        return <Timer className="h-4 w-4" />;
       case 'in-progress':
         return <Activity className="h-4 w-4" />;
       case 'failed':
@@ -329,17 +337,22 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
                         </div>
                       </>
                     )}
-                    {buyer && (
+                    {buyer ? (
                       <>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Buyer:</span>
                           <span className="font-medium">{buyer.name}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Buyer Phone:</span>
-                          <span className="font-mono text-xs">{buyer.phoneNumber}</span>
+                          <span className="text-muted-foreground">Buyer Status:</span>
+                          <Badge className="bg-green-100 text-green-800">{buyer.status || 'Active'}</Badge>
                         </div>
                       </>
+                    ) : (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Buyer:</span>
+                        <span className="text-muted-foreground">RTB External Buyers</span>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
