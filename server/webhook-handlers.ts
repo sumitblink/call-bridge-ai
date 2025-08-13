@@ -46,13 +46,17 @@ export class WebhookHandlers {
         updateData.callQuality = this.determineCallQuality(parseInt(webhookData.CallDuration));
       }
 
-      // Capture hangup reasons for failed calls
+      // Capture hangup reasons for failed calls with proper descriptions
       if (['busy', 'no-answer', 'failed', 'canceled'].includes(webhookData.CallStatus)) {
-        updateData.hangupCause = webhookData.CallStatus;
+        updateData.hangupCause = this.getHangupDescription(webhookData.CallStatus);
+        updateData.whoHungUp = 'system'; // System termination for failed calls
         updateData.disposition = 'no_connection';
       } else if (webhookData.CallStatus === 'completed') {
         const duration = parseInt(webhookData.CallDuration || '0');
         updateData.disposition = duration >= 30 ? 'connected' : 'short_call';
+        // Set initial hangup data - will be enhanced by Voice Insights
+        updateData.hangupCause = 'Call completed normally';
+        updateData.whoHungUp = 'unknown'; // Will be updated by Voice Insights
       }
 
       // Update call costs (Twilio pricing)
