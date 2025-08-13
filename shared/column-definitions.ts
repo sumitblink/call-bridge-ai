@@ -508,22 +508,8 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     defaultVisible: false,
     width: 100
   },
-  {
-    id: 'duplicate',
-    label: 'Duplicate',
-    category: 'Performance',
-    dataType: 'boolean',
-    defaultVisible: true,
-    width: 100
-  },
-  {
-    id: 'previouslyConnected',
-    label: 'Previously Connected',
-    category: 'Performance',
-    dataType: 'boolean',
-    defaultVisible: true,
-    width: 150
-  },
+
+
   {
     id: 'previouslyConnectedDate',
     label: 'Previously Connected Date',
@@ -556,14 +542,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     defaultVisible: false,
     width: 100
   },
-  {
-    id: 'approvedAdjustment',
-    label: 'Approved Adjustment',
-    category: 'Performance',
-    dataType: 'boolean',
-    defaultVisible: false,
-    width: 150
-  },
+
   {
     id: 'revenue',
     label: 'Revenue',
