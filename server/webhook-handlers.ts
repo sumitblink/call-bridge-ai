@@ -1,11 +1,14 @@
 // Enhanced Twilio Webhook Handlers for Complete Call Attribution
 import { HybridStorage } from './hybrid-storage.js';
+import { TwilioVoiceInsights } from './twilio-voice-insights.js';
 
 export class WebhookHandlers {
   private storage: HybridStorage;
+  private voiceInsights: TwilioVoiceInsights;
 
   constructor(storage: HybridStorage) {
     this.storage = storage;
+    this.voiceInsights = new TwilioVoiceInsights();
   }
 
   /**
@@ -70,7 +73,40 @@ export class WebhookHandlers {
         }
       }
 
-      // Update the call record
+      // Get detailed hangup information from Voice Insights API
+      if (webhookData.CallStatus === 'completed' || webhookData.CallStatus === 'no-answer' || webhookData.CallStatus === 'busy') {
+        console.log(`🔍 Fetching Voice Insights for precise hangup data...`);
+        
+        // Delay slightly to ensure call summary is available
+        setTimeout(async () => {
+          const insights = await this.voiceInsights.getCallSummary(webhookData.CallSid);
+          
+          if (insights && insights.whoHungUp) {
+            const enhancedUpdateData = {
+              whoHungUp: insights.whoHungUp,
+              hangupCause: this.voiceInsights.getHangupDescription(insights.whoHungUp),
+              lastSipResponse: insights.lastSipResponse,
+              callQuality: this.voiceInsights.getCallQualityAssessment(insights),
+              silenceDetected: insights.silenceDetected,
+              packetLoss: insights.packetLossDetected,
+              jitterDetected: insights.jitterDetected,
+              codecUsed: insights.codecUsed,
+              updatedAt: new Date()
+            };
+            
+            console.log(`📞 Voice Insights - Who Hung Up: ${insights.whoHungUp}`);
+            console.log(`📊 Call Quality: ${enhancedUpdateData.callQuality}`);
+            
+            // Update call with Voice Insights data
+            await this.storage.updateCallStatus(existingCall.id, enhancedUpdateData);
+            console.log(`✅ Enhanced hangup data applied to call ${existingCall.id}`);
+          } else {
+            console.log(`⚠️ Voice Insights not available yet for ${webhookData.CallSid}`);
+          }
+        }, 5000); // Wait 5 seconds for call summary to be available
+      }
+
+      // Update the call record with initial webhook data
       await this.storage.updateCallStatus(existingCall.id, updateData);
       
       console.log(`✅ Call updated successfully`);
