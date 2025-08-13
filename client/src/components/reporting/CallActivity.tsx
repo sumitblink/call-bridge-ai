@@ -61,6 +61,13 @@ interface Call {
   numberPoolId: number | null;
   createdAt: string;
   updatedAt: string;
+  // Enhanced fields from backend
+  buyerName?: string;
+  buyerEmail?: string;
+  campaignName?: string;
+  targetName?: string;
+  targetCompany?: string;
+  targetId?: number;
 }
 
 interface Campaign {
@@ -1387,6 +1394,10 @@ export default function CallActivity() {
         const campaign = campaigns.find(c => c.id === call.campaignId);
         return <div className="truncate text-xs">{campaign?.name || 'Unknown'}</div>;
       case 'buyer':
+        // Use enhanced buyerName field (includes RTB target company names) or fallback to buyer lookup
+        if (call.buyerName) {
+          return <div className="truncate text-xs">{call.buyerName}</div>;
+        }
         const buyer = buyers.find(b => b.id === call.buyerId);
         return <div className="truncate text-xs">{(buyer as any)?.companyName || buyer?.name || 'No Buyer'}</div>;
       case 'target':
@@ -1759,7 +1770,7 @@ export default function CallActivity() {
             case 'buyerId':
               return call.buyerId || 'N/A';
             case 'buyer':
-              return buyers.find(b => b.id === call.buyerId)?.name || 'No Buyer';
+              return call.buyerName || buyers.find(b => b.id === call.buyerId)?.name || 'No Buyer';
             default:
               return (call as any)[col] || '';
           }
