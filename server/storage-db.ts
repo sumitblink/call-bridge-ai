@@ -713,12 +713,8 @@ export class DatabaseStorage implements IStorage {
           hangupCause: calls.hangupCause,
           disposition: calls.disposition,
           whoHungUp: calls.whoHungUp,
-          // Buyer fields - Show RTB target company if RTB call, otherwise show buyer
-          buyerName: sql<string>`CASE 
-            WHEN ${calls.targetId} IS NOT NULL AND ${rtbTargets.companyName} IS NOT NULL 
-            THEN ${rtbTargets.companyName}
-            ELSE ${buyers.companyName}
-          END`,
+          // Buyer fields - Use stored buyer_name from calls table
+          buyerName: calls.buyerName,
           buyerEmail: buyers.email,
           // Campaign fields  
           campaignName: campaigns.name,

@@ -251,6 +251,7 @@ export const calls = pgTable("calls", {
   id: serial("id").primaryKey(),
   campaignId: uuid("campaign_id").references(() => campaigns.id),
   buyerId: integer("buyer_id").references(() => buyers.id), // Top-level buyer
+  buyerName: varchar("buyer_name", { length: 255 }), // Computed buyer name (RTB target company or buyer company)
   targetId: integer("target_id").references(() => targets.id), // Specific target/destination
   publisherId: integer("publisher_id").references(() => publishers.id), // Publisher/affiliate who generated the call
   publisherName: varchar("publisher_name", { length: 255 }), // Publisher name from DNI tracking
