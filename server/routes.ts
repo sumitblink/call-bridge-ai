@@ -5240,11 +5240,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Twilio Webhook Endpoints for Live Call Handling
-  // These endpoints handle incoming calls and route them to buyers
+  // Enhanced Twilio Webhook Endpoints with Complete Attribution
   app.post('/api/webhooks/twilio/voice', handleIncomingCall);
-  app.post('/api/webhooks/twilio/status', handleCallStatus);
-  app.post('/api/webhooks/twilio/recording', handleRecordingStatus);
+  app.post('/api/webhooks/twilio/status', async (req, res) => {
+    try {
+      console.log(`\n🔔 === ENHANCED TWILIO STATUS WEBHOOK ===`);
+      console.log(`📞 Call SID: ${req.body.CallSid}`);
+      console.log(`📊 Status: ${req.body.CallStatus}`);
+      console.log(`⏱️ Duration: ${req.body.CallDuration || 0}s`);
+
+      // Import and use enhanced webhook handler
+      const { WebhookHandlers } = await import('./webhook-handlers');
+      const webhookHandler = new WebhookHandlers(storage);
+
+      // Handle status update with comprehensive attribution
+      const statusResult = await webhookHandler.handleCallStatusUpdate(req.body);
+      
+      if (statusResult.success) {
+        // Try to attribute to session for DNI calls
+        await webhookHandler.attributeCallToSession(req.body.CallSid, req.body.From);
+        
+        // Assign RTB revenue if applicable
+        if (statusResult.callId) {
+          await webhookHandler.assignRTBRevenue(statusResult.callId);
+        }
+        
+        console.log(`✅ Enhanced webhook processing complete`);
+      } else {
+        console.log(`❌ Enhanced webhook failed: ${statusResult.error}`);
+      }
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error(`💥 Enhanced webhook error:`, error);
+      res.sendStatus(500);
+    }
+  });
+
+  app.post('/api/webhooks/twilio/recording', async (req, res) => {
+    try {
+      console.log(`\n🎙️ === RECORDING WEBHOOK ===`);
+      
+      // Import and use enhanced webhook handler
+      const { WebhookHandlers } = await import('./webhook-handlers');
+      const webhookHandler = new WebhookHandlers(storage);
+      
+      const recordingResult = await webhookHandler.handleRecordingComplete(req.body);
+      
+      if (recordingResult.success) {
+        console.log(`✅ Recording webhook processed successfully`);
+      } else {
+        console.log(`❌ Recording webhook failed: ${recordingResult.error}`);
+      }
+      
+      res.sendStatus(200);
+    } catch (error) {
+      console.error(`💥 Recording webhook error:`, error);
+      res.sendStatus(500);
+    }
+  });
 
   // Tracking Tag Webhook Endpoints
   // Handle incoming calls to tracking tag primary numbers

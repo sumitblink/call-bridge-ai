@@ -398,6 +398,14 @@ class HybridStorage implements IStorage {
     );
   }
 
+  // Enhanced call status update method for webhook processing
+  async updateCallStatus(callId: number, updates: any): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.updateCallStatus(callId, updates),
+      () => Promise.resolve(false) // Memory storage fallback
+    );
+  }
+
   // Call Logs
   async getCallLogs(callId: number): Promise<CallLog[]> {
     return this.executeOperation(

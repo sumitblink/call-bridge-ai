@@ -571,12 +571,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCall(id: number, updates: Partial<InsertCall>): Promise<Call | undefined> {
+    console.log(`📊 [DatabaseStorage] Updating call ${id} with:`, updates);
+    
+    const updateData = {
+      ...updates,
+      updatedAt: new Date()
+    };
+    
     const [updatedCall] = await db
       .update(calls)
-      .set(updates)
+      .set(updateData)
       .where(eq(calls.id, id))
       .returning();
+      
+    if (updatedCall) {
+      console.log(`✅ [DatabaseStorage] Call ${id} updated successfully`);
+    } else {
+      console.log(`❌ [DatabaseStorage] Failed to update call ${id}`);
+    }
+    
     return updatedCall;
+  }
+
+  // Enhanced call status update method for webhook processing
+  async updateCallStatus(callId: number, updates: any): Promise<boolean> {
+    try {
+      console.log(`📊 [DatabaseStorage] Updating call status ${callId} with:`, updates);
+      
+      const updateData = {
+        ...updates,
+        updatedAt: new Date()
+      };
+      
+      const result = await db
+        .update(calls)
+        .set(updateData)
+        .where(eq(calls.id, callId));
+        
+      const success = result.rowCount > 0;
+      console.log(`${success ? '✅' : '❌'} [DatabaseStorage] Call status update ${success ? 'succeeded' : 'failed'}`);
+      
+      return success;
+    } catch (error) {
+      console.error(`💥 [DatabaseStorage] Call status update error:`, error);
+      return false;
+    }
   }
 
   // Call logs
