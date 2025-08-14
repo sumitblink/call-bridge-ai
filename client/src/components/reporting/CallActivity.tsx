@@ -112,26 +112,8 @@ interface CallDetailsExpandedProps {
 function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpandedProps) {
   const [activeTab, setActiveTab] = useState("events");
 
-  // Fetch RTB auction data for this specific call
+  // Fetch RTB auction data for this specific call - REAL DATA FROM DATABASE
   const { data: rtbAuctionData, isLoading: isLoadingRtb, error: rtbError } = useQuery({
-    queryKey: ['/api/calls', call.id, 'rtb'],
-    queryFn: async () => {
-      const response = await fetch(`/api/calls/${call.id}/rtb`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch RTB data');
-      }
-      return response.json();
-    },
-    enabled: activeTab === 'rtb' || activeTab === 'routing' || activeTab === 'events' || activeTab === 'ringtree', // Fetch for tabs that need RTB data
-  });
-
-  // Fetch comprehensive RTB auction details (Ringba-style)
-  const { data: comprehensiveRtbData, isLoading: isLoadingComprehensiveRtb } = useQuery({
     queryKey: ['/api/calls', call.id, 'rtb-auction-details'],
     queryFn: async () => {
       const response = await fetch(`/api/calls/${call.id}/rtb-auction-details`, {
@@ -141,12 +123,26 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
         },
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch comprehensive RTB auction data');
+        throw new Error('Failed to fetch RTB data');
       }
-      return response.json();
+      const data = await response.json();
+      // Return the bidResponses array with mapped fields for real data display
+      return data.bidResponses?.map((bid: any) => ({
+        targetId: bid.rtbTargetId,
+        targetName: bid.targetName,
+        bidAmount: bid.bidAmount,
+        destinationNumber: bid.destinationNumber,
+        responseTime: bid.responseTimeMs,
+        status: bid.responseStatus, // Real status: 'success', 'error', 'timeout'
+        rejectionReason: bid.rejectionReason, // Real rejection reasons from database
+        isWinner: bid.isWinningBid,
+        rawResponse: bid.rawResponse
+      })) || [];
     },
-    enabled: activeTab === 'rtb-auction' || activeTab === 'events', // Only fetch when needed
+    enabled: activeTab === 'rtb' || activeTab === 'routing' || activeTab === 'events' || activeTab === 'ringtree', // Fetch for tabs that need RTB data
   });
+
+  // Remove duplicate query - using rtbAuctionData above for all RTB data needs
 
   const formatDuration = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
