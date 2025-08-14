@@ -9598,6 +9598,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Voice Insights API - Manual fetch for existing calls
+  app.post('/api/calls/:callId/voice-insights', requireAuth, async (req: any, res) => {
+    try {
+      const { callId } = req.params;
+      const userId = req.user?.id;
+      
+      // Get the call record and verify ownership
+      const calls = await storage.getCalls();
+      const call = calls.find(c => c.id === parseInt(callId) && c.userId === userId);
+      
+      if (!call) {
+        return res.status(404).json({ error: 'Call not found' });
+      }
+      
+      if (!call.callSid) {
+        return res.status(400).json({ error: 'Call does not have a Twilio SID' });
+      }
+      
+      // Import Voice Insights service
+      const { twilioVoiceInsights } = await import('./twilio-voice-insights');
+      
+      // Fetch Voice Insights data
+      const hangupInfo = await twilioVoiceInsights.updateCallWithVoiceInsights(
+        call.callSid, 
+        call.id
+      );
+      
+      if (!hangupInfo) {
+        return res.status(404).json({ 
+          error: 'Voice Insights data not available', 
+          message: 'Data may take up to 10 minutes after call completion to be available'
+        });
+      }
+      
+      // Update call record with Voice Insights data
+      const updates: any = {};
+      
+      if (hangupInfo.whoHungUp) {
+        updates.whoHungUp = hangupInfo.whoHungUp;
+      }
+      
+      if (hangupInfo.hangupCause) {
+        updates.hangupCause = hangupInfo.hangupCause;
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        await storage.updateCall(call.id, updates);
+        
+        // Log Voice Insights fetch
+        await storage.createCallLog({
+          callId: call.id,
+          buyerId: call.buyerId,
+          action: 'voice_insights_manual',
+          response: `Manual Voice Insights fetch: Who hung up: ${hangupInfo.whoHungUp}, Cause: ${hangupInfo.hangupCause}`,
+        });
+      }
+      
+      res.json({
+        success: true,
+        callId: call.id,
+        voiceInsights: hangupInfo,
+        updatedFields: updates
+      });
+      
+    } catch (error: any) {
+      console.error('Error fetching Voice Insights:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch Voice Insights data',
+        message: error.message
+      });
+    }
+  });
+
   // Call details router already mounted above - removed duplicate mounting
 
   const httpServer = createServer(app);

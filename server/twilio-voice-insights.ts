@@ -1,164 +1,216 @@
-// Twilio Voice Insights Call Summary API Integration
-import fetch from 'node-fetch';
+import twilio from 'twilio';
 
-export class TwilioVoiceInsights {
-  private accountSid: string;
-  private authToken: string;
-  private baseUrl: string;
+/**
+ * Twilio Voice Insights service for fetching detailed call analytics
+ * Provides "Who Hung Up" data and other Voice Insights properties
+ */
+export class TwilioVoiceInsightsService {
+  private client: twilio.Twilio;
 
   constructor() {
-    this.accountSid = process.env.TWILIO_ACCOUNT_SID!;
-    this.authToken = process.env.TWILIO_AUTH_TOKEN!;
-    this.baseUrl = `https://insights.twilio.com/v1/Voice`;
-    
-    if (!this.accountSid || !this.authToken) {
-      throw new Error('Twilio credentials not found in environment');
-    }
+    this.client = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
   }
 
   /**
-   * Fetch Call Summary from Twilio Voice Insights
-   * This provides detailed "who hung up" information and call quality metrics
+   * Fetch Voice Insights Call Summary for a specific call
+   * @param callSid - Twilio Call SID
+   * @returns Call summary with detailed insights
    */
-  async getCallSummary(callSid: string): Promise<any> {
+  async getCallSummary(callSid: string) {
     try {
-      console.log(`🔍 Fetching Voice Insights for call: ${callSid}`);
+      console.log(`[Voice Insights] Fetching call summary for ${callSid}`);
       
-      const url = `${this.baseUrl}/${this.accountSid}/Calls/${callSid}/Summary`;
-      const auth = Buffer.from(`${this.accountSid}:${this.authToken}`).toString('base64');
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const summary = await this.client.insights.v1
+        .calls(callSid)
+        .summary()
+        .fetch();
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`❌ Voice Insights API error: ${response.status} - ${errorText}`);
-        return null;
+      console.log(`[Voice Insights] Successfully fetched summary for ${callSid}`);
+      return summary;
+    } catch (error: any) {
+      console.error(`[Voice Insights] Error fetching call summary for ${callSid}:`, error.message);
+      
+      // Check if this is a "not found" error or requires Advanced Features
+      if (error.status === 404) {
+        console.log(`[Voice Insights] Call ${callSid} not found in Voice Insights (call may be too old or not eligible)`);
+      } else if (error.status === 401) {
+        console.log(`[Voice Insights] Voice Insights Advanced Features required for account`);
       }
-
-      const callSummary = await response.json();
-      console.log(`✅ Voice Insights data retrieved for ${callSid}`);
       
-      return this.parseCallSummary(callSummary);
-      
-    } catch (error) {
-      console.error(`💥 Voice Insights API error:`, error);
       return null;
     }
   }
 
   /**
-   * Parse Call Summary response to extract key hangup and quality data
+   * Extract "Who Hung Up" information from Voice Insights Call Summary
+   * @param summary - Twilio Voice Insights Call Summary
+   * @returns Object with who hung up and hangup cause data
    */
-  private parseCallSummary(summary: any): any {
-    const parsed = {
-      whoHungUp: null,
-      lastSipResponse: null,
-      callState: null,
-      silenceDetected: false,
-      packetLossDetected: false,
-      jitterDetected: false,
-      postDialDelay: null,
-      twilioRtpLatency: null,
-      // Connection details
-      fromConnection: null,
-      toConnection: null,
-      // Quality metrics
-      codecUsed: null,
-      packetLossPercentage: null,
-      averageJitter: null,
-      maxJitter: null,
-      mosScore: null,
-      roundTripTime: null
-    };
-
+  extractHangupInfo(summary: any) {
     try {
-      // Extract core properties
-      if (summary.properties) {
-        parsed.whoHungUp = summary.properties.who_hung_up || summary.properties.whoHungUp;
-        parsed.lastSipResponse = summary.properties.last_sip_response || summary.properties.lastSipResponse;
-        parsed.callState = summary.properties.call_state || summary.properties.callState;
-        parsed.silenceDetected = summary.properties.silence_detected || false;
-        parsed.postDialDelay = summary.properties.post_dial_delay || summary.properties.postDialDelay;
-        parsed.twilioRtpLatency = summary.properties.twilio_rtp_latency || summary.properties.twilioRtpLatency;
-      }
-
-      // Extract connection info from edges
-      if (summary.edges && summary.edges.length > 0) {
-        summary.edges.forEach((edge: any) => {
-          if (edge.from && edge.from.connection) {
-            parsed.fromConnection = edge.from.connection;
-          }
-          if (edge.to && edge.to.connection) {
-            parsed.toConnection = edge.to.connection;
-          }
-        });
-      }
-
-      // Extract quality metrics
-      if (summary.metrics && summary.metrics.length > 0) {
-        summary.metrics.forEach((metric: any) => {
-          if (metric.codec) parsed.codecUsed = metric.codec;
-          if (metric.packet_loss_detected) {
-            parsed.packetLossDetected = true;
-            parsed.packetLossPercentage = metric.packet_loss_percentage;
-          }
-          if (metric.jitter_detected) {
-            parsed.jitterDetected = true;
-            parsed.averageJitter = metric.average_jitter;
-            parsed.maxJitter = metric.max_jitter;
-          }
-          if (metric.mos_score) parsed.mosScore = metric.mos_score;
-          if (metric.round_trip_time) parsed.roundTripTime = metric.round_trip_time;
-        });
-      }
-
-      console.log(`📊 Parsed Voice Insights - Who Hung Up: ${parsed.whoHungUp}`);
-      return parsed;
+      // Extract "who hung up" from properties.disconnected_by
+      const disconnectedBy = summary.properties?.disconnected_by;
       
-    } catch (error) {
-      console.error(`💥 Error parsing call summary:`, error);
-      return parsed;
+      // Extract hangup cause from various sources
+      let hangupCause = null;
+      
+      // Check carrier edge for Q.850 cause codes
+      if (summary.carrierEdge?.properties?.q850_cause) {
+        hangupCause = `Q850-${summary.carrierEdge.properties.q850_cause}`;
+      }
+      
+      // Check SIP edge for Q.850 cause codes
+      if (!hangupCause && summary.sipEdge?.properties?.q850_cause) {
+        hangupCause = `Q850-${summary.sipEdge.properties.q850_cause}`;
+      }
+      
+      // Map Twilio's disconnected_by values to our format
+      let whoHungUp = null;
+      switch (disconnectedBy) {
+        case 'caller':
+          whoHungUp = 'caller';
+          break;
+        case 'callee':
+          whoHungUp = 'callee';
+          break;
+        case 'unknown':
+          whoHungUp = 'unknown';
+          break;
+        default:
+          whoHungUp = disconnectedBy || 'unknown';
+      }
+
+      // If we don't have hangup cause from Q.850, use call state
+      if (!hangupCause) {
+        const callState = summary.callState;
+        switch (callState) {
+          case 'completed':
+            hangupCause = 'normal_completion';
+            break;
+          case 'busy':
+            hangupCause = 'busy';
+            break;
+          case 'noanswer':
+            hangupCause = 'no_answer';
+            break;
+          case 'failed':
+            hangupCause = 'failed';
+            break;
+          case 'canceled':
+            hangupCause = 'canceled';
+            break;
+          default:
+            hangupCause = callState || 'unknown';
+        }
+      }
+
+      return {
+        whoHungUp,
+        hangupCause,
+        disconnectedBy,
+        callState: summary.callState,
+        answeredBy: summary.answeredBy,
+        processingState: summary.processingState
+      };
+    } catch (error: any) {
+      console.error('[Voice Insights] Error extracting hangup info:', error.message);
+      return {
+        whoHungUp: 'unknown',
+        hangupCause: 'extraction_error',
+        disconnectedBy: null,
+        callState: null,
+        answeredBy: null,
+        processingState: null
+      };
     }
   }
 
   /**
-   * Get enhanced hangup information with human-readable descriptions
+   * Update call record with Voice Insights data
+   * @param callSid - Twilio Call SID
+   * @param callId - Internal call ID
+   * @returns Updated hangup information
    */
-  getHangupDescription(whoHungUp: string): string {
-    switch (whoHungUp?.toLowerCase()) {
-      case 'caller':
-        return 'Caller hung up';
-      case 'callee':
-        return 'Callee hung up';
-      case 'twilio':
-        return 'Twilio terminated call';
-      case 'carrier':
-        return 'Carrier terminated call';
-      case 'unknown':
-        return 'Unknown termination';
-      default:
-        return whoHungUp || 'Not determined';
+  async updateCallWithVoiceInsights(callSid: string, callId: number) {
+    try {
+      console.log(`[Voice Insights] Updating call ${callId} with Voice Insights data`);
+      
+      // Fetch Voice Insights summary
+      const summary = await this.getCallSummary(callSid);
+      if (!summary) {
+        console.log(`[Voice Insights] No summary available for call ${callId}`);
+        return null;
+      }
+
+      // Extract hangup information
+      const hangupInfo = this.extractHangupInfo(summary);
+      
+      console.log(`[Voice Insights] Call ${callId} hangup info:`, {
+        whoHungUp: hangupInfo.whoHungUp,
+        hangupCause: hangupInfo.hangupCause,
+        callState: hangupInfo.callState
+      });
+
+      return hangupInfo;
+    } catch (error: any) {
+      console.error(`[Voice Insights] Error updating call ${callId}:`, error.message);
+      return null;
     }
   }
 
   /**
-   * Get call quality assessment based on metrics
+   * Extract additional quality metrics from Voice Insights
+   * @param summary - Voice Insights Call Summary
+   * @returns Quality metrics object
    */
-  getCallQualityAssessment(insights: any): string {
-    const issues = [];
-    
-    if (insights.silenceDetected) issues.push('silence detected');
-    if (insights.packetLossDetected) issues.push(`packet loss (${insights.packetLossPercentage}%)`);
-    if (insights.jitterDetected) issues.push(`jitter (avg: ${insights.averageJitter}ms)`);
-    if (insights.mosScore && insights.mosScore < 3.5) issues.push(`low MOS score (${insights.mosScore})`);
-    
-    if (issues.length === 0) return 'Good quality';
-    return `Quality issues: ${issues.join(', ')}`;
+  extractQualityMetrics(summary: any) {
+    try {
+      const metrics: any = {
+        postDialDelay: summary.properties?.pdd_ms || null,
+        lastSipResponse: summary.properties?.last_sip_response_num || null,
+        direction: summary.properties?.direction || null,
+        queueTime: summary.properties?.queue_time || null,
+        tags: summary.tags || [],
+        callType: summary.callType || null,
+        duration: summary.duration || null,
+        connectDuration: summary.connectDuration || null
+      };
+
+      // Extract audio quality indicators
+      if (summary.sdkEdge?.metrics) {
+        const sdkMetrics = summary.sdkEdge.metrics;
+        
+        // MOS (Mean Opinion Score) for call quality
+        if (sdkMetrics.inbound?.mos) {
+          metrics.mosScore = sdkMetrics.inbound.mos.average || null;
+        }
+        
+        // Packet loss percentage
+        if (sdkMetrics.inbound?.packets_loss_percentage) {
+          metrics.packetLoss = sdkMetrics.inbound.packets_loss_percentage;
+        }
+        
+        // Jitter information
+        if (sdkMetrics.inbound?.jitter) {
+          metrics.jitter = sdkMetrics.inbound.jitter.average || null;
+        }
+        
+        // RTT (Round Trip Time)
+        if (sdkMetrics.inbound?.rtt) {
+          metrics.rtt = sdkMetrics.inbound.rtt.average || null;
+        }
+      }
+
+      return metrics;
+    } catch (error: any) {
+      console.error('[Voice Insights] Error extracting quality metrics:', error.message);
+      return {};
+    }
   }
 }
+
+// Export singleton instance
+export const twilioVoiceInsights = new TwilioVoiceInsightsService();

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Phone, DollarSign, Clock, MapPin, Search, Filter, Download, Eye, Play, PhoneOff, Calendar, Globe, Settings, GripVertical } from "lucide-react";
+import { Phone, DollarSign, Clock, MapPin, Search, Filter, Download, Eye, Play, PhoneOff, Calendar, Globe, Settings, GripVertical, Activity } from "lucide-react";
 import { ColumnCustomizer } from "@/components/reporting/ColumnCustomizer";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 // Format duration in seconds to human readable format
 function formatDuration(seconds: number): string {
   if (seconds < 60) {
@@ -108,6 +110,9 @@ export default function CallDetails() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedCallId, setSelectedCallId] = useState<number | null>(null);
   const [showColumnCustomizer, setShowColumnCustomizer] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const [columnConfig, setColumnConfig] = useState<ColumnConfig[]>([
     { id: 'callInfo', label: 'Call Info', visible: true, order: 0 },
     { id: 'campaign', label: 'Campaign', visible: true, order: 1 },
@@ -144,8 +149,40 @@ export default function CallDetails() {
     enabled: !!selectedCallId,
   });
 
-  const calls: CallDetail[] = callsData?.calls || [];
-  const bids: BidDetail[] = bidDetails?.bids || [];
+  const calls: CallDetail[] = (callsData as any)?.calls || [];
+  const bids: BidDetail[] = (bidDetails as any)?.bids || [];
+
+  // Voice Insights mutation
+  const voiceInsightsMutation = useMutation({
+    mutationFn: async (callId: number) => {
+      const response = await fetch(`/api/calls/${callId}/voice-insights`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch Voice Insights');
+      }
+      return response.json();
+    },
+    onSuccess: (data: any, callId) => {
+      toast({
+        title: "Voice Insights Updated",
+        description: `Successfully fetched Voice Insights data for call ${callId}. Who hung up: ${data.voiceInsights?.whoHungUp || 'unknown'}`,
+      });
+      // Refresh the calls data
+      queryClient.invalidateQueries({ queryKey: ["/api/call-details/summary"] });
+    },
+    onError: (error: any, callId) => {
+      toast({
+        title: "Voice Insights Error",
+        description: error.message || `Failed to fetch Voice Insights for call ${callId}`,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Add dynamic tag columns to column configuration when URL parameters are loaded
   const allColumns = [...columnConfig];
@@ -179,14 +216,14 @@ export default function CallDetails() {
   });
 
   const getStatusBadge = (status: string) => {
-    const variants = {
+    const variants: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
       completed: "default",
       failed: "destructive", 
       "no-answer": "secondary",
       busy: "secondary",
       cancelled: "outline"
     };
-    return <Badge variant={variants[status as keyof typeof variants] || "outline"}>{status}</Badge>;
+    return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
   };
 
   const getBidStatusBadge = (status: string, rejectionReason: string | null, isWinner: boolean) => {
@@ -339,15 +376,28 @@ export default function CallDetails() {
         );
       case 'actions':
         return (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSelectedCallId(call.id)}
-            className="h-6 px-2 text-xs"
-          >
-            <Eye className="h-3 w-3 mr-1" />
-            View Bids
-          </Button>
+          <div className="flex space-x-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedCallId(call.id)}
+              className="h-6 px-2 text-xs"
+            >
+              <Eye className="h-3 w-3 mr-1" />
+              View Bids
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => voiceInsightsMutation.mutate(call.id)}
+              disabled={voiceInsightsMutation.isPending || !call.callSid}
+              className="h-6 px-2 text-xs"
+              title="Fetch Voice Insights data including 'Who Hung Up' information"
+            >
+              <Activity className="h-3 w-3 mr-1" />
+              {voiceInsightsMutation.isPending ? 'Fetching...' : 'Voice Insights'}
+            </Button>
+          </div>
         );
       default:
         // Handle dynamic tag columns
