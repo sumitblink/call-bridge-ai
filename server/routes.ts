@@ -1046,12 +1046,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 winningBidAmount = winner.bidAmount || 0;
                 winnerDestination = winner.destinationNumber || null;
                 
-                // Get buyer name for winner target
+                // Get buyer name for winner target using direct database query
                 if (winner.targetId) {
                   try {
-                    const target = await storage.getTarget(winner.targetId);
+                    const target = await db.query.rtbTargets.findFirst({
+                      where: eq(rtbTargets.id, winner.targetId)
+                    });
                     if (target && target.buyerId) {
-                      const buyer = await storage.getBuyer(target.buyerId);
+                      const buyer = await db.query.buyers.findFirst({
+                        where: eq(buyers.id, target.buyerId)
+                      });
                       winnerBuyerName = buyer?.name || null;
                     }
                   } catch (e) {
@@ -1177,7 +1181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         auctionDetails.map(async (bid) => {
           let buyerName = 'Unknown Buyer';
           
-          // Get buyer name through target directly from database
+          // Get buyer name from target - each target belongs to a buyer (company)
           if (bid.targetId) {
             try {
               const target = await db.query.rtbTargets.findFirst({
@@ -1187,10 +1191,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const buyer = await db.query.buyers.findFirst({
                   where: eq(buyers.id, target.buyerId)
                 });
-                buyerName = buyer?.name || 'Unknown Buyer';
+                buyerName = buyer?.name || `Buyer ${target.buyerId}`;
+              } else {
+                buyerName = `Target ${bid.targetId}`;
               }
             } catch (e) {
               console.log(`Could not get buyer for target ${bid.targetId}`);
+              buyerName = `Target ${bid.targetId}`;
             }
           }
 
