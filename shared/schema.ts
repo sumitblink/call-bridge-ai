@@ -927,7 +927,7 @@ export const insertBuyerSchema = createInsertSchema(buyers).omit({
   userId: z.number().optional(),
   // Basic Information
   name: z.string().optional(), // Sub ID field
-  companyName: z.string().min(1, "Company name is required"),
+  buyerName: z.string().min(1, "Buyer name is required"),
   email: z.string().email("Valid email is required").optional().or(z.literal("")),
   phoneNumber: z.string().optional(),
   status: z.enum(["active", "paused", "inactive"]).optional(),
@@ -1409,7 +1409,7 @@ export const rtbTargets = pgTable("rtb_targets", {
   
   // Target Configuration
   name: varchar("name", { length: 256 }).notNull(),
-  companyName: varchar("company_name", { length: 256 }),
+  buyerName: varchar("buyer_name", { length: 256 }),
   contactPerson: varchar("contact_person", { length: 256 }),
   contactEmail: varchar("contact_email", { length: 256 }),
   contactPhone: varchar("contact_phone", { length: 50 }),
@@ -1742,7 +1742,7 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
 }).extend({
   userId: z.number().optional(),
   name: z.string().min(1, "Target name is required"),
-  companyName: z.string().optional(),
+  buyerName: z.string().optional(),
   contactPerson: z.string().optional(),
   contactEmail: z.string().email().optional(),
   contactPhone: z.string().optional(),
