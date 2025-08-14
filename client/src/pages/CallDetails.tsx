@@ -219,20 +219,21 @@ export default function CallDetails() {
   const [columnConfig, setColumnConfig] = useState<ColumnConfig[]>([
     { id: 'callInfo', label: 'Call Info', visible: true, width: 180, order: 0, resizable: true },
     { id: 'campaign', label: 'Campaign', visible: true, width: 150, order: 1, resizable: true },
-    { id: 'fromTo', label: 'From → To', visible: true, width: 160, order: 2, resizable: true },
-    { id: 'duration', label: 'Duration', visible: true, width: 100, order: 3, resizable: true },
-    { id: 'status', label: 'Status', visible: true, width: 120, order: 4, resizable: true },
-    { id: 'whoHungUp', label: 'Who Hung Up', visible: true, width: 140, order: 5, resizable: true },
-    { id: 'callDateTime', label: 'Call Date/Time', visible: true, width: 160, order: 6, resizable: true },
-    { id: 'destinationType', label: 'Destination Type', visible: true, width: 130, order: 7, resizable: true },
-    { id: 'recording', label: 'Recording', visible: true, width: 120, order: 8, resizable: true },
-    { id: 'revenue', label: 'Revenue', visible: true, width: 100, order: 9, resizable: true },
-    { id: 'payout', label: 'Payout', visible: true, width: 100, order: 10, resizable: true },
-    { id: 'profit', label: 'Profit', visible: true, width: 100, order: 11, resizable: true },
-    { id: 'rtbWinner', label: 'RTB Winner', visible: true, width: 180, order: 12, resizable: true },
-    { id: 'winningBid', label: 'Winning Bid', visible: true, width: 120, order: 13, resizable: true },
-    { id: 'rtbStats', label: 'RTB Stats', visible: true, width: 140, order: 14, resizable: true },
-    { id: 'actions', label: 'Actions', visible: true, width: 200, order: 15, resizable: false },
+    { id: 'clickId', label: 'Click ID', visible: true, width: 120, order: 2, resizable: true },
+    { id: 'fromTo', label: 'From → To', visible: true, width: 160, order: 3, resizable: true },
+    { id: 'duration', label: 'Duration', visible: true, width: 100, order: 4, resizable: true },
+    { id: 'status', label: 'Status', visible: true, width: 120, order: 5, resizable: true },
+    { id: 'whoHungUp', label: 'Who Hung Up', visible: true, width: 140, order: 6, resizable: true },
+    { id: 'callDateTime', label: 'Call Date/Time', visible: true, width: 160, order: 7, resizable: true },
+    { id: 'destinationType', label: 'Destination Type', visible: true, width: 130, order: 8, resizable: true },
+    { id: 'recording', label: 'Recording', visible: true, width: 120, order: 9, resizable: true },
+    { id: 'revenue', label: 'Revenue', visible: true, width: 100, order: 10, resizable: true },
+    { id: 'payout', label: 'Payout', visible: true, width: 100, order: 11, resizable: true },
+    { id: 'profit', label: 'Profit', visible: true, width: 100, order: 12, resizable: true },
+    { id: 'rtbWinner', label: 'RTB Winner', visible: true, width: 180, order: 13, resizable: true },
+    { id: 'winningBid', label: 'Winning Bid', visible: true, width: 120, order: 14, resizable: true },
+    { id: 'rtbStats', label: 'RTB Stats', visible: true, width: 140, order: 15, resizable: true },
+    { id: 'actions', label: 'Actions', visible: true, width: 200, order: 16, resizable: false },
   ]);
 
   // Fetch all calls with detailed information
@@ -385,6 +386,14 @@ export default function CallDetails() {
         );
       case 'campaign':
         return <div className="font-medium text-sm">{call.campaignName}</div>;
+      case 'clickId':
+        return call.clickId ? (
+          <div className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+            {call.clickId}
+          </div>
+        ) : (
+          <span className="text-gray-400 text-xs">No Click ID</span>
+        );
       case 'fromTo':
         return (
           <div className="space-y-1">
