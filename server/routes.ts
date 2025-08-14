@@ -997,16 +997,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   .where(eq(rtbBidResponses.requestId, bidRequest.requestId))
                   .orderBy(desc(rtbBidResponses.bidAmount));
 
-                auctionDetails = bidResponses.map(row => ({
-                  id: row.rtb_bid_responses.id,
-                  targetId: row.rtb_bid_responses.rtbTargetId,
-                  targetName: row.rtb_targets?.name || `Target ${row.rtb_bid_responses.rtbTargetId}`,
-                  bidAmount: parseFloat(row.rtb_bid_responses.bidAmount?.toString() || '0'),
-                  destinationNumber: row.rtb_bid_responses.destinationNumber,
-                  responseTime: row.rtb_bid_responses.responseTimeMs,
-                  bidStatus: row.rtb_bid_responses.responseStatus,
-                  rejectionReason: row.rtb_bid_responses.rejectionReason
-                }));
+                // Get bid responses with buyer information
+                const bidResponsesWithBuyers = await Promise.all(
+                  bidResponses.map(async (row) => {
+                    let companyName = `Target ${row.rtb_bid_responses.rtbTargetId}`;
+                    
+                    if (row.rtb_targets && row.rtb_targets.buyerId) {
+                      try {
+                        const buyer = await db.query.buyers.findFirst({
+                          where: eq(buyers.id, row.rtb_targets.buyerId)
+                        });
+                        companyName = buyer?.name || buyer?.companyName || `Company ${row.rtb_targets.buyerId}`;
+                      } catch (e) {
+                        console.log(`Could not get buyer for target ${row.rtb_bid_responses.rtbTargetId}`);
+                      }
+                    }
+
+                    return {
+                      id: row.rtb_bid_responses.id,
+                      targetId: row.rtb_bid_responses.rtbTargetId,
+                      targetName: row.rtb_targets?.name || `Target ${row.rtb_bid_responses.rtbTargetId}`,
+                      companyName: companyName,
+                      bidAmount: parseFloat(row.rtb_bid_responses.bidAmount?.toString() || '0'),
+                      destinationNumber: row.rtb_bid_responses.destinationNumber,
+                      responseTime: row.rtb_bid_responses.responseTimeMs,
+                      bidStatus: row.rtb_bid_responses.responseStatus,
+                      rejectionReason: row.rtb_bid_responses.rejectionReason
+                    };
+                  })
+                );
+                
+                auctionDetails = bidResponsesWithBuyers;
               }
             } catch (error) {
               console.error(`Error fetching RTB data for call ${call.id}:`, error);
@@ -1181,25 +1202,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         auctionDetails.map(async (bid) => {
           let buyerName = 'Unknown Buyer';
           
-          // Get buyer name from target - each target belongs to a buyer (company)
-          if (bid.targetId) {
-            try {
-              const target = await db.query.rtbTargets.findFirst({
-                where: eq(rtbTargets.id, bid.targetId)
-              });
-              if (target && target.buyerId) {
-                const buyer = await db.query.buyers.findFirst({
-                  where: eq(buyers.id, target.buyerId)
-                });
-                buyerName = buyer?.name || `Buyer ${target.buyerId}`;
-              } else {
-                buyerName = `Target ${bid.targetId}`;
-              }
-            } catch (e) {
-              console.log(`Could not get buyer for target ${bid.targetId}`);
-              buyerName = `Target ${bid.targetId}`;
-            }
-          }
+          // Use the company name that was already fetched
+          buyerName = bid.companyName || `Target ${bid.targetId}`;
 
           return {
             id: bid.id || 0,
@@ -1207,6 +1211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             targetId: bid.targetId || 0,
             targetName: bid.targetName || `Target ${bid.targetId}`,
             buyerName,
+            companyName: bid.companyName || buyerName,
             bidAmount: bid.bidAmount || 0,
             destinationNumber: bid.destinationNumber || '',
             responseTime: bid.responseTime || 0,

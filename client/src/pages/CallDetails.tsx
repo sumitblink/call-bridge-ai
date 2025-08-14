@@ -52,6 +52,7 @@ interface BidDetail {
   targetId: number;
   targetName: string;
   buyerName: string;
+  companyName?: string;
   bidAmount: number;
   destinationNumber: string;
   responseTime: number;
@@ -347,11 +348,11 @@ export default function CallDetails() {
                         <TableRow key={bid.id} className={bid.isWinner ? "bg-yellow-50" : ""}>
                           <TableCell>
                             <div className="font-medium">{bid.targetName}</div>
-                            <div className="text-xs text-gray-500">ID: {bid.targetId}</div>
+                            <div className="text-xs text-gray-500">{bid.companyName || bid.buyerName}</div>
                           </TableCell>
                           
                           <TableCell>
-                            <div className="font-medium">{bid.buyerName || 'Unknown'}</div>
+                            <div className="font-medium">{bid.companyName || bid.buyerName || 'Unknown'}</div>
                           </TableCell>
                           
                           <TableCell>
