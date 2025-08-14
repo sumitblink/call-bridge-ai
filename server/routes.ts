@@ -2461,12 +2461,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[Database Assignment] Final Buyer ID: ${finalBuyerId}, Target ID: ${finalTargetId}`);
 
+      // For RTB calls, use the actual caller's number (fromNumber) instead of pool tracking number
+      // This matches Ringba's behavior where Caller ID shows the actual caller number
       let callData: any = {
         campaignId: campaign.id,
         buyerId: finalBuyerId, // Use proper buyer ID for both RTB and internal
         targetId: finalTargetId, // Use proper target ID for both RTB and internal
         callSid: CallSid,
-        fromNumber,
+        fromNumber: fromNumber, // Use actual caller's number for RTB calls (matches Ringba)
         toNumber,
         dialedNumber: toNumber,
         numberPoolId: parseInt(poolId),
@@ -2480,6 +2482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         routingData: JSON.stringify({
           ...routingData,
           routingMethod,
+          poolNumber: toNumber, // Store the pool/tracking number separately for reference
           externalDestination: routingMethod === 'rtb' ? targetPhoneNumber : null,
           rtbTargetName: routingMethod === 'rtb' ? selectedBuyer.companyName || selectedBuyer.name : null,
           timestamp: new Date().toISOString()
@@ -2929,11 +2932,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[Webhook RTB] Campaign financial config - Payout:', payout, 'Revenue:', revenue, 'Profit:', profit);
       
       // Create call record with RTB data
+      // For RTB calls, use the actual caller's number (fromNumber) instead of pool tracking number
+      // This matches Ringba's behavior where Caller ID shows the actual caller number
       let callData = {
         campaignId: campaign.id,
         buyerId: selectedBuyer.id,
         callSid: CallSid,
-        fromNumber,
+        fromNumber: fromNumber, // Use actual caller's number for RTB calls (matches Ringba)
         toNumber,
         status: 'ringing',
         startTime: new Date(),
@@ -2944,6 +2949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         routingData: JSON.stringify({
           ...routingData,
           routingMethod,
+          poolNumber: toNumber, // Store the pool/tracking number separately for reference
           timestamp: new Date().toISOString()
         })
       };
