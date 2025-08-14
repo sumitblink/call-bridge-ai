@@ -978,7 +978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const campaignName = campaign?.name || 'Unknown Campaign';
 
             // Get RTB auction details directly from database since storage method doesn't exist
-            let auctionDetails = [];
+            let auctionDetails: any[] = [];
             try {
               // Find RTB bid request for this call using call SID
               const bidRequest = await db.query.rtbBidRequests.findFirst({
@@ -1129,12 +1129,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verify ownership through campaign
-      if (!call.campaign || call.campaign.userId !== userId) {
+      if (!call.campaign || (call.campaign as any).userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
 
       // Get RTB auction details directly from database since storage method doesn't exist
-      let auctionDetails = [];
+      let auctionDetails: any[] = [];
       try {
         // Find RTB bid request for this call using call SID
         const bidRequest = await db.query.rtbBidRequests.findFirst({
@@ -1181,14 +1181,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (bid.targetId) {
             try {
               const target = await db.query.rtbTargets.findFirst({
-                where: eq(rtbTargets.id, bid.targetId),
-                with: {
-                  buyer: {
-                    columns: { name: true }
-                  }
-                }
+                where: eq(rtbTargets.id, bid.targetId)
               });
-              buyerName = target?.buyer?.name || 'Unknown Buyer';
+              if (target && target.buyerId) {
+                const buyer = await db.query.buyers.findFirst({
+                  where: eq(buyers.id, target.buyerId),
+                  columns: { name: true }
+                });
+                buyerName = buyer?.name || 'Unknown Buyer';
+              }
             } catch (e) {
               console.log(`Could not get buyer for target ${bid.targetId}`);
             }
