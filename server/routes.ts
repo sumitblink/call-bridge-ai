@@ -1116,12 +1116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get the call directly from database
       const call = await db.query.calls.findFirst({
-        where: eq(calls.id, callId),
-        with: {
-          campaign: {
-            columns: { userId: true, name: true }
-          }
-        }
+        where: eq(calls.id, callId)
       });
 
       if (!call) {
@@ -1129,7 +1124,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verify ownership through campaign
-      if (!call.campaign || (call.campaign as any).userId !== userId) {
+      const campaign = call.campaignId ? await db.query.campaigns.findFirst({
+        where: eq(campaigns.id, call.campaignId),
+        columns: { userId: true }
+      }) : null;
+      
+      if (!campaign || campaign.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
 
@@ -1185,8 +1185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
               if (target && target.buyerId) {
                 const buyer = await db.query.buyers.findFirst({
-                  where: eq(buyers.id, target.buyerId),
-                  columns: { name: true }
+                  where: eq(buyers.id, target.buyerId)
                 });
                 buyerName = buyer?.name || 'Unknown Buyer';
               }
