@@ -711,19 +711,17 @@ export class SupabaseStorage implements IStorage {
           hangupCause: calls.hangupCause,
           disposition: calls.disposition,
           whoHungUp: calls.whoHungUp,
-          // Buyer fields with null handling
-          buyerName: sql`COALESCE(${calls.buyerName}, ${buyers.companyName})`,
-          buyerEmail: buyers.email,
+          // Buyer fields
+          buyerName: calls.buyerName,
+          buyerEmail: sql`''::text`,
           // Campaign fields  
           campaignName: campaigns.name,
           // RTB Target fields
-          targetName: rtbTargets.name,
-          targetCompany: rtbTargets.companyName,
+          targetName: sql`''::text`,
+          targetCompany: sql`''::text`,
         })
         .from(calls)
         .innerJoin(campaigns, eq(calls.campaignId, campaigns.id))
-        .leftJoin(buyers, eq(calls.buyerId, buyers.id))
-        .leftJoin(rtbTargets, eq(calls.targetId, rtbTargets.id))
         .where(eq(campaigns.userId, userId))
         .orderBy(desc(calls.createdAt))
         .limit(1000);
