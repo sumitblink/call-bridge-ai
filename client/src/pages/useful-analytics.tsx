@@ -22,7 +22,14 @@ export default function UsefulAnalytics() {
 
   // Fetch real visitor session data with auto-refresh
   const { data: sessionData, isLoading, refetch } = useQuery({
-    queryKey: ['/api/tracking/live-sessions'],
+    queryKey: ['/api/tracking/live-sessions', timeRange],
+    queryFn: async () => {
+      const url = new URL('/api/tracking/live-sessions', window.location.origin);
+      url.searchParams.set('timeRange', timeRange);
+      const response = await fetch(url.toString(), { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch sessions');
+      return response.json();
+    },
     staleTime: 5000, // Refresh every 5 seconds
     refetchInterval: false, // Turn off auto-refresh to reduce console spam
   });
@@ -72,6 +79,13 @@ export default function UsefulAnalytics() {
   // Time-based analysis from actual data
   const { data: historicalData } = useQuery({
     queryKey: ['/api/analytics/historical', timeRange],
+    queryFn: async () => {
+      const url = new URL('/api/analytics/historical', window.location.origin);
+      url.searchParams.set('timeRange', timeRange);
+      const response = await fetch(url.toString(), { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch historical data');
+      return response.json();
+    },
     staleTime: 60000,
   });
 
@@ -82,6 +96,13 @@ export default function UsefulAnalytics() {
   // Attribution insights from real session data
   const { data: attributionMetrics } = useQuery({
     queryKey: ['/api/analytics/attribution-values', timeRange],
+    queryFn: async () => {
+      const url = new URL('/api/analytics/attribution-values', window.location.origin);
+      url.searchParams.set('timeRange', timeRange);
+      const response = await fetch(url.toString(), { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch attribution data');
+      return response.json();
+    },
     staleTime: 60000,
   });
 
@@ -290,7 +311,7 @@ export default function UsefulAnalytics() {
                         <Badge variant="outline">{campaign.source}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge size="sm" variant="secondary">{campaign.medium || 'none'}</Badge>
+                        <Badge variant="secondary">{campaign.medium || 'none'}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">

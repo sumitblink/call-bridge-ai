@@ -1317,103 +1317,19 @@ export class DatabaseStorage implements IStorage {
 
   // RTB Targets
   async getRtbTargets(userId?: number): Promise<RtbTarget[]> {
-    try {
-      // Use raw SQL query to bypass Drizzle issue
-      const result = await db.execute(sql`
-        SELECT id, user_id, name, buyer_name, company_name, contact_person, contact_email, 
-               contact_phone, endpoint_url, timeout_ms, connection_timeout, auth_method, auth_username, 
-               auth_password, auth_token, timezone, min_bid_amount, max_bid_amount, currency, 
-               is_active, created_at, updated_at
-        FROM rtb_targets 
-        ${userId ? sql`WHERE user_id = ${userId}` : sql``}
-        ORDER BY created_at DESC
-      `);
-      
-      const targets: RtbTarget[] = result.rows.map((row: any) => ({
-        id: row.id,
-        userId: row.user_id,
-        name: row.name,
-        buyerName: row.buyer_name,
-        companyName: row.company_name,
-        contactPerson: row.contact_person,
-        contactEmail: row.contact_email,
-        contactPhone: row.contact_phone,
-        endpointUrl: row.endpoint_url,
-        timeoutMs: row.timeout_ms,
-        connectionTimeout: row.connection_timeout,
-        authMethod: row.auth_method,
-        authUsername: row.auth_username,
-        authPassword: row.auth_password,
-        authToken: row.auth_token,
-        timezone: row.timezone,
-        minBidAmount: row.min_bid_amount,
-        maxBidAmount: row.max_bid_amount,
-        currency: row.currency,
-        isActive: row.is_active,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      }));
-      
-      return targets;
-    } catch (error) {
-      console.error('[getRtbTargets] Database query error:', error);
-      return [];
+    if (userId) {
+      return await db.select().from(rtbTargets).where(eq(rtbTargets.userId, userId));
     }
+    return await db.select().from(rtbTargets);
   }
 
   async getRtbTarget(id: number, userId?: number): Promise<RtbTarget | undefined> {
-    try {
-      if (!id) {
-        console.warn('[getRtbTarget] Target ID is null or undefined');
-        return undefined;
-      }
-      
-      // Use raw SQL query to bypass Drizzle issue
-      const result = await db.execute(sql`
-        SELECT id, user_id, name, buyer_name, company_name, contact_person, contact_email, 
-               contact_phone, endpoint_url, timeout_ms, connection_timeout, auth_method, auth_username, 
-               auth_password, auth_token, timezone, min_bid_amount, max_bid_amount, currency, 
-               is_active, created_at, updated_at
-        FROM rtb_targets 
-        WHERE id = ${id} ${userId ? sql`AND user_id = ${userId}` : sql``}
-        LIMIT 1
-      `);
-      
-      if (result.rows.length === 0) {
-        return undefined;
-      }
-      
-      const row = result.rows[0] as any;
-      const target: RtbTarget = {
-        id: row.id,
-        userId: row.user_id,
-        name: row.name,
-        buyerName: row.buyer_name,
-        companyName: row.company_name,
-        contactPerson: row.contact_person,
-        contactEmail: row.contact_email,
-        contactPhone: row.contact_phone,
-        endpointUrl: row.endpoint_url,
-        timeoutMs: row.timeout_ms,
-        connectionTimeout: row.connection_timeout,
-        authMethod: row.auth_method,
-        authUsername: row.auth_username,
-        authPassword: row.auth_password,
-        authToken: row.auth_token,
-        timezone: row.timezone,
-        minBidAmount: row.min_bid_amount,
-        maxBidAmount: row.max_bid_amount,
-        currency: row.currency,
-        isActive: row.is_active,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      };
-      
-      return target;
-    } catch (error) {
-      console.error('[getRtbTarget] Database query error:', error);
-      return undefined;
+    const whereConditions = [eq(rtbTargets.id, id)];
+    if (userId) {
+      whereConditions.push(eq(rtbTargets.userId, userId));
     }
+    const [target] = await db.select().from(rtbTargets).where(and(...whereConditions));
+    return target;
   }
 
   async createRtbTarget(target: InsertRtbTarget): Promise<RtbTarget> {
@@ -1532,35 +1448,10 @@ export class DatabaseStorage implements IStorage {
 
   // Campaign RTB Target Assignments (replaces router assignments)
   async getCampaignRtbTargets(campaignId: string): Promise<CampaignRtbTarget[]> {
-    try {
-      if (!campaignId) {
-        console.warn('[getCampaignRtbTargets] Campaign ID is null or undefined');
-        return [];
-      }
-      
-      // Use raw SQL query to bypass Drizzle issue
-      const result = await db.execute(sql`
-        SELECT id, campaign_id, rtb_target_id, priority, weight, is_active, assigned_at
-        FROM campaign_rtb_targets 
-        WHERE campaign_id = ${campaignId}
-      `);
-      
-      // Map the raw results to the expected CampaignRtbTarget format
-      const targets: CampaignRtbTarget[] = result.rows.map((row: any) => ({
-        id: row.id,
-        campaignId: row.campaign_id,
-        rtbTargetId: row.rtb_target_id,
-        priority: row.priority,
-        weight: row.weight,
-        isActive: row.is_active,
-        assignedAt: row.assigned_at,
-      }));
-      
-      return targets;
-    } catch (error) {
-      console.error('[getCampaignRtbTargets] Database query error:', error);
-      return [];
-    }
+    return await db
+      .select()
+      .from(campaignRtbTargets)
+      .where(eq(campaignRtbTargets.campaignId, campaignId));
   }
 
   async createCampaignRtbTarget(assignment: InsertCampaignRtbTarget): Promise<CampaignRtbTarget> {
@@ -1586,60 +1477,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRtbBidRequest(requestId: string): Promise<RtbBidRequest | undefined> {
-    try {
-      if (!requestId) {
-        console.warn('[getRtbBidRequest] Request ID is null or undefined');
-        return undefined;
-      }
-      
-      // Use raw SQL query to bypass Drizzle issue
-      const result = await db.execute(sql`
-        SELECT id, request_id, campaign_id, rtb_router_id, caller_id, caller_state, caller_zip, 
-               call_start_time, publisher_id, publisher_sub_id, inbound_number, inbound_call_id, 
-               expose_caller_id, tags, timeout_ms, total_targets_pinged, successful_responses,
-               winning_bid_amount, winning_target_id, request_sent_at, bidding_completed_at,
-               total_response_time_ms, created_at
-        FROM rtb_bid_requests 
-        WHERE request_id = ${requestId}
-        LIMIT 1
-      `);
-      
-      if (result.rows.length === 0) {
-        return undefined;
-      }
-      
-      const row = result.rows[0] as any;
-      const request: RtbBidRequest = {
-        id: row.id,
-        requestId: row.request_id,
-        campaignId: row.campaign_id,
-        rtbRouterId: row.rtb_router_id,
-        callerId: row.caller_id,
-        callerState: row.caller_state,
-        callerZip: row.caller_zip,
-        callStartTime: row.call_start_time,
-        publisherId: row.publisher_id,
-        publisherSubId: row.publisher_sub_id,
-        inboundNumber: row.inbound_number,
-        inboundCallId: row.inbound_call_id,
-        exposeCallerId: row.expose_caller_id,
-        tags: row.tags,
-        timeoutMs: row.timeout_ms,
-        totalTargetsPinged: row.total_targets_pinged,
-        successfulResponses: row.successful_responses,
-        winningBidAmount: row.winning_bid_amount,
-        winningTargetId: row.winning_target_id,
-        requestSentAt: row.request_sent_at,
-        biddingCompletedAt: row.bidding_completed_at,
-        totalResponseTimeMs: row.total_response_time_ms,
-        createdAt: row.created_at,
-      };
-      
-      return request;
-    } catch (error) {
-      console.error('[getRtbBidRequest] Database query error:', error);
-      return undefined;
-    }
+    const [request] = await db.select().from(rtbBidRequests).where(eq(rtbBidRequests.requestId, requestId));
+    return request || undefined;
   }
 
   async createRtbBidRequest(request: InsertRtbBidRequest): Promise<RtbBidRequest> {

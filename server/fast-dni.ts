@@ -22,7 +22,7 @@ export class FastDNI {
       
       if (cached && expiry && Date.now() < expiry) {
         const responseTime = Date.now() - startTime;
-        console.log(`⚡ CACHED DNI Response: ${cached.phoneNumber} in ${responseTime}ms`);
+        // console.log(`⚡ CACHED DNI Response: ${cached.phoneNumber} in ${responseTime}ms`);
         return { phoneNumber: cached.phoneNumber, success: true };
       }
       
@@ -75,7 +75,7 @@ export class FastDNI {
       cacheExpiry.set(cacheKey, Date.now() + CACHE_TTL);
 
       const responseTime = Date.now() - startTime;
-      console.log(`⚡ FAST DNI Response: ${selectedPhone} in ${responseTime}ms`);
+      // console.log(`⚡ FAST DNI Response: ${selectedPhone} in ${responseTime}ms`);
 
       return { phoneNumber: selectedPhone, success: true };
 
