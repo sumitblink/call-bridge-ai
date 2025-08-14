@@ -2275,8 +2275,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Create a virtual buyer object with external destination number
               selectedBuyer = {
-                id: -1, // Virtual buyer ID
+                id: -999, // Temporary virtual buyer ID (will be replaced)
+                external: true, // Mark as external RTB buyer - CRITICAL for DB creation
                 name: `RTB Winner (${biddingResult.winningBid.targetName || 'External'})`,
+                companyName: biddingResult.winningBid.targetName || 'External RTB Bidder',
                 phoneNumber: biddingResult.winningBid.destinationNumber,
                 email: 'rtb@external.com',
                 priority: 1,
@@ -2408,15 +2410,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let finalBuyerId = selectedBuyer.id;
       let finalTargetId = selectedTarget?.id || null;
       
-      // Safety check: Never allow invalid buyer IDs
-      if (finalBuyerId < 1) {
-        console.log('[RTB Safety] Invalid buyer ID detected, using fallback buyer');
-        const availableBuyers = await storage.getBuyers();
-        const validBuyer = availableBuyers.find(b => b.userId === campaign.userId);
-        finalBuyerId = validBuyer?.id || 32; // Use test buyer 32 as absolute fallback
-        console.log('[RTB Safety] Using fallback buyer ID:', finalBuyerId);
-      }
-      
       if (routingMethod === 'rtb' && (selectedBuyer as any).external) {
         console.log(`[RTB Database] Creating/finding RTB buyer record for tracking...`);
         
@@ -2447,11 +2440,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               timezone: 'UTC'
             });
             console.log(`[RTB Database] Successfully created RTB buyer: ID ${rtbBuyer.id} - ${rtbBuyer.name}`);
+            
+            // Verify the buyer was actually created in the database
+            const verifyBuyer = await storage.getBuyers();
+            const createdBuyer = verifyBuyer.find(b => b.id === rtbBuyer.id);
+            if (!createdBuyer) {
+              console.error(`[RTB Database] ERROR: Buyer ${rtbBuyer.id} not found in database after creation!`);
+              throw new Error(`Failed to verify RTB buyer creation - buyer ${rtbBuyer.id} missing`);
+            }
           } else {
             console.log(`[RTB Database] Using existing RTB buyer: ID ${rtbBuyer.id} - ${rtbBuyer.name}`);
           }
           
           finalBuyerId = rtbBuyer.id;
+          console.log(`[RTB Database] Assigned RTB buyer ID: ${finalBuyerId} for call routing`);
           
           // For now, skip target creation and just use the buyer ID
           // RTB targets are external and don't need internal target records
@@ -2873,8 +2875,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Create a virtual buyer object with external destination number
               selectedBuyer = {
-                id: -1, // Virtual buyer ID
+                id: -999, // Temporary virtual buyer ID (will be replaced)
+                external: true, // Mark as external RTB buyer - CRITICAL for DB creation
                 name: `RTB Winner (${biddingResult.winningBid.targetName || 'External'})`,
+                companyName: biddingResult.winningBid.targetName || 'External RTB Bidder',
                 phoneNumber: biddingResult.winningBid.destinationNumber,
                 email: 'rtb@external.com',
                 priority: 1,
