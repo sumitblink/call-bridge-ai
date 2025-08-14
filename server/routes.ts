@@ -667,7 +667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store the session
       await storage.createVisitorSession(sessionData);
 
-      // RedTrack session tracked silently for high traffic
+      console.log('RedTrack session tracked:', { sessionId, clickid, campaign_id });
 
       res.json({
         success: true,
@@ -2408,15 +2408,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let finalBuyerId = selectedBuyer.id;
       let finalTargetId = selectedTarget?.id || null;
       
-      // Safety check: Never allow invalid buyer IDs
-      if (finalBuyerId < 1) {
-        console.log('[RTB Safety] Invalid buyer ID detected, using fallback buyer');
-        const availableBuyers = await storage.getBuyers();
-        const validBuyer = availableBuyers.find(b => b.userId === campaign.userId);
-        finalBuyerId = validBuyer?.id || 32; // Use test buyer 32 as absolute fallback
-        console.log('[RTB Safety] Using fallback buyer ID:', finalBuyerId);
-      }
-      
       if (routingMethod === 'rtb' && (selectedBuyer as any).external) {
         console.log(`[RTB Database] Creating/finding RTB buyer record for tracking...`);
         
@@ -2459,30 +2450,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
         } catch (rtbDbError) {
           console.error('[RTB Database] Error creating RTB records:', rtbDbError);
-          // Fall back to creating a simple RTB buyer without error-prone operations
-          try {
-            // Create a simple RTB buyer as fallback
-            const fallbackBuyer = await storage.createBuyer({
-              userId: campaign.userId,
-              name: 'RTB External Winner',
-              companyName: 'RTB External System',
-              email: 'rtb-fallback@external.com',
-              phoneNumber: targetPhoneNumber || '+10000000000',
-              description: 'Fallback RTB buyer for external routing',
-              defaultPayout: winningBidAmount ? parseFloat(String(winningBidAmount)) : 0,
-              isActive: true,
-              timezone: 'UTC'
-            });
-            finalBuyerId = fallbackBuyer.id;
-            console.log('[RTB Database] Created fallback RTB buyer:', finalBuyerId);
-          } catch (fallbackError) {
-            console.error('[RTB Database] Fallback buyer creation failed:', fallbackError);
-            // Use the first available buyer as last resort
-            const availableBuyers = await storage.getBuyers();
-            const firstBuyer = availableBuyers.find(b => b.userId === campaign.userId);
-            finalBuyerId = firstBuyer?.id || 32; // Use test buyer ID 32 as absolute fallback
-            console.log('[RTB Database] Using emergency fallback buyer ID:', finalBuyerId);
-          }
+          // Fall back to original logic if creation fails
+          finalBuyerId = selectedBuyer.id;
           finalTargetId = null;
         }
       } else if (routingMethod !== 'rtb') {
@@ -4191,17 +4160,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
     try {
-      // Verbose logging disabled for production use
-      // console.log('🚀 DNI ULTRA-FAST REQUEST:', {
-      //   body: req.body,
-      //   headers: {
-      //     'user-agent': req.get('user-agent'),
-      //     'referer': req.get('referer'),
-      //     'origin': req.get('origin')
-      //   },
-      //   ip: req.ip,
-      //   timestamp: new Date().toISOString()
-      // });
+      console.log('🚀 DNI ULTRA-FAST REQUEST:', {
+        body: req.body,
+        headers: {
+          'user-agent': req.get('user-agent'),
+          'referer': req.get('referer'),
+          'origin': req.get('origin')
+        },
+        ip: req.ip,
+        timestamp: new Date().toISOString()
+      });
 
       const { campaignId, publisher, clickid, utm_source, utm_medium } = req.body;
       
@@ -4230,7 +4198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
-      // console.log('✅ DNI ULTRA-FAST RESPONSE:', response);
+      console.log('✅ DNI ULTRA-FAST RESPONSE:', response);
       
       res.json(response);
 
@@ -7061,8 +7029,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
     try {
-      // console.log('=== Simple DNI Track Handler Called ===');
-      // console.log('Request body:', req.body);
+      console.log('=== Simple DNI Track Handler Called ===');
+      console.log('Request body:', req.body);
 
       const {
         campaignId,
@@ -7116,7 +7084,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
       
-      // console.log('DNI: Processing simple tracking request');
+      console.log('DNI: Processing simple tracking request');
 
       const trackingRequest = {
         campaignId,
@@ -7406,7 +7374,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/tracking/live-sessions', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
-      const { timeRange = '7d' } = req.query;
       
       // Get tracking stats from storage layer
       const basicStats = await storage.getBasicTrackingStats(userId);
@@ -7415,10 +7382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const client = (await import('@neondatabase/serverless')).neon;
       const sql_client = client(process.env.DATABASE_URL!);
       
-      // Calculate days based on timeRange
-      const days = timeRange === '1d' ? 1 : timeRange === '7d' ? 7 : 30;
-      
-      // Get real tracking sessions from visitor sessions with date filtering
+      // Get real tracking sessions from visitor sessions (DNI data is stored here)
       const visitorSessions = await sql_client`
         SELECT 
           session_id, source, medium, campaign,
@@ -7426,9 +7390,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           referrer, user_agent, landing_page, last_activity, is_active
         FROM visitor_sessions 
         WHERE user_id = ${userId} 
-          AND last_activity >= CURRENT_DATE - ${days} * INTERVAL '1 day'
         ORDER BY last_activity DESC 
-        LIMIT 100
+        LIMIT 50
       `;
 
       // Use visitor sessions (includes DNI data)
@@ -8950,17 +8913,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const days = timeRange === '1d' ? 1 : timeRange === '7d' ? 7 : 30;
       
-      // Use last_activity instead of first_visit for consistency with live-sessions
       const dailyStats = await sql_client`
         SELECT 
-          DATE(last_activity) as date,
+          DATE(first_visit) as date,
           COUNT(*) as sessions,
           COUNT(DISTINCT source) as sources
         FROM visitor_sessions 
         WHERE user_id = ${userId} 
-          AND last_activity >= CURRENT_DATE - ${days} * INTERVAL '1 day'
-        GROUP BY DATE(last_activity)
-        ORDER BY date ASC
+          AND first_visit >= CURRENT_DATE - ${days} * INTERVAL '1 day'
+        GROUP BY DATE(first_visit)
+        ORDER BY date DESC
         LIMIT 30
       `;
       
@@ -8981,10 +8943,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/analytics/attribution-values', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
-      const { timeRange = '7d' } = req.query;
       
       // For now, return empty attribution values until we have conversion tracking
-      // But maintain consistent timeRange parameter handling
       res.json([]);
     } catch (error) {
       console.error('Error fetching attribution values:', error);

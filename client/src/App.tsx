@@ -73,7 +73,6 @@ function Router() {
 
 
           <Route path="/analytics" component={UsefulAnalytics} />
-          <Route path="/traffic-analytics" component={RealTrackingDashboard} />
           <Route path="/enhanced-reporting" component={EnhancedReporting} />
           <Route path="/call-details" component={CallDetails} />
           <Route path="/settings/predictive-routing" component={PredictiveRoutingSettings} />
