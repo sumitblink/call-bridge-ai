@@ -1691,6 +1691,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user calls efficiently with enhanced data (includes hangup, target, buyer data)
       const userCalls = await storage.getEnhancedCallsByUser(userId);
       
+      // HOTFIX: Ensure buyerName is populated for RTB calls from database
+      const client = (await import('@neondatabase/serverless')).neon;
+      const sql_client = client(process.env.DATABASE_URL!);
+      
+      // Get buyer_name for calls that are missing it
+      const callsNeedingBuyerName = userCalls.filter(call => !call.buyerName && call.id);
+      if (callsNeedingBuyerName.length > 0) {
+        const callIds = callsNeedingBuyerName.map(call => call.id);
+        const buyerNames = await sql_client`
+          SELECT id, buyer_name 
+          FROM calls 
+          WHERE id = ANY(${callIds}) AND buyer_name IS NOT NULL
+        `;
+        
+        // Update the calls with correct buyer names
+        const buyerNameMap = new Map(buyerNames.map(row => [row.id, row.buyer_name]));
+        userCalls.forEach(call => {
+          if (!call.buyerName && buyerNameMap.has(call.id)) {
+            call.buyerName = buyerNameMap.get(call.id);
+          }
+        });
+      }
+      
       // Enhanced RTB data for call ID 144
       const enhancedCalls = userCalls.map(call => {
         // Add detailed RTB data for demo call (call ID 144)
