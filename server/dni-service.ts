@@ -350,15 +350,39 @@ export class DNIService {
       const client = (await import('@neondatabase/serverless')).neon;
       const sql_client = client(process.env.DATABASE_URL!);
       
-      await sql_client`
-        UPDATE visitor_sessions 
-        SET assigned_phone_number_id = ${phoneNumberId}, 
-            last_activity = NOW()
+      // First check if session exists
+      const existingSession = await sql_client`
+        SELECT id, session_id, campaign 
+        FROM visitor_sessions 
         WHERE session_id = ${sessionId} 
-        AND campaign = ${campaignId}
+        LIMIT 1
       `;
       
-      console.log('DNI: Updated session', sessionId, 'with phone assignment:', phoneNumberId);
+      if (existingSession.length === 0) {
+        console.log(`DNI: Creating new session ${sessionId} for campaign ${campaignId}`);
+        // Create new session with phone assignment
+        await sql_client`
+          INSERT INTO visitor_sessions (
+            session_id, campaign, assigned_phone_number_id, 
+            first_visit, last_activity, is_active, has_converted
+          ) VALUES (
+            ${sessionId}, ${campaignId}, ${phoneNumberId},
+            NOW(), NOW(), true, false
+          )
+        `;
+      } else {
+        // Update existing session
+        const updateResult = await sql_client`
+          UPDATE visitor_sessions 
+          SET assigned_phone_number_id = ${phoneNumberId}, 
+              last_activity = NOW(),
+              campaign = ${campaignId}
+          WHERE session_id = ${sessionId}
+        `;
+        console.log(`DNI: Updated session ${sessionId} with phone ID ${phoneNumberId}, affected rows: ${updateResult.length}`);
+      }
+      
+      console.log(`DNI: ✓ Session ${sessionId} assigned phone number ID ${phoneNumberId}`);
     } catch (error) {
       console.error('Error updating session phone assignment:', error);
     }
