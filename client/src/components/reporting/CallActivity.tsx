@@ -702,17 +702,17 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                             <TableCell>
                               <div className="space-y-1.5 max-w-[250px]">
                                 <div className="flex items-center space-x-2">
-                                  {bidder.status === 'success' && bidder.bidAmount > 0 ? (
+                                  {bidder.status === 'success' && bidder.bidAmount > 0 && !bidder.rejectionReason ? (
                                     <CheckCircle className="h-3 w-3 text-green-500" />
                                   ) : (
                                     <XCircle className="h-3 w-3 text-red-500" />
                                   )}
                                   <Badge 
-                                    variant={bidder.status === 'success' && bidder.bidAmount > 0 ? 'default' : 'destructive'}
+                                    variant={bidder.status === 'success' && bidder.bidAmount > 0 && !bidder.rejectionReason ? 'default' : 'destructive'}
                                     className="text-xs"
                                   >
-                                    {bidder.status === 'success' && bidder.bidAmount > 0 ? 'success' : 
-                                     bidder.status === 'error' ? 'rejected' : 
+                                    {bidder.status === 'success' && bidder.bidAmount > 0 && !bidder.rejectionReason ? 'success' : 
+                                     bidder.status === 'error' || bidder.rejectionReason ? 'rejected' : 
                                      bidder.status === 'timeout' ? 'timeout' : 'rejected'}
                                   </Badge>
                                 </div>
