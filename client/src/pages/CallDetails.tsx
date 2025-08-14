@@ -350,6 +350,21 @@ export default function CallDetails() {
     return matchesSearch && matchesStatus;
   });
 
+  // Calculate live and completed call counts
+  const liveCalls = calls.filter(call => 
+    call.status === 'ringing' || 
+    call.status === 'in-progress' || 
+    call.status === 'queued'
+  ).length;
+  
+  const completedCalls = calls.filter(call => 
+    call.status === 'completed' || 
+    call.status === 'failed' || 
+    call.status === 'no-answer' || 
+    call.status === 'busy' || 
+    call.status === 'cancelled'
+  ).length;
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
       completed: "default",
@@ -613,6 +628,29 @@ export default function CallDetails() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
+        </div>
+      </div>
+
+      {/* Live and Completed Call Stats */}
+      <div className="flex items-center space-x-6 p-4 bg-gray-900 rounded-lg text-white">
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-center w-10 h-10 bg-green-500 rounded-full">
+            <Phone className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-green-400">{liveCalls}</div>
+            <div className="text-sm text-gray-300">Live</div>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-center w-10 h-10 bg-blue-500 rounded-full">
+            <Phone className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-blue-400">{completedCalls}</div>
+            <div className="text-sm text-gray-300">Completed</div>
+          </div>
         </div>
       </div>
 
