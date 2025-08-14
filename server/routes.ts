@@ -2434,18 +2434,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (!rtbBuyer) {
             // Create new RTB buyer record
+            console.log(`[RTB Database] Creating new RTB buyer: ${rtbBuyerName}`);
             rtbBuyer = await storage.createBuyer({
               userId: campaign.userId,
               name: rtbBuyerName,
               companyName: `RTB External: ${rtbBuyerName}`,
               email: 'rtb@external.com',
-              phoneNumber: targetPhoneNumber,
-              description: `External RTB bidder: ${rtbBuyerName}`,
+              phoneNumber: targetPhoneNumber || '+10000000000',
+              description: `External RTB bidder: ${rtbBuyerName} - Bid: $${winningBidAmount}`,
               defaultPayout: winningBidAmount ? parseFloat(String(winningBidAmount)) : 0,
               isActive: true,
               timezone: 'UTC'
             });
-            console.log(`[RTB Database] Created RTB buyer record: ${rtbBuyer.id} - ${rtbBuyer.name}`);
+            console.log(`[RTB Database] Successfully created RTB buyer: ID ${rtbBuyer.id} - ${rtbBuyer.name}`);
+          } else {
+            console.log(`[RTB Database] Using existing RTB buyer: ID ${rtbBuyer.id} - ${rtbBuyer.name}`);
           }
           
           finalBuyerId = rtbBuyer.id;
@@ -2647,16 +2650,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dialTag = `<Number>${targetPhoneNumber}</Number>`;
       }
         
-      const twiml = `
-        <Response>
-          <Say>${connectMessage}</Say>
-          <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="https://${req.hostname}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="/api/webhooks/pool/${poolId}/status" method="POST">
-            ${dialTag}
-          </Dial>
-          <Say>The call has ended. Thank you for calling.</Say>
-          <Hangup/>
-        </Response>
-      `;
+      const twiml = `<Response>
+  <Say>${connectMessage}</Say>
+  <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="https://${req.hostname}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="/api/webhooks/pool/${poolId}/status" method="POST">
+    ${dialTag}
+  </Dial>
+  <Say>The call has ended. Thank you for calling.</Say>
+  <Hangup/>
+</Response>`;
       
       console.log(`📋 === GENERATED TWIML ===`);
       console.log(twiml);
