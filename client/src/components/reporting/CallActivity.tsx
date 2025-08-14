@@ -702,16 +702,18 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                             <TableCell>
                               <div className="space-y-1.5 max-w-[250px]">
                                 <div className="flex items-center space-x-2">
-                                  {bidder.status === 'success' ? (
+                                  {bidder.status === 'success' && bidder.bidAmount > 0 ? (
                                     <CheckCircle className="h-3 w-3 text-green-500" />
                                   ) : (
                                     <XCircle className="h-3 w-3 text-red-500" />
                                   )}
                                   <Badge 
-                                    variant={bidder.status === 'success' ? 'default' : 'destructive'}
+                                    variant={bidder.status === 'success' && bidder.bidAmount > 0 ? 'default' : 'destructive'}
                                     className="text-xs"
                                   >
-                                    {bidder.status === 'error' ? 'rejected' : bidder.status}
+                                    {bidder.status === 'success' && bidder.bidAmount > 0 ? 'success' : 
+                                     bidder.status === 'error' ? 'rejected' : 
+                                     bidder.status === 'timeout' ? 'timeout' : 'rejected'}
                                   </Badge>
                                 </div>
                                 
@@ -721,8 +723,14 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                                   </div>
                                 )}
                                 
-                                {!bidder.rejectionReason && bidder.status === 'success' && bidder.bidAmount > 0 && (
+                                {bidder.status === 'success' && bidder.bidAmount > 0 && !bidder.rejectionReason && (
                                   <div className="text-xs text-green-600">Bid accepted successfully</div>
+                                )}
+                                
+                                {(bidder.status === 'error' || bidder.status === 'timeout' || bidder.bidAmount === 0) && !bidder.rejectionReason && (
+                                  <div className="text-xs text-red-600">
+                                    {bidder.status === 'timeout' ? 'Request timeout' : 'Bid rejected'}
+                                  </div>
                                 )}
                               </div>
                             </TableCell>
