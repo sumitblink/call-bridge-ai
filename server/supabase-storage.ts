@@ -855,7 +855,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   // Integration methods
-  async getUrlParameters(userId: number): Promise<any[]> {
+  async getUrlParameters(userId?: number): Promise<any[]> {
     return await db.select().from(urlParameters).where(eq(urlParameters.userId, userId));
   }
 
@@ -1163,13 +1163,24 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createRtbTarget(target: InsertRtbTarget): Promise<RtbTarget> {
-    const result = await db.insert(rtbTargets).values(target).returning();
+    const result = await db.insert(rtbTargets).values({
+      ...target,
+      minBidAmount: target.minBidAmount?.toString() || '0.00',
+      maxBidAmount: target.maxBidAmount?.toString() || '100.00'
+    }).returning();
     return result[0];
   }
 
   async updateRtbTarget(id: number, target: Partial<InsertRtbTarget>): Promise<RtbTarget | undefined> {
+    const updateData = { ...target, updatedAt: new Date() };
+    if (updateData.minBidAmount !== undefined) {
+      updateData.minBidAmount = updateData.minBidAmount?.toString() || '0.00';
+    }
+    if (updateData.maxBidAmount !== undefined) {
+      updateData.maxBidAmount = updateData.maxBidAmount?.toString() || '100.00';
+    }
     const result = await db.update(rtbTargets)
-      .set({ ...target, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(rtbTargets.id, id))
       .returning();
     return result[0];
@@ -1249,13 +1260,20 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createRtbBidResponse(response: InsertRtbBidResponse): Promise<RtbBidResponse> {
-    const result = await db.insert(rtbBidResponses).values(response).returning();
+    const result = await db.insert(rtbBidResponses).values({
+      ...response,
+      bidAmount: response.bidAmount?.toString() || '0.00'
+    }).returning();
     return result[0];
   }
 
   async updateRtbBidResponse(id: number, response: Partial<InsertRtbBidResponse>): Promise<RtbBidResponse | undefined> {
+    const updateData = { ...response };
+    if (updateData.bidAmount !== undefined) {
+      updateData.bidAmount = updateData.bidAmount?.toString() || '0.00';
+    }
     const result = await db.update(rtbBidResponses)
-      .set(response)
+      .set(updateData)
       .where(eq(rtbBidResponses.id, id))
       .returning();
     return result[0];
@@ -1635,7 +1653,6 @@ export class SupabaseStorage implements IStorage {
         .select({
           id: rtbTargets.id,
           name: rtbTargets.name,
-          companyName: rtbTargets.companyName,
           contactPerson: rtbTargets.contactPerson,
           contactEmail: rtbTargets.contactEmail,
           contactPhone: rtbTargets.contactPhone,
