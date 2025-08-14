@@ -997,37 +997,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   .where(eq(rtbBidResponses.requestId, bidRequest.requestId))
                   .orderBy(desc(rtbBidResponses.bidAmount));
 
-                // Get bid responses with buyer information
-                const bidResponsesWithBuyers = await Promise.all(
-                  bidResponses.map(async (row) => {
-                    let companyName = `Target ${row.rtb_bid_responses.rtbTargetId}`;
-                    
-                    if (row.rtb_targets && row.rtb_targets.buyerId) {
-                      try {
-                        const buyer = await db.query.buyers.findFirst({
-                          where: eq(buyers.id, row.rtb_targets.buyerId)
-                        });
-                        companyName = buyer?.name || buyer?.companyName || `Company ${row.rtb_targets.buyerId}`;
-                      } catch (e) {
-                        console.log(`Could not get buyer for target ${row.rtb_bid_responses.rtbTargetId}`);
-                      }
-                    }
-
-                    return {
-                      id: row.rtb_bid_responses.id,
-                      targetId: row.rtb_bid_responses.rtbTargetId,
-                      targetName: row.rtb_targets?.name || `Target ${row.rtb_bid_responses.rtbTargetId}`,
-                      companyName: companyName,
-                      bidAmount: parseFloat(row.rtb_bid_responses.bidAmount?.toString() || '0'),
-                      destinationNumber: row.rtb_bid_responses.destinationNumber,
-                      responseTime: row.rtb_bid_responses.responseTimeMs,
-                      bidStatus: row.rtb_bid_responses.responseStatus,
-                      rejectionReason: row.rtb_bid_responses.rejectionReason
-                    };
-                  })
-                );
-                
-                auctionDetails = bidResponsesWithBuyers;
+                auctionDetails = bidResponses.map(row => ({
+                  id: row.rtb_bid_responses.id,
+                  targetId: row.rtb_bid_responses.rtbTargetId,
+                  targetName: row.rtb_targets?.name || `Target ${row.rtb_bid_responses.rtbTargetId}`,
+                  buyerId: row.rtb_targets?.buyerId || null,
+                  bidAmount: parseFloat(row.rtb_bid_responses.bidAmount?.toString() || '0'),
+                  destinationNumber: row.rtb_bid_responses.destinationNumber,
+                  responseTime: row.rtb_bid_responses.responseTimeMs,
+                  bidStatus: row.rtb_bid_responses.responseStatus,
+                  rejectionReason: row.rtb_bid_responses.rejectionReason
+                }));
               }
             } catch (error) {
               console.error(`Error fetching RTB data for call ${call.id}:`, error);
@@ -1067,20 +1047,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 winningBidAmount = winner.bidAmount || 0;
                 winnerDestination = winner.destinationNumber || null;
                 
-                // Get buyer name for winner target using direct database query
-                if (winner.targetId) {
+                // Get buyer name for winner target using buyerId from winner
+                if (winner.buyerId) {
                   try {
-                    const target = await db.query.rtbTargets.findFirst({
-                      where: eq(rtbTargets.id, winner.targetId)
+                    const buyer = await db.query.buyers.findFirst({
+                      where: eq(buyers.id, winner.buyerId)
                     });
-                    if (target && target.buyerId) {
-                      const buyer = await db.query.buyers.findFirst({
-                        where: eq(buyers.id, target.buyerId)
-                      });
-                      winnerBuyerName = buyer?.name || null;
-                    }
+                    winnerBuyerName = buyer?.name || buyer?.companyName || null;
                   } catch (e) {
-                    console.log(`Could not get buyer for target ${winner.targetId}`);
+                    console.log(`Could not get buyer ${winner.buyerId} for target ${winner.targetId}`);
                   }
                 }
               }
@@ -1200,10 +1175,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process auction details to create bid list with buyer information
       const bidsWithDetails = await Promise.all(
         auctionDetails.map(async (bid) => {
-          let buyerName = 'Unknown Buyer';
+          let buyerName = `Target ${bid.targetId}`;
           
-          // Use the company name that was already fetched
-          buyerName = bid.companyName || `Target ${bid.targetId}`;
+          // Get the actual buyer name for this target
+          if (bid.buyerId) {
+            try {
+              const buyer = await db.query.buyers.findFirst({
+                where: eq(buyers.id, bid.buyerId)
+              });
+              buyerName = buyer?.name || buyer?.companyName || `Buyer ${bid.buyerId}`;
+            } catch (e) {
+              console.log(`Could not get buyer ${bid.buyerId} for target ${bid.targetId}`);
+            }
+          }
 
           return {
             id: bid.id || 0,
@@ -1211,7 +1195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             targetId: bid.targetId || 0,
             targetName: bid.targetName || `Target ${bid.targetId}`,
             buyerName,
-            companyName: bid.companyName || buyerName,
+            companyName: buyerName,
             bidAmount: bid.bidAmount || 0,
             destinationNumber: bid.destinationNumber || '',
             responseTime: bid.responseTime || 0,
