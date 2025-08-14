@@ -73,7 +73,7 @@ export default function CallDetails() {
 
   // Fetch RTB bid details for selected call
   const { data: bidDetails, isLoading: bidLoading } = useQuery({
-    queryKey: ["/api/call-details/bids", selectedCallId],
+    queryKey: [`/api/call-details/bids/${selectedCallId}`],
     enabled: !!selectedCallId,
   });
 
