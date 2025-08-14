@@ -334,7 +334,7 @@ export default function CallDetails() {
                             <div className="flex items-center space-x-1">
                               <DollarSign className="h-3 w-3 text-green-600" />
                               <span className="font-medium text-green-600 text-sm">
-                                ${(call.revenue || 0).toFixed(4)}
+                                ${(parseFloat(call.revenue?.toString() || '0') || 0).toFixed(4)}
                               </span>
                             </div>
                           </TableCell>
@@ -344,7 +344,7 @@ export default function CallDetails() {
                             <div className="flex items-center space-x-1">
                               <DollarSign className="h-3 w-3 text-orange-600" />
                               <span className="font-medium text-orange-600 text-sm">
-                                ${(call.payout || 0).toFixed(4)}
+                                ${(parseFloat(call.payout?.toString() || '0') || 0).toFixed(4)}
                               </span>
                             </div>
                           </TableCell>
@@ -352,7 +352,9 @@ export default function CallDetails() {
                           {/* 8. Profit */}
                           <TableCell>
                             {(() => {
-                              const profit = (call.revenue || 0) - (call.payout || 0);
+                              const revenue = parseFloat(call.revenue?.toString() || '0') || 0;
+                              const payout = parseFloat(call.payout?.toString() || '0') || 0;
+                              const profit = revenue - payout;
                               return (
                                 <div className="flex items-center space-x-1">
                                   <DollarSign className="h-3 w-3 text-blue-600" />
