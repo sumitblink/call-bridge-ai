@@ -977,8 +977,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const campaign = call.campaignId ? await storage.getCampaign(call.campaignId) : null;
             const campaignName = campaign?.name || 'Unknown Campaign';
 
-            // Get RTB auction details using storage interface
-            const auctionDetails = await storage.getRTBAuctionDetails(call.id);
+            // Get RTB auction details directly from database since storage method doesn't exist
+            let auctionDetails = [];
+            try {
+              // Find RTB bid request for this call using call SID
+              const bidRequest = await db.query.rtbBidRequests.findFirst({
+                where: and(
+                  eq(rtbBidRequests.campaignId, call.campaignId!),
+                  sql`${rtbBidRequests.requestId} LIKE '%' || ${call.callSid} || '%'`
+                )
+              });
+
+              if (bidRequest) {
+                // Get bid responses for this request
+                const bidResponses = await db
+                  .select()
+                  .from(rtbBidResponses)
+                  .leftJoin(rtbTargets, eq(rtbBidResponses.rtbTargetId, rtbTargets.id))
+                  .where(eq(rtbBidResponses.requestId, bidRequest.requestId))
+                  .orderBy(desc(rtbBidResponses.bidAmount));
+
+                auctionDetails = bidResponses.map(row => ({
+                  id: row.rtb_bid_responses.id,
+                  targetId: row.rtb_bid_responses.rtbTargetId,
+                  targetName: row.rtb_targets?.name || `Target ${row.rtb_bid_responses.rtbTargetId}`,
+                  bidAmount: parseFloat(row.rtb_bid_responses.bidAmount?.toString() || '0'),
+                  destinationNumber: row.rtb_bid_responses.destinationNumber,
+                  responseTime: row.rtb_bid_responses.responseTimeMs,
+                  bidStatus: row.rtb_bid_responses.responseStatus,
+                  rejectionReason: row.rtb_bid_responses.rejectionReason
+                }));
+              }
+            } catch (error) {
+              console.error(`Error fetching RTB data for call ${call.id}:`, error);
+            }
             
             // Calculate RTB statistics from auction details
             let winnerTargetName = null;
@@ -1094,8 +1126,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
 
-      // Get RTB auction details using storage interface
-      const auctionDetails = await storage.getRTBAuctionDetails(callId);
+      // Get RTB auction details directly from database since storage method doesn't exist
+      let auctionDetails = [];
+      try {
+        // Find RTB bid request for this call using call SID
+        const bidRequest = await db.query.rtbBidRequests.findFirst({
+          where: and(
+            eq(rtbBidRequests.campaignId, call.campaignId!),
+            sql`${rtbBidRequests.requestId} LIKE '%' || ${call.callSid} || '%'`
+          )
+        });
+
+        if (bidRequest) {
+          // Get bid responses for this request
+          const bidResponses = await db
+            .select()
+            .from(rtbBidResponses)
+            .leftJoin(rtbTargets, eq(rtbBidResponses.rtbTargetId, rtbTargets.id))
+            .where(eq(rtbBidResponses.requestId, bidRequest.requestId))
+            .orderBy(desc(rtbBidResponses.bidAmount));
+
+          auctionDetails = bidResponses.map(row => ({
+            id: row.rtb_bid_responses.id,
+            targetId: row.rtb_bid_responses.rtbTargetId,
+            targetName: row.rtb_targets?.name || `Target ${row.rtb_bid_responses.rtbTargetId}`,
+            bidAmount: parseFloat(row.rtb_bid_responses.bidAmount?.toString() || '0'),
+            destinationNumber: row.rtb_bid_responses.destinationNumber,
+            responseTime: row.rtb_bid_responses.responseTimeMs,
+            bidStatus: row.rtb_bid_responses.responseStatus,
+            rejectionReason: row.rtb_bid_responses.rejectionReason
+          }));
+        }
+      } catch (error) {
+        console.error(`Error fetching RTB data for call ${callId}:`, error);
+      }
       
       if (!auctionDetails || auctionDetails.length === 0) {
         return res.json({ bids: [] });
