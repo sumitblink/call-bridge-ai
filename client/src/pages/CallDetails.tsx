@@ -632,30 +632,30 @@ export default function CallDetails() {
       </div>
 
       {/* Live and Completed Call Stats */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
-                <Phone className="h-5 w-5 text-green-600" />
+          <CardContent className="p-3">
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded">
+                <Phone className="h-4 w-4 text-green-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-green-600">{liveCalls}</div>
-                <div className="text-sm text-gray-600">Live Calls</div>
+                <div className="text-xl font-bold text-green-600">{liveCalls}</div>
+                <div className="text-xs text-gray-600">Live Calls</div>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
-                <Phone className="h-5 w-5 text-blue-600" />
+          <CardContent className="p-3">
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded">
+                <Phone className="h-4 w-4 text-blue-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-blue-600">{completedCalls}</div>
-                <div className="text-sm text-gray-600">Completed Calls</div>
+                <div className="text-xl font-bold text-blue-600">{completedCalls}</div>
+                <div className="text-xs text-gray-600">Completed Calls</div>
               </div>
             </div>
           </CardContent>
