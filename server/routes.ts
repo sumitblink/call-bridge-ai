@@ -15,7 +15,7 @@ import { FlowExecutionEngine } from "./flow-execution-engine";
 import { TwiMLGenerator } from "./twiml-generator";
 import { targetService } from "./target-service";
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, or } from "drizzle-orm";
 import { 
   callTrackingTags, 
   dniSessions, 
@@ -984,7 +984,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const bidRequest = await db.query.rtbBidRequests.findFirst({
                 where: and(
                   eq(rtbBidRequests.campaignId, call.campaignId!),
-                  sql`${rtbBidRequests.requestId} LIKE '%' || ${call.callSid} || '%'`
+                  or(
+                    sql`${rtbBidRequests.requestId} LIKE '%' || ${call.callSid} || '%'`,
+                    sql`${rtbBidRequests.requestId} = 'pool_' || ${call.numberPoolId} || '_' || ${call.callSid}`
+                  )
                 )
               });
 
@@ -1040,8 +1043,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 );
               }
 
-              // Find winner (based on call's targetId)
-              const winner = auctionDetails.find(bid => bid.targetId === call.targetId);
+              // Find winner (highest successful bid since RTB calls might not store target_id correctly)
+              const winner = successfulBidList.length > 0 ? successfulBidList[0] : 
+                            (auctionDetails.length > 0 ? auctionDetails[0] : null);
               if (winner) {
                 winnerTargetName = winner.targetName || `Target ${winner.targetId}`;
                 winningBidAmount = winner.bidAmount || 0;
