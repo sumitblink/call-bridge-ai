@@ -2652,9 +2652,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dialTag = `<Number>${targetPhoneNumber}</Number>`;
       }
         
+      // Use proper hostname for webhook URLs (avoid localhost in production)
+      const webhookHost = req.hostname === 'localhost' ? req.get('host') : req.hostname;
+      const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+      const baseUrl = `${protocol}://${webhookHost}`;
+      
       const twiml = `<Response>
   <Say>${connectMessage}</Say>
-  <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="https://${req.hostname}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="/api/webhooks/pool/${poolId}/status" method="POST">
+  <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="${baseUrl}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="${baseUrl}/api/webhooks/pool/${poolId}/status" method="POST">
     ${dialTag}
   </Dial>
   <Say>The call has ended. Thank you for calling.</Say>
