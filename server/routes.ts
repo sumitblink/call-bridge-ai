@@ -1146,6 +1146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: row.rtb_bid_responses.id,
             targetId: row.rtb_bid_responses.rtbTargetId,
             targetName: row.rtb_targets?.name || `Target ${row.rtb_bid_responses.rtbTargetId}`,
+            companyName: row.rtb_targets?.buyerName || `Company ${row.rtb_bid_responses.rtbTargetId}`,
             bidAmount: parseFloat(row.rtb_bid_responses.bidAmount?.toString() || '0'),
             destinationNumber: row.rtb_bid_responses.destinationNumber,
             responseTime: row.rtb_bid_responses.responseTimeMs,
