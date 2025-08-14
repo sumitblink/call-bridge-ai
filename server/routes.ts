@@ -1114,15 +1114,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Get the call using storage interface
-      const call = await storage.getCall(callId);
+      // Get the call directly from database
+      const call = await db.query.calls.findFirst({
+        where: eq(calls.id, callId),
+        with: {
+          campaign: {
+            columns: { userId: true, name: true }
+          }
+        }
+      });
+
       if (!call) {
         return res.status(404).json({ message: "Call not found" });
       }
 
       // Verify ownership through campaign
-      const campaign = call.campaignId ? await storage.getCampaign(call.campaignId) : null;
-      if (!campaign || campaign.userId !== userId) {
+      if (!call.campaign || call.campaign.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
 
@@ -1170,14 +1177,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         auctionDetails.map(async (bid) => {
           let buyerName = 'Unknown Buyer';
           
-          // Get buyer name through target
+          // Get buyer name through target directly from database
           if (bid.targetId) {
             try {
-              const target = await storage.getTarget(bid.targetId);
-              if (target && target.buyerId) {
-                const buyer = await storage.getBuyer(target.buyerId);
-                buyerName = buyer?.name || 'Unknown Buyer';
-              }
+              const target = await db.query.rtbTargets.findFirst({
+                where: eq(rtbTargets.id, bid.targetId),
+                with: {
+                  buyer: {
+                    columns: { name: true }
+                  }
+                }
+              });
+              buyerName = target?.buyer?.name || 'Unknown Buyer';
             } catch (e) {
               console.log(`Could not get buyer for target ${bid.targetId}`);
             }
