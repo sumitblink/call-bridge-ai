@@ -1448,10 +1448,22 @@ export class DatabaseStorage implements IStorage {
 
   // Campaign RTB Target Assignments (replaces router assignments)
   async getCampaignRtbTargets(campaignId: string): Promise<CampaignRtbTarget[]> {
-    return await db
-      .select()
-      .from(campaignRtbTargets)
-      .where(eq(campaignRtbTargets.campaignId, campaignId));
+    try {
+      if (!campaignId) {
+        console.warn('[getCampaignRtbTargets] Campaign ID is null or undefined');
+        return [];
+      }
+      
+      const result = await db
+        .select()
+        .from(campaignRtbTargets)
+        .where(eq(campaignRtbTargets.campaignId, campaignId));
+        
+      return result || [];
+    } catch (error) {
+      console.error('[getCampaignRtbTargets] Database query error:', error);
+      return [];
+    }
   }
 
   async createCampaignRtbTarget(assignment: InsertCampaignRtbTarget): Promise<CampaignRtbTarget> {

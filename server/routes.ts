@@ -7929,11 +7929,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/campaigns/:campaignId/rtb-targets', requireAuth, async (req: any, res) => {
     try {
       const { campaignId } = req.params;
+      
+      if (!campaignId) {
+        return res.status(400).json({ error: 'Campaign ID is required' });
+      }
+      
       const assignments = await storage.getCampaignRtbTargets(campaignId);
-      res.json(assignments);
+      res.json(assignments || []);
     } catch (error) {
       console.error('Error fetching campaign RTB targets:', error);
-      res.status(500).json({ error: 'Failed to fetch campaign RTB targets' });
+      res.status(500).json({ error: 'Failed to fetch campaign RTB targets', details: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 

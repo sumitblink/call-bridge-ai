@@ -818,7 +818,7 @@ export class RTBService {
    */
   static async performHealthChecks(userId: number): Promise<Array<{target: RtbTarget; health: any}>> {
     try {
-      const targets = await storage.getUserRtbTargets(userId);
+      const targets = await storage.getRtbTargets(userId);
       const healthResults = [];
 
       for (const target of targets) {
