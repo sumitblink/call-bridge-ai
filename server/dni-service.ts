@@ -170,11 +170,11 @@ export class DNIService {
           const existingSession = await this.getSessionPhoneNumber(request.sessionId, campaign.id);
           if (existingSession && poolNumbers.find(p => p.id === existingSession.phoneNumberId)) {
             selectedPhone = poolNumbers.find(p => p.id === existingSession.phoneNumberId)!;
-            console.log('DNI: Using sticky session phone:', selectedPhone.phoneNumber, 'for session:', request.sessionId);
+            // Sticky session found
           } else {
             // No existing session or expired - assign new number based on rotation strategy
             selectedPhone = this.selectPhoneByStrategy(poolNumbers, request);
-            console.log('DNI: Assigned new phone for session:', selectedPhone.phoneNumber, 'for session:', request.sessionId);
+            // Only log new assignments for debugging
           }
         } else {
           // No session ID - use rotation strategy
@@ -382,7 +382,7 @@ export class DNIService {
         console.log(`DNI: Updated session ${sessionId} with phone ID ${phoneNumberId}, affected rows: ${updateResult.length}`);
       }
       
-      console.log(`DNI: ✓ Session ${sessionId} assigned phone number ID ${phoneNumberId}`);
+      // Session assignment completed silently
     } catch (error) {
       console.error('Error updating session phone assignment:', error);
     }

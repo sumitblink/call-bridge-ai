@@ -667,7 +667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store the session
       await storage.createVisitorSession(sessionData);
 
-      console.log('RedTrack session tracked:', { sessionId, clickid, campaign_id });
+      // RedTrack session tracked silently for high traffic
 
       res.json({
         success: true,

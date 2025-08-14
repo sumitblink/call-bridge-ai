@@ -35,16 +35,23 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
+      // Only log RTB-related calls, webhooks, and errors - skip frequent endpoints for high traffic
+      const isRTBRelated = path.includes('/rtb') || path.includes('/webhook') || path.includes('/twilio');
+      const isErrorStatus = res.statusCode >= 400;
+      const isSlowRequest = duration > 1000; // Log slow requests
+      
+      if (isRTBRelated || isErrorStatus || isSlowRequest) {
+        let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+        if (capturedJsonResponse && (isErrorStatus || isRTBRelated)) {
+          logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        }
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
+        if (logLine.length > 80) {
+          logLine = logLine.slice(0, 79) + "…";
+        }
 
-      log(logLine);
+        log(logLine);
+      }
     }
   });
 
