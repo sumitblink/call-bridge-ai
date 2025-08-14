@@ -143,6 +143,8 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
   });
 
   // Remove duplicate query - using rtbAuctionData above for all RTB data needs
+  const isLoadingComprehensiveRtb = false;
+  const comprehensiveRtbData = null;
 
   const formatDuration = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
@@ -262,7 +264,7 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                     </div>
                     <div className="space-y-1">
                       {rtbAuctionData && rtbAuctionData.length > 0 ? (
-                        rtbAuctionData.slice(0, 3).map((auction, index) => (
+                        rtbAuctionData.slice(0, 3).map((auction: any, index: number) => (
                           <div key={auction.id} className="grid grid-cols-3 gap-2 text-xs">
                             <div>1</div>
                             <div>1</div>
@@ -328,7 +330,7 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                         <div>Reason</div>
                       </div>
                       <div className="space-y-1">
-                        {rtbAuctionData.filter(auction => auction.bidStatus !== 'accepted').map((auction, index) => (
+                        {rtbAuctionData.filter((auction: any) => auction.bidStatus !== 'accepted').map((auction: any, index: number) => (
                           <div key={auction.id} className="grid grid-cols-4 gap-2 text-xs">
                             <div>${parseFloat(auction.bidAmount).toFixed(2)}</div>
                             <div>{auction.responseTime}</div>
@@ -658,8 +660,8 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                       </TableHeader>
                       <TableBody>
                         {rtbAuctionData && rtbAuctionData.length > 0 ? rtbAuctionData
-                          .sort((a: any, b: any) => parseFloat(b.bidAmount) - parseFloat(a.bidAmount))
-                          .map((bidder: any, idx: number) => (
+                          .sort((a, b) => parseFloat(b.bidAmount) - parseFloat(a.bidAmount))
+                          .map((bidder, idx: number) => (
                           <TableRow key={idx} className="text-sm">
                             <TableCell>
                               <div className="flex items-center space-x-2">
@@ -780,7 +782,7 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                       <span className="text-gray-600">Avg Response:</span>
                       <span className="font-mono">
                         {rtbAuctionData && rtbAuctionData.length > 0
-                          ? Math.round(rtbAuctionData.reduce((sum: number, b: any) => sum + b.responseTime, 0) / rtbAuctionData.length)
+                          ? Math.round(rtbAuctionData.reduce((sum: number, b: any) => sum + (b.responseTime || 0), 0) / rtbAuctionData.length)
                           : 0}ms
                       </span>
                     </div>
@@ -800,13 +802,13 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Successful Bids:</span>
-                      <span className="font-medium text-green-600">{rtbAuctionData ? rtbAuctionData.filter(bid => bid.bidStatus === 'accepted').length : 0}</span>
+                      <span className="font-medium text-green-600">{rtbAuctionData ? rtbAuctionData.filter((bid: any) => bid.bidStatus === 'accepted').length : 0}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Success Rate:</span>
                       <span className="font-medium">
                         {rtbAuctionData && rtbAuctionData.length > 0
-                          ? Math.round((rtbAuctionData.filter(bid => bid.bidStatus === 'accepted').length / rtbAuctionData.length) * 100)
+                          ? Math.round((rtbAuctionData.filter((bid: any) => bid.bidStatus === 'accepted').length / rtbAuctionData.length) * 100)
                           : 0}%
                       </span>
                     </div>
@@ -823,12 +825,12 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                     <div className="flex justify-between">
                       <span className="text-gray-600">Winning Bid:</span>
                       <span className="font-bold text-green-600">
-                        ${rtbAuctionData?.find(bid => bid.isWinner)?.bidAmount ? parseFloat(rtbAuctionData.find(bid => bid.isWinner).bidAmount).toFixed(2) : '0.00'}
+                        ${rtbAuctionData?.find((bid: any) => bid.isWinner)?.bidAmount ? parseFloat(rtbAuctionData.find((bid: any) => bid.isWinner).bidAmount).toFixed(2) : '0.00'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Winner ID:</span>
-                      <span className="font-mono">{rtbAuctionData?.find(bid => bid.isWinner)?.targetId || 'None'}</span>
+                      <span className="font-mono">{rtbAuctionData?.find((bid: any) => bid.isWinner)?.targetId || 'None'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Route Method:</span>
@@ -908,7 +910,7 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
         <TabsContent value="ringtree" className="p-4 space-y-4 m-0">
           {rtbAuctionData && rtbAuctionData.length > 0 ? (
             <div className="space-y-4">
-              {rtbAuctionData.map((auction, index) => (
+              {rtbAuctionData.map((auction: any, index: number) => (
                 <div key={auction.id} className="border rounded-lg overflow-hidden">
                   {/* Ring Tree Target Raw Result */}
                   <div className="bg-blue-50 p-3 border-b">
