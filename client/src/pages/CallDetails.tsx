@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Phone, DollarSign, Clock, MapPin, Search, Filter, Download, Eye, Play, PhoneOff, Calendar, Globe } from "lucide-react";
+import { Phone, DollarSign, Clock, MapPin, Search, Filter, Download, Eye, Play, PhoneOff, Calendar, Globe, Settings, GripVertical } from "lucide-react";
+import { ColumnCustomizer } from "@/components/reporting/ColumnCustomizer";
 // Format duration in seconds to human readable format
 function formatDuration(seconds: number): string {
   if (seconds < 60) {
@@ -85,15 +86,56 @@ interface BidDetail {
   rejectionReason: string | null;
 }
 
+interface UrlParameter {
+  id: number;
+  parameterName: string;
+  reportingMenuName: string;
+  reportName: string;
+  parameterType: string;
+  isActive: boolean;
+}
+
+interface ColumnConfig {
+  id: string;
+  label: string;
+  visible: boolean;
+  width?: number;
+  order: number;
+}
+
 export default function CallDetails() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedCallId, setSelectedCallId] = useState<number | null>(null);
+  const [showColumnCustomizer, setShowColumnCustomizer] = useState(false);
+  const [columnConfig, setColumnConfig] = useState<ColumnConfig[]>([
+    { id: 'callInfo', label: 'Call Info', visible: true, order: 0 },
+    { id: 'campaign', label: 'Campaign', visible: true, order: 1 },
+    { id: 'fromTo', label: 'From → To', visible: true, order: 2 },
+    { id: 'duration', label: 'Duration', visible: true, order: 3 },
+    { id: 'status', label: 'Status', visible: true, order: 4 },
+    { id: 'whoHungUp', label: 'Who Hung Up', visible: true, order: 5 },
+    { id: 'callDateTime', label: 'Call Date/Time', visible: true, order: 6 },
+    { id: 'destinationType', label: 'Destination Type', visible: true, order: 7 },
+    { id: 'recording', label: 'Recording', visible: true, order: 8 },
+    { id: 'revenue', label: 'Revenue', visible: true, order: 9 },
+    { id: 'payout', label: 'Payout', visible: true, order: 10 },
+    { id: 'profit', label: 'Profit', visible: true, order: 11 },
+    { id: 'rtbWinner', label: 'RTB Winner', visible: true, order: 12 },
+    { id: 'winningBid', label: 'Winning Bid', visible: true, order: 13 },
+    { id: 'rtbStats', label: 'RTB Stats', visible: true, order: 14 },
+    { id: 'actions', label: 'Actions', visible: true, order: 15 },
+  ]);
 
   // Fetch all calls with detailed information
   const { data: callsData, isLoading: callsLoading } = useQuery({
     queryKey: ["/api/call-details/summary"],
     refetchInterval: 30000,
+  });
+
+  // Fetch user's custom URL parameters for dynamic columns
+  const { data: urlParameters = [] } = useQuery<UrlParameter[]>({
+    queryKey: ['/api/integrations/url-parameters'],
   });
 
   // Fetch RTB bid details for selected call
@@ -104,6 +146,24 @@ export default function CallDetails() {
 
   const calls: CallDetail[] = callsData?.calls || [];
   const bids: BidDetail[] = bidDetails?.bids || [];
+
+  // Add dynamic tag columns to column configuration when URL parameters are loaded
+  const allColumns = [...columnConfig];
+  urlParameters.forEach((param, index) => {
+    const tagColumnId = `tag_${param.parameterName}`;
+    if (!allColumns.find(col => col.id === tagColumnId)) {
+      allColumns.push({
+        id: tagColumnId,
+        label: param.reportName,
+        visible: true,
+        order: columnConfig.length + index,
+      });
+    }
+  });
+
+  // Sort columns by order
+  const sortedColumns = allColumns.sort((a, b) => a.order - b.order);
+  const visibleColumns = sortedColumns.filter(col => col.visible);
 
   // Filter calls based on search and status
   const filteredCalls = calls.filter(call => {
@@ -139,6 +199,173 @@ export default function CallDetails() {
     return <Badge variant="destructive">Rejected</Badge>;
   };
 
+  // Function to render dynamic cell content based on column type
+  const renderCellContent = (call: CallDetail, column: ColumnConfig) => {
+    switch (column.id) {
+      case 'callInfo':
+        return (
+          <div className="space-y-1">
+            <div className="font-mono text-sm font-medium">{call.id}</div>
+            <div className="text-xs text-gray-500">{call.callSid.slice(0, 16)}...</div>
+            <div className="text-xs text-gray-400">
+              {new Date(call.createdAt).toLocaleString()}
+            </div>
+          </div>
+        );
+      case 'campaign':
+        return <div className="font-medium text-sm">{call.campaignName}</div>;
+      case 'fromTo':
+        return (
+          <div className="space-y-1">
+            <div className="font-mono text-sm">{call.fromNumber}</div>
+            <div className="text-xs text-gray-500">→ {call.toNumber}</div>
+          </div>
+        );
+      case 'duration':
+        return (
+          <div className="flex items-center space-x-1">
+            <Clock className="h-3 w-3 text-gray-400" />
+            <span className="text-sm">{formatDuration(call.duration)}</span>
+          </div>
+        );
+      case 'status':
+        return getStatusBadge(call.status);
+      case 'whoHungUp':
+        return (
+          <div className="space-y-1">
+            <div className="text-xs font-medium">{call.whoHungUp || 'Unknown'}</div>
+            {call.hangupCause && (
+              <div className="text-xs text-gray-500">{call.hangupCause}</div>
+            )}
+          </div>
+        );
+      case 'callDateTime':
+        return (
+          <div className="space-y-1">
+            <div className="text-xs">{new Date(call.createdAt).toLocaleDateString()}</div>
+            <div className="text-xs text-gray-500">{new Date(call.createdAt).toLocaleTimeString()}</div>
+          </div>
+        );
+      case 'destinationType':
+        return (
+          <Badge variant="outline" className="text-xs">
+            {(call.winnerDestination || call.toNumber)?.includes("sip:") ? "SIP" : "Phone"}
+          </Badge>
+        );
+      case 'recording':
+        return call.recordingUrl ? (
+          <div className="flex space-x-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => alert("Audio player would be implemented")}
+              className="h-6 w-6 p-0"
+            >
+              <Play className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(call.recordingUrl, '_blank')}
+              className="h-6 w-6 p-0"
+            >
+              <Download className="h-3 w-3" />
+            </Button>
+          </div>
+        ) : (
+          <span className="text-gray-400 text-xs">No recording</span>
+        );
+      case 'revenue':
+        return (
+          <div className="flex items-center space-x-1">
+            <DollarSign className="h-3 w-3 text-green-600" />
+            <span className="font-medium text-green-600 text-sm">
+              ${(parseFloat(call.revenue?.toString() || '0') || 0).toFixed(4)}
+            </span>
+          </div>
+        );
+      case 'payout':
+        return (
+          <div className="flex items-center space-x-1">
+            <DollarSign className="h-3 w-3 text-orange-600" />
+            <span className="font-medium text-orange-600 text-sm">
+              ${(parseFloat(call.payout?.toString() || '0') || 0).toFixed(4)}
+            </span>
+          </div>
+        );
+      case 'profit':
+        const revenue = parseFloat(call.revenue?.toString() || '0') || 0;
+        const payout = parseFloat(call.payout?.toString() || '0') || 0;
+        const profit = revenue - payout;
+        return (
+          <div className="flex items-center space-x-1">
+            <DollarSign className="h-3 w-3 text-blue-600" />
+            <span className={`font-bold text-sm ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${profit.toFixed(4)}
+            </span>
+          </div>
+        );
+      case 'rtbWinner':
+        return call.winnerTargetName ? (
+          <div className="space-y-1">
+            <div className="font-medium text-sm">{call.winnerTargetName}</div>
+            {call.winnerBuyerName && (
+              <div className="text-xs text-gray-500">{call.winnerBuyerName}</div>
+            )}
+          </div>
+        ) : (
+          <span className="text-gray-400 text-sm">No winner</span>
+        );
+      case 'winningBid':
+        return call.winningBidAmount > 0 ? (
+          <div className="flex items-center space-x-1">
+            <DollarSign className="h-3 w-3 text-green-600" />
+            <span className="font-bold text-green-600">
+              ${call.winningBidAmount.toFixed(2)}
+            </span>
+          </div>
+        ) : (
+          <span className="text-gray-400 text-sm">$0.00</span>
+        );
+      case 'rtbStats':
+        return call.winnerDestination ? (
+          <div className="font-mono text-xs">
+            {call.winnerDestination.length > 15 
+              ? call.winnerDestination.slice(0, 15) + "..." 
+              : call.winnerDestination}
+          </div>
+        ) : (
+          <span className="text-gray-400 text-xs">No destination</span>
+        );
+      case 'actions':
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedCallId(call.id)}
+            className="h-6 px-2 text-xs"
+          >
+            <Eye className="h-3 w-3 mr-1" />
+            View Bids
+          </Button>
+        );
+      default:
+        // Handle dynamic tag columns
+        if (column.id.startsWith('tag_')) {
+          const parameterName = column.id.replace('tag_', '');
+          const tagValue = (call as any)[parameterName]; // Dynamic property access
+          return tagValue ? (
+            <div className="text-xs font-mono max-w-32 truncate">
+              {tagValue}
+            </div>
+          ) : (
+            <span className="text-gray-400 text-xs">-</span>
+          );
+        }
+        return <span className="text-gray-400 text-xs">-</span>;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -148,13 +375,17 @@ export default function CallDetails() {
           <p className="text-gray-500">Comprehensive call information and RTB auction results</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Export
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowColumnCustomizer(true)}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Columns
           </Button>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
-            Download CSV
+            Export
           </Button>
         </div>
       </div>
@@ -224,219 +455,28 @@ export default function CallDetails() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Call Info</TableHead>
-                        <TableHead>Campaign</TableHead>
-                        <TableHead>From → To</TableHead>
-                        <TableHead>Duration</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Who Hung Up</TableHead>
-                        <TableHead>Call Date/Time</TableHead>
-                        <TableHead>Destination Type</TableHead>
-                        <TableHead>Recording</TableHead>
-                        <TableHead>Revenue</TableHead>
-                        <TableHead>Payout</TableHead>
-                        <TableHead>Profit</TableHead>
-                        <TableHead>URL Parameters</TableHead>
-                        <TableHead>RTB Winner</TableHead>
-                        <TableHead>Winning Bid</TableHead>
-                        <TableHead>RTB Stats</TableHead>
-                        <TableHead>Actions</TableHead>
+                        {visibleColumns.map((column) => (
+                          <TableHead 
+                            key={column.id}
+                            className="relative group cursor-pointer select-none"
+                            style={{ width: column.width || 'auto' }}
+                          >
+                            <div className="flex items-center space-x-1">
+                              <GripVertical className="h-3 w-3 text-gray-300 group-hover:text-gray-500" />
+                              <span>{column.label}</span>
+                            </div>
+                          </TableHead>
+                        ))}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredCalls.map((call) => (
                         <TableRow key={call.id} className="hover:bg-gray-50">
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="font-mono text-sm font-medium">{call.id}</div>
-                              <div className="text-xs text-gray-500">{call.callSid.slice(0, 16)}...</div>
-                              <div className="text-xs text-gray-400">
-                                {new Date(call.createdAt).toLocaleString()}
-                              </div>
-                            </div>
-                          </TableCell>
-                          
-                          <TableCell>
-                            <div className="font-medium text-sm">{call.campaignName}</div>
-                          </TableCell>
-                          
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="font-mono text-sm">{call.fromNumber}</div>
-                              <div className="text-xs text-gray-500">→ {call.toNumber}</div>
-                            </div>
-                          </TableCell>
-                          
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <Clock className="h-3 w-3 text-gray-400" />
-                              <span className="text-sm">{formatDuration(call.duration)}</span>
-                            </div>
-                          </TableCell>
-                          
-                          <TableCell>
-                            {getStatusBadge(call.status)}
-                          </TableCell>
-
-                          {/* 1. Who Hung Up */}
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="text-xs font-medium">{call.whoHungUp || 'Unknown'}</div>
-                              {call.hangupCause && (
-                                <div className="text-xs text-gray-500">{call.hangupCause}</div>
-                              )}
-                            </div>
-                          </TableCell>
-
-                          {/* 2. Call Date/Time */}
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="text-xs">{new Date(call.createdAt).toLocaleDateString()}</div>
-                              <div className="text-xs text-gray-500">{new Date(call.createdAt).toLocaleTimeString()}</div>
-                            </div>
-                          </TableCell>
-
-                          {/* 3. Destination Type */}
-                          <TableCell>
-                            <Badge variant="outline" className="text-xs">
-                              {(call.winnerDestination || call.toNumber)?.includes("sip:") ? "SIP" : "Phone"}
-                            </Badge>
-                          </TableCell>
-
-                          {/* 4. Recording */}
-                          <TableCell>
-                            {call.recordingUrl ? (
-                              <div className="flex space-x-1">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => alert("Audio player would be implemented")}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Play className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => window.open(call.recordingUrl, '_blank')}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Download className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 text-xs">No recording</span>
-                            )}
-                          </TableCell>
-
-                          {/* 6. Revenue */}
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <DollarSign className="h-3 w-3 text-green-600" />
-                              <span className="font-medium text-green-600 text-sm">
-                                ${(parseFloat(call.revenue?.toString() || '0') || 0).toFixed(4)}
-                              </span>
-                            </div>
-                          </TableCell>
-
-                          {/* 7. Payout */}
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <DollarSign className="h-3 w-3 text-orange-600" />
-                              <span className="font-medium text-orange-600 text-sm">
-                                ${(parseFloat(call.payout?.toString() || '0') || 0).toFixed(4)}
-                              </span>
-                            </div>
-                          </TableCell>
-
-                          {/* 8. Profit */}
-                          <TableCell>
-                            {(() => {
-                              const revenue = parseFloat(call.revenue?.toString() || '0') || 0;
-                              const payout = parseFloat(call.payout?.toString() || '0') || 0;
-                              const profit = revenue - payout;
-                              return (
-                                <div className="flex items-center space-x-1">
-                                  <DollarSign className="h-3 w-3 text-blue-600" />
-                                  <span className={`font-bold text-sm ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    ${profit.toFixed(4)}
-                                  </span>
-                                </div>
-                              );
-                            })()}
-                          </TableCell>
-
-                          {/* 5. URL Parameters */}
-                          <TableCell>
-                            <div className="space-y-1 text-xs max-w-32">
-                              {call.utmSource && <div><span className="font-medium">UTM:</span> {call.utmSource}</div>}
-                              {call.utmCampaign && <div><span className="font-medium">Campaign:</span> {call.utmCampaign}</div>}
-                              {call.clickId && <div><span className="font-medium">ClickID:</span> {call.clickId.slice(0, 8)}...</div>}
-                              {!call.utmSource && !call.utmCampaign && !call.clickId && (
-                                <span className="text-gray-400">No parameters</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          
-                          <TableCell>
-                            {call.winnerTargetName ? (
-                              <div className="space-y-1">
-                                <div className="font-medium text-sm">{call.winnerTargetName}</div>
-                                {call.winnerBuyerName && (
-                                  <div className="text-xs text-gray-500">{call.winnerBuyerName}</div>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 text-sm">No winner</span>
-                            )}
-                          </TableCell>
-                          
-                          <TableCell>
-                            {call.winningBidAmount > 0 ? (
-                              <div className="flex items-center space-x-1">
-                                <DollarSign className="h-3 w-3 text-green-600" />
-                                <span className="font-bold text-green-600">
-                                  ${call.winningBidAmount.toFixed(2)}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 text-sm">$0.00</span>
-                            )}
-                          </TableCell>
-                          
-                          <TableCell>
-                            {call.winnerDestination ? (
-                              <div className="font-mono text-xs">
-                                {call.winnerDestination.length > 15 
-                                  ? call.winnerDestination.slice(0, 15) + "..." 
-                                  : call.winnerDestination}
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 text-sm">N/A</span>
-                            )}
-                          </TableCell>
-                          
-                          <TableCell>
-                            <div className="space-y-1 text-xs">
-                              <div>{call.successfulBids}/{call.totalBids} bids</div>
-                              <div className="text-gray-500">{call.avgResponseTime}ms avg</div>
-                              {call.totalRevenue > 0 && (
-                                <div className="text-green-600">${call.totalRevenue.toFixed(2)}</div>
-                              )}
-                            </div>
-                          </TableCell>
-                          
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedCallId(call.id)}
-                              className="w-full"
-                            >
-                              <Eye className="h-3 w-3 mr-1" />
-                              RTB Bids
-                            </Button>
-                          </TableCell>
+                          {visibleColumns.map((column) => (
+                            <TableCell key={column.id} style={{ width: column.width || 'auto' }}>
+                              {renderCellContent(call, column)}
+                            </TableCell>
+                          ))}
                         </TableRow>
                       ))}
                     </TableBody>
