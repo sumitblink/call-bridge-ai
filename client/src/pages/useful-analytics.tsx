@@ -18,7 +18,7 @@ import {
 const COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'];
 
 export default function UsefulAnalytics() {
-  const [timeRange, setTimeRange] = useState('7d');
+  const [timeRange, setTimeRange] = useState('1d');
 
   // Fetch real visitor session data with auto-refresh
   const { data: sessionData, isLoading, refetch } = useQuery({

@@ -7374,6 +7374,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/tracking/live-sessions', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
+      const { timeRange = '1d' } = req.query;
+      
+      // Calculate date filter based on time range
+      const now = new Date();
+      let dateFilter;
+      
+      switch (timeRange) {
+        case '1d':
+          // Today only - start of today
+          dateFilter = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case '7d':
+          // Last 7 days
+          dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '30d':
+          // Last 30 days
+          dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          // Default to today
+          dateFilter = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      }
       
       // Get tracking stats from storage layer
       const basicStats = await storage.getBasicTrackingStats(userId);
@@ -7382,7 +7405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const client = (await import('@neondatabase/serverless')).neon;
       const sql_client = client(process.env.DATABASE_URL!);
       
-      // Get real tracking sessions from visitor sessions (DNI data is stored here)
+      // Get real tracking sessions from visitor sessions (DNI data is stored here) with date filter
       const visitorSessions = await sql_client`
         SELECT 
           session_id, source, medium, campaign,
@@ -7390,8 +7413,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           referrer, user_agent, landing_page, last_activity, is_active
         FROM visitor_sessions 
         WHERE user_id = ${userId} 
+          AND last_activity >= ${dateFilter.toISOString()}
         ORDER BY last_activity DESC 
-        LIMIT 50
+        LIMIT 100
       `;
 
       // Use visitor sessions (includes DNI data)
