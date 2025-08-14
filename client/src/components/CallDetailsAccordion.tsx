@@ -458,45 +458,7 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
                     </div>
                   </div>
 
-                  {/* Not Accepted Section */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <span className="font-semibold text-red-600">Not Accepted</span>
-                    </div>
-                    <div className="ml-5 space-y-1 text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono">$0.00</span>
-                        <span>Medi - WeGenerate - T2 RTB</span>
-                        <span className="text-muted-foreground">Call Acceptance Parsing Rejection, Api Request Failure (429 - Too Many Requests)</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono">$0.00</span>
-                        <span>Medi - LMX - RTB</span>
-                        <span className="text-muted-foreground">Call Acceptance Parsing Rejection</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono">$0.00</span>
-                        <span>Medi - Naked - RTB</span>
-                        <span className="text-muted-foreground">Call Acceptance Parsing Rejection</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Not Accepted - Duration Section */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                      <span className="font-semibold text-orange-600">Not Accepted - Duration</span>
-                    </div>
-                    <div className="ml-5 space-y-1 text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono">$8.40</span>
-                        <span>180</span>
-                        <span>Medi - PM - RTB</span>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Hardcoded sections removed - RTB data now comes from actual auction results below */}
 
                   {/* RTB Requests Definitition Summary */}
                   <div>
@@ -659,8 +621,11 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
                   </div>
                 ) : rtbAuctionDetails && rtbAuctionDetails.length > 0 ? (
                   <div className="space-y-6">
-                    {/* Not Accepted Section */}
-                    {rtbAuctionDetails.filter(detail => detail.bidStatus === 'rejected' || detail.bidStatus === 'failed').length > 0 && (
+                    {/* Not Accepted Section - Only show if there are actual rejected/failed bids */}
+                    {rtbAuctionDetails.filter(detail => 
+                      (detail.bidStatus === 'rejected' || detail.bidStatus === 'failed' || detail.bidStatus === 'error') 
+                      && !detail.isWinner
+                    ).length > 0 && (
                       <div>
                         <div className="flex items-center gap-2 mb-3">
                           <XCircle className="h-4 w-4 text-red-500" />
@@ -678,7 +643,10 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
                             </TableHeader>
                             <TableBody>
                               {rtbAuctionDetails
-                                .filter(detail => detail.bidStatus === 'rejected' || detail.bidStatus === 'failed')
+                                .filter(detail => 
+                                  (detail.bidStatus === 'rejected' || detail.bidStatus === 'failed' || detail.bidStatus === 'error') 
+                                  && !detail.isWinner
+                                )
                                 .map((detail) => (
                                   <TableRow key={detail.id} className="border-b last:border-b-0">
                                     <TableCell className="font-mono">${detail.bidAmount}</TableCell>
