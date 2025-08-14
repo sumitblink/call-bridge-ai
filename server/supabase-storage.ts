@@ -711,8 +711,8 @@ export class SupabaseStorage implements IStorage {
           hangupCause: calls.hangupCause,
           disposition: calls.disposition,
           whoHungUp: calls.whoHungUp,
-          // Buyer fields
-          buyerName: buyers.companyName,
+          // Buyer fields with null handling
+          buyerName: sql`COALESCE(${calls.buyerName}, ${buyers.companyName})`,
           buyerEmail: buyers.email,
           // Campaign fields  
           campaignName: campaigns.name,

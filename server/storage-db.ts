@@ -70,7 +70,7 @@ import {
   type InsertRedtrackConfig,
 } from '@shared/schema';
 import { db } from './db';
-import { eq, and, sql, inArray, isNotNull, ne, isNull } from 'drizzle-orm';
+import { eq, and, sql, inArray, isNotNull, ne, isNull, desc } from 'drizzle-orm';
 import type { IStorage } from './storage';
 
 export class DatabaseStorage implements IStorage {
@@ -713,8 +713,8 @@ export class DatabaseStorage implements IStorage {
           hangupCause: calls.hangupCause,
           disposition: calls.disposition,
           whoHungUp: calls.whoHungUp,
-          // Buyer fields - Use stored buyer_name from calls table
-          buyerName: calls.buyerName,
+          // Buyer fields - Use stored buyer_name from calls table with null handling
+          buyerName: sql`COALESCE(${calls.buyerName}, ${buyers.companyName})`,
           buyerEmail: buyers.email,
           // Campaign fields  
           campaignName: campaigns.name,
