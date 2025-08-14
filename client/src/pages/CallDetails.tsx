@@ -111,15 +111,16 @@ function SortableTableHead({
       className={`relative group select-none ${isDragging ? 'opacity-50' : ''} ${isResizing ? 'cursor-col-resize' : 'cursor-pointer'}`}
       {...attributes}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between h-full relative">
         <div className="flex items-center space-x-1" {...listeners}>
-          <Move className="h-3 w-3 text-gray-300 group-hover:text-gray-500" />
+          <Move className="h-3 w-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
           <span>{column.label}</span>
         </div>
         {column.resizable !== false && (
           <div 
-            className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-blue-400 transition-colors"
+            className="absolute right-0 top-0 h-full w-2 cursor-col-resize hover:bg-blue-400 hover:opacity-50 transition-all"
             onMouseDown={handleMouseDown}
+            style={{ zIndex: 10 }}
           />
         )}
       </div>
@@ -254,37 +255,7 @@ export default function CallDetails() {
   const calls: CallDetail[] = (callsData as any)?.calls || [];
   const bids: BidDetail[] = (bidDetails as any)?.bids || [];
 
-  // Voice Insights mutation
-  const voiceInsightsMutation = useMutation({
-    mutationFn: async (callId: number) => {
-      const response = await fetch(`/api/calls/${callId}/voice-insights`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch Voice Insights');
-      }
-      return response.json();
-    },
-    onSuccess: (data: any, callId) => {
-      toast({
-        title: "Voice Insights Updated",
-        description: `Successfully fetched Voice Insights data for call ${callId}. Who hung up: ${data.voiceInsights?.whoHungUp || 'unknown'}`,
-      });
-      // Refresh the calls data
-      queryClient.invalidateQueries({ queryKey: ["/api/call-details/summary"] });
-    },
-    onError: (error: any, callId) => {
-      toast({
-        title: "Voice Insights Error",
-        description: error.message || `Failed to fetch Voice Insights for call ${callId}`,
-        variant: "destructive",
-      });
-    },
-  });
+
 
   // DnD sensors for drag and drop functionality
   const sensors = useSensors(
@@ -349,6 +320,16 @@ export default function CallDetails() {
       )
     );
   }, []);
+
+  // Handle column visibility changes from the customizer
+  const handleColumnsChange = useCallback((newVisibleColumns: string[]) => {
+    const updatedColumns = allColumns.map((col, index) => ({
+      ...col,
+      visible: newVisibleColumns.includes(col.id),
+      order: newVisibleColumns.indexOf(col.id) !== -1 ? newVisibleColumns.indexOf(col.id) : index
+    }));
+    setColumnConfig(updatedColumns);
+  }, [allColumns]);
 
   // Sort columns by order  
   const sortedVisibleColumns = allColumns
@@ -479,19 +460,17 @@ export default function CallDetails() {
       case 'recording':
         return call.recordingUrl ? (
           <div className="flex space-x-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => alert("Audio player would be implemented")}
-              className="h-6 w-6 p-0"
-            >
-              <Play className="h-3 w-3" />
-            </Button>
+            <audio controls className="h-8 w-20" style={{ fontSize: '8px' }}>
+              <source src={call.recordingUrl} type="audio/mpeg" />
+              <source src={call.recordingUrl} type="audio/wav" />
+              Your browser does not support the audio element.
+            </audio>
             <Button
               variant="outline"
               size="sm"
               onClick={() => window.open(call.recordingUrl, '_blank')}
               className="h-6 w-6 p-0"
+              title="Download recording"
             >
               <Download className="h-3 w-3" />
             </Button>
@@ -573,17 +552,6 @@ export default function CallDetails() {
               <Eye className="h-3 w-3 mr-1" />
               View Bids
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => voiceInsightsMutation.mutate(call.id)}
-              disabled={voiceInsightsMutation.isPending || !call.callSid}
-              className="h-6 px-2 text-xs"
-              title="Fetch Voice Insights data including 'Who Hung Up' information"
-            >
-              <Activity className="h-3 w-3 mr-1" />
-              {voiceInsightsMutation.isPending ? 'Fetching...' : 'Voice Insights'}
-            </Button>
           </div>
         );
       default:
@@ -612,14 +580,10 @@ export default function CallDetails() {
           <p className="text-gray-500">Comprehensive call information and RTB auction results</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setShowColumnCustomizer(true)}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Columns
-          </Button>
+          <ColumnCustomizer
+            visibleColumns={visibleColumns}
+            onColumnsChange={handleColumnsChange}
+          />
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Export
