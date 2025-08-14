@@ -9673,6 +9673,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Call details router already mounted above - removed duplicate mounting
 
+  // Recording proxy endpoints to handle Twilio authentication
+  app.get('/api/recordings/proxy', requireAuth, async (req, res) => {
+    try {
+      const { url } = req.query;
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'Recording URL is required' });
+      }
+
+      // Fetch the recording with proper authentication
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch recording: ${response.statusText}`);
+      }
+
+      // Set appropriate headers for audio playback
+      res.setHeader('Content-Type', response.headers.get('content-type') || 'audio/mpeg');
+      res.setHeader('Content-Length', response.headers.get('content-length') || '');
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+      
+      // Stream the audio content
+      response.body?.pipe(res);
+    } catch (error) {
+      console.error('Recording proxy error:', error);
+      res.status(500).json({ error: 'Failed to fetch recording' });
+    }
+  });
+
+  app.get('/api/recordings/download', requireAuth, async (req, res) => {
+    try {
+      const { url } = req.query;
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'Recording URL is required' });
+      }
+
+      // Fetch the recording with proper authentication
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch recording: ${response.statusText}`);
+      }
+
+      // Set headers for download
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', 'attachment; filename="recording.mp3"');
+      res.setHeader('Content-Length', response.headers.get('content-length') || '');
+      
+      // Stream the audio content for download
+      response.body?.pipe(res);
+    } catch (error) {
+      console.error('Recording download error:', error);
+      res.status(500).json({ error: 'Failed to download recording' });
+    }
+  });
+
   const httpServer = createServer(app);
   // Test landing page route for RedTrack integration testing
   app.get('/redtrack-test-lander.html', (req, res) => {

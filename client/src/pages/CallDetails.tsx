@@ -460,15 +460,31 @@ export default function CallDetails() {
       case 'recording':
         return call.recordingUrl ? (
           <div className="flex space-x-1">
-            <audio controls className="h-8 w-20" style={{ fontSize: '8px' }}>
-              <source src={call.recordingUrl} type="audio/mpeg" />
-              <source src={call.recordingUrl} type="audio/wav" />
-              Your browser does not support the audio element.
-            </audio>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(call.recordingUrl, '_blank')}
+              onClick={() => {
+                if (call.recordingUrl) {
+                  // Create a proxy endpoint for authenticated Twilio recording access
+                  const proxyUrl = `/api/recordings/proxy?url=${encodeURIComponent(call.recordingUrl)}`;
+                  window.open(proxyUrl, '_blank');
+                }
+              }}
+              className="h-6 w-6 p-0"
+              title="Play recording"
+            >
+              <Play className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (call.recordingUrl) {
+                  // Download through proxy to handle Twilio authentication
+                  const proxyUrl = `/api/recordings/download?url=${encodeURIComponent(call.recordingUrl)}`;
+                  window.open(proxyUrl, '_blank');
+                }
+              }}
               className="h-6 w-6 p-0"
               title="Download recording"
             >
