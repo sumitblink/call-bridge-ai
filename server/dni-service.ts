@@ -398,21 +398,22 @@ export class DNIService {
     request: DNIRequest
   ): Promise<void> {
     try {
-      console.log('DNI Tracking Session:', {
-        trackingId,
-        campaignId,
-        phoneNumberId,
-        source: request.source,
-        medium: request.medium,
-        campaign: request.campaign,
-        sessionId: request.sessionId
-      });
+      // Verbose tracking session logging disabled
+      // console.log('DNI Tracking Session:', {
+      //   trackingId,
+      //   campaignId,
+      //   phoneNumberId,
+      //   source: request.source,
+      //   medium: request.medium,
+      //   campaign: request.campaign,
+      //   sessionId: request.sessionId
+      // });
       
       // Get geographic data from IP address
       const geoData = GeoService.getGeographicDataFromIP(request.ipAddress || '127.0.0.1');
-      console.log('DNI Geographic Data:', geoData);
+      // console.log('DNI Geographic Data:', geoData);
       
-      console.log('DNI CustomFields received:', request.customFields);
+      // console.log('DNI CustomFields received:', request.customFields);
 
       // Store visitor session in database for real-time tracking
       const { neon } = await import('@neondatabase/serverless');
@@ -463,7 +464,7 @@ export class DNIService {
           redtrack_sub_5 = EXCLUDED.redtrack_sub_5
       `;
       
-      console.log(`✅ DNI Session stored: ${uniqueSessionId} with UTM: ${request.source}/${request.medium}/${request.campaign}`);
+      // console.log(`✅ DNI Session stored: ${uniqueSessionId} with UTM: ${request.source}/${request.medium}/${request.campaign}`);
     } catch (error) {
       console.error('Error storing tracking session:', error);
     }
@@ -693,7 +694,7 @@ export class DNIService {
    */
   static async trackVisitorByCampaignId(request: DNIRequest): Promise<DNIResponse> {
     try {
-      console.log('DNI: Simple tracking by campaign ID:', request.campaignId);
+      // console.log('DNI: Simple tracking by campaign ID:', request.campaignId);
       
       // Find campaign by ID
       const campaign = await db.select().from(campaigns).where(eq(campaigns.id, request.campaignId)).limit(1);
@@ -711,7 +712,7 @@ export class DNIService {
       }
 
       const campaignRecord = campaign[0];
-      console.log('DNI: Found campaign:', campaignRecord.name);
+      // console.log('DNI: Found campaign:', campaignRecord.name);
 
       // Use the existing trackVisitor method with campaign details
       const trackingRequest = {

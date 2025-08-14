@@ -4160,16 +4160,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
     try {
-      console.log('🚀 DNI ULTRA-FAST REQUEST:', {
-        body: req.body,
-        headers: {
-          'user-agent': req.get('user-agent'),
-          'referer': req.get('referer'),
-          'origin': req.get('origin')
-        },
-        ip: req.ip,
-        timestamp: new Date().toISOString()
-      });
+      // Verbose logging disabled for production use
+      // console.log('🚀 DNI ULTRA-FAST REQUEST:', {
+      //   body: req.body,
+      //   headers: {
+      //     'user-agent': req.get('user-agent'),
+      //     'referer': req.get('referer'),
+      //     'origin': req.get('origin')
+      //   },
+      //   ip: req.ip,
+      //   timestamp: new Date().toISOString()
+      // });
 
       const { campaignId, publisher, clickid, utm_source, utm_medium } = req.body;
       
@@ -4198,7 +4199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
-      console.log('✅ DNI ULTRA-FAST RESPONSE:', response);
+      // console.log('✅ DNI ULTRA-FAST RESPONSE:', response);
       
       res.json(response);
 
@@ -7029,8 +7030,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
     try {
-      console.log('=== Simple DNI Track Handler Called ===');
-      console.log('Request body:', req.body);
+      // console.log('=== Simple DNI Track Handler Called ===');
+      // console.log('Request body:', req.body);
 
       const {
         campaignId,
@@ -7084,7 +7085,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
       
-      console.log('DNI: Processing simple tracking request');
+      // console.log('DNI: Processing simple tracking request');
 
       const trackingRequest = {
         campaignId,
