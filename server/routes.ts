@@ -1691,28 +1691,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user calls efficiently with enhanced data (includes hangup, target, buyer data)
       const userCalls = await storage.getEnhancedCallsByUser(userId);
       
-      // HOTFIX: Ensure buyerName is populated for RTB calls from database
-      const client = (await import('@neondatabase/serverless')).neon;
-      const sql_client = client(process.env.DATABASE_URL!);
+      // HOTFIX: Set buyer name from target company for RTB calls
+      const rtbTargets = await storage.getRtbTargets(userId);
       
-      // Get buyer_name for calls that are missing it
-      const callsNeedingBuyerName = userCalls.filter(call => !call.buyerName && call.id);
-      if (callsNeedingBuyerName.length > 0) {
-        const callIds = callsNeedingBuyerName.map(call => call.id);
-        const buyerNames = await sql_client`
-          SELECT id, buyer_name 
-          FROM calls 
-          WHERE id = ANY(${callIds}) AND buyer_name IS NOT NULL
-        `;
-        
-        // Update the calls with correct buyer names
-        const buyerNameMap = new Map(buyerNames.map(row => [row.id, row.buyer_name]));
-        userCalls.forEach(call => {
-          if (!call.buyerName && buyerNameMap.has(call.id)) {
-            call.buyerName = buyerNameMap.get(call.id);
+      userCalls.forEach(call => {
+        if (!call.buyerName && call.targetId) {
+          // Find the RTB target for this call
+          const target = rtbTargets.find(t => t.id === call.targetId);
+          if (target && target.companyName) {
+            call.buyerName = target.companyName;
           }
-        });
-      }
+        }
+      });
       
       // Enhanced RTB data for call ID 144
       const enhancedCalls = userCalls.map(call => {
