@@ -499,7 +499,17 @@ export class RTBService {
       }
 
       // Get active targets assigned directly to this campaign
-      const assignments = await storage.getCampaignRtbTargets(campaign.id);
+      console.log(`[RTB DEBUG] About to fetch targets for campaign: ${campaign.id}`);
+      console.log(`[RTB DEBUG] Campaign object:`, JSON.stringify(campaign, null, 2));
+      
+      let assignments;
+      try {
+        assignments = await storage.getCampaignRtbTargets(campaign.id);
+        console.log(`[RTB DEBUG] Successfully fetched ${assignments.length} assignments`);
+      } catch (error) {
+        console.error(`[RTB DEBUG] Error fetching campaign RTB targets:`, error);
+        throw error;
+      }
       const activeAssignments = assignments.filter(a => a.isActive !== false); // Include assignments where isActive is true or undefined
 
       // Use campaign-level RTB configuration instead of router configuration

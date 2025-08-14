@@ -1626,29 +1626,33 @@ export class SupabaseStorage implements IStorage {
   // Campaign RTB Target methods
   async getCampaignRtbTargets(campaignId: string): Promise<any[]> {
     try {
-      const result = await db
-        .select({
-          id: rtbTargets.id,
-          name: rtbTargets.name,
-          companyName: rtbTargets.companyName,
-          contactPerson: rtbTargets.contactPerson,
-          contactEmail: rtbTargets.contactEmail,
-          contactPhone: rtbTargets.contactPhone,
-          endpointUrl: rtbTargets.endpointUrl,
-          minBidAmount: rtbTargets.minBidAmount,
-          maxBidAmount: rtbTargets.maxBidAmount,
-          currency: rtbTargets.currency,
-          isActive: rtbTargets.isActive,
-          createdAt: rtbTargets.createdAt,
-          updatedAt: rtbTargets.updatedAt
-        })
-        .from(campaignRtbTargets)
-        .innerJoin(rtbTargets, eq(campaignRtbTargets.rtbTargetId, rtbTargets.id))
-        .where(eq(campaignRtbTargets.campaignId, campaignId));
+      if (!campaignId) {
+        console.warn('[SupabaseStorage getCampaignRtbTargets] Campaign ID is null or undefined');
+        return [];
+      }
       
-      return result;
+      // Use raw SQL query to bypass Drizzle issue
+      const result = await db.execute(sql`
+        SELECT crt.id, crt.campaign_id, crt.rtb_target_id, crt.priority, crt.weight, 
+               crt.is_active, crt.assigned_at
+        FROM campaign_rtb_targets crt
+        WHERE crt.campaign_id = ${campaignId}
+      `);
+      
+      // Map the raw results to the expected CampaignRtbTarget format
+      const targets: any[] = result.rows.map((row: any) => ({
+        id: row.id,
+        campaignId: row.campaign_id,
+        rtbTargetId: row.rtb_target_id,
+        priority: row.priority,
+        weight: row.weight,
+        isActive: row.is_active,
+        assignedAt: row.assigned_at,
+      }));
+      
+      return targets;
     } catch (error) {
-      console.error('Error fetching campaign RTB targets:', error);
+      console.error('[SupabaseStorage getCampaignRtbTargets] Database query error:', error);
       return [];
     }
   }
