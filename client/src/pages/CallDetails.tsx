@@ -632,26 +632,34 @@ export default function CallDetails() {
       </div>
 
       {/* Live and Completed Call Stats */}
-      <div className="flex items-center space-x-6 p-4 bg-gray-900 rounded-lg text-white">
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center justify-center w-10 h-10 bg-green-500 rounded-full">
-            <Phone className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-green-400">{liveCalls}</div>
-            <div className="text-sm text-gray-300">Live</div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
+                <Phone className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600">{liveCalls}</div>
+                <div className="text-sm text-gray-600">Live Calls</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center justify-center w-10 h-10 bg-blue-500 rounded-full">
-            <Phone className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-blue-400">{completedCalls}</div>
-            <div className="text-sm text-gray-300">Completed</div>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
+                <Phone className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-blue-600">{completedCalls}</div>
+                <div className="text-sm text-gray-600">Completed Calls</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
