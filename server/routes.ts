@@ -7374,6 +7374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/tracking/live-sessions', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
+      const { timeRange = '7d' } = req.query;
       
       // Get tracking stats from storage layer
       const basicStats = await storage.getBasicTrackingStats(userId);
@@ -7382,7 +7383,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const client = (await import('@neondatabase/serverless')).neon;
       const sql_client = client(process.env.DATABASE_URL!);
       
-      // Get real tracking sessions from visitor sessions (DNI data is stored here)
+      // Calculate days based on timeRange
+      const days = timeRange === '1d' ? 1 : timeRange === '7d' ? 7 : 30;
+      
+      // Get real tracking sessions from visitor sessions with date filtering
       const visitorSessions = await sql_client`
         SELECT 
           session_id, source, medium, campaign,
@@ -7390,8 +7394,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           referrer, user_agent, landing_page, last_activity, is_active
         FROM visitor_sessions 
         WHERE user_id = ${userId} 
+          AND last_activity >= CURRENT_DATE - ${days} * INTERVAL '1 day'
         ORDER BY last_activity DESC 
-        LIMIT 50
+        LIMIT 100
       `;
 
       // Use visitor sessions (includes DNI data)
@@ -8913,16 +8918,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const days = timeRange === '1d' ? 1 : timeRange === '7d' ? 7 : 30;
       
+      // Use last_activity instead of first_visit for consistency with live-sessions
       const dailyStats = await sql_client`
         SELECT 
-          DATE(first_visit) as date,
+          DATE(last_activity) as date,
           COUNT(*) as sessions,
           COUNT(DISTINCT source) as sources
         FROM visitor_sessions 
         WHERE user_id = ${userId} 
-          AND first_visit >= CURRENT_DATE - ${days} * INTERVAL '1 day'
-        GROUP BY DATE(first_visit)
-        ORDER BY date DESC
+          AND last_activity >= CURRENT_DATE - ${days} * INTERVAL '1 day'
+        GROUP BY DATE(last_activity)
+        ORDER BY date ASC
         LIMIT 30
       `;
       
@@ -8943,8 +8949,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/analytics/attribution-values', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
+      const { timeRange = '7d' } = req.query;
       
       // For now, return empty attribution values until we have conversion tracking
+      // But maintain consistent timeRange parameter handling
       res.json([]);
     } catch (error) {
       console.error('Error fetching attribution values:', error);
