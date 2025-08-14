@@ -1626,6 +1626,11 @@ export class SupabaseStorage implements IStorage {
   // Campaign RTB Target methods
   async getCampaignRtbTargets(campaignId: string): Promise<any[]> {
     try {
+      if (!campaignId) {
+        console.log('No campaignId provided to getCampaignRtbTargets');
+        return [];
+      }
+
       const result = await db
         .select({
           id: rtbTargets.id,
@@ -1646,7 +1651,7 @@ export class SupabaseStorage implements IStorage {
         .innerJoin(rtbTargets, eq(campaignRtbTargets.rtbTargetId, rtbTargets.id))
         .where(eq(campaignRtbTargets.campaignId, campaignId));
       
-      return result;
+      return result || [];
     } catch (error) {
       console.error('Error fetching campaign RTB targets:', error);
       return [];
