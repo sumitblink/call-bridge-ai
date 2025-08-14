@@ -363,8 +363,7 @@ export default function RealTrackingDashboard() {
               </Table>
             </div>
           </CardContent>
-          </Card>
-        </div>
+        </Card>
 
         {/* Detailed Session Table */}
         <Card>
@@ -410,7 +409,7 @@ export default function RealTrackingDashboard() {
                         {session.campaign || 'Direct Traffic'}
                       </TableCell>
                       <TableCell>
-                        <Badge size="sm" variant="secondary">{session.medium || 'none'}</Badge>
+                        <Badge variant="secondary">{session.medium || 'none'}</Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(session.timestamp).toLocaleString()}

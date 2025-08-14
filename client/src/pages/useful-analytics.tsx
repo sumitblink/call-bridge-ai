@@ -290,7 +290,7 @@ export default function UsefulAnalytics() {
                         <Badge variant="outline">{campaign.source}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge size="sm" variant="secondary">{campaign.medium || 'none'}</Badge>
+                        <Badge variant="secondary">{campaign.medium || 'none'}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
