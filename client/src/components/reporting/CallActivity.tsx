@@ -1395,6 +1395,7 @@ export default function CallActivity() {
         return <div className="truncate text-xs">{campaign?.name || 'Unknown'}</div>;
       case 'buyer':
         // Use enhanced buyerName field (includes RTB target company names) or fallback to buyer lookup
+        console.log('Debug buyer data for call', call.id, ':', { buyerName: call.buyerName, buyerId: call.buyerId });
         if (call.buyerName) {
           return <div className="truncate text-xs">{call.buyerName}</div>;
         }
