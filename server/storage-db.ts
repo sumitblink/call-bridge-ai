@@ -1539,18 +1539,11 @@ export class DatabaseStorage implements IStorage {
   async getConversionEvents(sessionId?: string, campaignId?: number): Promise<ConversionEvent[]> {
     let query = db.select().from(conversionEvents);
     
-    if (sessionId && campaignId) {
-      query = query.where(and(
-        eq(conversionEvents.sessionId, sessionId),
-        eq(conversionEvents.campaignId, campaignId)
-      ));
-    } else if (sessionId) {
+    if (sessionId) {
       query = query.where(eq(conversionEvents.sessionId, sessionId));
-    } else if (campaignId) {
-      query = query.where(eq(conversionEvents.campaignId, campaignId));
     }
     
-    return await query.orderBy(sql`${conversionEvents.createdAt} DESC`);
+    return await query.orderBy(desc(conversionEvents.createdAt));
   }
 
   async getBasicTrackingStats(userId: number): Promise<{
@@ -1573,7 +1566,7 @@ export class DatabaseStorage implements IStorage {
           .select()
           .from(conversionEvents)
           .where(inArray(conversionEvents.sessionId, sessionIds))
-          .orderBy(sql`${conversionEvents.createdAt} DESC`)
+          .orderBy(desc(conversionEvents.createdAt))
       : [];
 
     // Calculate top sources
