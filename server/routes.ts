@@ -2330,15 +2330,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`\n📞 === INTERNAL BUYER SELECTION ===`);
         console.log(`🔄 RTB Result: ${routingMethod} - Using internal buyers`);
         
-        const { CallRouter } = await import('./call-routing');
-        const routingResult = await CallRouter.selectBuyer(campaign.id, fromNumber);
+        // Get internal buyers for this campaign
+        const campaignBuyers = await storage.getCampaignBuyers(campaign.id);
+        console.log(`🔍 Found ${campaignBuyers.length} internal buyers for campaign`);
         
-        if (!routingResult.selectedBuyer) {
-          console.log(`❌ NO BUYERS AVAILABLE: ${routingResult.reason}`);
+        if (campaignBuyers.length > 0) {
+          // Use first active buyer as fallback
+          const activeBuyer = campaignBuyers.find(cb => cb.isActive);
+          if (activeBuyer) {
+            selectedBuyer = await storage.getBuyer(activeBuyer.buyerId);
+            console.log(`✅ Selected internal buyer: ${selectedBuyer?.name || selectedBuyer?.companyName}`);
+            
+            routingData = {
+              ...routingData,
+              routingReason: 'internal_fallback_from_rtb',
+              alternatives: campaignBuyers.length - 1
+            };
+          }
+        }
+        
+        if (!selectedBuyer) {
+          console.log(`❌ NO BUYERS AVAILABLE: No buyers assigned to campaign`);
           console.log(`🔚 CALL REJECTED - Playing busy message to caller`);
           return res.type('text/xml').send(`
             <Response>
-              <Say>All representatives are currently busy. Please try again later.</Say>
+              <Say>We're sorry, all representatives are currently busy. Please call back later.</Say>
               <Hangup/>
             </Response>
           `);
