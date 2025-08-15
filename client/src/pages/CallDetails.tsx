@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Layout from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -612,8 +613,9 @@ export default function CallDetails() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <Layout>
+      <div className="space-y-6">
+        {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Call Details</h1>
@@ -848,6 +850,7 @@ export default function CallDetails() {
 
 
       </Tabs>
-    </div>
+      </div>
+    </Layout>
   );
 }
