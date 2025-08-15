@@ -52,7 +52,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (August 2025)
 
-### Database Stability & Error Resolution (Latest)
+### SIP Routing Priority Fix (Latest - August 16, 2025)
+- **CRITICAL FIX**: RTB system now prioritizes SIP addresses over phone numbers as recommended by partners
+- **RTB Response Processing**: Modified routing logic to extract `sipAddress` from RTB bid responses before falling back to `destinationNumber`
+- **SIP Address Detection**: Enhanced target phone number selection to check RTB response structure for SIP preferences
+- **Routing Logic**: Changed order of preference: 1) RTB sipAddress, 2) RTB destinationNumber, 3) Legacy buyer phoneNumber
+- **Partner Compliance**: System now follows RTB partner recommendations to use SIP routing over DID routing
+
+### Database Stability & Error Resolution  
 - **Foreign Key Constraint Fixes**: Comprehensive validation for all call creation foreign key references (buyer_id, number_pool_id, phone_number_id)
 - **TwiML Generation Stabilized**: Fixed undefined variable errors in caller ID assignment causing application crashes
 - **Status Callback Enhanced**: Pool status webhook now returns proper TwiML responses instead of plain text to prevent Twilio errors

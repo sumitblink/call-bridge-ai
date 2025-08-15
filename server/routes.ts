@@ -2365,9 +2365,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let selectedTarget: any = null;
       
       if (routingMethod === 'rtb') {
-        // For RTB, use the external destination number from the winning bid
-        targetPhoneNumber = selectedBuyer.phoneNumber;
-        console.log(`🌐 RTB External Destination: ${targetPhoneNumber}`);
+        // For RTB, prioritize SIP address over phone number if available
+        const rtbResponse = biddingResult?.winningBid;
+        if (rtbResponse?.sipAddress) {
+          targetPhoneNumber = rtbResponse.sipAddress;
+          console.log(`🌐 RTB SIP Destination (PREFERRED): ${targetPhoneNumber}`);
+        } else if (rtbResponse?.destinationNumber) {
+          targetPhoneNumber = rtbResponse.destinationNumber;
+          console.log(`📞 RTB Phone Destination (FALLBACK): ${targetPhoneNumber}`);
+        } else {
+          targetPhoneNumber = selectedBuyer.phoneNumber;
+          console.log(`📞 RTB Buyer Phone (LEGACY): ${targetPhoneNumber}`);
+        }
       } else {
         // For internal buyers, select target using intelligent routing
         const { CallRouter } = await import('./call-routing');
