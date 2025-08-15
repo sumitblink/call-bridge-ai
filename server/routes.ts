@@ -2330,31 +2330,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`\n📞 === INTERNAL BUYER SELECTION ===`);
         console.log(`🔄 RTB Result: ${routingMethod} - Using internal buyers`);
         
-        // Get internal buyers for this campaign
-        const campaignBuyers = await storage.getCampaignBuyers(campaign.id);
-        console.log(`🔍 Found ${campaignBuyers.length} internal buyers for campaign`);
+        const { CallRouter } = await import('./call-routing');
+        const routingResult = await CallRouter.selectBuyer(campaign.id, fromNumber);
         
-        if (campaignBuyers.length > 0) {
-          // Use first active buyer as fallback
-          const activeBuyer = campaignBuyers.find(cb => cb.isActive);
-          if (activeBuyer) {
-            selectedBuyer = await storage.getBuyer(activeBuyer.buyerId);
-            console.log(`✅ Selected internal buyer: ${selectedBuyer?.name || selectedBuyer?.companyName}`);
-            
-            routingData = {
-              ...routingData,
-              routingReason: 'internal_fallback_from_rtb',
-              alternatives: campaignBuyers.length - 1
-            };
-          }
-        }
-        
-        if (!selectedBuyer) {
-          console.log(`❌ NO BUYERS AVAILABLE: No buyers assigned to campaign`);
+        if (!routingResult.selectedBuyer) {
+          console.log(`❌ NO BUYERS AVAILABLE: ${routingResult.reason}`);
           console.log(`🔚 CALL REJECTED - Playing busy message to caller`);
           return res.type('text/xml').send(`
             <Response>
-              <Say>We're sorry, all representatives are currently busy. Please call back later.</Say>
+              <Say>All representatives are currently busy. Please try again later.</Say>
               <Hangup/>
             </Response>
           `);
@@ -2681,7 +2665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   <Dial callerId="${callerIdToUse}" timeout="30" record="record-from-answer" recordingStatusCallback="${baseUrl}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="${baseUrl}/api/webhooks/pool/${poolId}/status" method="POST">
     ${dialTag}
   </Dial>
-  <Say>Thank you for calling.</Say>
+  <Say>We're sorry, our partner is currently unavailable. Thank you for calling.</Say>
   <Hangup/>
 </Response>`;
       
@@ -2737,10 +2721,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn('[Pool Status] Database update failed, continuing:', dbError);
       }
       
-      // Return proper TwiML response based on call status
+      // Return proper TwiML response based on call status - handle RTB partner disconnects
       if (CallStatus === 'completed' || DialCallStatus === 'completed') {
-        res.type('text/xml').send(`<Response><Say>Thank you for calling.</Say><Hangup/></Response>`);
-      } else if (CallStatus === 'failed' || DialCallStatus === 'failed' || DialCallStatus === 'busy' || DialCallStatus === 'no-answer') {
+        // Check if call duration was very short (indicating immediate disconnect)
+        const duration = CallDuration ? parseInt(CallDuration) : 0;
+        if (duration <= 3) {
+          res.type('text/xml').send(`<Response><Say>We're sorry, our partner is currently unavailable. Please try again later.</Say><Hangup/></Response>`);
+        } else {
+          res.type('text/xml').send(`<Response><Say>Thank you for calling.</Say><Hangup/></Response>`);
+        }
+      } else if (CallStatus === 'no-answer' || DialCallStatus === 'no-answer') {
+        res.type('text/xml').send(`<Response><Say>We're sorry, our partner is currently unavailable. Please try again later.</Say><Hangup/></Response>`);
+      } else if (CallStatus === 'failed' || DialCallStatus === 'failed' || DialCallStatus === 'busy') {
         res.type('text/xml').send(`<Response><Say>We're sorry, the call could not be completed. Please try again later.</Say><Hangup/></Response>`);
       } else {
         res.status(200).send('OK');
