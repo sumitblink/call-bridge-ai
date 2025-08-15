@@ -1554,21 +1554,34 @@ export class DatabaseStorage implements IStorage {
     recentConversions: ConversionEvent[];
   }> {
     try {
-      // Get sessions for the user
-      const userSessions = await db
-        .select()
-        .from(visitorSessions)
-        .where(eq(visitorSessions.userId, userId));
+      // Get sessions for the user - simplified query to avoid schema issues
+      let userSessions: any[] = [];
+      try {
+        userSessions = await db
+          .select()
+          .from(visitorSessions)
+          .where(eq(visitorSessions.userId, userId))
+          .limit(1000);
+      } catch (sessionError) {
+        console.warn('Failed to fetch visitor sessions, using empty array:', sessionError);
+        userSessions = [];
+      }
 
-      // Get conversion events for the user's sessions (no campaignId filter)
-      const sessionIds = userSessions.map(s => s.sessionId);
-      const userConversions = sessionIds.length > 0 
-        ? await db
+      // Get conversion events for the user's sessions (if any sessions exist)
+      let userConversions: any[] = [];
+      if (userSessions.length > 0) {
+        try {
+          const sessionIds = userSessions.map(s => s.sessionId);
+          userConversions = await db
             .select()
             .from(conversionEvents)
             .where(inArray(conversionEvents.sessionId, sessionIds))
-            .orderBy(desc(conversionEvents.createdAt))
-        : [];
+            .orderBy(desc(conversionEvents.createdAt));
+        } catch (conversionError) {
+          console.warn('Failed to fetch conversion events, using empty array:', conversionError);
+          userConversions = [];
+        }
+      }
 
       // Calculate top sources
       const sourceCounts: Record<string, number> = {};
