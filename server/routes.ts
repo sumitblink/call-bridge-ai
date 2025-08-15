@@ -28,11 +28,7 @@ import {
   calls,
   insertCallTrackingTagSchema,
   CallTrackingTag,
-  InsertCallTrackingTag,
-  rtbBidRequests,
-  rtbBidResponses,
-  rtbTargets,
-  buyers
+  InsertCallTrackingTag 
 } from "../shared/schema";
 import { handleIncomingCall, handleCallStatus, handleRecordingStatus } from "./twilio-webhooks";
 import { RTBIdGenerator } from "./rtb-id-generator";
@@ -239,18 +235,13 @@ async function fireRedTrackPostback(clickid: string, conversionType: string, con
         
         console.log('[Webhook] Firing RedTrack postback:', postbackUrl);
         
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
         const response = await fetch(postbackUrl, {
           method: 'GET',
-          signal: controller.signal,
+          timeout: 10000,
           headers: {
             'User-Agent': 'CallCenter-Pro-Webhook/1.0'
           }
         });
-        
-        clearTimeout(timeoutId);
 
         if (response.ok) {
           console.log(`[Webhook] ✅ RedTrack postback fired successfully to ${domain}:`, {
@@ -264,7 +255,7 @@ async function fireRedTrackPostback(clickid: string, conversionType: string, con
           console.log(`[Webhook] RedTrack postback failed for ${domain}:`, response.status);
         }
       } catch (error) {
-        console.log(`[Webhook] RedTrack postback error for ${domain}:`, (error as Error).message);
+        console.log(`[Webhook] RedTrack postback error for ${domain}:`, error.message);
       }
     }
 
@@ -341,7 +332,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userData) {
         userData = {
           id: sessionUser.id,
-          username: sessionUser.username || sessionUser.email || "",
           email: sessionUser.email,
           firstName: sessionUser.firstName,
           lastName: sessionUser.lastName,
@@ -707,7 +697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Find existing session by clickid
       const sessions = await storage.getVisitorSessions(2); // System user
-      const session = sessions.find(s => (s as any).redtrackData && (s as any).redtrackData.clickid === clickid);
+      const session = sessions.find(s => s.redtrackData && s.redtrackData.clickid === clickid);
 
       const sessionId = session?.sessionId || `rt_conv_${Date.now()}`;
 
@@ -792,7 +782,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Get tracking pixels that should fire for this conversion type
           const userId = 2; // System user for external tracking
-          const pixels = await storage.getTrackingPixels();
+          const pixels = await storage.getTrackingPixels(userId);
           const redtrackPixels = pixels.filter(p => 
             p.url.includes('redtrack') || 
             p.url.includes('postback') ||
@@ -953,242 +943,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching RTB auction details:', error);
       res.status(500).json({ error: 'Failed to fetch RTB auction details' });
-    }
-  });
-
-  // Call Details Summary API
-  app.get('/api/call-details/summary', requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user?.id;
-      
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      // Get all calls using the storage interface (safer approach)
-      const allCalls = await storage.getCallsByUser(userId);
-      const callsData = allCalls.slice(0, 100); // Limit to 100 most recent calls
-
-      // For each call, get RTB auction details
-      const callsWithRtbDetails = await Promise.all(
-        callsData.map(async (call) => {
-          try {
-            // Get campaign name
-            const campaign = call.campaignId ? await storage.getCampaign(call.campaignId) : null;
-            const campaignName = campaign?.name || 'Unknown Campaign';
-
-            // Get RTB auction details directly from database since storage method doesn't exist
-            let auctionDetails: any[] = [];
-            try {
-              // Find RTB bid request for this call using call SID
-              const bidRequest = await db.query.rtbBidRequests.findFirst({
-                where: and(
-                  eq(rtbBidRequests.campaignId, call.campaignId!),
-                  sql`${rtbBidRequests.requestId} LIKE '%' || ${call.callSid} || '%'`
-                )
-              });
-
-              if (bidRequest) {
-                // Get bid responses for this request
-                const bidResponses = await db
-                  .select()
-                  .from(rtbBidResponses)
-                  .leftJoin(rtbTargets, eq(rtbBidResponses.rtbTargetId, rtbTargets.id))
-                  .where(eq(rtbBidResponses.requestId, bidRequest.requestId))
-                  .orderBy(desc(rtbBidResponses.bidAmount));
-
-                auctionDetails = bidResponses.map(row => ({
-                  id: row.rtb_bid_responses.id,
-                  targetId: row.rtb_bid_responses.rtbTargetId,
-                  targetName: row.rtb_targets?.name || `Target ${row.rtb_bid_responses.rtbTargetId}`,
-                  companyName: row.rtb_targets?.buyerName || `Company ${row.rtb_bid_responses.rtbTargetId}`,
-                  bidAmount: parseFloat(row.rtb_bid_responses.bidAmount?.toString() || '0'),
-                  destinationNumber: row.rtb_bid_responses.destinationNumber,
-                  responseTime: row.rtb_bid_responses.responseTimeMs,
-                  bidStatus: row.rtb_bid_responses.responseStatus,
-                  rejectionReason: row.rtb_bid_responses.rejectionReason
-                }));
-              }
-            } catch (error) {
-              console.error(`Error fetching RTB data for call ${call.id}:`, error);
-            }
-            
-            // Calculate RTB statistics from auction details
-            let winnerTargetName = null;
-            let winningBidAmount = 0;
-            let winnerDestination = null;
-            let winnerBuyerName = null;
-            let totalBids = 0;
-            let successfulBids = 0;
-            let avgResponseTime = 0;
-            let totalRevenue = 0;
-
-            if (auctionDetails && auctionDetails.length > 0) {
-              totalBids = auctionDetails.length;
-              
-              // Find successful bids (non-zero amounts with success status)
-              const successfulBidList = auctionDetails.filter(bid => 
-                bid.bidAmount && bid.bidAmount > 0 && bid.bidStatus === 'success'
-              );
-              successfulBids = successfulBidList.length;
-
-              // Calculate average response time
-              const validResponseTimes = auctionDetails.filter(bid => bid.responseTime && bid.responseTime > 0);
-              if (validResponseTimes.length > 0) {
-                avgResponseTime = Math.round(
-                  validResponseTimes.reduce((sum, bid) => sum + (bid.responseTime || 0), 0) / validResponseTimes.length
-                );
-              }
-
-              // Find winner (based on call's targetId)
-              const winner = auctionDetails.find(bid => bid.targetId === call.targetId);
-              if (winner) {
-                winnerTargetName = winner.targetName || `Target ${winner.targetId}`;
-                winningBidAmount = winner.bidAmount || 0;
-                winnerDestination = winner.destinationNumber || null;
-                winnerBuyerName = winner.companyName || null;
-              }
-
-              // Calculate total revenue from successful bids
-              totalRevenue = successfulBidList.reduce((sum, bid) => sum + (bid.bidAmount || 0), 0);
-            }
-            
-            return {
-              ...call,
-              campaignName,
-              winnerTargetId: call.targetId,
-              winnerTargetName,
-              winningBidAmount,
-              winnerDestination,
-              winnerBuyerName,
-              totalBids,
-              successfulBids,
-              avgResponseTime,
-              totalRevenue
-            };
-          } catch (error) {
-            console.error(`Error processing RTB data for call ${call.id}:`, error);
-            const campaign = call.campaignId ? await storage.getCampaign(call.campaignId) : null;
-            return {
-              ...call,
-              campaignName: campaign?.name || 'Unknown Campaign',
-              winnerTargetId: call.targetId,
-              winnerTargetName: null,
-              winningBidAmount: 0,
-              winnerDestination: null,
-              winnerBuyerName: null,
-              totalBids: 0,
-              successfulBids: 0,
-              avgResponseTime: 0,
-              totalRevenue: 0
-            };
-          }
-        })
-      );
-
-      res.json({ calls: callsWithRtbDetails });
-    } catch (error) {
-      console.error("Error fetching call details summary:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Detailed RTB bid information for a specific call
-  app.get('/api/call-details/bids/:callId', requireAuth, async (req: any, res) => {
-    try {
-      const callId = parseInt(req.params.callId);
-      const userId = req.user?.id;
-      
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      // Get the call directly from database
-      const call = await db.query.calls.findFirst({
-        where: eq(calls.id, callId)
-      });
-
-      if (!call) {
-        return res.status(404).json({ message: "Call not found" });
-      }
-
-      // Verify ownership through campaign
-      const campaign = call.campaignId ? await db.query.campaigns.findFirst({
-        where: eq(campaigns.id, call.campaignId),
-        columns: { userId: true }
-      }) : null;
-      
-      if (!campaign || campaign.userId !== userId) {
-        return res.status(403).json({ message: "Access denied" });
-      }
-
-      // Get RTB auction details directly from database since storage method doesn't exist
-      let auctionDetails: any[] = [];
-      try {
-        // Find RTB bid request for this call using call SID
-        const bidRequest = await db.query.rtbBidRequests.findFirst({
-          where: and(
-            eq(rtbBidRequests.campaignId, call.campaignId!),
-            sql`${rtbBidRequests.requestId} LIKE '%' || ${call.callSid} || '%'`
-          )
-        });
-
-        if (bidRequest) {
-          // Get bid responses for this request
-          const bidResponses = await db
-            .select()
-            .from(rtbBidResponses)
-            .leftJoin(rtbTargets, eq(rtbBidResponses.rtbTargetId, rtbTargets.id))
-            .where(eq(rtbBidResponses.requestId, bidRequest.requestId))
-            .orderBy(desc(rtbBidResponses.bidAmount));
-
-          auctionDetails = bidResponses.map(row => ({
-            id: row.rtb_bid_responses.id,
-            targetId: row.rtb_bid_responses.rtbTargetId,
-            targetName: row.rtb_targets?.name || `Target ${row.rtb_bid_responses.rtbTargetId}`,
-            companyName: row.rtb_targets?.buyerName || `Company ${row.rtb_bid_responses.rtbTargetId}`,
-            bidAmount: parseFloat(row.rtb_bid_responses.bidAmount?.toString() || '0'),
-            destinationNumber: row.rtb_bid_responses.destinationNumber,
-            responseTime: row.rtb_bid_responses.responseTimeMs,
-            bidStatus: row.rtb_bid_responses.responseStatus,
-            rejectionReason: row.rtb_bid_responses.rejectionReason
-          }));
-        }
-      } catch (error) {
-        console.error(`Error fetching RTB data for call ${callId}:`, error);
-      }
-      
-      if (!auctionDetails || auctionDetails.length === 0) {
-        return res.json({ bids: [] });
-      }
-
-      // Process auction details to create bid list with buyer information
-      const bidsWithDetails = auctionDetails.map(bid => {
-        const buyerName = bid.companyName || `Target ${bid.targetId}`;
-
-        return {
-          id: bid.id || 0,
-          callId: callId,
-          targetId: bid.targetId || 0,
-          targetName: bid.targetName || `Target ${bid.targetId}`,
-          buyerName,
-          companyName: buyerName,
-          bidAmount: bid.bidAmount || 0,
-          destinationNumber: bid.destinationNumber || '',
-          responseTime: bid.responseTime || 0,
-          status: bid.bidStatus || 'unknown',
-          isWinner: bid.targetId === call.targetId,
-          rejectionReason: bid.rejectionReason || null
-        };
-      });
-
-      // Sort by bid amount descending
-      bidsWithDetails.sort((a, b) => b.bidAmount - a.bidAmount);
-
-      res.json({ bids: bidsWithDetails });
-    } catch (error) {
-      console.error("Error fetching bid details:", error);
-      res.status(500).json({ message: "Internal server error" });
     }
   });
 
@@ -1480,7 +1234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: campaign.name,
           status: campaign.status,
           enableRtb: campaign.enableRtb,
-          rtbRouterId: (campaign as any).rtbRouterId || null,
+          rtbRouterId: campaign.rtbRouterId,
           createdAt: campaign.createdAt
         }
       });
@@ -1717,10 +1471,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(buyer);
     } catch (error) {
       console.error("Error creating buyer:", error);
-      if ((error as any).name === 'ZodError') {
-        res.status(400).json({ error: "Validation error", details: (error as any).errors });
+      if (error.name === 'ZodError') {
+        res.status(400).json({ error: "Validation error", details: error.errors });
       } else {
-        res.status(500).json({ error: "Failed to create buyer", message: (error as Error).message });
+        res.status(500).json({ error: "Failed to create buyer", message: error.message });
       }
     }
   });
@@ -1930,19 +1684,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get user calls efficiently with enhanced data (includes hangup, target, buyer data)
       const userCalls = await storage.getEnhancedCallsByUser(userId);
-      
-      // HOTFIX: Set buyer name from target company for RTB calls
-      const rtbTargets = await storage.getRtbTargets(userId);
-      
-      userCalls.forEach(call => {
-        if (!call.buyerName && call.targetId) {
-          // Find the RTB target for this call
-          const target = rtbTargets.find(t => t.id === call.targetId);
-          if (target && target.companyName) {
-            call.buyerName = target.companyName;
-          }
-        }
-      });
       
       // Enhanced RTB data for call ID 144
       const enhancedCalls = userCalls.map(call => {
@@ -2244,7 +1985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Prepare bid request for RTB (use CallSid to ensure same call gets same request ID)
             const bidRequest = {
               requestId: `pool_${poolId}_${CallSid}`,
-              campaignId: campaign.id, // Keep as UUID string, don't convert to number
+              campaignId: campaign.id,
               campaignRtbId: campaign.rtbId || undefined,
               callerId: fromNumber,
               callerState: req.body.CallerState || null,
@@ -2287,10 +2028,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               routingData = {
                 ...routingData,
+                method: 'rtb',
                 rtbRequestId,
                 winningBidAmount,
                 winningTargetId,
-                targetName: (biddingResult.winningBid as any).targetName || 'External Bidder',
+                targetName: biddingResult.winningBid.targetName || 'External Bidder',
                 totalTargetsPinged: biddingResult.totalTargetsPinged,
                 responseTimeMs: biddingResult.totalResponseTime
               };
@@ -2345,6 +2087,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         selectedBuyer = routingResult.selectedBuyer;
         routingData = {
           ...routingData,
+          method: routingMethod,
           routingReason: routingResult.reason,
           alternatives: routingResult.alternativeBuyers.length
         };
@@ -2404,67 +2147,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[Pool Webhook] Campaign financial config - Payout:', payout, 'Revenue:', revenue, 'Profit:', profit);
       
-      // For RTB calls, create/find RTB buyer and target records for database tracking
-      let finalBuyerId = selectedBuyer.id;
-      let finalTargetId = selectedTarget?.id || null;
-      
-      if (routingMethod === 'rtb' && (selectedBuyer as any).external) {
-        console.log(`[RTB Database] Creating/finding RTB buyer record for tracking...`);
-        
-        // Create or find RTB buyer record for database tracking
-        const rtbBuyerName = selectedBuyer.companyName || selectedBuyer.name || 'RTB Winner';
-        
-        try {
-          // Check if RTB buyer already exists
-          const existingBuyers = await storage.getBuyers();
-          let rtbBuyer = existingBuyers.find(b => 
-            b.name === rtbBuyerName && 
-            b.companyName?.includes('RTB') && 
-            b.userId === campaign.userId
-          );
-          
-          if (!rtbBuyer) {
-            // Create new RTB buyer record
-            rtbBuyer = await storage.createBuyer({
-              userId: campaign.userId,
-              name: rtbBuyerName,
-              companyName: `RTB External: ${rtbBuyerName}`,
-              email: 'rtb@external.com',
-              phoneNumber: targetPhoneNumber,
-              description: `External RTB bidder: ${rtbBuyerName}`,
-              defaultPayout: winningBidAmount ? parseFloat(String(winningBidAmount)) : 0,
-              isActive: true,
-              timezone: 'UTC'
-            });
-            console.log(`[RTB Database] Created RTB buyer record: ${rtbBuyer.id} - ${rtbBuyer.name}`);
-          }
-          
-          finalBuyerId = rtbBuyer.id;
-          
-          // For now, skip target creation and just use the buyer ID
-          // RTB targets are external and don't need internal target records
-          console.log(`[RTB Database] Using RTB buyer without internal target (external routing)`);
-          finalTargetId = null; // RTB calls route externally
-          
-
-          
-        } catch (rtbDbError) {
-          console.error('[RTB Database] Error creating RTB records:', rtbDbError);
-          // Fall back to original logic if creation fails
-          finalBuyerId = selectedBuyer.id;
-          finalTargetId = null;
-        }
-      } else if (routingMethod !== 'rtb') {
-        // Use regular target selection for internal routing
-        finalTargetId = selectedTarget?.id || null;
-      }
-
-      console.log(`[Database Assignment] Final Buyer ID: ${finalBuyerId}, Target ID: ${finalTargetId}`);
+      // Use intelligent target selection result
+      const targetId = routingMethod !== 'rtb' ? selectedTarget.id : null;
 
       let callData: any = {
         campaignId: campaign.id,
-        buyerId: finalBuyerId, // Use proper buyer ID for both RTB and internal
-        targetId: finalTargetId, // Use proper target ID for both RTB and internal
+        buyerId: routingMethod === 'rtb' ? null : selectedBuyer.id, // RTB calls use external routing
+        targetId: targetId, // Add target assignment
         callSid: CallSid,
         fromNumber,
         toNumber,
@@ -3742,7 +3431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: new Date()
       };
 
-      const updatedPixel = await storage.createCampaignTrackingPixel(pixelData);
+      const updatedPixel = await storage.updateCampaignTrackingPixel(campaignId, pixelId, pixelData);
       if (!updatedPixel) {
         return res.status(404).json({ error: "Campaign tracking pixel not found" });
       }
@@ -5493,65 +5182,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced Twilio Webhook Endpoints with Complete Attribution
+  // Twilio Webhook Endpoints for Live Call Handling
+  // These endpoints handle incoming calls and route them to buyers
   app.post('/api/webhooks/twilio/voice', handleIncomingCall);
-  app.post('/api/webhooks/twilio/status', async (req, res) => {
-    try {
-      console.log(`\n🔔 === ENHANCED TWILIO STATUS WEBHOOK ===`);
-      console.log(`📞 Call SID: ${req.body.CallSid}`);
-      console.log(`📊 Status: ${req.body.CallStatus}`);
-      console.log(`⏱️ Duration: ${req.body.CallDuration || 0}s`);
-
-      // Import and use enhanced webhook handler
-      const { WebhookHandlers } = await import('./webhook-handlers');
-      const webhookHandler = new WebhookHandlers(storage);
-
-      // Handle status update with comprehensive attribution
-      const statusResult = await webhookHandler.handleCallStatusUpdate(req.body);
-      
-      if (statusResult.success) {
-        // Try to attribute to session for DNI calls
-        await webhookHandler.attributeCallToSession(req.body.CallSid, req.body.From);
-        
-        // Assign RTB revenue if applicable
-        if (statusResult.callId) {
-          await webhookHandler.assignRTBRevenue(statusResult.callId);
-        }
-        
-        console.log(`✅ Enhanced webhook processing complete`);
-      } else {
-        console.log(`❌ Enhanced webhook failed: ${statusResult.error}`);
-      }
-
-      res.sendStatus(200);
-    } catch (error) {
-      console.error(`💥 Enhanced webhook error:`, error);
-      res.sendStatus(500);
-    }
-  });
-
-  app.post('/api/webhooks/twilio/recording', async (req, res) => {
-    try {
-      console.log(`\n🎙️ === RECORDING WEBHOOK ===`);
-      
-      // Import and use enhanced webhook handler
-      const { WebhookHandlers } = await import('./webhook-handlers');
-      const webhookHandler = new WebhookHandlers(storage);
-      
-      const recordingResult = await webhookHandler.handleRecordingComplete(req.body);
-      
-      if (recordingResult.success) {
-        console.log(`✅ Recording webhook processed successfully`);
-      } else {
-        console.log(`❌ Recording webhook failed: ${recordingResult.error}`);
-      }
-      
-      res.sendStatus(200);
-    } catch (error) {
-      console.error(`💥 Recording webhook error:`, error);
-      res.sendStatus(500);
-    }
-  });
+  app.post('/api/webhooks/twilio/status', handleCallStatus);
+  app.post('/api/webhooks/twilio/recording', handleRecordingStatus);
 
   // Tracking Tag Webhook Endpoints
   // Handle incoming calls to tracking tag primary numbers
@@ -9598,143 +9233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Voice Insights API - Manual fetch for existing calls
-  app.post('/api/calls/:callId/voice-insights', requireAuth, async (req: any, res) => {
-    try {
-      const { callId } = req.params;
-      const userId = req.user?.id;
-      
-      // Get the call record and verify ownership
-      const calls = await storage.getCalls();
-      const call = calls.find(c => c.id === parseInt(callId) && c.userId === userId);
-      
-      if (!call) {
-        return res.status(404).json({ error: 'Call not found' });
-      }
-      
-      if (!call.callSid) {
-        return res.status(400).json({ error: 'Call does not have a Twilio SID' });
-      }
-      
-      // Import Voice Insights service
-      const { twilioVoiceInsights } = await import('./twilio-voice-insights');
-      
-      // Fetch Voice Insights data
-      const hangupInfo = await twilioVoiceInsights.updateCallWithVoiceInsights(
-        call.callSid, 
-        call.id
-      );
-      
-      if (!hangupInfo) {
-        return res.status(404).json({ 
-          error: 'Voice Insights data not available', 
-          message: 'Data may take up to 10 minutes after call completion to be available'
-        });
-      }
-      
-      // Update call record with Voice Insights data
-      const updates: any = {};
-      
-      if (hangupInfo.whoHungUp) {
-        updates.whoHungUp = hangupInfo.whoHungUp;
-      }
-      
-      if (hangupInfo.hangupCause) {
-        updates.hangupCause = hangupInfo.hangupCause;
-      }
-      
-      if (Object.keys(updates).length > 0) {
-        await storage.updateCall(call.id, updates);
-        
-        // Log Voice Insights fetch
-        await storage.createCallLog({
-          callId: call.id,
-          buyerId: call.buyerId,
-          action: 'voice_insights_manual',
-          response: `Manual Voice Insights fetch: Who hung up: ${hangupInfo.whoHungUp}, Cause: ${hangupInfo.hangupCause}`,
-        });
-      }
-      
-      res.json({
-        success: true,
-        callId: call.id,
-        voiceInsights: hangupInfo,
-        updatedFields: updates
-      });
-      
-    } catch (error: any) {
-      console.error('Error fetching Voice Insights:', error);
-      res.status(500).json({ 
-        error: 'Failed to fetch Voice Insights data',
-        message: error.message
-      });
-    }
-  });
-
   // Call details router already mounted above - removed duplicate mounting
-
-  // Recording proxy endpoints to handle Twilio authentication
-  app.get('/api/recordings/proxy', requireAuth, async (req, res) => {
-    try {
-      const { url } = req.query;
-      if (!url || typeof url !== 'string') {
-        return res.status(400).json({ error: 'Recording URL is required' });
-      }
-
-      // Fetch the recording with proper authentication
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch recording: ${response.statusText}`);
-      }
-
-      // Set appropriate headers for audio playback
-      res.setHeader('Content-Type', response.headers.get('content-type') || 'audio/mpeg');
-      res.setHeader('Content-Length', response.headers.get('content-length') || '');
-      res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
-      
-      // Stream the audio content
-      response.body?.pipe(res);
-    } catch (error) {
-      console.error('Recording proxy error:', error);
-      res.status(500).json({ error: 'Failed to fetch recording' });
-    }
-  });
-
-  app.get('/api/recordings/download', requireAuth, async (req, res) => {
-    try {
-      const { url } = req.query;
-      if (!url || typeof url !== 'string') {
-        return res.status(400).json({ error: 'Recording URL is required' });
-      }
-
-      // Fetch the recording with proper authentication
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Basic ${Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch recording: ${response.statusText}`);
-      }
-
-      // Set headers for download
-      res.setHeader('Content-Type', 'application/octet-stream');
-      res.setHeader('Content-Disposition', 'attachment; filename="recording.mp3"');
-      res.setHeader('Content-Length', response.headers.get('content-length') || '');
-      
-      // Stream the audio content for download
-      response.body?.pipe(res);
-    } catch (error) {
-      console.error('Recording download error:', error);
-      res.status(500).json({ error: 'Failed to download recording' });
-    }
-  });
 
   const httpServer = createServer(app);
   // Test landing page route for RedTrack integration testing

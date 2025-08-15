@@ -6,7 +6,6 @@ import { RoutingDecisionTracker } from './routing-decision-tracker';
 import { twilioService } from './twilio-service';
 import { FlowExecutionEngine } from './flow-execution-engine';
 import { RTBService } from './rtb-service';
-import { twilioVoiceInsights } from './twilio-voice-insights';
 
 // RTB Routing Utility Functions
 const isSip = (dest: string): boolean => {
@@ -745,49 +744,6 @@ export async function handleCallStatus(req: Request, res: Response) {
     });
 
     console.log('[Webhook] Call updated:', call.id, updates);
-
-    // Fetch additional Voice Insights data when call completes
-    if (['completed', 'busy', 'no-answer', 'failed'].includes(statusData.CallStatus)) {
-      console.log('[Webhook] Call ended, fetching Voice Insights data...');
-      
-      // Schedule Voice Insights fetch after a delay (data may take up to 10 minutes to be available)
-      setTimeout(async () => {
-        try {
-          const hangupInfo = await twilioVoiceInsights.updateCallWithVoiceInsights(
-            statusData.CallSid, 
-            call.id
-          );
-          
-          if (hangupInfo) {
-            // Update call record with Voice Insights data
-            const voiceInsightsUpdates: any = {};
-            
-            if (hangupInfo.whoHungUp && !updates.whoHungUp) {
-              voiceInsightsUpdates.whoHungUp = hangupInfo.whoHungUp;
-            }
-            
-            if (hangupInfo.hangupCause && !updates.hangupCause) {
-              voiceInsightsUpdates.hangupCause = hangupInfo.hangupCause;
-            }
-            
-            if (Object.keys(voiceInsightsUpdates).length > 0) {
-              await storage.updateCall(call.id, voiceInsightsUpdates);
-              console.log('[Voice Insights] Updated call with insights:', voiceInsightsUpdates);
-            }
-            
-            // Log Voice Insights data
-            await storage.createCallLog({
-              callId: call.id,
-              buyerId: call.buyerId,
-              action: 'voice_insights',
-              response: `Voice Insights: Who hung up: ${hangupInfo.whoHungUp}, Cause: ${hangupInfo.hangupCause}`,
-            });
-          }
-        } catch (error: any) {
-          console.error('[Voice Insights] Error fetching insights for call:', call.id, error.message);
-        }
-      }, 2000); // Wait 2 seconds before fetching (partial data available within 10 minutes)
-    }
 
     // Trigger RedTrack quality tracking for call completion
     await triggerRedTrackQualityEvent(updatedCall, statusData);

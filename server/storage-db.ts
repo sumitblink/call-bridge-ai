@@ -571,51 +571,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCall(id: number, updates: Partial<InsertCall>): Promise<Call | undefined> {
-    console.log(`📊 [DatabaseStorage] Updating call ${id} with:`, updates);
-    
-    const updateData = {
-      ...updates,
-      updatedAt: new Date()
-    };
-    
     const [updatedCall] = await db
       .update(calls)
-      .set(updateData)
+      .set(updates)
       .where(eq(calls.id, id))
       .returning();
-      
-    if (updatedCall) {
-      console.log(`✅ [DatabaseStorage] Call ${id} updated successfully`);
-    } else {
-      console.log(`❌ [DatabaseStorage] Failed to update call ${id}`);
-    }
-    
     return updatedCall;
-  }
-
-  // Enhanced call status update method for webhook processing
-  async updateCallStatus(callId: number, updates: any): Promise<boolean> {
-    try {
-      console.log(`📊 [DatabaseStorage] Updating call status ${callId} with:`, updates);
-      
-      const updateData = {
-        ...updates,
-        updatedAt: new Date()
-      };
-      
-      const result = await db
-        .update(calls)
-        .set(updateData)
-        .where(eq(calls.id, callId));
-        
-      const success = result.rowCount > 0;
-      console.log(`${success ? '✅' : '❌'} [DatabaseStorage] Call status update ${success ? 'succeeded' : 'failed'}`);
-      
-      return success;
-    } catch (error) {
-      console.error(`💥 [DatabaseStorage] Call status update error:`, error);
-      return false;
-    }
   }
 
   // Call logs
@@ -713,8 +674,8 @@ export class DatabaseStorage implements IStorage {
           hangupCause: calls.hangupCause,
           disposition: calls.disposition,
           whoHungUp: calls.whoHungUp,
-          // Buyer fields - Use stored buyer_name from calls table
-          buyerName: calls.buyerName,
+          // Buyer fields
+          buyerName: buyers.companyName,
           buyerEmail: buyers.email,
           // Campaign fields  
           campaignName: campaigns.name,
@@ -1683,49 +1644,6 @@ export class DatabaseStorage implements IStorage {
       .delete(redtrackConfigs)
       .where(eq(redtrackConfigs.id, id));
     return result.rowCount > 0;
-  }
-
-  // RTB Auction Details method
-  async getRTBAuctionDetails(callId: number): Promise<any[]> {
-    try {
-      const result = await db.execute(sql`
-        SELECT 
-          id,
-          call_id as "callId",
-          auction_id as "auctionId", 
-          target_id as "targetId",
-          target_name as "targetName",
-          bid_amount as "bidAmount",
-          bid_duration as "bidDuration",
-          bid_status as "bidStatus",
-          response_time as "responseTime",
-          rejection_reason as "rejectionReason", 
-          destination_number as "destinationNumber",
-          is_winner as "isWinner",
-          timestamp,
-          metadata
-        FROM rtb_auction_details 
-        WHERE call_id = ${callId}
-        ORDER BY timestamp ASC
-      `);
-      return result.rows || [];
-    } catch (error) {
-      console.error('[DatabaseStorage] Error fetching RTB auction details:', error);
-      return [];
-    }
-  }
-
-  // Missing methods for routing decisions and call events
-  async getRoutingDecisions(callId: number): Promise<any[]> {
-    // For now, return empty array since routing decisions are stored differently
-    // In the future, this could query a dedicated routing_decisions table
-    return [];
-  }
-
-  async getCallEvents(callId: number): Promise<any[]> {
-    // For now, return empty array since call events are stored differently
-    // In the future, this could query a dedicated call_events table
-    return [];
   }
 }
 

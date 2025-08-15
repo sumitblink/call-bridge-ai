@@ -135,7 +135,7 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
 
   // Fetch RTB auction details for RTB tab
   const { data: rtbAuctionDetails, error: rtbError, isLoading: rtbLoading } = useQuery<RTBAuctionDetail[]>({
-    queryKey: ['/api/rtb-auction-details', call.id],
+    queryKey: ['/api/calls', call.id, 'rtb'],
     enabled: expandedCall === call.id.toString(),
   });
 
@@ -161,12 +161,8 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completed-long':
-        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
       case 'completed':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'short-call':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
       case 'in-progress':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'failed':
@@ -182,12 +178,8 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completed-long':
-        return <Trophy className="h-4 w-4" />;
       case 'completed':
         return <CheckCircle className="h-4 w-4" />;
-      case 'short-call':
-        return <Timer className="h-4 w-4" />;
       case 'in-progress':
         return <Activity className="h-4 w-4" />;
       case 'failed':
@@ -337,22 +329,17 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
                         </div>
                       </>
                     )}
-                    {buyer ? (
+                    {buyer && (
                       <>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Buyer:</span>
                           <span className="font-medium">{buyer.name}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Buyer Status:</span>
-                          <Badge className="bg-green-100 text-green-800">{buyer.status || 'Active'}</Badge>
+                          <span className="text-muted-foreground">Buyer Phone:</span>
+                          <span className="font-mono text-xs">{buyer.phoneNumber}</span>
                         </div>
                       </>
-                    ) : (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Buyer:</span>
-                        <span className="text-muted-foreground">RTB External Buyers</span>
-                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -458,7 +445,45 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
                     </div>
                   </div>
 
-                  {/* Hardcoded sections removed - RTB data now comes from actual auction results below */}
+                  {/* Not Accepted Section */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <span className="font-semibold text-red-600">Not Accepted</span>
+                    </div>
+                    <div className="ml-5 space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">$0.00</span>
+                        <span>Medi - WeGenerate - T2 RTB</span>
+                        <span className="text-muted-foreground">Call Acceptance Parsing Rejection, Api Request Failure (429 - Too Many Requests)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">$0.00</span>
+                        <span>Medi - LMX - RTB</span>
+                        <span className="text-muted-foreground">Call Acceptance Parsing Rejection</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">$0.00</span>
+                        <span>Medi - Naked - RTB</span>
+                        <span className="text-muted-foreground">Call Acceptance Parsing Rejection</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Not Accepted - Duration Section */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                      <span className="font-semibold text-orange-600">Not Accepted - Duration</span>
+                    </div>
+                    <div className="ml-5 space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">$8.40</span>
+                        <span>180</span>
+                        <span>Medi - PM - RTB</span>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* RTB Requests Definitition Summary */}
                   <div>
@@ -621,11 +646,8 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
                   </div>
                 ) : rtbAuctionDetails && rtbAuctionDetails.length > 0 ? (
                   <div className="space-y-6">
-                    {/* Not Accepted Section - Only show if there are actual rejected/failed bids */}
-                    {rtbAuctionDetails.filter(detail => 
-                      (detail.bidStatus === 'rejected' || detail.bidStatus === 'failed' || detail.bidStatus === 'error') 
-                      && !detail.isWinner
-                    ).length > 0 && (
+                    {/* Not Accepted Section */}
+                    {rtbAuctionDetails.filter(detail => detail.bidStatus === 'rejected' || detail.bidStatus === 'failed').length > 0 && (
                       <div>
                         <div className="flex items-center gap-2 mb-3">
                           <XCircle className="h-4 w-4 text-red-500" />
@@ -643,10 +665,7 @@ export default function CallDetailsAccordion({ call, campaign, buyer }: CallDeta
                             </TableHeader>
                             <TableBody>
                               {rtbAuctionDetails
-                                .filter(detail => 
-                                  (detail.bidStatus === 'rejected' || detail.bidStatus === 'failed' || detail.bidStatus === 'error') 
-                                  && !detail.isWinner
-                                )
+                                .filter(detail => detail.bidStatus === 'rejected' || detail.bidStatus === 'failed')
                                 .map((detail) => (
                                   <TableRow key={detail.id} className="border-b last:border-b-0">
                                     <TableCell className="font-mono">${detail.bidAmount}</TableCell>

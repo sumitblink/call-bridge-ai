@@ -25,7 +25,6 @@ import AdvancedAnalyticsPage from "@/pages/advanced-analytics";
 import UsefulAnalytics from "@/pages/useful-analytics";
 
 import EnhancedReporting from "@/pages/enhanced-reporting";
-import CallDetails from "@/pages/CallDetails";
 import PredictiveRoutingSettings from "@/pages/predictive-routing-settings";
 import ApiTestingPage from "@/pages/api-testing";
 import DocumentationPage from "@/pages/documentation";
@@ -74,7 +73,6 @@ function Router() {
 
           <Route path="/analytics" component={UsefulAnalytics} />
           <Route path="/enhanced-reporting" component={EnhancedReporting} />
-          <Route path="/call-details" component={CallDetails} />
           <Route path="/settings/predictive-routing" component={PredictiveRoutingSettings} />
           <Route path="/integrations" component={Integrations} />
           <Route path="/redtrack" component={RedTrackPage} />

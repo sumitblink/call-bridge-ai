@@ -24,7 +24,6 @@ const navigation = [
 ];
 
 const reportingNavigation = [
-  { name: "Call Details", href: "/call-details", icon: Activity, current: false },
   { name: "Traffic Analytics", href: "/analytics", icon: BarChart3, current: false },
   { name: "Enhanced Reporting", href: "/enhanced-reporting", icon: PhoneCall, current: false },
 ];
