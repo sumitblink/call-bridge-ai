@@ -9758,6 +9758,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!url || typeof url !== 'string') {
         return res.status(400).json({ error: 'Recording URL is required' });
       }
+      
+      // Validate that the URL is a proper Twilio recording URL
+      if (!url.includes('api.twilio.com') || !url.includes('Recordings/')) {
+        return res.status(400).json({ error: 'Invalid recording URL format' });
+      }
 
       // Fetch the recording with proper authentication
       const response = await fetch(url, {
