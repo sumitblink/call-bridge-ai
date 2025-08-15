@@ -1052,7 +1052,7 @@ export class RTBService {
         bidAmount: parseFloat(bidAmount.toString()),
         bidCurrency: currency,
         destinationNumber: destinationNumber,
-        sipAddress: sipAddress, // Add SIP address field separately
+        // Note: sipAddress is stored in rawResponse.sipAddress for routing logic
         requiredDuration: requiredDuration ? parseInt(requiredDuration.toString()) : undefined,
         responseTimeMs: responseTime,
         isValid,
