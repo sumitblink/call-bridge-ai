@@ -629,19 +629,52 @@ export class SupabaseStorage implements IStorage {
       }
     }
     
+    // Validate other foreign key references
+    let validNumberPoolId = call.numberPoolId;
+    let validPhoneNumberId = call.phoneNumberId;
+    let validTrackingTagId = call.trackingTagId;
+    
+    // Check number pool ID
+    if (call.numberPoolId) {
+      try {
+        const pool = await db.select().from(numberPools).where(eq(numberPools.id, call.numberPoolId)).limit(1);
+        if (pool.length === 0) {
+          console.warn(`[SupabaseStorage] Number pool ID ${call.numberPoolId} does not exist, setting to null`);
+          validNumberPoolId = null;
+        }
+      } catch (error) {
+        console.warn(`[SupabaseStorage] Error checking number pool ID:`, error);
+        validNumberPoolId = null;
+      }
+    }
+    
+    // Check phone number ID  
+    if (call.phoneNumberId) {
+      try {
+        const phone = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, call.phoneNumberId)).limit(1);
+        if (phone.length === 0) {
+          console.warn(`[SupabaseStorage] Phone number ID ${call.phoneNumberId} does not exist, setting to null`);
+          validPhoneNumberId = null;
+        }
+      } catch (error) {
+        console.warn(`[SupabaseStorage] Error checking phone number ID:`, error);
+        validPhoneNumberId = null;
+      }
+    }
+    
     const result = await db.insert(calls).values({
       campaignId: call.campaignId,
       buyerId: validBuyerId,
       targetId: call.targetId,
       publisherId: call.publisherId,
       publisherName: call.publisherName,
-      trackingTagId: call.trackingTagId,
+      trackingTagId: validTrackingTagId,
       callSid: call.callSid,
       fromNumber: call.fromNumber,
       toNumber: call.toNumber,
       dialedNumber: call.dialedNumber,
-      numberPoolId: call.numberPoolId, // Add missing pool ID field
-      phoneNumberId: call.phoneNumberId, // Add missing phone number ID field
+      numberPoolId: validNumberPoolId,
+      phoneNumberId: validPhoneNumberId,
       duration: call.duration || 0,
       status: call.status || 'ringing',
       disposition: call.disposition,
