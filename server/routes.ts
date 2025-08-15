@@ -2661,12 +2661,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
       const baseUrl = `${protocol}://${webhookHost}`;
       
+      // Use the assigned phone number as caller ID or fallback to the to number
+      const callerIdToUse = assignedNumber?.phoneNumber || toNumber;
+      
       const twiml = `<Response>
   <Say>${connectMessage}</Say>
-  <Dial callerId="${toNumber}" timeout="30" record="record-from-answer" recordingStatusCallback="${baseUrl}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="${baseUrl}/api/webhooks/pool/${poolId}/status" method="POST">
+  <Dial callerId="${callerIdToUse}" timeout="30" record="record-from-answer" recordingStatusCallback="${baseUrl}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="${baseUrl}/api/webhooks/pool/${poolId}/status" method="POST">
     ${dialTag}
   </Dial>
-  <Say>The call has ended. Thank you for calling.</Say>
+  <Say>Thank you for calling.</Say>
   <Hangup/>
 </Response>`;
       
@@ -2692,12 +2695,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.type('text/xml').send(twiml);
     } catch (error) {
       console.error('[Pool Webhook] Error processing call:', error);
-      res.type('text/xml').send(`
-        <Response>
-          <Say>We're experiencing technical difficulties. Please try again later.</Say>
-          <Hangup/>
-        </Response>
-      `);
+      res.type('text/xml').send(`<Response>
+  <Say>Thank you for calling. Please try again later.</Say>
+  <Hangup/>
+</Response>`);
     }
   });
 
