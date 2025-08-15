@@ -2662,10 +2662,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const twiml = `<Response>
   <Say>${connectMessage}</Say>
-  <Dial callerId="${callerIdToUse}" timeout="60" record="record-from-answer" recordingStatusCallback="${baseUrl}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="${baseUrl}/api/webhooks/pool/${poolId}/status" method="POST">
+  <Dial callerId="${callerIdToUse}" timeout="30" record="record-from-answer" recordingStatusCallback="${baseUrl}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="${baseUrl}/api/webhooks/pool/${poolId}/status" method="POST">
     ${dialTag}
   </Dial>
-  <Say>Thank you for calling.</Say>
+  <Say>We're sorry, our partner is currently unavailable. Thank you for calling.</Say>
   <Hangup/>
 </Response>`;
       
@@ -2721,9 +2721,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn('[Pool Status] Database update failed, continuing:', dbError);
       }
       
-      // Return proper TwiML response based on call status - play "Thank you" when call ends
-      if (CallStatus === 'completed' || DialCallStatus === 'completed' || CallStatus === 'no-answer' || DialCallStatus === 'no-answer') {
-        res.type('text/xml').send(`<Response><Say>Thank you for calling.</Say><Hangup/></Response>`);
+      // Return proper TwiML response based on call status - handle RTB partner disconnects
+      if (CallStatus === 'completed' || DialCallStatus === 'completed') {
+        // Check if call duration was very short (indicating immediate disconnect)
+        const duration = CallDuration ? parseInt(CallDuration) : 0;
+        if (duration <= 3) {
+          res.type('text/xml').send(`<Response><Say>We're sorry, our partner is currently unavailable. Please try again later.</Say><Hangup/></Response>`);
+        } else {
+          res.type('text/xml').send(`<Response><Say>Thank you for calling.</Say><Hangup/></Response>`);
+        }
+      } else if (CallStatus === 'no-answer' || DialCallStatus === 'no-answer') {
+        res.type('text/xml').send(`<Response><Say>We're sorry, our partner is currently unavailable. Please try again later.</Say><Hangup/></Response>`);
       } else if (CallStatus === 'failed' || DialCallStatus === 'failed' || DialCallStatus === 'busy') {
         res.type('text/xml').send(`<Response><Say>We're sorry, the call could not be completed. Please try again later.</Say><Hangup/></Response>`);
       } else {
