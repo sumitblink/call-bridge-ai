@@ -108,7 +108,7 @@ class HybridStorage implements IStorage {
     if (this.useDatabase) {
       try {
         const result = await supabaseOp();
-        console.log('[HybridStorage] Database operation successful, returning database result');
+        // Removed excessive success logging to reduce console noise
         return result;
       } catch (error) {
         console.warn('Database operation failed, trying memory storage:', error);
@@ -118,7 +118,7 @@ class HybridStorage implements IStorage {
         return fallbackResult;
       }
     } else {
-      console.log('[HybridStorage] Using memory storage directly');
+      // Only log when actually using memory storage directly
       const memResult = await memoryOp();
       return memResult;
     }
@@ -395,6 +395,14 @@ class HybridStorage implements IStorage {
     return this.executeOperation(
       () => this.databaseStorage.updateCall(id, updates),
       () => this.memStorage.updateCall(id, updates)
+    );
+  }
+
+  // Enhanced call status update method for webhook processing
+  async updateCallStatus(callId: number, updates: any): Promise<boolean> {
+    return this.executeOperation(
+      () => this.databaseStorage.updateCallStatus(callId, updates),
+      () => Promise.resolve(false) // Memory storage fallback
     );
   }
 

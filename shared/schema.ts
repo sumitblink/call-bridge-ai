@@ -251,6 +251,7 @@ export const calls = pgTable("calls", {
   id: serial("id").primaryKey(),
   campaignId: uuid("campaign_id").references(() => campaigns.id),
   buyerId: integer("buyer_id").references(() => buyers.id), // Top-level buyer
+  buyerName: varchar("buyer_name", { length: 255 }), // Computed buyer name (RTB target company or buyer company)
   targetId: integer("target_id").references(() => targets.id), // Specific target/destination
   publisherId: integer("publisher_id").references(() => publishers.id), // Publisher/affiliate who generated the call
   publisherName: varchar("publisher_name", { length: 255 }), // Publisher name from DNI tracking
@@ -926,7 +927,7 @@ export const insertBuyerSchema = createInsertSchema(buyers).omit({
   userId: z.number().optional(),
   // Basic Information
   name: z.string().optional(), // Sub ID field
-  companyName: z.string().min(1, "Company name is required"),
+  buyerName: z.string().min(1, "Buyer name is required"),
   email: z.string().email("Valid email is required").optional().or(z.literal("")),
   phoneNumber: z.string().optional(),
   status: z.enum(["active", "paused", "inactive"]).optional(),
@@ -980,7 +981,7 @@ export const insertTargetSchema = createInsertSchema(targets).omit({
   buyerId: z.number().min(1, "Buyer ID is required"),
   name: z.string().min(1, "Target name is required"),
   phoneNumber: z.string().optional(),
-  endpoint: z.string().url("Invalid endpoint URL").optional().or(z.literal("")),
+  endpoint: z.string().optional().or(z.literal("")),
   priority: z.number().min(1).max(10).optional(),
   dailyCap: z.number().min(0).optional(),
   concurrencyLimit: z.number().min(1).optional(),
@@ -1408,7 +1409,7 @@ export const rtbTargets = pgTable("rtb_targets", {
   
   // Target Configuration
   name: varchar("name", { length: 256 }).notNull(),
-  companyName: varchar("company_name", { length: 256 }),
+  buyerName: varchar("buyer_name", { length: 256 }),
   contactPerson: varchar("contact_person", { length: 256 }),
   contactEmail: varchar("contact_email", { length: 256 }),
   contactPhone: varchar("contact_phone", { length: 50 }),
@@ -1741,7 +1742,7 @@ export const insertRtbTargetSchema = createInsertSchema(rtbTargets).omit({
 }).extend({
   userId: z.number().optional(),
   name: z.string().min(1, "Target name is required"),
-  companyName: z.string().optional(),
+  buyerName: z.string().optional(),
   contactPerson: z.string().optional(),
   contactEmail: z.string().email().optional(),
   contactPhone: z.string().optional(),

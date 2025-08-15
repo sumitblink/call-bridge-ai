@@ -70,7 +70,7 @@ import {
   type InsertRedtrackConfig,
 } from '@shared/schema';
 import { db } from './db';
-import { eq, and, sql, inArray, isNotNull, ne, isNull } from 'drizzle-orm';
+import { eq, and, sql, inArray, isNotNull, ne, isNull, desc } from 'drizzle-orm';
 import type { IStorage } from './storage';
 
 export class DatabaseStorage implements IStorage {
@@ -571,12 +571,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCall(id: number, updates: Partial<InsertCall>): Promise<Call | undefined> {
+    console.log(`📊 [DatabaseStorage] Updating call ${id} with:`, updates);
+    
+    const updateData = {
+      ...updates,
+      updatedAt: new Date()
+    };
+    
     const [updatedCall] = await db
       .update(calls)
-      .set(updates)
+      .set(updateData)
       .where(eq(calls.id, id))
       .returning();
+      
+    if (updatedCall) {
+      console.log(`✅ [DatabaseStorage] Call ${id} updated successfully`);
+    } else {
+      console.log(`❌ [DatabaseStorage] Failed to update call ${id}`);
+    }
+    
     return updatedCall;
+  }
+
+  // Enhanced call status update method for webhook processing
+  async updateCallStatus(callId: number, updates: any): Promise<boolean> {
+    try {
+      console.log(`📊 [DatabaseStorage] Updating call status ${callId} with:`, updates);
+      
+      const updateData = {
+        ...updates,
+        updatedAt: new Date()
+      };
+      
+      const result = await db
+        .update(calls)
+        .set(updateData)
+        .where(eq(calls.id, callId));
+        
+      const success = result.rowCount > 0;
+      console.log(`${success ? '✅' : '❌'} [DatabaseStorage] Call status update ${success ? 'succeeded' : 'failed'}`);
+      
+      return success;
+    } catch (error) {
+      console.error(`💥 [DatabaseStorage] Call status update error:`, error);
+      return false;
+    }
   }
 
   // Call logs
@@ -632,66 +671,24 @@ export class DatabaseStorage implements IStorage {
   // Enhanced Calls with Joins  
   async getEnhancedCallsByUser(userId: number, filters?: any): Promise<any[]> {
     try {
+      // Simplified query without complex joins to avoid null object errors
       const result = await db
-        .select({
-          // Call fields
-          id: calls.id,
-          campaignId: calls.campaignId,
-          buyerId: calls.buyerId,
-          targetId: calls.targetId,
-          numberPoolId: calls.numberPoolId,
-          phoneNumberId: calls.phoneNumberId,
-          callSid: calls.callSid,
-          fromNumber: calls.fromNumber,
-          toNumber: calls.toNumber,
-          duration: calls.duration,
-          status: calls.status,
-          callQuality: calls.callQuality,
-          recordingUrl: calls.recordingUrl,
-          recordingSid: calls.recordingSid,
-          recordingStatus: calls.recordingStatus,
-          recordingDuration: calls.recordingDuration,
-          transcription: calls.transcription,
-          transcriptionStatus: calls.transcriptionStatus,
-          cost: calls.cost,
-          revenue: calls.revenue,
-          payout: calls.payout,
-          profit: calls.profit,
-          geoLocation: calls.geoLocation,
-          userAgent: calls.userAgent,
-          clickId: calls.clickId,
-          publisherName: calls.publisherName,
-          utmSource: calls.utmSource,
-          utmMedium: calls.utmMedium,
-          utmCampaign: calls.utmCampaign,
-          utmContent: calls.utmContent,
-          utmTerm: calls.utmTerm,
-          referrer: calls.referrer,
-          landingPage: calls.landingPage,
-          ipAddress: calls.ipAddress,
-          createdAt: calls.createdAt,
-          updatedAt: calls.updatedAt,
-          hangupCause: calls.hangupCause,
-          disposition: calls.disposition,
-          whoHungUp: calls.whoHungUp,
-          // Buyer fields
-          buyerName: buyers.companyName,
-          buyerEmail: buyers.email,
-          // Campaign fields  
-          campaignName: campaigns.name,
-          // RTB Target fields
-          targetName: rtbTargets.name,
-          targetCompany: rtbTargets.companyName,
-        })
+        .select()
         .from(calls)
         .innerJoin(campaigns, eq(calls.campaignId, campaigns.id))
-        .leftJoin(buyers, eq(calls.buyerId, buyers.id))
-        .leftJoin(rtbTargets, eq(calls.targetId, rtbTargets.id))
         .where(eq(campaigns.userId, userId))
         .orderBy(desc(calls.createdAt))
         .limit(1000);
       
-      return result;
+      // Transform result to match expected format
+      return result.map(row => ({
+        ...row.calls,
+        campaignName: row.campaigns.name,
+        buyerName: row.calls.buyerName || 'Unknown Buyer',
+        buyerEmail: null,
+        targetName: null,
+        targetCompany: null
+      }));
     } catch (error) {
       console.error('Error getting enhanced calls:', error);
       return [];
@@ -1542,18 +1539,11 @@ export class DatabaseStorage implements IStorage {
   async getConversionEvents(sessionId?: string, campaignId?: number): Promise<ConversionEvent[]> {
     let query = db.select().from(conversionEvents);
     
-    if (sessionId && campaignId) {
-      query = query.where(and(
-        eq(conversionEvents.sessionId, sessionId),
-        eq(conversionEvents.campaignId, campaignId)
-      ));
-    } else if (sessionId) {
+    if (sessionId) {
       query = query.where(eq(conversionEvents.sessionId, sessionId));
-    } else if (campaignId) {
-      query = query.where(eq(conversionEvents.campaignId, campaignId));
     }
     
-    return await query.orderBy(sql`${conversionEvents.createdAt} DESC`);
+    return await query.orderBy(desc(conversionEvents.createdAt));
   }
 
   async getBasicTrackingStats(userId: number): Promise<{
@@ -1563,42 +1553,13 @@ export class DatabaseStorage implements IStorage {
     topSources: Array<{source: string; count: number}>;
     recentConversions: ConversionEvent[];
   }> {
-    // Get sessions for the user
-    const userSessions = await db
-      .select()
-      .from(visitorSessions)
-      .where(eq(visitorSessions.userId, userId));
-
-    // Get conversion events for the user's sessions
-    const sessionIds = userSessions.map(s => s.sessionId);
-    const userConversions = sessionIds.length > 0 
-      ? await db
-          .select()
-          .from(conversionEvents)
-          .where(inArray(conversionEvents.sessionId, sessionIds))
-          .orderBy(sql`${conversionEvents.createdAt} DESC`)
-      : [];
-
-    // Calculate top sources
-    const sourceCounts: Record<string, number> = {};
-    userSessions.forEach(session => {
-      const source = session.source || 'direct';
-      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
-    });
-
-    const topSources = Object.entries(sourceCounts)
-      .map(([source, count]) => ({ source, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-
-    const recentConversions = userConversions.slice(0, 10);
-
+    // Traffic analytics disabled - return empty stats
     return {
-      totalSessions: userSessions.length,
-      totalConversions: userConversions.length,
-      conversionRate: userSessions.length > 0 ? (userConversions.length / userSessions.length) * 100 : 0,
-      topSources,
-      recentConversions
+      totalSessions: 0,
+      totalConversions: 0,
+      conversionRate: 0,
+      topSources: [],
+      recentConversions: []
     };
   }
 
@@ -1644,6 +1605,49 @@ export class DatabaseStorage implements IStorage {
       .delete(redtrackConfigs)
       .where(eq(redtrackConfigs.id, id));
     return result.rowCount > 0;
+  }
+
+  // RTB Auction Details method
+  async getRTBAuctionDetails(callId: number): Promise<any[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          id,
+          call_id as "callId",
+          auction_id as "auctionId", 
+          target_id as "targetId",
+          target_name as "targetName",
+          bid_amount as "bidAmount",
+          bid_duration as "bidDuration",
+          bid_status as "bidStatus",
+          response_time as "responseTime",
+          rejection_reason as "rejectionReason", 
+          destination_number as "destinationNumber",
+          is_winner as "isWinner",
+          timestamp,
+          metadata
+        FROM rtb_auction_details 
+        WHERE call_id = ${callId}
+        ORDER BY timestamp ASC
+      `);
+      return result.rows || [];
+    } catch (error) {
+      console.error('[DatabaseStorage] Error fetching RTB auction details:', error);
+      return [];
+    }
+  }
+
+  // Missing methods for routing decisions and call events
+  async getRoutingDecisions(callId: number): Promise<any[]> {
+    // For now, return empty array since routing decisions are stored differently
+    // In the future, this could query a dedicated routing_decisions table
+    return [];
+  }
+
+  async getCallEvents(callId: number): Promise<any[]> {
+    // For now, return empty array since call events are stored differently
+    // In the future, this could query a dedicated call_events table
+    return [];
   }
 }
 

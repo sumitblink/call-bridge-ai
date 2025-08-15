@@ -280,19 +280,28 @@ router.get("/api/calls/:callId/rtb-auction-details", requireAuth, async (req, re
       callDuration: call.duration,
       fromNumber: call.fromNumber,
       toNumber: call.toNumber,
-      bidResponses: bidResponses.map(bid => ({
-        id: bid.id,
-        rtbTargetId: bid.rtbTargetId,
-        targetName: bid.targetName || `Target ${bid.rtbTargetId}`,
-        bidAmount: parseFloat(bid.bidAmount?.toString() || '0'),
-        destinationNumber: bid.destinationNumber || '',
-        responseTimeMs: bid.responseTimeMs || 0,
-        responseStatus: bid.responseStatus || 'unknown',
-        isValid: bid.isValid || false,
-        isWinningBid: bid.isWinningBid || false,
-        rejectionReason: bid.rejectionReason,
-        rawResponse: bid.rawResponse
-      }))
+      bidResponses: bidResponses.map(bid => {
+        // Determine winner based on call's target_id (the actual routing decision)
+        const isWinner = call.targetId === bid.rtbTargetId;
+        
+        // Map response status for frontend display
+        const status = bid.responseStatus === 'success' && !bid.rejectionReason ? 'success' : 
+                      bid.responseStatus === 'error' || bid.rejectionReason ? 'error' : 
+                      'timeout';
+        
+        return {
+          id: bid.id,
+          targetId: bid.rtbTargetId,
+          targetName: bid.targetName || `Target ${bid.rtbTargetId}`,
+          bidAmount: parseFloat(bid.bidAmount?.toString() || '0'),
+          destinationNumber: bid.destinationNumber || '',
+          responseTime: bid.responseTimeMs || 0,
+          status: status,
+          isWinner: isWinner,
+          rejectionReason: bid.rejectionReason,
+          rawResponse: bid.rawResponse
+        };
+      })
     };
 
     console.log(`[RTB AUCTION API] Call ${callId} - Pinged: ${auctionSummary.totalTargetsPinged}, Responses: ${auctionSummary.successfulResponses}, Winner: $${auctionSummary.winningBidAmount}`);

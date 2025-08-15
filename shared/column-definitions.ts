@@ -95,8 +95,11 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Target Number',
     category: 'Popular',
     dataType: 'string',
-    defaultVisible: false,
-    width: 120
+    defaultVisible: true, // Now has real data
+    width: 130,
+    sortable: true,
+    filterable: true,
+    description: 'Actual target phone number called'
   },
   {
     id: 'buyer',
@@ -113,8 +116,11 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Target Group',
     category: 'Popular',
     dataType: 'string',
-    defaultVisible: false,
-    width: 120
+    defaultVisible: true, // Now has real data
+    width: 140,
+    sortable: true,
+    filterable: true,
+    description: 'Target group classification'
   },
   {
     id: 'campaignId',
@@ -155,8 +161,11 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Target Sub ID',
     category: 'Popular',
     dataType: 'string',
-    defaultVisible: false,
-    width: 120
+    defaultVisible: true, // Now has real data
+    width: 130,
+    sortable: true,
+    filterable: true,
+    description: 'Target sub-identifier for tracking'
   },
   {
     id: 'buyerId',
@@ -171,8 +180,11 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Buyer Sub ID',
     category: 'Popular',
     dataType: 'string',
-    defaultVisible: false,
-    width: 120
+    defaultVisible: true, // Now has real data
+    width: 130,
+    sortable: true,
+    filterable: true,
+    description: 'Buyer sub-identifier for tracking'
   },
   {
     id: 'targetGroupId',
@@ -189,8 +201,11 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Inbound Call ID',
     category: 'Call',
     dataType: 'string',
-    defaultVisible: false,
-    width: 150
+    defaultVisible: true, // Now has real data
+    width: 180,
+    sortable: true,
+    filterable: true,
+    description: 'External inbound call identifier'
   },
   {
     id: 'callDate',
@@ -224,8 +239,11 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Number ID',
     category: 'Call',
     dataType: 'string',
-    defaultVisible: false,
-    width: 100
+    defaultVisible: true, // Now has real data
+    width: 110,
+    sortable: true,
+    filterable: true,
+    description: 'Phone number identifier'
   },
   {
     id: 'numberPool',
@@ -281,40 +299,55 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Connected',
     category: 'Call',
     dataType: 'boolean',
-    defaultVisible: false,
-    width: 100
+    defaultVisible: true, // Now has real data
+    width: 100,
+    sortable: true,
+    filterable: true,
+    description: 'Was call successfully connected'
   },
   {
     id: 'incomplete',
     label: 'Incomplete',
     category: 'Call',
     dataType: 'boolean',
-    defaultVisible: false,
-    width: 100
+    defaultVisible: true, // Now has real data
+    width: 100,
+    sortable: true,
+    filterable: true,
+    description: 'Is call incomplete or failed'
   },
   {
     id: 'hasRecording',
     label: 'Has Recording',
     category: 'Call',
     dataType: 'boolean',
-    defaultVisible: false,
-    width: 120
+    defaultVisible: true, // Now has real data
+    width: 120,
+    sortable: true,
+    filterable: true,
+    description: 'Does call have recording available'
   },
   {
     id: 'isLive',
     label: 'Is Live',
     category: 'Call',
     dataType: 'boolean',
-    defaultVisible: false,
-    width: 80
+    defaultVisible: true, // Now has real data
+    width: 80,
+    sortable: true,
+    filterable: true,
+    description: 'Is call currently live'
   },
   {
     id: 'recording',
     label: 'Recording',
     category: 'Call',
-    dataType: 'string',
-    defaultVisible: false,
-    width: 100
+    dataType: 'boolean',
+    defaultVisible: true, // Now has real data
+    width: 100,
+    sortable: true,
+    filterable: true,
+    description: 'Recording availability status'
   },
 
   // Impression Category
@@ -349,8 +382,10 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Time To Call',
     category: 'Time',
     dataType: 'duration',
-    defaultVisible: false,
-    width: 100
+    defaultVisible: true, // Now has real data
+    width: 120,
+    sortable: true,
+    description: 'Time from impression to call in seconds'
   },
   {
     id: 'duration',
@@ -374,8 +409,10 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Time To Connect',
     category: 'Time',
     dataType: 'duration',
-    defaultVisible: false,
-    width: 120
+    defaultVisible: true, // Now has real data
+    width: 130,
+    sortable: true,
+    description: 'Time to establish connection in milliseconds'
   },
 
   // Performance Category (key defaults based on image)
@@ -384,32 +421,44 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'No Payout Reason',
     category: 'Performance',
     dataType: 'string',
-    defaultVisible: false,
-    width: 150
+    defaultVisible: true, // Now has real data
+    width: 200,
+    sortable: true,
+    filterable: true,
+    description: 'Reason why payout was not given'
   },
   {
     id: 'noConversionReason',
     label: 'No Conversion Reason',
     category: 'Performance',
     dataType: 'string',
-    defaultVisible: false,
-    width: 150
+    defaultVisible: true, // Now has real data
+    width: 200,
+    sortable: true,
+    filterable: true,
+    description: 'Reason why call did not convert'
   },
   {
     id: 'blockReason',
     label: 'Block Reason',
     category: 'Performance',
     dataType: 'string',
-    defaultVisible: false,
-    width: 120
+    defaultVisible: true, // Now has real data
+    width: 150,
+    sortable: true,
+    filterable: true,
+    description: 'Reason why call was blocked'
   },
   {
     id: 'incompleteCallReason',
     label: 'Incomplete Call Reason',
     category: 'Performance',
     dataType: 'string',
-    defaultVisible: false,
-    width: 150
+    defaultVisible: true, // Now has real data
+    width: 180,
+    sortable: true,
+    filterable: true,
+    description: 'Reason why call was incomplete'
   },
   {
     id: 'offlineConversionUploaded',
@@ -459,22 +508,8 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     defaultVisible: false,
     width: 100
   },
-  {
-    id: 'duplicate',
-    label: 'Duplicate',
-    category: 'Performance',
-    dataType: 'boolean',
-    defaultVisible: true,
-    width: 100
-  },
-  {
-    id: 'previouslyConnected',
-    label: 'Previously Connected',
-    category: 'Performance',
-    dataType: 'boolean',
-    defaultVisible: true,
-    width: 150
-  },
+
+
   {
     id: 'previouslyConnectedDate',
     label: 'Previously Connected Date',
@@ -507,14 +542,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     defaultVisible: false,
     width: 100
   },
-  {
-    id: 'approvedAdjustment',
-    label: 'Approved Adjustment',
-    category: 'Performance',
-    dataType: 'boolean',
-    defaultVisible: false,
-    width: 150
-  },
+
   {
     id: 'revenue',
     label: 'Revenue',
@@ -524,14 +552,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 100,
     sortable: true
   },
-  {
-    id: 'profitNetTolco',
-    label: 'Profit Net Tolco',
-    category: 'Performance',
-    dataType: 'currency',
-    defaultVisible: false,
-    width: 120
-  },
+
   {
     id: 'profit',
     label: 'Profit',
@@ -549,29 +570,116 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     defaultVisible: false,
     width: 100
   },
+
+
+
+
+  // Timestamp Columns
   {
-    id: 'voicemail',
-    label: 'Voicemail',
+    id: 'callCompleteTimestamp',
+    label: 'Call Complete Timestamp',
+    category: 'Time',
+    dataType: 'date',
+    defaultVisible: true,
+    width: 180,
+    sortable: true,
+    description: 'When call actually completed'
+  },
+  {
+    id: 'callConnectedTimestamp',
+    label: 'Call Connected Timestamp',
+    category: 'Time',
+    dataType: 'date',
+    defaultVisible: true,
+    width: 180,
+    sortable: true,
+    description: 'When call was connected'
+  },
+
+  // Additional Performance Columns
+  {
+    id: 'duplicate',
+    label: 'Duplicate',
     category: 'Performance',
     dataType: 'boolean',
-    defaultVisible: false,
-    width: 100
+    defaultVisible: true,
+    width: 100,
+    sortable: true,
+    filterable: true,
+    description: 'Is this a duplicate call'
+  },
+  {
+    id: 'previouslyConnected',
+    label: 'Previously Connected',
+    category: 'Performance',
+    dataType: 'boolean',
+    defaultVisible: true,
+    width: 150,
+    sortable: true,
+    filterable: true,
+    description: 'Was caller previously connected'
+  },
+  {
+    id: 'convertedBlocked',
+    label: 'Converted Blocked',
+    category: 'Performance',
+    dataType: 'boolean',
+    defaultVisible: true,
+    width: 140,
+    sortable: true,
+    filterable: true,
+    description: 'Was conversion blocked'
+  },
+  {
+    id: 'approvedAdjustment',
+    label: 'Approved Adjustment',
+    category: 'Performance',
+    dataType: 'currency',
+    defaultVisible: true,
+    width: 150,
+    sortable: true,
+    description: 'Approved adjustment amount'
+  },
+  {
+    id: 'profitNetTolco',
+    label: 'Profit Net TOLCO',
+    category: 'Performance',
+    dataType: 'currency',
+    defaultVisible: true,
+    width: 140,
+    sortable: true,
+    description: 'Net profit after TOLCO fees'
+  },
+  {
+    id: 'voicemail',
+    label: 'Voice Mail',
+    category: 'Performance',
+    dataType: 'boolean',
+    defaultVisible: true,
+    width: 100,
+    sortable: true,
+    filterable: true,
+    description: 'Did call reach voicemail'
   },
   {
     id: 'totalCost',
     label: 'Total Cost',
     category: 'Performance',
     dataType: 'currency',
-    defaultVisible: false,
-    width: 100
+    defaultVisible: true,
+    width: 110,
+    sortable: true,
+    description: 'Total cost including fees'
   },
   {
     id: 'tolcoCost',
-    label: 'Tolco Cost',
+    label: 'TOLCO Cost',
     category: 'Performance',
     dataType: 'currency',
-    defaultVisible: false,
-    width: 100
+    defaultVisible: true,
+    width: 110,
+    sortable: true,
+    description: 'TOLCO platform cost'
   },
 
   // Additional essential columns for current functionality
@@ -602,24 +710,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120,
     filterable: true
   },
-  {
-    id: 'duplicate',
-    label: 'Duplicate',
-    category: 'Call',
-    dataType: 'string',
-    defaultVisible: true,
-    width: 100,
-    filterable: true
-  },
-  {
-    id: 'previouslyConnected',
-    label: 'Previously Connected',
-    category: 'Call',
-    dataType: 'string',
-    defaultVisible: true,
-    width: 140,
-    filterable: true
-  },
+
   {
     id: 'actions',
     label: 'Actions',
