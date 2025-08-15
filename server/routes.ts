@@ -2666,7 +2666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const twiml = `<Response>
   <Say>${connectMessage}</Say>
-  <Dial callerId="${callerIdToUse}" timeout="30" record="record-from-answer" recordingStatusCallback="${baseUrl}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="${baseUrl}/api/webhooks/pool/${poolId}/status" method="POST">
+  <Dial callerId="${callerIdToUse}" timeout="60" record="record-from-answer" recordingStatusCallback="${baseUrl}/api/webhooks/recording-status" recordingStatusCallbackMethod="POST" action="${baseUrl}/api/webhooks/pool/${poolId}/status" method="POST">
     ${dialTag}
   </Dial>
   <Say>Thank you for calling.</Say>
