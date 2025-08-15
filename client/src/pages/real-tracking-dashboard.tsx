@@ -30,29 +30,22 @@ interface TrackingStats {
 }
 
 export default function RealTrackingDashboard() {
-  // Fetch real tracking data with auto-refresh
+  // Fetch real tracking data
   const { data: trackingData, isLoading, error, refetch } = useQuery<{
     sessions: TrackingSession[];
     stats: TrackingStats;
   }>({
     queryKey: ['/api/tracking/live-sessions'],
-    refetchInterval: 10000, // Refresh every 10 seconds for real-time traffic monitoring
-    staleTime: 5000,
+    refetchInterval: false, // Turn off auto-refresh to reduce console spam
+    staleTime: 30000,
   });
 
   const sessions = trackingData?.sessions || [];
   
-  // Calculate real-time statistics from actual data
-  const now = new Date();
-  const last5Minutes = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
-  const last10Minutes = new Date(now.getTime() - 10 * 60 * 1000).toISOString();
-  const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-  
+  // Calculate real statistics from actual data
   const stats = {
     totalSessions: sessions.length,
-    activeSessions: sessions.filter(s => s.timestamp > last24Hours).length,
-    recentSessions: sessions.filter(s => s.timestamp > last10Minutes).length,
-    liveTraffic: sessions.filter(s => s.timestamp > last5Minutes).length,
+    activeSessions: sessions.filter(s => s.timestamp > new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()).length,
     googleTraffic: sessions.filter(s => s.source === 'google').length,
     facebookTraffic: sessions.filter(s => s.source === 'facebook').length,
     linkedinTraffic: sessions.filter(s => s.source === 'linkedin').length,
@@ -104,9 +97,9 @@ export default function RealTrackingDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between border-b pb-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Traffic Analytics</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Real-Time Tracking</h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Real-time page visits and session tracking • Updated every 10 seconds
+              Live data from your DNI pixel tracking tests
             </p>
           </div>
           <div className="flex items-center space-x-3">
@@ -121,44 +114,13 @@ export default function RealTrackingDashboard() {
           </div>
         </div>
 
-        {/* Real-Time Traffic Analytics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          <Card className="col-span-2">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{stats.totalSessions.toLocaleString()}</div>
-                <p className="text-sm text-muted-foreground">Total Page Visits</p>
-                <p className="text-xs text-gray-500">All time</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{stats.liveTraffic}</div>
-                <p className="text-sm text-muted-foreground">Live Traffic</p>
-                <p className="text-xs text-gray-500">Last 5 mins</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{stats.recentSessions}</div>
-                <p className="text-sm text-muted-foreground">Recent Visits</p>
-                <p className="text-xs text-gray-500">Last 10 mins</p>
-              </div>
-            </CardContent>
-          </Card>
-
+        {/* Key Metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{stats.activeSessions}</div>
-                <p className="text-sm text-muted-foreground">Today</p>
-                <p className="text-xs text-gray-500">24 hours</p>
+                <div className="text-2xl font-bold text-blue-600">{stats.totalSessions}</div>
+                <p className="text-sm text-muted-foreground">Total Sessions</p>
               </div>
             </CardContent>
           </Card>
@@ -209,40 +171,38 @@ export default function RealTrackingDashboard() {
           </Card>
         </div>
 
-        {/* Live Traffic Monitoring Section */}
+        {/* Campaign Performance */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <span>Live Traffic Monitor</span>
-                </span>
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  {stats.liveTraffic} active
-                </Badge>
+              <CardTitle className="flex items-center space-x-2">
+                <Target className="h-5 w-5" />
+                <span>Top Performing Campaigns</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Page visits this hour</span>
-                  <span className="font-mono text-xl text-blue-600">
-                    {sessions.filter(s => s.timestamp > new Date(Date.now() - 60 * 60 * 1000).toISOString()).length}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Visitors last 10 minutes</span>
-                  <span className="font-mono text-xl text-orange-600">{stats.recentSessions}</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Active visitors (5 mins)</span>
-                  <span className="font-mono text-xl text-green-600">{stats.liveTraffic}</span>
-                </div>
-                <div className="flex justify-between items-center py-3">
-                  <span className="text-sm text-gray-600">Total sessions tracked</span>
-                  <span className="font-mono text-xl text-purple-600">{stats.totalSessions.toLocaleString()}</span>
-                </div>
+              <div className="space-y-3">
+                {topCampaigns.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">No campaign data available</p>
+                ) : (
+                  topCampaigns.map((campaign: any, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <Badge variant="outline">{campaign.source}</Badge>
+                        <div>
+                          <p className="font-medium">{campaign.campaign || 'Unnamed Campaign'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Last activity: {new Date(campaign.latest).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold">{campaign.count}</div>
+                        <p className="text-xs text-muted-foreground">sessions</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -250,120 +210,33 @@ export default function RealTrackingDashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Target className="h-5 w-5" />
-                <span>Traffic Sources</span>
+                <Activity className="h-5 w-5" />
+                <span>Recent Activity</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {topCampaigns.slice(0, 8).map((campaign: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-3 h-3 rounded-full ${
-                        index === 0 ? 'bg-blue-500' : 
-                        index === 1 ? 'bg-green-500' : 
-                        index === 2 ? 'bg-purple-500' : 
-                        index === 3 ? 'bg-orange-500' : 
-                        index === 4 ? 'bg-red-500' : 
-                        index === 5 ? 'bg-yellow-500' : 
-                        index === 6 ? 'bg-pink-500' : 'bg-indigo-500'
-                      }`}></div>
-                      <span className="text-sm">
-                        <span className="font-medium capitalize">{campaign.source}</span>
-                        {campaign.campaign && (
-                          <span className="text-gray-500"> • {campaign.campaign}</span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-mono text-sm font-bold">{campaign.count}</div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(campaign.latest).toLocaleTimeString()}
+                {sessions.slice(0, 5).map((session, index) => (
+                  <div key={index} className="flex items-center space-x-3 p-2 border-l-2 border-l-blue-500 bg-blue-50/50 rounded-r-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <Badge size="sm" variant="secondary">{session.source}</Badge>
+                        <span className="text-sm font-medium">{session.campaign || 'Direct'}</span>
                       </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {session.medium} • {new Date(session.timestamp).toLocaleString()}
+                      </p>
                     </div>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </div>
                 ))}
-                {topCampaigns.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    No traffic sources found. Data will appear as visitors land on your pages.
-                  </div>
+                {sessions.length === 0 && (
+                  <p className="text-muted-foreground text-center py-4">No recent sessions</p>
                 )}
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Recent Sessions Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Recent Page Visits</span>
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                  Auto-refresh: 10s
-                </Badge>
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  {sessions.length} Total
-                </Badge>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Campaign</TableHead>
-                    <TableHead>Session ID</TableHead>
-                    <TableHead>Medium</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sessions.slice(0, 15).map((session: TrackingSession) => {
-                    const isRecent = new Date(session.timestamp) > new Date(Date.now() - 5 * 60 * 1000);
-                    return (
-                      <TableRow key={session.id} className={isRecent ? 'bg-green-50 dark:bg-green-900/10' : ''}>
-                        <TableCell className="text-sm">
-                          <div className="flex flex-col">
-                            <span>{new Date(session.timestamp).toLocaleTimeString()}</span>
-                            <span className="text-xs text-gray-500">
-                              {new Date(session.timestamp).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="capitalize">
-                            {session.source}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-[150px] truncate">
-                          {session.campaign || 'Direct'}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {session.id.length > 15 ? `${session.id.substring(0, 15)}...` : session.id}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-gray-600 capitalize">
-                            {session.medium || 'organic'}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {sessions.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                        No page visits found. Data will appear here once traffic starts hitting your campaigns.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Detailed Session Table */}
         <Card>
@@ -409,7 +282,7 @@ export default function RealTrackingDashboard() {
                         {session.campaign || 'Direct Traffic'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{session.medium || 'none'}</Badge>
+                        <Badge size="sm" variant="secondary">{session.medium || 'none'}</Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(session.timestamp).toLocaleString()}

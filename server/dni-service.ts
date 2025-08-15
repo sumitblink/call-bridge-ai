@@ -170,11 +170,11 @@ export class DNIService {
           const existingSession = await this.getSessionPhoneNumber(request.sessionId, campaign.id);
           if (existingSession && poolNumbers.find(p => p.id === existingSession.phoneNumberId)) {
             selectedPhone = poolNumbers.find(p => p.id === existingSession.phoneNumberId)!;
-            // Sticky session found
+            console.log('DNI: Using sticky session phone:', selectedPhone.phoneNumber, 'for session:', request.sessionId);
           } else {
             // No existing session or expired - assign new number based on rotation strategy
             selectedPhone = this.selectPhoneByStrategy(poolNumbers, request);
-            // Only log new assignments for debugging
+            console.log('DNI: Assigned new phone for session:', selectedPhone.phoneNumber, 'for session:', request.sessionId);
           }
         } else {
           // No session ID - use rotation strategy
@@ -350,39 +350,15 @@ export class DNIService {
       const client = (await import('@neondatabase/serverless')).neon;
       const sql_client = client(process.env.DATABASE_URL!);
       
-      // First check if session exists
-      const existingSession = await sql_client`
-        SELECT id, session_id, campaign 
-        FROM visitor_sessions 
+      await sql_client`
+        UPDATE visitor_sessions 
+        SET assigned_phone_number_id = ${phoneNumberId}, 
+            last_activity = NOW()
         WHERE session_id = ${sessionId} 
-        LIMIT 1
+        AND campaign = ${campaignId}
       `;
       
-      if (existingSession.length === 0) {
-        console.log(`DNI: Creating new session ${sessionId} for campaign ${campaignId}`);
-        // Create new session with phone assignment
-        await sql_client`
-          INSERT INTO visitor_sessions (
-            session_id, campaign, assigned_phone_number_id, 
-            first_visit, last_activity, is_active, has_converted
-          ) VALUES (
-            ${sessionId}, ${campaignId}, ${phoneNumberId},
-            NOW(), NOW(), true, false
-          )
-        `;
-      } else {
-        // Update existing session
-        const updateResult = await sql_client`
-          UPDATE visitor_sessions 
-          SET assigned_phone_number_id = ${phoneNumberId}, 
-              last_activity = NOW(),
-              campaign = ${campaignId}
-          WHERE session_id = ${sessionId}
-        `;
-        console.log(`DNI: Updated session ${sessionId} with phone ID ${phoneNumberId}, affected rows: ${updateResult.length}`);
-      }
-      
-      // Session assignment completed silently
+      console.log('DNI: Updated session', sessionId, 'with phone assignment:', phoneNumberId);
     } catch (error) {
       console.error('Error updating session phone assignment:', error);
     }
@@ -398,22 +374,21 @@ export class DNIService {
     request: DNIRequest
   ): Promise<void> {
     try {
-      // Verbose tracking session logging disabled
-      // console.log('DNI Tracking Session:', {
-      //   trackingId,
-      //   campaignId,
-      //   phoneNumberId,
-      //   source: request.source,
-      //   medium: request.medium,
-      //   campaign: request.campaign,
-      //   sessionId: request.sessionId
-      // });
+      console.log('DNI Tracking Session:', {
+        trackingId,
+        campaignId,
+        phoneNumberId,
+        source: request.source,
+        medium: request.medium,
+        campaign: request.campaign,
+        sessionId: request.sessionId
+      });
       
       // Get geographic data from IP address
       const geoData = GeoService.getGeographicDataFromIP(request.ipAddress || '127.0.0.1');
-      // console.log('DNI Geographic Data:', geoData);
+      console.log('DNI Geographic Data:', geoData);
       
-      // console.log('DNI CustomFields received:', request.customFields);
+      console.log('DNI CustomFields received:', request.customFields);
 
       // Store visitor session in database for real-time tracking
       const { neon } = await import('@neondatabase/serverless');
@@ -464,7 +439,7 @@ export class DNIService {
           redtrack_sub_5 = EXCLUDED.redtrack_sub_5
       `;
       
-      // console.log(`✅ DNI Session stored: ${uniqueSessionId} with UTM: ${request.source}/${request.medium}/${request.campaign}`);
+      console.log(`✅ DNI Session stored: ${uniqueSessionId} with UTM: ${request.source}/${request.medium}/${request.campaign}`);
     } catch (error) {
       console.error('Error storing tracking session:', error);
     }
@@ -694,7 +669,7 @@ export class DNIService {
    */
   static async trackVisitorByCampaignId(request: DNIRequest): Promise<DNIResponse> {
     try {
-      // console.log('DNI: Simple tracking by campaign ID:', request.campaignId);
+      console.log('DNI: Simple tracking by campaign ID:', request.campaignId);
       
       // Find campaign by ID
       const campaign = await db.select().from(campaigns).where(eq(campaigns.id, request.campaignId)).limit(1);
@@ -712,7 +687,7 @@ export class DNIService {
       }
 
       const campaignRecord = campaign[0];
-      // console.log('DNI: Found campaign:', campaignRecord.name);
+      console.log('DNI: Found campaign:', campaignRecord.name);
 
       // Use the existing trackVisitor method with campaign details
       const trackingRequest = {

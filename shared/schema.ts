@@ -981,7 +981,7 @@ export const insertTargetSchema = createInsertSchema(targets).omit({
   buyerId: z.number().min(1, "Buyer ID is required"),
   name: z.string().min(1, "Target name is required"),
   phoneNumber: z.string().optional(),
-  endpoint: z.string().optional().or(z.literal("")),
+  endpoint: z.string().url("Invalid endpoint URL").optional().or(z.literal("")),
   priority: z.number().min(1).max(10).optional(),
   dailyCap: z.number().min(0).optional(),
   concurrencyLimit: z.number().min(1).optional(),

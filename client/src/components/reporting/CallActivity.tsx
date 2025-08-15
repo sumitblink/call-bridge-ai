@@ -265,7 +265,7 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                     <div className="space-y-1">
                       {rtbAuctionData && rtbAuctionData.length > 0 ? (
                         rtbAuctionData.slice(0, 3).map((auction: any, index: number) => (
-                          <div key={`auction-${auction.id || index}`} className="grid grid-cols-3 gap-2 text-xs">
+                          <div key={auction.id} className="grid grid-cols-3 gap-2 text-xs">
                             <div>1</div>
                             <div>1</div>
                             <div>{auction.targetName}</div>
@@ -660,8 +660,8 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                       </TableHeader>
                       <TableBody>
                         {rtbAuctionData && rtbAuctionData.length > 0 ? rtbAuctionData
-                          .sort((a: any, b: any) => parseFloat(b.bidAmount) - parseFloat(a.bidAmount))
-                          .map((bidder: any, idx: number) => (
+                          .sort((a, b) => parseFloat(b.bidAmount) - parseFloat(a.bidAmount))
+                          .map((bidder, idx: number) => (
                           <TableRow key={idx} className="text-sm">
                             <TableCell>
                               <div className="flex items-center space-x-2">

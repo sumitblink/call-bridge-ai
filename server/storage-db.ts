@@ -70,7 +70,7 @@ import {
   type InsertRedtrackConfig,
 } from '@shared/schema';
 import { db } from './db';
-import { eq, and, sql, inArray, isNotNull, ne, isNull, desc } from 'drizzle-orm';
+import { eq, and, sql, inArray, isNotNull, ne, isNull } from 'drizzle-orm';
 import type { IStorage } from './storage';
 
 export class DatabaseStorage implements IStorage {
@@ -671,24 +671,66 @@ export class DatabaseStorage implements IStorage {
   // Enhanced Calls with Joins  
   async getEnhancedCallsByUser(userId: number, filters?: any): Promise<any[]> {
     try {
-      // Simplified query without complex joins to avoid null object errors
       const result = await db
-        .select()
+        .select({
+          // Call fields
+          id: calls.id,
+          campaignId: calls.campaignId,
+          buyerId: calls.buyerId,
+          targetId: calls.targetId,
+          numberPoolId: calls.numberPoolId,
+          phoneNumberId: calls.phoneNumberId,
+          callSid: calls.callSid,
+          fromNumber: calls.fromNumber,
+          toNumber: calls.toNumber,
+          duration: calls.duration,
+          status: calls.status,
+          callQuality: calls.callQuality,
+          recordingUrl: calls.recordingUrl,
+          recordingSid: calls.recordingSid,
+          recordingStatus: calls.recordingStatus,
+          recordingDuration: calls.recordingDuration,
+          transcription: calls.transcription,
+          transcriptionStatus: calls.transcriptionStatus,
+          cost: calls.cost,
+          revenue: calls.revenue,
+          payout: calls.payout,
+          profit: calls.profit,
+          geoLocation: calls.geoLocation,
+          userAgent: calls.userAgent,
+          clickId: calls.clickId,
+          publisherName: calls.publisherName,
+          utmSource: calls.utmSource,
+          utmMedium: calls.utmMedium,
+          utmCampaign: calls.utmCampaign,
+          utmContent: calls.utmContent,
+          utmTerm: calls.utmTerm,
+          referrer: calls.referrer,
+          landingPage: calls.landingPage,
+          ipAddress: calls.ipAddress,
+          createdAt: calls.createdAt,
+          updatedAt: calls.updatedAt,
+          hangupCause: calls.hangupCause,
+          disposition: calls.disposition,
+          whoHungUp: calls.whoHungUp,
+          // Buyer fields - Use stored buyer_name from calls table
+          buyerName: calls.buyerName,
+          buyerEmail: buyers.email,
+          // Campaign fields  
+          campaignName: campaigns.name,
+          // RTB Target fields
+          targetName: rtbTargets.name,
+          targetCompany: rtbTargets.companyName,
+        })
         .from(calls)
         .innerJoin(campaigns, eq(calls.campaignId, campaigns.id))
+        .leftJoin(buyers, eq(calls.buyerId, buyers.id))
+        .leftJoin(rtbTargets, eq(calls.targetId, rtbTargets.id))
         .where(eq(campaigns.userId, userId))
         .orderBy(desc(calls.createdAt))
         .limit(1000);
       
-      // Transform result to match expected format
-      return result.map(row => ({
-        ...row.calls,
-        campaignName: row.campaigns.name,
-        buyerName: row.calls.buyerName || 'Unknown Buyer',
-        buyerEmail: null,
-        targetName: null,
-        targetCompany: null
-      }));
+      return result;
     } catch (error) {
       console.error('Error getting enhanced calls:', error);
       return [];
@@ -1539,11 +1581,18 @@ export class DatabaseStorage implements IStorage {
   async getConversionEvents(sessionId?: string, campaignId?: number): Promise<ConversionEvent[]> {
     let query = db.select().from(conversionEvents);
     
-    if (sessionId) {
+    if (sessionId && campaignId) {
+      query = query.where(and(
+        eq(conversionEvents.sessionId, sessionId),
+        eq(conversionEvents.campaignId, campaignId)
+      ));
+    } else if (sessionId) {
       query = query.where(eq(conversionEvents.sessionId, sessionId));
+    } else if (campaignId) {
+      query = query.where(eq(conversionEvents.campaignId, campaignId));
     }
     
-    return await query.orderBy(desc(conversionEvents.createdAt));
+    return await query.orderBy(sql`${conversionEvents.createdAt} DESC`);
   }
 
   async getBasicTrackingStats(userId: number): Promise<{
@@ -1553,13 +1602,42 @@ export class DatabaseStorage implements IStorage {
     topSources: Array<{source: string; count: number}>;
     recentConversions: ConversionEvent[];
   }> {
-    // Traffic analytics disabled - return empty stats
+    // Get sessions for the user
+    const userSessions = await db
+      .select()
+      .from(visitorSessions)
+      .where(eq(visitorSessions.userId, userId));
+
+    // Get conversion events for the user's sessions
+    const sessionIds = userSessions.map(s => s.sessionId);
+    const userConversions = sessionIds.length > 0 
+      ? await db
+          .select()
+          .from(conversionEvents)
+          .where(inArray(conversionEvents.sessionId, sessionIds))
+          .orderBy(sql`${conversionEvents.createdAt} DESC`)
+      : [];
+
+    // Calculate top sources
+    const sourceCounts: Record<string, number> = {};
+    userSessions.forEach(session => {
+      const source = session.source || 'direct';
+      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+    });
+
+    const topSources = Object.entries(sourceCounts)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const recentConversions = userConversions.slice(0, 10);
+
     return {
-      totalSessions: 0,
-      totalConversions: 0,
-      conversionRate: 0,
-      topSources: [],
-      recentConversions: []
+      totalSessions: userSessions.length,
+      totalConversions: userConversions.length,
+      conversionRate: userSessions.length > 0 ? (userConversions.length / userSessions.length) * 100 : 0,
+      topSources,
+      recentConversions
     };
   }
 

@@ -613,68 +613,19 @@ export class SupabaseStorage implements IStorage {
 
   async createCall(call: any): Promise<Call> {
     console.log('[SupabaseStorage] createCall input clickId:', call.clickId);
-    
-    // Check if buyerId exists, if not set to null
-    let validBuyerId = null;
-    if (call.buyerId) {
-      try {
-        const buyer = await db.select().from(buyers).where(eq(buyers.id, call.buyerId)).limit(1);
-        if (buyer.length > 0) {
-          validBuyerId = call.buyerId;
-        } else {
-          console.warn(`[SupabaseStorage] Buyer ID ${call.buyerId} does not exist, setting to null`);
-        }
-      } catch (error) {
-        console.warn(`[SupabaseStorage] Error checking buyer ID ${call.buyerId}:`, error);
-      }
-    }
-    
-    // Validate other foreign key references
-    let validNumberPoolId = call.numberPoolId;
-    let validPhoneNumberId = call.phoneNumberId;
-    let validTrackingTagId = call.trackingTagId;
-    
-    // Check number pool ID
-    if (call.numberPoolId) {
-      try {
-        const pool = await db.select().from(numberPools).where(eq(numberPools.id, call.numberPoolId)).limit(1);
-        if (pool.length === 0) {
-          console.warn(`[SupabaseStorage] Number pool ID ${call.numberPoolId} does not exist, setting to null`);
-          validNumberPoolId = null;
-        }
-      } catch (error) {
-        console.warn(`[SupabaseStorage] Error checking number pool ID:`, error);
-        validNumberPoolId = null;
-      }
-    }
-    
-    // Check phone number ID  
-    if (call.phoneNumberId) {
-      try {
-        const phone = await db.select().from(phoneNumbers).where(eq(phoneNumbers.id, call.phoneNumberId)).limit(1);
-        if (phone.length === 0) {
-          console.warn(`[SupabaseStorage] Phone number ID ${call.phoneNumberId} does not exist, setting to null`);
-          validPhoneNumberId = null;
-        }
-      } catch (error) {
-        console.warn(`[SupabaseStorage] Error checking phone number ID:`, error);
-        validPhoneNumberId = null;
-      }
-    }
-    
     const result = await db.insert(calls).values({
       campaignId: call.campaignId,
-      buyerId: validBuyerId,
+      buyerId: call.buyerId,
       targetId: call.targetId,
       publisherId: call.publisherId,
       publisherName: call.publisherName,
-      trackingTagId: validTrackingTagId,
+      trackingTagId: call.trackingTagId,
       callSid: call.callSid,
       fromNumber: call.fromNumber,
       toNumber: call.toNumber,
       dialedNumber: call.dialedNumber,
-      numberPoolId: validNumberPoolId,
-      phoneNumberId: validPhoneNumberId,
+      numberPoolId: call.numberPoolId, // Add missing pool ID field
+      phoneNumberId: call.phoneNumberId, // Add missing phone number ID field
       duration: call.duration || 0,
       status: call.status || 'ringing',
       disposition: call.disposition,
@@ -761,16 +712,18 @@ export class SupabaseStorage implements IStorage {
           disposition: calls.disposition,
           whoHungUp: calls.whoHungUp,
           // Buyer fields
-          buyerName: calls.buyerName,
-          buyerEmail: sql`''::text`,
+          buyerName: buyers.companyName,
+          buyerEmail: buyers.email,
           // Campaign fields  
           campaignName: campaigns.name,
           // RTB Target fields
-          targetName: sql`''::text`,
-          targetCompany: sql`''::text`,
+          targetName: rtbTargets.name,
+          targetCompany: rtbTargets.companyName,
         })
         .from(calls)
         .innerJoin(campaigns, eq(calls.campaignId, campaigns.id))
+        .leftJoin(buyers, eq(calls.buyerId, buyers.id))
+        .leftJoin(rtbTargets, eq(calls.targetId, rtbTargets.id))
         .where(eq(campaigns.userId, userId))
         .orderBy(desc(calls.createdAt))
         .limit(1000);
@@ -902,7 +855,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   // Integration methods
-  async getUrlParameters(userId?: number): Promise<any[]> {
+  async getUrlParameters(userId: number): Promise<any[]> {
     return await db.select().from(urlParameters).where(eq(urlParameters.userId, userId));
   }
 
@@ -1210,24 +1163,13 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createRtbTarget(target: InsertRtbTarget): Promise<RtbTarget> {
-    const result = await db.insert(rtbTargets).values({
-      ...target,
-      minBidAmount: target.minBidAmount?.toString() || '0.00',
-      maxBidAmount: target.maxBidAmount?.toString() || '100.00'
-    }).returning();
+    const result = await db.insert(rtbTargets).values(target).returning();
     return result[0];
   }
 
   async updateRtbTarget(id: number, target: Partial<InsertRtbTarget>): Promise<RtbTarget | undefined> {
-    const updateData = { ...target, updatedAt: new Date() };
-    if (updateData.minBidAmount !== undefined) {
-      updateData.minBidAmount = updateData.minBidAmount?.toString() || '0.00';
-    }
-    if (updateData.maxBidAmount !== undefined) {
-      updateData.maxBidAmount = updateData.maxBidAmount?.toString() || '100.00';
-    }
     const result = await db.update(rtbTargets)
-      .set(updateData)
+      .set({ ...target, updatedAt: new Date() })
       .where(eq(rtbTargets.id, id))
       .returning();
     return result[0];
@@ -1307,20 +1249,13 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createRtbBidResponse(response: InsertRtbBidResponse): Promise<RtbBidResponse> {
-    const result = await db.insert(rtbBidResponses).values({
-      ...response,
-      bidAmount: response.bidAmount?.toString() || '0.00'
-    }).returning();
+    const result = await db.insert(rtbBidResponses).values(response).returning();
     return result[0];
   }
 
   async updateRtbBidResponse(id: number, response: Partial<InsertRtbBidResponse>): Promise<RtbBidResponse | undefined> {
-    const updateData = { ...response };
-    if (updateData.bidAmount !== undefined) {
-      updateData.bidAmount = updateData.bidAmount?.toString() || '0.00';
-    }
     const result = await db.update(rtbBidResponses)
-      .set(updateData)
+      .set(response)
       .where(eq(rtbBidResponses.id, id))
       .returning();
     return result[0];
@@ -1691,15 +1626,11 @@ export class SupabaseStorage implements IStorage {
   // Campaign RTB Target methods
   async getCampaignRtbTargets(campaignId: string): Promise<any[]> {
     try {
-      if (!campaignId) {
-        console.log('No campaignId provided to getCampaignRtbTargets');
-        return [];
-      }
-
       const result = await db
         .select({
           id: rtbTargets.id,
           name: rtbTargets.name,
+          companyName: rtbTargets.companyName,
           contactPerson: rtbTargets.contactPerson,
           contactEmail: rtbTargets.contactEmail,
           contactPhone: rtbTargets.contactPhone,
@@ -1715,7 +1646,7 @@ export class SupabaseStorage implements IStorage {
         .innerJoin(rtbTargets, eq(campaignRtbTargets.rtbTargetId, rtbTargets.id))
         .where(eq(campaignRtbTargets.campaignId, campaignId));
       
-      return result || [];
+      return result;
     } catch (error) {
       console.error('Error fetching campaign RTB targets:', error);
       return [];
