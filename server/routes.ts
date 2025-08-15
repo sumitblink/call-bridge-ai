@@ -2248,7 +2248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Prepare bid request for RTB (use CallSid to ensure same call gets same request ID)
             const bidRequest = {
               requestId: `pool_${poolId}_${CallSid}`,
-              campaignId: campaign.id, // Keep as UUID string, don't convert to number
+              campaignId: campaign.id.toString(), // Ensure string for RTB
               campaignRtbId: campaign.rtbId || undefined,
               callerId: fromNumber,
               callerState: req.body.CallerState || null,
@@ -2662,7 +2662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseUrl = `${protocol}://${webhookHost}`;
       
       // Use the assigned phone number as caller ID or fallback to the to number
-      const callerIdToUse = assignedNumber?.phoneNumber || toNumber;
+      const callerIdToUse = toNumber;
       
       const twiml = `<Response>
   <Say>${connectMessage}</Say>
