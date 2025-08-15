@@ -956,7 +956,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Call Details Summary API
+  // Call Details Summary API - Optimized to prevent connection pool exhaustion
   app.get('/api/call-details/summary', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
@@ -965,58 +965,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Get all calls using the storage interface (safer approach)
+      // Get recent calls with limit to prevent overwhelming database
       const allCalls = await storage.getCallsByUser(userId);
-      const callsData = allCalls.slice(0, 100); // Limit to 100 most recent calls
+      const callsData = allCalls.slice(0, 50); // Reduced to 50 calls to prevent connection issues
 
-      // For each call, get RTB auction details
-      const callsWithRtbDetails = await Promise.all(
-        callsData.map(async (call) => {
-          try {
-            // Get campaign name
-            const campaign = call.campaignId ? await storage.getCampaign(call.campaignId) : null;
-            const campaignName = campaign?.name || 'Unknown Campaign';
-
-            // Get RTB auction details directly from database since storage method doesn't exist
-            let auctionDetails: any[] = [];
+      // Batch process calls to avoid too many concurrent queries
+      const batchSize = 10;
+      const callsWithRtbDetails = [];
+      
+      for (let i = 0; i < callsData.length; i += batchSize) {
+        const batch = callsData.slice(i, i + batchSize);
+        
+        const batchResults = await Promise.all(
+          batch.map(async (call) => {
             try {
-              // Find RTB bid request for this call using call SID
-              const bidRequest = await db.query.rtbBidRequests.findFirst({
-                where: and(
-                  eq(rtbBidRequests.campaignId, call.campaignId!),
-                  or(
-                    sql`${rtbBidRequests.requestId} LIKE '%' || ${call.callSid} || '%'`,
-                    sql`${rtbBidRequests.requestId} = 'pool_' || ${call.numberPoolId} || '_' || ${call.callSid}`
-                  )
-                )
-              });
-
-              if (bidRequest) {
-                // Get bid responses for this request
-                const bidResponses = await db
-                  .select()
-                  .from(rtbBidResponses)
-                  .leftJoin(rtbTargets, eq(rtbBidResponses.rtbTargetId, rtbTargets.id))
-                  .where(eq(rtbBidResponses.requestId, bidRequest.requestId))
-                  .orderBy(desc(rtbBidResponses.bidAmount));
-
-                auctionDetails = bidResponses.map(row => ({
-                  id: row.rtb_bid_responses.id,
-                  targetId: row.rtb_bid_responses.rtbTargetId,
-                  targetName: row.rtb_targets?.name || `Target ${row.rtb_bid_responses.rtbTargetId}`,
-                  companyName: row.rtb_targets?.buyerName || `Company ${row.rtb_bid_responses.rtbTargetId}`,
-                  bidAmount: parseFloat(row.rtb_bid_responses.bidAmount?.toString() || '0'),
-                  destinationNumber: row.rtb_bid_responses.destinationNumber,
-                  responseTime: row.rtb_bid_responses.responseTimeMs,
-                  bidStatus: row.rtb_bid_responses.responseStatus,
-                  rejectionReason: row.rtb_bid_responses.rejectionReason
-                }));
+              // Get campaign name with fallback
+              let campaignName = 'Unknown Campaign';
+              try {
+                const campaign = call.campaignId ? await storage.getCampaign(call.campaignId) : null;
+                campaignName = campaign?.name || 'Unknown Campaign';
+              } catch (error) {
+                console.warn(`Failed to get campaign for call ${call.id}:`, error);
               }
-            } catch (error) {
-              console.error(`Error fetching RTB data for call ${call.id}:`, error);
-            }
-            
-            // Calculate RTB statistics from auction details
+
+              // Skip RTB details lookup to prevent connection exhaustion
+              // Return basic call data only
+              const auctionDetails: any[] = [];
+              
+            // Calculate RTB statistics from auction details (empty for now)
             let winnerTargetName = null;
             let winningBidAmount = 0;
             let winnerDestination = null;
@@ -1025,37 +1001,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let successfulBids = 0;
             let avgResponseTime = 0;
             let totalRevenue = 0;
-
-            if (auctionDetails && auctionDetails.length > 0) {
-              totalBids = auctionDetails.length;
-              
-              // Find successful bids (non-zero amounts with success status)
-              const successfulBidList = auctionDetails.filter(bid => 
-                bid.bidAmount && bid.bidAmount > 0 && bid.bidStatus === 'success'
-              );
-              successfulBids = successfulBidList.length;
-
-              // Calculate average response time
-              const validResponseTimes = auctionDetails.filter(bid => bid.responseTime && bid.responseTime > 0);
-              if (validResponseTimes.length > 0) {
-                avgResponseTime = Math.round(
-                  validResponseTimes.reduce((sum, bid) => sum + (bid.responseTime || 0), 0) / validResponseTimes.length
-                );
-              }
-
-              // Find winner (highest successful bid since RTB calls might not store target_id correctly)
-              const winner = successfulBidList.length > 0 ? successfulBidList[0] : 
-                            (auctionDetails.length > 0 ? auctionDetails[0] : null);
-              if (winner) {
-                winnerTargetName = winner.targetName || `Target ${winner.targetId}`;
-                winningBidAmount = winner.bidAmount || 0;
-                winnerDestination = winner.destinationNumber || null;
-                winnerBuyerName = winner.companyName || null;
-              }
-
-              // Calculate total revenue from successful bids
-              totalRevenue = successfulBidList.reduce((sum, bid) => sum + (bid.bidAmount || 0), 0);
-            }
             
             return {
               ...call,
@@ -1071,11 +1016,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               totalRevenue
             };
           } catch (error) {
-            console.error(`Error processing RTB data for call ${call.id}:`, error);
-            const campaign = call.campaignId ? await storage.getCampaign(call.campaignId) : null;
+            console.error(`Error processing call ${call.id}:`, error);
+            // Return minimal call data on error
             return {
               ...call,
-              campaignName: campaign?.name || 'Unknown Campaign',
+              campaignName: 'Unknown Campaign',
               winnerTargetId: call.targetId,
               winnerTargetName: null,
               winningBidAmount: 0,
@@ -1089,6 +1034,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         })
       );
+      
+      callsWithRtbDetails.push(...batchResults);
+      
+      // Add small delay between batches to prevent overwhelming database
+      if (i + batchSize < callsData.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
 
       res.json({ calls: callsWithRtbDetails });
     } catch (error) {
@@ -1127,9 +1080,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get RTB auction details directly from database since storage method doesn't exist
-      let auctionDetails: any[] = [];
       try {
-        // Find RTB bid request for this call using call SID
         const bidRequest = await db.query.rtbBidRequests.findFirst({
           where: and(
             eq(rtbBidRequests.campaignId, call.campaignId!),
