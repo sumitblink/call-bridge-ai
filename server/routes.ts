@@ -7422,8 +7422,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user?.id;
       const { timeRange = '7d' } = req.query;
       
-      // Get tracking stats from storage layer
-      const basicStats = await storage.getBasicTrackingStats(userId);
+      // Traffic analytics disabled - return empty stats
+      const basicStats = {
+        totalSessions: 0,
+        totalConversions: 0,
+        conversionRate: 0,
+        topSources: [],
+        recentConversions: []
+      };
       
       // Get actual visitor sessions from database (raw query to bypass Drizzle issue)
       const client = (await import('@neondatabase/serverless')).neon;
@@ -8747,14 +8753,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/tracking/stats', requireAuth, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      const stats = await storage.getBasicTrackingStats(userId);
-      res.json(stats);
-    } catch (error) {
-      console.error('Error fetching tracking stats:', error);
-      res.status(500).json({ error: 'Failed to fetch tracking stats' });
-    }
+    // Traffic analytics disabled - return empty stats
+    res.json({
+      totalSessions: 0,
+      totalConversions: 0,
+      conversionRate: 0,
+      topSources: [],
+      recentConversions: []
+    });
   });
 
   // Pixel code generation endpoint

@@ -1553,68 +1553,14 @@ export class DatabaseStorage implements IStorage {
     topSources: Array<{source: string; count: number}>;
     recentConversions: ConversionEvent[];
   }> {
-    try {
-      // Get sessions for the user - simplified query to avoid schema issues
-      let userSessions: any[] = [];
-      try {
-        userSessions = await db
-          .select()
-          .from(visitorSessions)
-          .where(eq(visitorSessions.userId, userId))
-          .limit(1000);
-      } catch (sessionError) {
-        console.warn('Failed to fetch visitor sessions, using empty array:', sessionError);
-        userSessions = [];
-      }
-
-      // Get conversion events for the user's sessions (if any sessions exist)
-      let userConversions: any[] = [];
-      if (userSessions.length > 0) {
-        try {
-          const sessionIds = userSessions.map(s => s.sessionId);
-          userConversions = await db
-            .select()
-            .from(conversionEvents)
-            .where(inArray(conversionEvents.sessionId, sessionIds))
-            .orderBy(desc(conversionEvents.createdAt));
-        } catch (conversionError) {
-          console.warn('Failed to fetch conversion events, using empty array:', conversionError);
-          userConversions = [];
-        }
-      }
-
-      // Calculate top sources
-      const sourceCounts: Record<string, number> = {};
-      userSessions.forEach(session => {
-        const source = session.source || 'direct';
-        sourceCounts[source] = (sourceCounts[source] || 0) + 1;
-      });
-
-      const topSources = Object.entries(sourceCounts)
-        .map(([source, count]) => ({ source, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
-
-      const recentConversions = userConversions.slice(0, 10);
-
-      return {
-        totalSessions: userSessions.length,
-        totalConversions: userConversions.length,
-        conversionRate: userSessions.length > 0 ? (userConversions.length / userSessions.length) * 100 : 0,
-        topSources,
-        recentConversions
-      };
-    } catch (error) {
-      console.error('Error in getBasicTrackingStats:', error);
-      // Return empty stats if database fails
-      return {
-        totalSessions: 0,
-        totalConversions: 0,
-        conversionRate: 0,
-        topSources: [],
-        recentConversions: []
-      };
-    }
+    // Traffic analytics disabled - return empty stats
+    return {
+      totalSessions: 0,
+      totalConversions: 0,
+      conversionRate: 0,
+      topSources: [],
+      recentConversions: []
+    };
   }
 
   // RedTrack Integration methods
