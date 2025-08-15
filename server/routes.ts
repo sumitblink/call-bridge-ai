@@ -2706,25 +2706,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/webhooks/pool/:poolId/status', async (req, res) => {
     try {
       const { poolId } = req.params;
-      const { CallSid, CallStatus, CallDuration } = req.body;
+      const { CallSid, CallStatus, CallDuration, DialCallStatus } = req.body;
       
       console.log(`[Pool Status] Pool ${poolId} call ${CallSid} status: ${CallStatus}`);
       
       // Update call status in database
-      const calls = await storage.getCalls();
-      const call = calls.find(c => c.callSid === CallSid);
-      
-      if (call) {
-        await storage.updateCall(call.id, {
-          status: CallStatus,
-          duration: CallDuration ? parseInt(CallDuration) : undefined
-        });
+      try {
+        const calls = await storage.getCalls();
+        const call = calls.find(c => c.callSid === CallSid);
+        
+        if (call) {
+          await storage.updateCall(call.id, {
+            status: CallStatus,
+            duration: CallDuration ? parseInt(CallDuration) : undefined
+          });
+        }
+      } catch (dbError) {
+        console.warn('[Pool Status] Database update failed, continuing:', dbError);
       }
       
-      res.status(200).send('OK');
+      // Return proper TwiML response based on call status
+      if (CallStatus === 'completed' || DialCallStatus === 'completed') {
+        res.type('text/xml').send(`<Response><Say>Thank you for calling.</Say><Hangup/></Response>`);
+      } else if (CallStatus === 'failed' || DialCallStatus === 'failed' || DialCallStatus === 'busy' || DialCallStatus === 'no-answer') {
+        res.type('text/xml').send(`<Response><Say>We're sorry, the call could not be completed. Please try again later.</Say><Hangup/></Response>`);
+      } else {
+        res.status(200).send('OK');
+      }
     } catch (error) {
-      console.error('[Pool Status] Error updating call status:', error);
-      res.status(500).send('Error');
+      console.error('[Pool Status] Error in status callback:', error);
+      res.type('text/xml').send(`<Response><Say>Thank you for calling.</Say><Hangup/></Response>`);
     }
   });
 
