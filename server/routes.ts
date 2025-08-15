@@ -2725,10 +2725,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn('[Pool Status] Database update failed, continuing:', dbError);
       }
       
-      // Return proper TwiML response based on call status
-      if (CallStatus === 'completed' || DialCallStatus === 'completed') {
+      // Return proper TwiML response based on call status - play "Thank you" when call ends
+      if (CallStatus === 'completed' || DialCallStatus === 'completed' || CallStatus === 'no-answer' || DialCallStatus === 'no-answer') {
         res.type('text/xml').send(`<Response><Say>Thank you for calling.</Say><Hangup/></Response>`);
-      } else if (CallStatus === 'failed' || DialCallStatus === 'failed' || DialCallStatus === 'busy' || DialCallStatus === 'no-answer') {
+      } else if (CallStatus === 'failed' || DialCallStatus === 'failed' || DialCallStatus === 'busy') {
         res.type('text/xml').send(`<Response><Say>We're sorry, the call could not be completed. Please try again later.</Say><Hangup/></Response>`);
       } else {
         res.status(200).send('OK');
