@@ -1080,6 +1080,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get RTB auction details directly from database since storage method doesn't exist
+      let auctionDetails: any[] = [];
       try {
         const bidRequest = await db.query.rtbBidRequests.findFirst({
           where: and(
