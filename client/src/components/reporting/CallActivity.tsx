@@ -660,8 +660,8 @@ function CallDetailsExpanded({ call, campaign, buyer, targets }: CallDetailsExpa
                       </TableHeader>
                       <TableBody>
                         {rtbAuctionData && rtbAuctionData.length > 0 ? rtbAuctionData
-                          .sort((a, b) => parseFloat(b.bidAmount) - parseFloat(a.bidAmount))
-                          .map((bidder, idx: number) => (
+                          .sort((a: any, b: any) => parseFloat(b.bidAmount) - parseFloat(a.bidAmount))
+                          .map((bidder: any, idx: number) => (
                           <TableRow key={idx} className="text-sm">
                             <TableCell>
                               <div className="flex items-center space-x-2">

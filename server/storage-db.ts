@@ -1553,43 +1553,55 @@ export class DatabaseStorage implements IStorage {
     topSources: Array<{source: string; count: number}>;
     recentConversions: ConversionEvent[];
   }> {
-    // Get sessions for the user
-    const userSessions = await db
-      .select()
-      .from(visitorSessions)
-      .where(eq(visitorSessions.userId, userId));
+    try {
+      // Get sessions for the user
+      const userSessions = await db
+        .select()
+        .from(visitorSessions)
+        .where(eq(visitorSessions.userId, userId));
 
-    // Get conversion events for the user's sessions
-    const sessionIds = userSessions.map(s => s.sessionId);
-    const userConversions = sessionIds.length > 0 
-      ? await db
-          .select()
-          .from(conversionEvents)
-          .where(inArray(conversionEvents.sessionId, sessionIds))
-          .orderBy(desc(conversionEvents.createdAt))
-      : [];
+      // Get conversion events for the user's sessions (no campaignId filter)
+      const sessionIds = userSessions.map(s => s.sessionId);
+      const userConversions = sessionIds.length > 0 
+        ? await db
+            .select()
+            .from(conversionEvents)
+            .where(inArray(conversionEvents.sessionId, sessionIds))
+            .orderBy(desc(conversionEvents.createdAt))
+        : [];
 
-    // Calculate top sources
-    const sourceCounts: Record<string, number> = {};
-    userSessions.forEach(session => {
-      const source = session.source || 'direct';
-      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
-    });
+      // Calculate top sources
+      const sourceCounts: Record<string, number> = {};
+      userSessions.forEach(session => {
+        const source = session.source || 'direct';
+        sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+      });
 
-    const topSources = Object.entries(sourceCounts)
-      .map(([source, count]) => ({ source, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+      const topSources = Object.entries(sourceCounts)
+        .map(([source, count]) => ({ source, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
 
-    const recentConversions = userConversions.slice(0, 10);
+      const recentConversions = userConversions.slice(0, 10);
 
-    return {
-      totalSessions: userSessions.length,
-      totalConversions: userConversions.length,
-      conversionRate: userSessions.length > 0 ? (userConversions.length / userSessions.length) * 100 : 0,
-      topSources,
-      recentConversions
-    };
+      return {
+        totalSessions: userSessions.length,
+        totalConversions: userConversions.length,
+        conversionRate: userSessions.length > 0 ? (userConversions.length / userSessions.length) * 100 : 0,
+        topSources,
+        recentConversions
+      };
+    } catch (error) {
+      console.error('Error in getBasicTrackingStats:', error);
+      // Return empty stats if database fails
+      return {
+        totalSessions: 0,
+        totalConversions: 0,
+        conversionRate: 0,
+        topSources: [],
+        recentConversions: []
+      };
+    }
   }
 
   // RedTrack Integration methods
