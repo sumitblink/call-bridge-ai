@@ -2229,6 +2229,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📞 Call from ${fromNumber} → Campaign: ${campaign.name}`);
       console.log(`🔧 RTB Status: ${campaign.enableRtb ? 'ENABLED' : 'DISABLED'}`);
       
+      let biddingResult: any = null; // Declare outside scope for access in routing logic
+      
       if (campaign.enableRtb) {
         try {
           // Get RTB targets assigned to this campaign
@@ -2256,7 +2258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`📤 Auction Request ID: ${bidRequest.requestId}`);
           
             // Conduct RTB bidding
-            const biddingResult = await RTBService.initiateAuction(
+            biddingResult = await RTBService.initiateAuction(
               campaign,
               bidRequest
             );
@@ -2366,9 +2368,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (routingMethod === 'rtb') {
         // For RTB, prioritize SIP address over phone number if available
+        console.log(`[RTB Debug] biddingResult:`, biddingResult);
+        console.log(`[RTB Debug] winningBid:`, biddingResult?.winningBid);
+        
         const rtbResponse = biddingResult?.winningBid;
-        if (rtbResponse?.sipAddress) {
-          targetPhoneNumber = rtbResponse.sipAddress;
+        
+        // Extract SIP address from raw response if available
+        let sipAddress = null;
+        if (rtbResponse?.rawResponse?.sipAddress) {
+          sipAddress = rtbResponse.rawResponse.sipAddress;
+          console.log(`[RTB Debug] Found SIP address in raw response: ${sipAddress}`);
+        }
+        
+        if (sipAddress) {
+          targetPhoneNumber = sipAddress;
           console.log(`🌐 RTB SIP Destination (PREFERRED): ${targetPhoneNumber}`);
         } else if (rtbResponse?.destinationNumber) {
           targetPhoneNumber = rtbResponse.destinationNumber;

@@ -996,9 +996,14 @@ export class RTBService {
       const bidAmount = this.extractResponseValue(responseData, target.bidAmountPath) || 
                        responseData.bidAmount || responseData.price || 0;
       
-      // Enhanced destination parsing - prefer SIP over phone number
-      let destinationNumber = this.extractResponseValue(responseData, target.destinationNumberPath) || 
-                             responseData.sipAddress || responseData.destinationNumber || responseData.phoneNumber || null;
+      // Extract both SIP address and phone number separately
+      const sipAddress = this.extractResponseValue(responseData, 'sipAddress') || responseData.sipAddress || null;
+      const phoneNumber = this.extractResponseValue(responseData, target.destinationNumberPath) || 
+                         responseData.destinationNumber || responseData.phoneNumber || null;
+      
+      // For legacy compatibility, use destinationNumber field but prioritize phone over SIP here
+      // The routing logic will handle SIP preference
+      let destinationNumber = phoneNumber || sipAddress || null;
       
       const currency = this.extractResponseValue(responseData, target.currencyPath) || 
                       responseData.bidCurrency || responseData.currency || target.currency;
@@ -1047,6 +1052,7 @@ export class RTBService {
         bidAmount: parseFloat(bidAmount.toString()),
         bidCurrency: currency,
         destinationNumber: destinationNumber,
+        sipAddress: sipAddress, // Add SIP address field separately
         requiredDuration: requiredDuration ? parseInt(requiredDuration.toString()) : undefined,
         responseTimeMs: responseTime,
         isValid,
