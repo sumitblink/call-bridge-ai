@@ -613,9 +613,25 @@ export class SupabaseStorage implements IStorage {
 
   async createCall(call: any): Promise<Call> {
     console.log('[SupabaseStorage] createCall input clickId:', call.clickId);
+    
+    // Check if buyerId exists, if not set to null
+    let validBuyerId = null;
+    if (call.buyerId) {
+      try {
+        const buyer = await db.select().from(buyers).where(eq(buyers.id, call.buyerId)).limit(1);
+        if (buyer.length > 0) {
+          validBuyerId = call.buyerId;
+        } else {
+          console.warn(`[SupabaseStorage] Buyer ID ${call.buyerId} does not exist, setting to null`);
+        }
+      } catch (error) {
+        console.warn(`[SupabaseStorage] Error checking buyer ID ${call.buyerId}:`, error);
+      }
+    }
+    
     const result = await db.insert(calls).values({
       campaignId: call.campaignId,
-      buyerId: call.buyerId,
+      buyerId: validBuyerId,
       targetId: call.targetId,
       publisherId: call.publisherId,
       publisherName: call.publisherName,
