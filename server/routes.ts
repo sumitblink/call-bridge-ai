@@ -988,19 +988,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.warn(`Failed to get campaign for call ${call.id}:`, error);
               }
 
-              // Skip RTB details lookup to prevent connection exhaustion
-              // Return basic call data only
-              const auctionDetails: any[] = [];
+              // Get RTB auction details for winner information
+              let auctionDetails: any[] = [];
+              let winnerTargetName = null;
+              let winningBidAmount = 0;
+              let winnerDestination = null;
+              let winnerBuyerName = null;
+              let totalBids = 0;
+              let successfulBids = 0;
+              let avgResponseTime = 0;
+              let totalRevenue = 0;
               
-            // Calculate RTB statistics from auction details (empty for now)
-            let winnerTargetName = null;
-            let winningBidAmount = 0;
-            let winnerDestination = null;
-            let winnerBuyerName = null;
-            let totalBids = 0;
-            let successfulBids = 0;
-            let avgResponseTime = 0;
-            let totalRevenue = 0;
+              try {
+                // Find RTB bid request for this call using call SID
+                const bidRequest = await db.query.rtbBidRequests.findFirst({
+                  where: and(
+                    eq(rtbBidRequests.campaignId, call.campaignId!),
+                    sql`${rtbBidRequests.requestId} LIKE '%' || ${call.callSid} || '%'`
+                  ),
+                  limit: 1
+                });
+
+                if (bidRequest) {
+                  // Get only the winning bid to minimize database load
+                  const winningBidResponse = await db
+                    .select({
+                      id: rtbBidResponses.id,
+                      rtbTargetId: rtbBidResponses.rtbTargetId,
+                      bidAmount: rtbBidResponses.bidAmount,
+                      destinationNumber: rtbBidResponses.destinationNumber,
+                      responseStatus: rtbBidResponses.responseStatus,
+                      targetName: rtbTargets.name,
+                      buyerName: rtbTargets.buyerName
+                    })
+                    .from(rtbBidResponses)
+                    .leftJoin(rtbTargets, eq(rtbBidResponses.rtbTargetId, rtbTargets.id))
+                    .where(and(
+                      eq(rtbBidResponses.requestId, bidRequest.requestId),
+                      eq(rtbBidResponses.responseStatus, 'success'),
+                      sql`${rtbBidResponses.bidAmount} > 0`
+                    ))
+                    .orderBy(desc(rtbBidResponses.bidAmount))
+                    .limit(1)
+                    .then(results => results[0]);
+
+                  if (winningBidResponse) {
+                    winnerTargetName = winningBidResponse.targetName || `Target ${winningBidResponse.rtbTargetId}`;
+                    winningBidAmount = parseFloat(winningBidResponse.bidAmount?.toString() || '0');
+                    winnerDestination = winningBidResponse.destinationNumber || null;
+                    winnerBuyerName = winningBidResponse.buyerName || null;
+                    totalRevenue = winningBidAmount;
+                    successfulBids = 1;
+                    totalBids = 1; // Simplified for performance
+                  }
+                }
+              } catch (error) {
+                console.error(`Error fetching RTB data for call ${call.id}:`, error);
+              }
             
             return {
               ...call,
