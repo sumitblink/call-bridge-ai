@@ -116,7 +116,7 @@ export default function Sidebar() {
         </Button>
       </div>
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-2 ml-[0px] mr-[0px] pl-[11px] pr-[11px]">
+      <nav className="flex-1 px-4 py-6 space-y-2 ml-[0px] mr-[0px] pl-[11px] pr-[11px] flex flex-col items-center">
         {navigation.map((item) => {
           const isActive = location === item.href || (item.href === "/dashboard" && location === "/");
           const Icon = item.icon;
