@@ -76,6 +76,7 @@ function SortableTableHead({
     if (column.resizable === false) return;
     
     e.preventDefault();
+    e.stopPropagation();
     setIsResizing(true);
     setStartX(e.clientX);
     setStartWidth(column.width);
@@ -119,9 +120,10 @@ function SortableTableHead({
         </div>
         {column.resizable !== false && (
           <div 
-            className="absolute right-0 top-0 h-full w-2 cursor-col-resize hover:bg-blue-400 hover:opacity-50 transition-all"
+            className="absolute right-0 top-0 h-full w-3 cursor-col-resize hover:bg-blue-200 bg-transparent border-r-2 border-transparent hover:border-blue-400 transition-all"
             onMouseDown={handleMouseDown}
             style={{ zIndex: 10 }}
+            title="Drag to resize column"
           />
         )}
       </div>
@@ -325,13 +327,12 @@ export default function CallDetails() {
 
   // Handle column visibility changes from the customizer
   const handleColumnsChange = useCallback((newVisibleColumns: string[]) => {
-    const updatedColumns = allColumns.map((col, index) => ({
+    setColumnConfig(prev => prev.map((col, index) => ({
       ...col,
       visible: newVisibleColumns.includes(col.id),
-      order: newVisibleColumns.indexOf(col.id) !== -1 ? newVisibleColumns.indexOf(col.id) : index
-    }));
-    setColumnConfig(updatedColumns);
-  }, [allColumns]);
+      order: newVisibleColumns.indexOf(col.id) !== -1 ? newVisibleColumns.indexOf(col.id) : col.order
+    })));
+  }, []);
 
   // Sort columns by order  
   const sortedVisibleColumns = allColumns
@@ -490,9 +491,18 @@ export default function CallDetails() {
               size="sm"
               onClick={() => {
                 if (call.recordingUrl) {
-                  // Create a proxy endpoint for authenticated Twilio recording access
-                  const proxyUrl = `/api/recordings/proxy?url=${encodeURIComponent(call.recordingUrl)}`;
-                  window.open(proxyUrl, '_blank');
+                  // Extract recording SID from Twilio URL
+                  const recordingSid = call.recordingUrl.split('/').pop()?.split('.')[0];
+                  if (recordingSid && recordingSid.startsWith('RE')) {
+                    const playUrl = `/api/recordings/${recordingSid}`;
+                    window.open(playUrl, '_blank');
+                  } else {
+                    toast({
+                      title: "Recording Error",
+                      description: "Invalid recording URL format",
+                      variant: "destructive"
+                    });
+                  }
                 }
               }}
               className="h-6 w-6 p-0"
@@ -505,9 +515,18 @@ export default function CallDetails() {
               size="sm"
               onClick={() => {
                 if (call.recordingUrl) {
-                  // Download through proxy to handle Twilio authentication
-                  const proxyUrl = `/api/recordings/download?url=${encodeURIComponent(call.recordingUrl)}`;
-                  window.open(proxyUrl, '_blank');
+                  // Extract recording SID from Twilio URL
+                  const recordingSid = call.recordingUrl.split('/').pop()?.split('.')[0];
+                  if (recordingSid && recordingSid.startsWith('RE')) {
+                    const downloadUrl = `/api/recordings/${recordingSid}?download=true`;
+                    window.open(downloadUrl, '_blank');
+                  } else {
+                    toast({
+                      title: "Download Error",
+                      description: "Invalid recording URL format",
+                      variant: "destructive"
+                    });
+                  }
                 }
               }}
               className="h-6 w-6 p-0"

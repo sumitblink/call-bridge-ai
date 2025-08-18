@@ -5859,9 +5859,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/recordings/:recordingSid', async (req, res) => {
     try {
       const { recordingSid } = req.params;
+      const download = req.query.download === 'true';
       
       if (!recordingSid) {
         return res.status(400).json({ error: "Recording SID is required" });
+      }
+
+      // Validate recording SID format
+      if (!recordingSid.startsWith('RE') || recordingSid.length < 30) {
+        return res.status(400).json({ error: "Invalid recording SID format" });
       }
 
       const recordingStatus = await twilioService.getRecordingStatus(recordingSid);
@@ -5876,10 +5882,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (response.ok) {
           res.setHeader('Content-Type', 'audio/mpeg');
-          res.setHeader('Content-Disposition', `inline; filename="recording-${recordingSid}.mp3"`);
+          if (download) {
+            res.setHeader('Content-Disposition', `attachment; filename="recording-${recordingSid}.mp3"`);
+          } else {
+            res.setHeader('Content-Disposition', `inline; filename="recording-${recordingSid}.mp3"`);
+          }
           response.body?.pipe(res);
         } else {
-          res.status(404).json({ error: "Recording not accessible" });
+          res.status(404).json({ error: "Recording not accessible from Twilio" });
         }
       } else {
         res.status(404).json({ error: "Recording URL not available" });
