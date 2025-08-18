@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Phone, DollarSign, Clock, MapPin, Search, Filter, Download, Eye, Play, PhoneOff, Calendar, Globe, Settings, GripVertical, Activity, Move, PhoneCall } from "lucide-react";
+import { Phone, DollarSign, Clock, MapPin, Search, Filter, Download, Eye, Play, PhoneOff, Calendar, Globe, Settings, GripVertical, Activity, Move } from "lucide-react";
 import { ColumnCustomizer } from "@/components/reporting/ColumnCustomizer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -233,7 +233,7 @@ export default function CallDetails() {
     { id: 'fromTo', label: 'From → To', visible: true, width: 160, order: 3, resizable: true },
     { id: 'duration', label: 'Duration', visible: true, width: 100, order: 4, resizable: true },
     { id: 'status', label: 'Status', visible: true, width: 120, order: 5, resizable: true },
-    { id: 'whoHungUp', label: 'Who Hung Up', visible: true, width: 140, order: 6, resizable: true },
+    { id: 'whoHungUp', label: 'Hung up', visible: true, width: 140, order: 6, resizable: true },
     { id: 'callDateTime', label: 'Call Date/Time', visible: true, width: 160, order: 7, resizable: true },
     { id: 'destinationType', label: 'Destination Type', visible: true, width: 130, order: 8, resizable: true },
     { id: 'recording', label: 'Recording', visible: true, width: 120, order: 9, resizable: true },
