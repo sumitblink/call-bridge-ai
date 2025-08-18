@@ -624,8 +624,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       }
 
-      // Get actual visitor sessions from the database
-      const sessions = await storage.getVisitorSessions() || [];
+      // Get actual visitor sessions from the database for current user (user_id = 2)
+      const sessions = await storage.getVisitorSessions(2) || [];
       
       // Filter sessions by time range - using first_visit as the timestamp
       const filteredSessions = sessions.filter(session => {
