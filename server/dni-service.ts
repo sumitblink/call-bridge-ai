@@ -114,6 +114,7 @@ export class DNIService {
           }
         } else if (request.campaignId) {
           // Direct campaign lookup with pool numbers
+          console.log('DNI: Looking up campaign by ID:', request.campaignId);
           const result = await db
             .select({ 
               campaign: campaigns,
@@ -283,7 +284,7 @@ export class DNIService {
    * Select phone number based on rotation strategy
    */
   private static selectPhoneByStrategy(poolNumbers: PhoneNumber[], request: DNIRequest): PhoneNumber {
-    const strategy = 'sticky'; // Default to sticky since user configured it
+    const strategy: 'sticky' | 'round_robin' | 'random' | 'priority' = 'sticky'; // Default to sticky since user configured it
     
     switch (strategy) {
       case 'round_robin':
@@ -422,8 +423,66 @@ export class DNIService {
       // Get user ID from campaign - for now, just use the logged-in user ID 2 (sumit)
       const userId = 2; // Fixed: Use the actual existing user ID
       
+      // Extract UTM parameters from referrer URL if not provided directly
+      let extractedSource = request.source || '';
+      let extractedMedium = request.medium || '';  
+      let extractedCampaign = request.campaign || '';
+      
+      console.log('DNI: Request UTM values:', { 
+        source: request.source, 
+        medium: request.medium, 
+        campaign: request.campaign 
+      });
+      console.log('DNI: Extracted UTM values:', { 
+        source: extractedSource, 
+        medium: extractedMedium, 
+        campaign: extractedCampaign 
+      });
+      
+      // If UTM parameters are missing, try to extract from referrer
+      if (!extractedSource && request.referrer) {
+        try {
+          const referrerUrl = new URL(request.referrer);
+          extractedSource = referrerUrl.searchParams.get('utm_source') || extractedSource;
+          extractedMedium = referrerUrl.searchParams.get('utm_medium') || extractedMedium;
+          extractedCampaign = referrerUrl.searchParams.get('utm_campaign') || extractedCampaign;
+        } catch (e) {
+          // Invalid URL, skip extraction
+        }
+      }
+      
+      // If still no source data, determine from referrer domain
+      if (!extractedSource && request.referrer) {
+        try {
+          const referrerUrl = new URL(request.referrer);
+          const domain = referrerUrl.hostname.toLowerCase();
+          if (domain.includes('google')) {
+            extractedSource = 'google';
+            extractedMedium = extractedMedium || 'organic';
+          } else if (domain.includes('facebook')) {
+            extractedSource = 'facebook';
+            extractedMedium = extractedMedium || 'social';
+          } else if (domain.includes('bing')) {
+            extractedSource = 'bing';
+            extractedMedium = extractedMedium || 'organic';
+          } else if (domain.includes('linkedin')) {
+            extractedSource = 'linkedin';
+            extractedMedium = extractedMedium || 'social';
+          } else {
+            extractedSource = 'referral';
+            extractedMedium = extractedMedium || 'referral';
+          }
+        } catch (e) {
+          extractedSource = 'direct';
+          extractedMedium = 'none';
+        }
+      } else if (!extractedSource) {
+        extractedSource = 'direct';
+        extractedMedium = 'none';
+      }
+
       // Create unique session identifier that includes UTM source for differentiation
-      const uniqueSessionId = `${request.sessionId}_${request.source}`;
+      const uniqueSessionId = `${request.sessionId}_${extractedSource || 'direct'}`;
       
       const insertResult = await sql`
         INSERT INTO visitor_sessions (
@@ -436,8 +495,8 @@ export class DNIService {
           geo_latitude, geo_longitude, geo_timezone
         ) VALUES (
           ${uniqueSessionId}, ${userId}, ${request.ipAddress || '127.0.0.1'}, ${request.userAgent || 'unknown'}, ${request.referrer || ''},
-          ${request.source || ''}, ${request.medium || ''}, ${request.campaign || ''}, ${request.customFields?.publisher || null},
-          ${request.source || ''}, ${request.medium || ''}, ${request.campaign || ''},
+          ${extractedSource}, ${extractedMedium}, ${extractedCampaign}, ${request.customFields?.publisher || null},
+          ${extractedSource}, ${extractedMedium}, ${extractedCampaign},
           ${request.term || null}, ${request.content || null}, ${request.customFields?.domain || 'unknown'}, ${request.customFields?.domain || 'unknown'},
           NOW(), NOW(), true, false,
           ${request.customFields?.clickid || null}, ${request.customFields?.sub1 || null}, ${request.customFields?.sub2 || null}, 
@@ -697,7 +756,7 @@ export class DNIService {
       // console.log('DNI: Simple tracking by campaign ID:', request.campaignId);
       
       // Find campaign by ID
-      const campaign = await db.select().from(campaigns).where(eq(campaigns.id, request.campaignId)).limit(1);
+      const campaign = await db.select().from(campaigns).where(eq(campaigns.id, request.campaignId!)).limit(1);
       
       if (!campaign || campaign.length === 0) {
         return {

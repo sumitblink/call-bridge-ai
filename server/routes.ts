@@ -4466,7 +4466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const request: DNIRequest = {
-        campaignId: req.query.campaign_id ? parseInt(req.query.campaign_id as string) : undefined,
+        campaignId: req.query.campaign_id as string,
         campaignName: req.query.campaign_name as string,
         source: req.query.utm_source as string,
         medium: req.query.utm_medium as string,
