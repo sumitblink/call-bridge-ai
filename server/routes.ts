@@ -606,9 +606,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Analytics endpoints for traffic analytics - now returning REAL data
+  // Analytics endpoints for traffic analytics
   app.get('/api/tracking/live-sessions', async (req, res) => {
-    console.log('[ANALYTICS] Starting live-sessions API call...');
     try {
       const timeRange = req.query.timeRange as string || '7d';
       const now = new Date();
@@ -626,10 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get actual visitor sessions from the database
-      console.log('[DEBUG] About to fetch visitor sessions from storage...');
       const sessions = await storage.getVisitorSessions() || [];
-      console.log(`[DEBUG] Raw sessions count: ${sessions.length}`);
-      console.log(`[DEBUG] First 3 sessions:`, sessions.slice(0, 3).map(s => ({ id: s.id, sessionId: s.sessionId, source: s.source })));
       
       // Filter sessions by time range - using first_visit as the timestamp
       const filteredSessions = sessions.filter(session => {
