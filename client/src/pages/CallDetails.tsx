@@ -662,20 +662,20 @@ export default function CallDetails() {
       {/* Combined Stats and Filters */}
       <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
         <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center justify-center w-5 h-5 bg-green-100 rounded">
-              <Phone className="h-3 w-3 text-green-600" />
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded">
+              <Phone className="h-5 w-5 text-green-600" />
             </div>
-            <div className="text-sm font-medium text-green-600">{liveCalls}</div>
-            <div className="text-xs text-gray-600">Live</div>
+            <div className="text-lg font-medium text-green-600">{liveCalls}</div>
+            <div className="text-sm text-gray-600">Live</div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center justify-center w-5 h-5 bg-blue-100 rounded">
-              <PhoneCall className="h-3 w-3 text-blue-600" />
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded">
+              <PhoneCall className="h-5 w-5 text-blue-600" />
             </div>
-            <div className="text-sm font-medium text-blue-600">{completedCalls}</div>
-            <div className="text-xs text-gray-600">Completed</div>
+            <div className="text-lg font-medium text-blue-600">{completedCalls}</div>
+            <div className="text-sm text-gray-600">Completed</div>
           </div>
         </div>
 
