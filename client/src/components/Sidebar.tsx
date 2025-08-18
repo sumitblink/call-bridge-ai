@@ -99,41 +99,19 @@ export default function Sidebar() {
   return (
     <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white shadow-sm border-r border-gray-200 flex flex-col transition-all duration-300`}>
       {/* Logo and Toggle */}
-      <div className={`flex items-center px-6 py-5 border-b border-gray-200 ${isCollapsed ? 'flex-col space-y-3' : 'justify-between'}`}>
-        {!isCollapsed && (
-          <>
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-                <Phone className="h-4 w-4 text-white" />
-              </div>
-              <span className="ml-3 text-xl font-semibold text-gray-900">CallCenter</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="h-8 w-8 p-0 flex-shrink-0"
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </>
-        )}
-        
-        {isCollapsed && (
-          <>
-            <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-              <Phone className="h-4 w-4 text-white" />
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="h-8 w-8 p-0"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </>
-        )}
+      <div className="flex items-center px-6 py-5 border-b border-gray-200">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="w-8 h-8 p-0 bg-primary-500 hover:bg-primary-600 rounded-lg"
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <Phone className="h-4 w-4 text-white" />
+          </Button>
+          {!isCollapsed && <span className="ml-3 text-xl font-semibold text-gray-900">CallCenter</span>}
+        </div>
       </div>
       {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2 ml-[0px] mr-[0px] pl-[11px] pr-[11px]">
