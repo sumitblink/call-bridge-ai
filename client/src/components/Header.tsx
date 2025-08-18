@@ -102,12 +102,9 @@ export default function Header() {
             variant="ghost" 
             size="icon"
             onClick={handleNotifications}
-            className="relative text-gray-400 hover:text-gray-500"
+            className="text-gray-400 hover:text-gray-500"
           >
             <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-              3
-            </span>
           </Button>
           
           
