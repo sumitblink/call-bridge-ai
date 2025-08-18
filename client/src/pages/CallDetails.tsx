@@ -80,18 +80,25 @@ function SortableTableHead({
     setIsResizing(true);
     setStartX(e.clientX);
     setStartWidth(column.width);
+    
+    // Add cursor style to body while resizing
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
   }, [column.resizable, column.width]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isResizing) return;
     
+    e.preventDefault();
     const diff = e.clientX - startX;
-    const newWidth = Math.max(50, startWidth + diff);
+    const newWidth = Math.max(80, startWidth + diff);
     onResize(column.id, newWidth);
   }, [isResizing, startX, startWidth, onResize, column.id]);
 
   const handleMouseUp = useCallback(() => {
     setIsResizing(false);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
   }, []);
 
   // Add/remove mouse event listeners
@@ -110,19 +117,19 @@ function SortableTableHead({
     <TableHead 
       ref={setNodeRef}
       style={style}
-      className={`relative group select-none ${isDragging ? 'opacity-50' : ''} ${isResizing ? 'cursor-col-resize' : 'cursor-pointer'}`}
+      className={`relative group select-none ${isDragging ? 'opacity-50' : ''}`}
       {...attributes}
     >
       <div className="flex items-center justify-between h-full relative">
-        <div className="flex items-center space-x-1" {...listeners}>
+        <div className="flex items-center space-x-1 flex-1" {...(isResizing ? {} : listeners)}>
           <Move className="h-3 w-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
           <span>{column.label}</span>
         </div>
         {column.resizable !== false && (
           <div 
-            className="absolute right-0 top-0 h-full w-3 cursor-col-resize hover:bg-blue-200 bg-transparent border-r-2 border-transparent hover:border-blue-400 transition-all"
+            className="absolute right-0 top-0 h-full w-1 bg-transparent hover:bg-blue-400 cursor-col-resize"
             onMouseDown={handleMouseDown}
-            style={{ zIndex: 10 }}
+            style={{ zIndex: 20 }}
             title="Drag to resize column"
           />
         )}

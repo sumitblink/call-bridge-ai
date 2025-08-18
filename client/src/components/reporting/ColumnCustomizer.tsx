@@ -298,40 +298,25 @@ export function ColumnCustomizer({ visibleColumns, onColumnsChange }: ColumnCust
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-0.5 pt-1 pb-2">
                   {(columns as ColumnDefinition[]).map((column: ColumnDefinition) => (
-                    <div key={column.id} className="flex items-center space-x-2 pl-8 py-0.5">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`checkbox-${column.id}`}
-                          checked={visibleColumns.includes(column.id)}
-                          onChange={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            
-                            // Immediately update the checkbox state to prevent revert
-                            const isCurrentlyChecked = visibleColumns.includes(column.id);
-                            if (e.target.checked !== isCurrentlyChecked) {
-                              toggleColumn(column.id);
-                            }
-                          }}
-                          className="h-4 w-4 accent-blue-600"
-                        />
+                    <div key={column.id} className="flex items-center space-x-2 pl-8 py-1">
+                      <Checkbox
+                        id={`checkbox-${column.id}`}
+                        checked={visibleColumns.includes(column.id)}
+                        onCheckedChange={() => toggleColumn(column.id)}
+                        className="h-4 w-4"
+                      />
+                      <div className="flex-1 min-w-0">
                         <label
                           htmlFor={`checkbox-${column.id}`}
-                          className="flex-1 text-sm cursor-pointer leading-none"
-                          onClick={(e) => {
-                            e.preventDefault();
-
-                            toggleColumn(column.id);
-                          }}
+                          className="text-sm cursor-pointer block"
                         >
                           <div className="font-medium">{column.label}</div>
                           {column.description && (
-                            <div className="text-xs text-muted-foreground">{column.description}</div>
+                            <div className="text-xs text-muted-foreground truncate">{column.description}</div>
                           )}
                         </label>
                       </div>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs shrink-0">
                         {column.dataType}
                       </Badge>
                     </div>
