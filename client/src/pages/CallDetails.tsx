@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Phone, DollarSign, Clock, MapPin, Search, Filter, Download, Eye, Play, PhoneOff, Calendar, Globe, Settings, GripVertical, Activity, Move } from "lucide-react";
+import { Phone, DollarSign, Clock, MapPin, Search, Filter, Download, Eye, Play, PhoneOff, Calendar, Globe, Settings, GripVertical, Activity, Move, PhoneCall } from "lucide-react";
 import { ColumnCustomizer } from "@/components/reporting/ColumnCustomizer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -640,12 +640,12 @@ export default function CallDetails() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Call Details</h1>
-          <p className="text-gray-500">Comprehensive call information and RTB auction results</p>
+        <div className="flex items-center space-x-4">
+          <h1 className="text-xl font-bold text-gray-900">Call Details</h1>
+          <span className="text-sm text-gray-500">Comprehensive call information and RTB auction results</span>
         </div>
         <div className="flex items-center space-x-2">
           <ColumnCustomizer
@@ -660,72 +660,52 @@ export default function CallDetails() {
       </div>
 
       {/* Live and Completed Call Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <Card>
-          <CardContent className="p-3">
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded">
-                <Phone className="h-4 w-4 text-green-600" />
-              </div>
-              <div>
-                <div className="text-xl font-bold text-green-600">{liveCalls}</div>
-                <div className="text-xs text-gray-600">Live Calls</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-3">
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded">
-                <Phone className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <div className="text-xl font-bold text-blue-600">{completedCalls}</div>
-                <div className="text-xs text-gray-600">Completed Calls</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 bg-green-50 px-3 py-2 rounded-lg">
+          <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded">
+            <Phone className="h-3 w-3 text-green-600" />
+          </div>
+          <div className="text-lg font-bold text-green-600">{liveCalls}</div>
+          <div className="text-sm text-gray-600">Live Calls</div>
+        </div>
+
+        <div className="flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-lg">
+          <div className="flex items-center justify-center w-6 h-6 bg-blue-100 rounded">
+            <PhoneCall className="h-3 w-3 text-blue-600" />
+          </div>
+          <div className="text-lg font-bold text-blue-600">{completedCalls}</div>
+          <div className="text-sm text-gray-600">Completed Calls</div>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex-1">
-              <Label htmlFor="search">Search Calls</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="search"
-                  placeholder="Search by Call SID, phone number, campaign, or target..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="status">Status Filter</Label>
-              <select
-                id="status"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="completed">Completed</option>
-                <option value="failed">Failed</option>
-                <option value="no-answer">No Answer</option>
-                <option value="busy">Busy</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
+      <div className="flex items-center space-x-4 bg-gray-50 p-3 rounded-lg">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search by Call SID, phone number, campaign, or target..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-white"
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Status</option>
+            <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
+            <option value="no-answer">No Answer</option>
+            <option value="busy">Busy</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
 
       {/* Main Content */}
       <Tabs defaultValue="overview" className="space-y-4">
