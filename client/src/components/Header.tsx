@@ -97,16 +97,6 @@ export default function Header() {
           <p className="text-sm text-gray-500 mt-1">{pageInfo.description}</p>
         </div>
         <div className="flex items-center space-x-4">
-          {/* Notification Bell */}
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={handleNotifications}
-            className="text-gray-400 hover:text-gray-500"
-          >
-            <Bell className="h-5 w-5" />
-          </Button>
-          
           
         </div>
       </div>
