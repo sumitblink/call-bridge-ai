@@ -269,7 +269,7 @@ export interface IStorage {
   // MVP Tracking methods
   createVisitorSession(session: InsertVisitorSession): Promise<VisitorSession>;
   getVisitorSession(sessionId: string): Promise<VisitorSession | undefined>;
-  getVisitorSessions(userId: number): Promise<VisitorSession[]>;
+  getVisitorSessions(userId?: number): Promise<VisitorSession[]>;
   updateVisitorSession(sessionId: string, updates: Partial<InsertVisitorSession>): Promise<VisitorSession | undefined>;
   createConversionEvent(event: InsertConversionEvent): Promise<ConversionEvent>;
   getConversionEvents(sessionId?: string, campaignId?: number): Promise<ConversionEvent[]>;
@@ -1670,8 +1670,11 @@ export class MemStorage implements IStorage {
     return this.visitorSessions.find(session => session.sessionId === sessionId);
   }
 
-  async getVisitorSessions(userId: number): Promise<VisitorSession[]> {
-    return this.visitorSessions.filter(session => session.userId === userId);
+  async getVisitorSessions(userId?: number): Promise<VisitorSession[]> {
+    if (userId !== undefined) {
+      return this.visitorSessions.filter(session => session.userId === userId);
+    }
+    return this.visitorSessions;
   }
 
   async updateVisitorSession(sessionId: string, updates: Partial<InsertVisitorSession>): Promise<VisitorSession | undefined> {

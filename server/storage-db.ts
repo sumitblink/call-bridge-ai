@@ -1517,8 +1517,12 @@ export class DatabaseStorage implements IStorage {
     return session;
   }
 
-  async getVisitorSessions(userId: number): Promise<VisitorSession[]> {
-    const sessions = await db.select().from(visitorSessions).where(eq(visitorSessions.userId, userId));
+  async getVisitorSessions(userId?: number): Promise<VisitorSession[]> {
+    if (userId !== undefined) {
+      const sessions = await db.select().from(visitorSessions).where(eq(visitorSessions.userId, userId));
+      return sessions;
+    }
+    const sessions = await db.select().from(visitorSessions);
     return sessions;
   }
 

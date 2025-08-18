@@ -1007,7 +1007,7 @@ class HybridStorage implements IStorage {
     );
   }
 
-  async getVisitorSessions(userId: number): Promise<VisitorSession[]> {
+  async getVisitorSessions(userId?: number): Promise<VisitorSession[]> {
     return this.executeOperation(
       () => this.databaseStorage.getVisitorSessions(userId),
       () => this.memStorage.getVisitorSessions(userId)

@@ -1623,7 +1623,7 @@ export class SupabaseStorage implements IStorage {
     return storage.getVisitorSession(sessionId);
   }
 
-  async getVisitorSessions(userId: number): Promise<VisitorSession[]> {
+  async getVisitorSessions(userId?: number): Promise<VisitorSession[]> {
     const { storage } = await import('./storage-db');
     return storage.getVisitorSessions(userId);
   }

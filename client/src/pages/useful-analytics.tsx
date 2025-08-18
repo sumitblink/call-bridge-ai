@@ -370,7 +370,7 @@ export default function UsefulAnalytics() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {sessions.slice(0, 3).map((session: any, index) => (
+                  {sessions.slice(0, 3).map((session: any, index: number) => (
                     <div key={index} className="p-4 bg-muted/50 rounded-lg border">
                       <div className="flex items-center justify-between mb-2">
                         <Badge variant="outline">{session.source}</Badge>
