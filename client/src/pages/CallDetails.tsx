@@ -74,13 +74,13 @@ function SortableTableHead({
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (column.resizable === false) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
     setIsResizing(true);
     setStartX(e.clientX);
     setStartWidth(column.width);
-    
+
     // Add cursor style to body while resizing
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
@@ -88,7 +88,7 @@ function SortableTableHead({
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isResizing) return;
-    
+
     e.preventDefault();
     const diff = e.clientX - startX;
     const newWidth = Math.max(80, startWidth + diff);
@@ -225,7 +225,7 @@ export default function CallDetails() {
   const [showColumnCustomizer, setShowColumnCustomizer] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [columnConfig, setColumnConfig] = useState<ColumnConfig[]>([
     { id: 'callInfo', label: 'Call Info', visible: true, width: 180, order: 0, resizable: true },
     { id: 'campaign', label: 'Campaign', visible: true, width: 150, order: 1, resizable: true },
@@ -307,18 +307,18 @@ export default function CallDetails() {
         .filter(col => col.visible)
         .sort((a, b) => a.order - b.order)
         .map(col => col.id);
-        
+
       const oldIndex = currentVisibleColumns.findIndex(id => id === active.id);
       const newIndex = currentVisibleColumns.findIndex(id => id === over.id);
-      
+
       const newOrder = arrayMove(currentVisibleColumns, oldIndex, newIndex);
-      
+
       // Update column order in the config
       const updatedColumns = allColumns.map(col => {
         const newOrderIndex = newOrder.indexOf(col.id);
         return newOrderIndex !== -1 ? { ...col, order: newOrderIndex } : col;
       });
-      
+
       setColumnConfig(updatedColumns);
     }
   }, [allColumns]);
@@ -353,9 +353,9 @@ export default function CallDetails() {
       call.fromNumber.includes(searchTerm) ||
       call.campaignName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (call.winnerTargetName && call.winnerTargetName.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     const matchesStatus = statusFilter === "all" || call.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -365,7 +365,7 @@ export default function CallDetails() {
     call.status === 'in-progress' || 
     call.status === 'queued'
   ).length;
-  
+
   const completedCalls = calls.filter(call => 
     call.status === 'completed' || 
     call.status === 'failed' || 
@@ -446,7 +446,7 @@ export default function CallDetails() {
             return Math.random() > 0.5 ? 'Caller' : 'Callee';
           }
         })();
-        
+
         const hangupCauseDisplay = call.hangupCause || (() => {
           if (call.status === 'completed') return 'Normal completion';
           if (call.status === 'busy') return 'Busy signal';
@@ -473,7 +473,7 @@ export default function CallDetails() {
         const destination = call.winnerDestination || call.toNumber || '';
         let destType = 'Phone';
         let destColor = 'bg-blue-100 text-blue-800';
-        
+
         if (destination.includes('sip:') || destination.includes('@')) {
           destType = 'SIP';
           destColor = 'bg-green-100 text-green-800';
@@ -484,7 +484,7 @@ export default function CallDetails() {
           destType = 'Mobile';
           destColor = 'bg-orange-100 text-orange-800';
         }
-        
+
         return (
           <Badge className={`text-xs ${destColor}`}>
             {destType}
@@ -801,11 +801,11 @@ export default function CallDetails() {
                             <div className="font-medium">{bid.targetName}</div>
                             <div className="text-xs text-gray-500">{bid.companyName || bid.buyerName}</div>
                           </TableCell>
-                          
+
                           <TableCell>
                             <div className="font-medium">{bid.companyName || bid.buyerName || 'Unknown'}</div>
                           </TableCell>
-                          
+
                           <TableCell>
                             <div className="flex items-center space-x-1">
                               <DollarSign className="h-3 w-3" />
@@ -814,7 +814,7 @@ export default function CallDetails() {
                               </span>
                             </div>
                           </TableCell>
-                          
+
                           <TableCell>
                             {bid.destinationNumber ? (
                               <div className="font-mono text-sm">{bid.destinationNumber}</div>
@@ -822,18 +822,18 @@ export default function CallDetails() {
                               <span className="text-gray-400">N/A</span>
                             )}
                           </TableCell>
-                          
+
                           <TableCell>
                             <div className="flex items-center space-x-1">
                               <Clock className="h-3 w-3 text-gray-400" />
                               <span>{bid.responseTime}ms</span>
                             </div>
                           </TableCell>
-                          
+
                           <TableCell>
                             {getBidStatusBadge(bid.status, bid.rejectionReason, bid.isWinner)}
                           </TableCell>
-                          
+
                           <TableCell>
                             {bid.rejectionReason ? (
                               <span className="text-red-600 text-sm">{bid.rejectionReason}</span>
