@@ -672,7 +672,7 @@ export default function CallDetails() {
 
           <div className="flex items-center space-x-3">
             <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded">
-              <PhoneCall className="h-5 w-5 text-blue-600" />
+              <Phone className="h-5 w-5 text-blue-600" />
             </div>
             <div className="text-lg font-medium text-blue-600">{completedCalls}</div>
             <div className="text-sm text-gray-600">Completed</div>
