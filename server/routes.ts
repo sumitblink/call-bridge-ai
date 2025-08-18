@@ -606,57 +606,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Analytics endpoints for traffic analytics
+  // Analytics endpoints for traffic analytics - now returning REAL data
   app.get('/api/tracking/live-sessions', async (req, res) => {
+    console.log('[ANALYTICS] Starting live-sessions API call...');
     try {
       const timeRange = req.query.timeRange as string || '7d';
       const now = new Date();
+      let startDate: Date;
       
-      // Create demo traffic analytics data since visitor sessions may be empty
-      const sources = ['google', 'facebook', 'direct', 'bing', 'twitter', 'linkedin'];
-      const mediums = ['cpc', 'organic', 'social', 'email', 'referral', 'display'];
-      const campaigns = ['Healthcare Lead Gen', 'Insurance Quotes', 'Legal Services', 'Home Services', 'Auto Insurance', 'Medicare Plans'];
+      switch (timeRange) {
+        case '1d':
+          startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case '30d':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      }
+
+      // Get actual visitor sessions from the database
+      console.log('[DEBUG] About to fetch visitor sessions from storage...');
+      const sessions = await storage.getVisitorSessions() || [];
+      console.log(`[DEBUG] Raw sessions count: ${sessions.length}`);
+      console.log(`[DEBUG] First 3 sessions:`, sessions.slice(0, 3).map(s => ({ id: s.id, sessionId: s.sessionId, source: s.source })));
       
-      const demoSessions = Array.from({ length: 18 }, (_, index) => {
-        const source = sources[index % sources.length];
-        const medium = mediums[index % mediums.length];
-        const campaign = campaigns[index % campaigns.length];
-        
-        // Create timestamps within the selected range
-        const daysBack = timeRange === '1d' ? 1 : timeRange === '30d' ? 30 : 7;
-        const timeOffset = Math.random() * (daysBack * 24 * 60 * 60 * 1000);
-        const sessionTime = new Date(now.getTime() - timeOffset);
-        
-        return {
-          id: index + 1,
-          sessionId: `demo_session_${index}_${Date.now()}`,
-          source,
-          medium,
-          campaign,
-          timestamp: sessionTime.toISOString(),
-          createdAt: sessionTime.toISOString(),
-          url: `/landing/${campaign.toLowerCase().replace(/\s+/g, '-')}`,
-          landingPage: `/landing/${campaign.toLowerCase().replace(/\s+/g, '-')}`,
-          referrer: source === 'direct' ? null : `https://${source}.com/search`,
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-          clickid: `${source}_${campaign}_${index}`,
-          utmSource: source,
-          utmMedium: medium,
-          utmCampaign: campaign,
-          utmContent: `ad_${index + 1}`,
-          deviceType: Math.random() > 0.6 ? 'mobile' : 'desktop',
-          location: ['California', 'Texas', 'Florida', 'New York', 'Illinois'][index % 5]
-        };
+      // Filter sessions by time range - using first_visit as the timestamp
+      const filteredSessions = sessions.filter(session => {
+        const sessionDate = new Date(session.firstVisit || session.lastActivity);
+        return sessionDate >= startDate;
       });
 
+      // Format sessions for analytics using correct database field names
+      const formattedSessions = filteredSessions.map(session => ({
+        id: session.id,
+        sessionId: session.sessionId,
+        source: session.source || 'direct',
+        medium: session.medium || 'organic', 
+        campaign: session.campaign || session.utmCampaign || 'unnamed',
+        timestamp: session.firstVisit || session.lastActivity,
+        url: session.landingPage || session.currentPage,
+        referrer: session.referrer,
+        userAgent: session.userAgent,
+        ipAddress: session.ipAddress,
+        clickid: session.clickId || session.redtrackClickid,
+        utmSource: session.utmSource,
+        utmMedium: session.utmMedium,
+        utmCampaign: session.utmCampaign,
+        utmContent: session.utmContent,
+        deviceType: 'unknown', // Not stored in current schema
+        location: session.location
+      }));
+
       res.json({
-        sessions: demoSessions,
+        sessions: formattedSessions,
         summary: {
-          totalSessions: demoSessions.length,
+          totalSessions: formattedSessions.length,
           timeRange,
-          uniqueSources: [...new Set(demoSessions.map(s => s.source))].length,
-          uniqueCampaigns: [...new Set(demoSessions.map(s => s.campaign))].length
+          uniqueSources: [...new Set(formattedSessions.map(s => s.source))].length,
+          uniqueCampaigns: [...new Set(formattedSessions.map(s => s.campaign))].length
         }
       });
     } catch (error) {
