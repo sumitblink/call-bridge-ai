@@ -659,39 +659,36 @@ export default function CallDetails() {
         </div>
       </div>
 
-      {/* Live and Completed Call Stats */}
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2 bg-green-50 px-3 py-2 rounded-lg">
-          <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded">
-            <Phone className="h-3 w-3 text-green-600" />
+      {/* Combined Stats and Filters */}
+      <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center w-5 h-5 bg-green-100 rounded">
+              <Phone className="h-3 w-3 text-green-600" />
+            </div>
+            <div className="text-sm font-medium text-green-600">{liveCalls}</div>
+            <div className="text-xs text-gray-600">Live</div>
           </div>
-          <div className="text-lg font-bold text-green-600">{liveCalls}</div>
-          <div className="text-sm text-gray-600">Live Calls</div>
+
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center w-5 h-5 bg-blue-100 rounded">
+              <PhoneCall className="h-3 w-3 text-blue-600" />
+            </div>
+            <div className="text-sm font-medium text-blue-600">{completedCalls}</div>
+            <div className="text-xs text-gray-600">Completed</div>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-lg">
-          <div className="flex items-center justify-center w-6 h-6 bg-blue-100 rounded">
-            <PhoneCall className="h-3 w-3 text-blue-600" />
-          </div>
-          <div className="text-lg font-bold text-blue-600">{completedCalls}</div>
-          <div className="text-sm text-gray-600">Completed Calls</div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center space-x-4 bg-gray-50 p-3 rounded-lg">
-        <div className="flex-1">
+        <div className="flex items-center space-x-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search by Call SID, phone number, campaign, or target..."
+              placeholder="Search calls..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-white"
+              className="pl-10 bg-white w-64"
             />
           </div>
-        </div>
-        <div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
